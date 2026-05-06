@@ -1,0 +1,415 @@
+---
+name: plantuml-skill
+description: Use when user requests diagrams, flowcharts, sequence diagrams, class diagrams, component diagrams, ER diagrams, architecture charts, or visualizations. Also use proactively when explaining systems with 3+ components, APIs, data flows, or class hierarchies. Generates .puml files and exports to PNG/SVG via Kroki API (no local install required).
+license: MIT
+homepage: https://github.com/Agents365-ai/plantuml-skill
+compatibility: Requires curl on PATH (pre-installed on macOS/Linux/Windows Git Bash). Default renderer is the public Kroki API at https://kroki.io; can also point to a local Kroki Docker instance, or fall back to a local PlantUML jar + Java + Graphviz.
+platforms: [macos, linux, windows]
+metadata: {"openclaw":{"requires":{"bins":["curl"]},"emoji":"🧩","os":["darwin","linux","win32"]},"hermes":{"tags":["plantuml","diagram","flowchart","sequence","class","uml","architecture","kroki"],"category":"design","requires_tools":["curl"],"related_skills":["drawio","mermaid","excalidraw","tldraw"]},"author":"Agents365-ai","version":"1.1.0"}
+---
+
+# PlantUML Diagram Skill
+
+## Overview
+
+Generate `.puml` PlantUML diagram files and export to PNG/SVG using **Kroki** — a cloud rendering API that requires no local installation beyond `curl`.
+
+**Format:** `.puml` (PlantUML text)
+**Renderer:** Kroki API (`https://kroki.io`) — just `curl`, no Java needed
+**Output:** PNG, SVG
+**Diagram types:** sequence, component, class, ER, activity, use case, state, C4, and more
+
+## When to Use
+
+**Explicit triggers:**
+- "plantuml diagram", "sequence diagram", "class diagram", "component diagram"
+- "UML", "activity diagram", "use case diagram", "state machine"
+- "visualize", "draw", "diagram", "flowchart", "architecture chart"
+
+**Proactive triggers:**
+- Explaining a system with 3+ interacting components
+- Describing API flows, authentication sequences, message passing
+- Showing class hierarchies, database schemas, or ER models
+- Illustrating state machines or lifecycle flows
+
+## Prerequisites
+
+**Option A: Kroki API (recommended — no install)**
+```bash
+# Just needs curl (pre-installed on macOS/Linux/Windows Git Bash)
+curl --version
+```
+
+**Option B: Local Kroki via Docker (for offline use)**
+```bash
+docker run -d -p 8000:8000 yuzutech/kroki
+# Then replace https://kroki.io with http://localhost:8000 in commands
+```
+
+**Option C: Local PlantUML jar (traditional)**
+```bash
+# Requires Java + Graphviz
+brew install graphviz   # macOS
+sudo apt install graphviz  # Ubuntu
+# Download plantuml.jar from https://plantuml.com/download
+java -jar plantuml.jar diagram.puml
+```
+
+## Workflow
+
+### Step 0. Update check (notify, don't pull) — first use per conversation
+
+Throttle to one check per 24 hours per installation; never mutate the skill directory without explicit user consent.
+
+1. If `<this-skill-dir>/.last_update` exists and is less than 24 hours old, skip this step entirely.
+
+2. Otherwise, fetch the latest tag from upstream:
+
+   ```bash
+   git -C <this-skill-dir> ls-remote --tags origin 'v*' 2>/dev/null \
+     | awk '{print $2}' | sed 's|refs/tags/||' \
+     | sort -V | tail -1
+   ```
+
+3. Compare with this skill's `metadata.version` from the frontmatter. If the upstream tag is strictly newer (semver), tell the user one line and ask:
+
+   > "A newer version of this skill is available: vX.Y.Z → vA.B.C. Want me to `git pull`?"
+
+   If they say yes, run `git -C <this-skill-dir> pull --ff-only`. Refresh `.last_update` either way so the prompt doesn't repeat for 24 hours.
+
+4. If upstream is the same or older, refresh `.last_update` silently and continue.
+
+5. On any failure (offline, not a git checkout — e.g. ClawHub-installed copy, read-only path, no permission), swallow the error silently and continue with the user's task. Do not mention the failure.
+
+### Step 1: Check Dependencies
+```bash
+curl --version
+```
+curl is available on all modern systems. If missing, install via package manager.
+
+### Step 2: Pick Diagram Type
+Choose the most appropriate PlantUML diagram type (see reference below).
+
+### Step 3: Generate .puml File
+Write the PlantUML source file with `@startuml` / `@enduml` markers.
+
+### Step 4: Export via Kroki
+```bash
+# PNG (recommended)
+curl -s -X POST https://kroki.io/plantuml/png \
+  -H "Content-Type: text/plain" \
+  --data-binary "@diagram.puml" \
+  -o diagram.png
+
+# SVG
+curl -s -X POST https://kroki.io/plantuml/svg \
+  -H "Content-Type: text/plain" \
+  --data-binary "@diagram.puml" \
+  -o diagram.svg
+```
+
+### Step 5: Report to User
+Tell the user:
+- Path to the `.puml` source file
+- Path to the exported PNG/SVG
+- Brief description of what was generated
+
+---
+
+## Diagram Types
+
+| Type | Keyword | Use for |
+|------|---------|---------|
+| Sequence | `@startuml` + sequence syntax | API calls, protocol flows, message passing |
+| Component | `@startuml` + components | service architecture, module dependencies |
+| Class | `@startuml` + class syntax | OOP models, data structures |
+| ER / Entity | `@startuml` + entity syntax | database schemas |
+| Activity | `@startuml` + activity syntax | workflows, business processes |
+| Use Case | `@startuml` + actor/usecase | system requirements, user stories |
+| State | `@startuml` + state syntax | state machines, lifecycle |
+| C4 Context | `@startuml` + C4 includes | high-level system context maps |
+| Mind Map | `@startmindmap` | topic breakdowns, concept maps |
+| Gantt | `@startgantt` | project timelines, schedules |
+
+---
+
+## Syntax Reference
+
+### Component / Architecture Diagram
+
+```plantuml
+@startuml
+!theme plain
+
+title Microservices Architecture
+
+actor "Client" as client
+rectangle "API Gateway" as gateway #LightBlue
+
+rectangle "Services" {
+  component "User Service" as user
+  component "Order Service" as order
+}
+
+database "User DB" as userdb
+database "Order DB" as orderdb
+queue "Kafka" as kafka
+
+client --> gateway
+gateway --> user
+gateway --> order
+user --> userdb
+order --> orderdb
+order --> kafka : events
+
+@enduml
+```
+
+**Shape types:**
+- `actor "Name" as id` — stick figure (user, external actor)
+- `component "Name" as id` — component box with [brackets]
+- `rectangle "Name" as id` — plain rectangle (for groups/layers)
+- `database "Name" as id` — cylinder (database)
+- `queue "Name" as id` — queue symbol
+- `cloud "Name" as id` — cloud shape (external services)
+- `node "Name" as id` — server/node box
+- `frame "Name" as id` — frame grouping
+- `package "Name" { }` — package grouping
+
+**Arrows:**
+- `A --> B` — solid arrow
+- `A -> B` — thin arrow
+- `A ..> B` — dashed arrow
+- `A --> B : label` — labeled arrow
+- `A <--> B` — bidirectional
+
+**Colors:**
+- `#LightBlue`, `#LightGreen`, `#LightYellow`, `#Pink`, `#Violet`
+- `#AED6F1` (blue), `#A9DFBF` (green), `#FAD7A0` (orange), `#F1948A` (red)
+- `#D7BDE2` (purple), `#F9E79F` (yellow), `#D3D3D3` (grey)
+
+---
+
+### Sequence Diagram
+
+```plantuml
+@startuml
+!theme plain
+title Login Flow
+
+participant "Client" as C
+participant "API Gateway" as G
+participant "Auth Service" as A
+database "User DB" as D
+
+C -> G : POST /login
+G -> A : validateCredentials(user, pass)
+A -> D : SELECT * FROM users WHERE email = ?
+D --> A : user record
+A --> G : 200 OK + JWT token
+G --> C : { token: "..." }
+
+@enduml
+```
+
+**Arrow types:**
+- `A -> B` — synchronous call
+- `A --> B` — return / dashed
+- `A ->> B` — async message
+- `A -[#red]-> B` — colored arrow
+- `activate A` / `deactivate A` — show activation box
+
+---
+
+### Class Diagram
+
+```plantuml
+@startuml
+!theme plain
+
+class User {
+  +int id
+  +String name
+  +String email
+  +login() : bool
+  +logout()
+}
+
+class Order {
+  +int id
+  +Date createdAt
+  +float total
+  +place()
+  +cancel()
+}
+
+class Product {
+  +int id
+  +String name
+  +float price
+}
+
+User "1" --> "*" Order : places
+Order "*" --> "*" Product : contains
+
+@enduml
+```
+
+**Relationships:**
+- `A --> B` — association
+- `A --|> B` — inheritance
+- `A ..|> B` — implements interface
+- `A *-- B` — composition
+- `A o-- B` — aggregation
+- `A "1" --> "*" B : label` — with multiplicities
+
+---
+
+### ER Diagram
+
+```plantuml
+@startuml
+!theme plain
+
+entity "USER" as user {
+  * id : int <<PK>>
+  --
+  name : varchar
+  email : varchar
+  created_at : datetime
+}
+
+entity "ORDER" as ord {
+  * id : int <<PK>>
+  --
+  * user_id : int <<FK>>
+  total : decimal
+  status : varchar
+}
+
+entity "PRODUCT" as prod {
+  * id : int <<PK>>
+  --
+  name : varchar
+  price : decimal
+}
+
+user ||--o{ ord : places
+ord }o--|{ prod : contains
+
+@enduml
+```
+
+---
+
+### Activity / Flowchart
+
+```plantuml
+@startuml
+!theme plain
+
+start
+
+:Receive Order;
+
+if (Payment valid?) then (yes)
+  :Process Payment;
+  :Send Confirmation Email;
+  :Update Inventory;
+  :Ship Order;
+  :Mark as Delivered;
+else (no)
+  :Send Payment Failed Email;
+  :Cancel Order;
+endif
+
+stop
+
+@enduml
+```
+
+---
+
+### State Diagram
+
+```plantuml
+@startuml
+!theme plain
+
+[*] --> Pending
+
+Pending --> Processing : payment_received
+Processing --> Shipped : packed
+Shipped --> Delivered : confirmed
+Processing --> Cancelled : cancel
+Pending --> Cancelled : cancel
+
+Delivered --> [*]
+Cancelled --> [*]
+
+@enduml
+```
+
+---
+
+## Export Commands
+
+```bash
+# PNG via Kroki API (recommended)
+curl -s -X POST https://kroki.io/plantuml/png \
+  -H "Content-Type: text/plain" \
+  --data-binary "@diagram.puml" \
+  -o diagram.png
+
+# SVG via Kroki API
+curl -s -X POST https://kroki.io/plantuml/svg \
+  -H "Content-Type: text/plain" \
+  --data-binary "@diagram.puml" \
+  -o diagram.svg
+
+# Via local Kroki Docker (offline)
+curl -s -X POST http://localhost:8000/plantuml/png \
+  -H "Content-Type: text/plain" \
+  --data-binary "@diagram.puml" \
+  -o diagram.png
+
+# Via local PlantUML jar (if installed)
+java -jar plantuml.jar diagram.puml
+# Output: diagram.png in same directory
+```
+
+---
+
+## Themes
+
+```plantuml
+!theme plain       ← clean, minimal (recommended)
+!theme cerulean    ← blue-tinted
+!theme blueprint   ← dark blue background
+!theme aws-orange  ← AWS style
+!theme vibrant     ← vivid colors
+```
+
+Or use `skinparam` for custom styling:
+```plantuml
+skinparam backgroundColor #FAFAFA
+skinparam componentBorderColor #555555
+skinparam ArrowColor #333333
+skinparam FontName Arial
+```
+
+---
+
+## Common Mistakes
+
+| Mistake | Fix |
+|---------|-----|
+| `curl` POST returns HTML error page | Check network; try `curl -v` to see error details |
+| Kroki returns 400 Bad Request | Validate PlantUML syntax at https://www.plantuml.com/plantuml/uml/ |
+| Arrow direction unexpected | Use `-->` for downward/right; explicitly use `-up->`, `-down->`, `-left->`, `-right->` |
+| Diagram too large/crowded | Split into multiple diagrams or use `package`/`rectangle` grouping |
+| Missing `@startuml` / `@enduml` | Always wrap diagram in these markers |
+| Special chars in labels | Wrap in quotes: `"Label: value"` |
+| C4 includes not found via Kroki | Use Kroki's `c4plantuml` diagram type instead of `plantuml` for C4 diagrams |
+| Component overlap | Use `together { }` or explicit layout hints (`top to bottom direction`) |
+| Sequence participants out of order | Declare `participant` explicitly at top in desired left-to-right order |

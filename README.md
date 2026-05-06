@@ -7,7 +7,6 @@ Production-grade Claude Code skills by [Agents365-ai](https://github.com/Agents3
 ```bash
 # Claude Code plugin marketplace
 /plugin marketplace add Agents365-ai/365-skills
-/plugin install drawio
 
 # Any agent (Claude Code, Cursor, Copilot, etc.)
 npx skills add Agents365-ai/365-skills -g
@@ -18,12 +17,15 @@ npx skills add Agents365-ai/365-skills -g
 | Plugin | Description |
 |---|---|
 | `drawio` | Draw.io diagrams — PNG/SVG/PDF export with visual review loop |
-| _(more coming)_ | mermaid, excalidraw, plantuml, tldraw |
+| `mermaid` | Mermaid diagrams — text-based, GitHub-native, auto-layout |
+| `excalidraw` | Excalidraw — hand-drawn whiteboard style |
+| `plantuml` | PlantUML — UML, C4, sequence, class diagrams |
+| `tldraw` | Tldraw — infinite canvas, sketch-style |
 
-## Install a plugin
+## Install plugins
 
 ```
-/plugin install drawio
+/plugin install drawio mermaid excalidraw plantuml tldraw
 ```
 
 ## Development
