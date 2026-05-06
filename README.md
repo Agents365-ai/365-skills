@@ -4,8 +4,13 @@ Production-grade Claude Code skills by [Agents365-ai](https://github.com/Agents3
 
 ## Install
 
-```
+```bash
+# Claude Code plugin marketplace
 /plugin marketplace add Agents365-ai/365-skills
+/plugin install drawio
+
+# Any agent (Claude Code, Cursor, Copilot, etc.)
+npx skills add Agents365-ai/365-skills -g
 ```
 
 ## Available plugins
@@ -23,8 +28,9 @@ Production-grade Claude Code skills by [Agents365-ai](https://github.com/Agents3
 
 ## Development
 
-Each plugin is a git submodule pointing to its standalone repo. To update all submodules to latest:
+Plugin skills are direct copies of the source repos (not submodules). To update a plugin:
 
-```
-git submodule update --remote
+```bash
+cp -r ../drawio-skill/skills/drawio-skill/* plugins/drawio/skills/drawio-skill/
+git add plugins/drawio && git commit -m "chore: sync drawio-skill"
 ```
