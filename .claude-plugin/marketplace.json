@@ -1,0 +1,32 @@
+{
+    "name": "365-skills",
+    "owner": {
+        "name": "Agents365-ai"
+    },
+    "metadata": {
+        "description": "Production-grade Claude Code skills — diagramming, visualization, and more"
+    },
+    "plugins": [
+        {
+            "name": "drawio",
+            "source": "./plugins/drawio",
+            "description": "Draw.io diagrams — generate .drawio XML, export to PNG/SVG/PDF via local CLI, with visual review loop and editable embedded XML",
+            "version": "1.5.0",
+            "author": {
+                "name": "Agents365-ai"
+            },
+            "repository": "https://github.com/Agents365-ai/drawio-skill",
+            "license": "MIT",
+            "keywords": [
+                "drawio",
+                "diagram",
+                "flowchart",
+                "architecture",
+                "visualization",
+                "uml",
+                "erd",
+                "sequence"
+            ]
+        }
+    ]
+}

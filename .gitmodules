@@ -1,0 +1,3 @@
+[submodule "plugins/drawio"]
+	path = plugins/drawio
+	url = https://github.com/Agents365-ai/drawio-skill.git
