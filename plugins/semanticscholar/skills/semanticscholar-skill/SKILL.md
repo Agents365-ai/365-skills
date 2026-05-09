@@ -5,7 +5,7 @@ license: MIT
 homepage: https://github.com/Agents365-ai/semanticscholar-skill
 compatibility: Requires python3 and the `requests` package. Set S2_API_KEY for higher rate limits (request at https://www.semanticscholar.org/product/api#api-key). Works unauthenticated with strict rate limits.
 platforms: [macos, linux, windows]
-metadata: {"openclaw":{"requires":{"bins":["python3"],"env":["S2_API_KEY"]},"emoji":"📚"},"hermes":{"tags":["semantic-scholar","academic","paper-search","citation","literature","research"],"category":"research","requires_tools":["python3"],"related_skills":["asta-skill","zotero-research-assistant","literature-review","paper-reader"]},"author":"Agents365-ai","version":"0.5.1"}
+metadata: {"openclaw":{"requires":{"bins":["python3"],"env":["S2_API_KEY"]},"emoji":"📚"},"hermes":{"tags":["semantic-scholar","academic","paper-search","citation","literature","research"],"category":"research","requires_tools":["python3"],"related_skills":["asta-skill","zotero-research-assistant","literature-review","paper-reader"]},"author":"Agents365-ai","version":"0.6.0"}
 ---
 
 # Semantic Scholar Search Workflow
@@ -13,30 +13,6 @@ metadata: {"openclaw":{"requires":{"bins":["python3"],"env":["S2_API_KEY"]},"emo
 Search academic papers via the Semantic Scholar API using a structured 4-phase workflow.
 
 **Critical rule:** NEVER make multiple sequential Bash calls for API requests. Always write ONE Python script that runs all searches, then execute it once. All rate limiting is handled inside `s2.py` automatically.
-
-## Update check
-
-Throttle to one check per 24 hours per installation; never mutate the skill directory without explicit user consent.
-
-1. If `<this-skill-dir>/.last_update` exists and is less than 24 hours old, skip this step entirely.
-
-2. Otherwise, fetch the latest tag from upstream:
-
-   ```bash
-   git -C <this-skill-dir> ls-remote --tags origin 'v*' 2>/dev/null \
-     | awk '{print $2}' | sed 's|refs/tags/||' \
-     | sort -V | tail -1
-   ```
-
-3. Compare with this skill's `metadata.version` from the frontmatter. If the upstream tag is strictly newer (semver), tell the user one line and ask:
-
-   > "A newer version of this skill is available: vX.Y.Z → vA.B.C. Want me to `git pull`?"
-
-   If they say yes, run `git -C <this-skill-dir> pull --ff-only`. Refresh `.last_update` either way so the prompt doesn't repeat for 24 hours.
-
-4. If upstream is the same or older, refresh `.last_update` silently and continue.
-
-5. On any failure (offline, not a git checkout — e.g. ClawHub-installed copy, read-only path, no permission), swallow the error silently and continue with the user's task. Do not mention the failure.
 
 ## Phase 1: Understand & Plan
 
