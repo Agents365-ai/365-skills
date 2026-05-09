@@ -21,11 +21,12 @@ npx skills add Agents365-ai/365-skills -g
 | `excalidraw` | Excalidraw — hand-drawn whiteboard style |
 | `plantuml` | PlantUML — UML, C4, sequence, class diagrams |
 | `tldraw` | Tldraw — infinite canvas, sketch-style |
+| `semanticscholar` | Semantic Scholar — academic paper search, citation graph, recommendations, BibTeX export |
 
 ## Install plugins
 
 ```
-/plugin install drawio mermaid excalidraw plantuml tldraw
+/plugin install drawio mermaid excalidraw plantuml tldraw semanticscholar
 ```
 
 ## Development
@@ -35,4 +36,8 @@ Plugin skills are direct copies of the source repos (not submodules). To update 
 ```bash
 cp -r ../drawio-skill/skills/drawio-skill/* plugins/drawio/skills/drawio-skill/
 git add plugins/drawio && git commit -m "chore: sync drawio-skill"
+
+# semanticscholar
+cp -r ../semanticscholar-skill/skills/semanticscholar-skill/* plugins/semanticscholar/skills/semanticscholar-skill/
+git add plugins/semanticscholar && git commit -m "chore: sync semanticscholar-skill"
 ```

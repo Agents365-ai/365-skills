@@ -56,6 +56,16 @@
             "repository": "https://github.com/Agents365-ai/tldraw-skill",
             "license": "MIT",
             "keywords": ["tldraw", "whiteboard", "canvas", "sketch", "diagram"]
+        },
+        {
+            "name": "semanticscholar",
+            "source": "./plugins/semanticscholar",
+            "description": "Semantic Scholar paper search — keyword/boolean/snippet search, citation traversal, similar-paper recommendations, author lookup, BibTeX/Markdown/JSON export, with built-in rate limiting and single-script execution",
+            "version": "0.5.1",
+            "author": { "name": "Agents365-ai" },
+            "repository": "https://github.com/Agents365-ai/semanticscholar-skill",
+            "license": "MIT",
+            "keywords": ["semantic-scholar", "academic", "paper-search", "citation", "literature", "research", "bibtex"]
         }
     ]
 }
