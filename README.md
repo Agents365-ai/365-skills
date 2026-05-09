@@ -36,8 +36,8 @@ Plugin skills are direct copies of the source repos (not submodules). To update 
 ```bash
 cp -r ../drawio-skill/skills/drawio-skill/* plugins/drawio/skills/drawio-skill/
 git add plugins/drawio && git commit -m "chore: sync drawio-skill"
-
-# semanticscholar
-cp -r ../semanticscholar-skill/skills/semanticscholar-skill/* plugins/semanticscholar/skills/semanticscholar-skill/
-git add plugins/semanticscholar && git commit -m "chore: sync semanticscholar-skill"
 ```
+
+### Auto-sync (semanticscholar)
+
+`semanticscholar-skill` ships a GitHub Actions workflow (`.github/workflows/sync-365-skills.yml`) that automatically pushes any change under `skills/semanticscholar-skill/**` here, and bumps the version field in `marketplace.json`. Requires the source repo to have a `SYNC_365_SKILLS_TOKEN` secret with `Contents: write` on this repo.
