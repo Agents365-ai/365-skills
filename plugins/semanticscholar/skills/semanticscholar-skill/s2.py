@@ -55,11 +55,15 @@ import time, os, json, requests, sys
 GRAPH = "https://api.semanticscholar.org/graph/v1"
 RECS = "https://api.semanticscholar.org/recommendations/v1"
 DATASETS = "https://api.semanticscholar.org/datasets/v1"
-HEADERS = {"x-api-key": os.environ.get("S2_API_KEY", "")}
 
-# Module-level rate coordination
+_API_KEY = os.environ.get("S2_API_KEY", "").strip()
+HAS_KEY = bool(_API_KEY)
+HEADERS = {"x-api-key": _API_KEY} if HAS_KEY else {}
+
+# Without a key the shared anonymous pool allows ~100 req/5 min per IP;
+# use a 3s gap to stay well inside that limit.
 _last_request_time = 0
-_MIN_GAP = 1.1  # seconds between requests
+_MIN_GAP = 1.1 if HAS_KEY else 3.0
 
 
 def _request(method, url, params=None, json_data=None, max_retries=5):
@@ -89,6 +93,14 @@ def _request(method, url, params=None, json_data=None, max_retries=5):
                 continue
             raise
 
+        if r.status_code == 403 and HAS_KEY:
+            # Invalid/expired key — drop it and retry unauthenticated this attempt.
+            import s2 as _self
+            print("  [auth] S2_API_KEY rejected (403); switching to unauthenticated mode", file=sys.stderr)
+            _self.HAS_KEY = False
+            _self.HEADERS = {}
+            _self._MIN_GAP = 3.0
+            continue
         if r.status_code in (429, 504):
             if attempt < max_retries:
                 wait = min(2 ** (attempt + 1), 60)
@@ -320,13 +332,17 @@ def deduplicate(papers):
     return out
 
 
-def build_bool_query(phrases=None, required=None, excluded=None, or_terms=None):
+def build_bool_query(phrases=None, required=None, excluded=None, or_terms=None,
+                     fuzzy=None, proximity=None):
     """Compose a boolean query string for search_bulk.
 
     phrases    -> "exact phrase" (quoted)
     required   -> +term (must include)
     excluded   -> -term (must exclude)
     or_terms   -> (a | b | c) group
+    fuzzy      -> list of (term, edit_distance): bugs~3 matches buggy/buns/busg
+    proximity  -> list of (phrase, word_distance): ("blue lake", 3) matches
+                  phrases with up to 3 words between "blue" and "lake"
     """
     parts = []
     for p in (phrases or []):
@@ -337,7 +353,37 @@ def build_bool_query(phrases=None, required=None, excluded=None, or_terms=None):
         parts.append(f"-{e}")
     if or_terms:
         parts.append("(" + " | ".join(or_terms) + ")")
+    for term, dist in (fuzzy or []):
+        parts.append(f"{term}~{dist}")
+    for phrase, dist in (proximity or []):
+        parts.append(f'"{phrase}"~{dist}')
     return " ".join(parts)
+
+
+# --- Datasets API ---
+
+def list_releases():
+    """Return a list of all available dataset release date strings (newest last)."""
+    return s2_get(f"{DATASETS}/release/")
+
+
+def list_datasets(release_id="latest"):
+    """Return dataset metadata for a given release. Use release_id='latest' for the newest."""
+    return s2_get(f"{DATASETS}/release/{release_id}")
+
+
+def get_dataset_links(release_id, dataset_name):
+    """Return pre-signed download URLs for a dataset file. Requires a valid API key."""
+    if not HAS_KEY:
+        raise RuntimeError("get_dataset_links requires S2_API_KEY — dataset downloads are not available unauthenticated")
+    return s2_get(f"{DATASETS}/release/{release_id}/dataset/{dataset_name}")
+
+
+def get_dataset_diffs(start_release_id, end_release_id, dataset_name):
+    """Return incremental diffs (update + delete file lists) between two releases. Requires API key."""
+    if not HAS_KEY:
+        raise RuntimeError("get_dataset_diffs requires S2_API_KEY")
+    return s2_get(f"{DATASETS}/diffs/{start_release_id}/to/{end_release_id}/{dataset_name}")
 
 
 # --- Output formatting ---

@@ -5,7 +5,7 @@ license: MIT
 homepage: https://github.com/Agents365-ai/semanticscholar-skill
 compatibility: Requires python3 and the `requests` package. Set S2_API_KEY for higher rate limits (request at https://www.semanticscholar.org/product/api#api-key). Works unauthenticated with strict rate limits.
 platforms: [macos, linux, windows]
-metadata: {"openclaw":{"requires":{"bins":["python3"],"env":["S2_API_KEY"]},"emoji":"📚"},"hermes":{"tags":["semantic-scholar","academic","paper-search","citation","literature","research"],"category":"research","requires_tools":["python3"],"related_skills":["asta-skill","zotero-research-assistant","literature-review","paper-reader"]},"author":"Agents365-ai","version":"0.6.0"}
+metadata: {"openclaw":{"requires":{"bins":["python3"]},"emoji":"📚"},"hermes":{"tags":["semantic-scholar","academic","paper-search","citation","literature","research"],"category":"research","requires_tools":["python3"],"related_skills":["asta-skill","zotero-research-assistant","literature-review","paper-reader"]},"author":"Agents365-ai","version":"0.8.0"}
 ---
 
 # Semantic Scholar Search Workflow
@@ -20,9 +20,12 @@ Parse the user's intent and choose a search strategy:
 
 ### Decision Tree
 
+> **Default to `search_bulk()`.** Per Semantic Scholar's own docs, bulk search is preferred over relevance search for most cases because relevance search is more resource-intensive. Use `search_relevance()` only when you need TLDR fields or author/citation details inline.
+
 | User wants... | Strategy | Function |
 |---------------|----------|----------|
-| Broad topic exploration | Relevance search | `search_relevance()` |
+| Broad topic exploration | Bulk search (preferred) | `search_bulk()` with `build_bool_query()` |
+| Need TLDR / inline author details | Relevance search | `search_relevance()` |
 | Precise technical terms, exact phrases | Bulk search with boolean operators | `search_bulk()` with `build_bool_query()` |
 | Specific passages or methods | Snippet search | `search_snippets()` |
 | Known paper by title | Title match | `match_title()` |
@@ -89,6 +92,8 @@ print(format_results(papers, "Stem-like CD4 T cells in IBD"))
 ```
 
 Save to `/tmp/s2_search.py`, then run with `python3 /tmp/s2_search.py` in a single Bash call. Rate limiting, retries, and backoff are automatic inside `s2.py`.
+
+**No API key:** The skill works without `S2_API_KEY`. When the key is absent or invalid, `s2.py` automatically switches to unauthenticated mode (no `x-api-key` header) and widens the request gap to 3 s to stay within the anonymous rate limit (~100 req / 5 min shared per IP). Keep `max_results` ≤ 30 per search and combine fewer searches per script to avoid sustained 429s.
 
 **Checkpoint:** Verify the script ran successfully (no exceptions) and returned results. If 0 results, broaden the query or relax filters before presenting.
 
@@ -160,6 +165,14 @@ Loop until user says done. Each follow-up uses the same single-script pattern.
 
 ---
 
+## Additional Resources
+
+- **S2folks GitHub** — Official Semantic Scholar code examples: https://github.com/allenai/s2-folks
+- **Postman Collection** — No-code API testing: linked from https://www.semanticscholar.org/product/api/tutorial
+- **API Documentation** — Full endpoint reference: https://api.semanticscholar.org/
+
+---
+
 ## API Quick Reference
 
 ### Helper Module (`s2.py`)
@@ -212,8 +225,12 @@ snake_case kwargs are translated to S2 camelCase params automatically (`fields_o
 | `\|` | `CNN \| RNN` | OR |
 | `*` | `neuro*` | Prefix wildcard |
 | `()` | `(CNN \| RNN) +attention` | Grouping |
+| `term~N` | `bugs~3` | Fuzzy: matches words within N edits (e.g. buggy, buns) |
+| `"phrase"~N` | `"blue lake"~3` | Proximity: up to N words between terms |
 
-Use `build_bool_query(phrases, required, excluded, or_terms)` to construct safely.
+Use `build_bool_query(phrases, required, excluded, or_terms, fuzzy, proximity)` to construct safely.
+- `fuzzy`: list of `(term, edit_distance)` tuples
+- `proximity`: list of `(phrase, word_distance)` tuples
 
 ### Output Functions
 
@@ -237,22 +254,86 @@ Use `build_bool_query(phrases, required, excluded, or_terms)` to construct safel
 
 Default: `title,year,citationCount,authors,venue,externalIds,tldr`
 
-Additional: `abstract`, `references`, `citations`, `openAccessPdf`, `publicationDate`, `publicationVenue`, `fieldsOfStudy`, `s2FieldsOfStudy`, `journal`, `isOpenAccess`, `referenceCount`, `influentialCitationCount`, `citationStyles`, `embedding`, `textAvailability`
+Additional: `corpusId` (integer, S2 secondary ID), `url` (S2 paper page link), `abstract`, `references`, `citations`, `openAccessPdf`, `publicationDate`, `publicationVenue`, `fieldsOfStudy`, `s2FieldsOfStudy`, `journal`, `isOpenAccess`, `referenceCount`, `influentialCitationCount` (influential citations only), `citationStyles`, `embedding`, `textAvailability`
+
+`externalIds` object contains: `ArXiv`, `MAG`, `ACL`, `PubMed`, `Medline`, `PubMedCentral`, `DBLP`, `DOI`
 
 Author fields: `name`, `affiliations`, `paperCount`, `citationCount`, `hIndex`, `homepage`, `externalIds`, `papers`
 
+> **Minimize fields.** Per the official S2 tutorial: *"Avoid including more fields than you need, because that can slow down the response rate."* Only add `abstract`, `references`, or `citations` when the user explicitly needs them.
+
+### `sort` Parameter Values (bulk search only)
+
+The `sort` kwarg accepts only these three values:
+
+| Value | Meaning |
+|-------|---------|
+| `citationCount:desc` | Most-cited first (default) |
+| `publicationDate:desc` | Newest first |
+| `paperId:asc` | Stable deterministic order (useful for pagination) |
+
+### Recommendations Limits
+
+`find_similar()` and `recommend()` return at most **500** papers per call (`limit` max = 500).
+
+### Datasets API Functions
+
+For bulk download of full S2 datasets (papers, authors, abstracts, embeddings, etc.):
+
+| Function | Purpose | Requires key? |
+|----------|---------|--------------|
+| `list_releases()` | List all available release date strings | No |
+| `list_datasets(release_id="latest")` | List datasets in a release | No |
+| `get_dataset_links(release_id, dataset_name)` | Pre-signed download URLs for a dataset | **Yes** |
+| `get_dataset_diffs(start, end, dataset_name)` | Incremental diffs between two releases | **Yes** |
+
+**Available dataset names** (pass as `dataset_name`):
+
+| Name | Description | Approx size |
+|------|-------------|-------------|
+| `papers` | Core paper attributes (title, authors, date, etc.) | ~200M records, 30 × 1.5 GB |
+| `abstracts` | Paper abstract text where available | ~100M records, 30 × 1.8 GB |
+| `authors` | Author core attributes (name, affiliation, paper count) | — |
+| `citations` | Citation relationships between papers | — |
+| `embeddings-specter_v1` | Dense SPECTER vector embeddings of papers | ~120M records, 30 × 28 GB |
+| `publication-venues` | Venue metadata | — |
+| `s2orc` | Full-body text from open-access PDFs | — |
+| `tldrs` | Short natural-language summaries | ~100M records, 30 × 200 MB |
+
+All datasets are delivered as **JSON Lines** (one record per line). The diffs response contains `update_files` (insert/replace by primary key) and `delete_files` (remove from dataset).
+
 ### Rate Limiting
 
-Handled automatically by `s2.py`: 1.1s gap between requests, exponential backoff (2s→4s→8s→16s→32s, max 60s) on 429/504 errors, up to 5 retries.
+`s2.py` adapts automatically based on whether `S2_API_KEY` is set:
+
+| Mode | Gap | Official limit | Retries |
+|------|-----|----------------|---------|
+| Authenticated (valid key) | 1.1 s | **1 req/s** per key (dedicated quota) | 5× exponential backoff (2s→60s) |
+| Unauthenticated (no key or invalid key) | 3.0 s | **Shared pool** across all anonymous users — slower and less reliable | 5× exponential backoff (2s→60s) |
+
+> From the official S2 tutorial: *"Users without API keys are affected by the traffic from all other unauthenticated users, who share a single API key."* A free key gives you a dedicated 1 req/s quota. Get one at https://www.semanticscholar.org/product/api#api-key-form
+
+### Bulk Search Response Structure
+
+`search_bulk()` returns a list of papers already unpaginated. Internally the raw response has:
+
+| Field | Type | Meaning |
+|-------|------|---------|
+| `total` | integer | Estimated total matching papers (not exact) |
+| `token` | string | Present when more pages exist; pass in next request |
+| `data` | array | Papers for this page |
+
+`s2.py` handles token pagination automatically — you only see the final flat list.
 
 ### Troubleshooting
 
 | Error | Cause | Fix |
 |-------|-------|-----|
-| `HTTPError 403` | Missing or invalid API key | Verify `S2_API_KEY` is set: `echo $S2_API_KEY` |
-| `HTTPError 429` after 5 retries | Sustained rate limit exceeded | Wait 60s, reduce `max_results`, or split into smaller batches |
+| `HTTPError 403` | `S2_API_KEY` is set but invalid/expired | `s2.py` auto-falls back to unauthenticated; or `unset S2_API_KEY`, or get a new key at https://www.semanticscholar.org/product/api#api-key-form |
+| `HTTPError 404` | Bad paper/author ID | Check ID format — S2 returns `{"error": "Paper/Author/Object not found"}` or `"...with id ### not found"` |
+| `HTTPError 429` after 5 retries | Sustained anonymous rate limit hit | Wait 60 s, keep `max_results` ≤ 30, or reduce searches per script |
 | `ModuleNotFoundError: s2` | Skill directory not on path | Verify skill is installed at `~/.claude/skills/`, `~/.openclaw/skills/`, or as a Claude Code plugin under `~/.claude/plugins/` |
 | `ModuleNotFoundError: requests` | `requests` not installed | `pip install requests` or `uv pip install requests` |
 | 0 results returned | Query too specific or filters too narrow | Broaden query, remove filters, try `search_relevance()` instead of `search_bulk()` |
 | `KeyError: 'data'` | Endpoint returned error object | Check `r.get("message")` for API error details |
-| `tldr` field is empty | Not all papers have TLDR | Fall back to `abstract` field; bulk search never returns `tldr` |
+| `tldr` field is empty | Not all papers have TLDR; bulk search never returns it | Fall back to `abstract` field |
