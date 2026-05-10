@@ -27,7 +27,7 @@ End-to-end academic research workflow that turns a question into a cited, struct
 ## Guiding principles
 
 1. **Scripts over vibes.** Every search, dedupe, rank, and export step runs through a script in `scripts/`. The same input should produce the same output. Do not improvise ranking or counting by eye.
-2. **Sources are federated, not singular.** OpenAlex is the primary backbone (free, 240M+ works, no key). arXiv (CS/ML/physics preprints), Crossref (DOI metadata), PubMed (biomedical), DBLP (CS conferences/journals), bioRxiv (life-sci preprints via Europe PMC), and Exa (open-web, requires `EXA_API_KEY`) fill gaps. MCP tools (Semantic Scholar / Brave) are *enrichment*, not *dependency* — if they time out, research continues. Phase 4 citation chase runs both OpenAlex and Semantic Scholar by default; coverage gaps between the two are real.
+2. **Sources are federated, not singular.** OpenAlex is the primary backbone (free, 240M+ works, no key). arXiv (CS/ML/physics preprints), Crossref (DOI metadata), PubMed (biomedical), DBLP (CS conferences/journals), bioRxiv (life-sci preprints via Europe PMC), and Exa (open-web, requires `EXA_API_KEY`) fill gaps. Semantic Scholar is also script-driven — `build_citation_graph.py --source s2|both` is the spine path for Phase 4, with better CS / arXiv / cross-disciplinary coverage than OpenAlex; the two graphs disagree more than you'd expect. The asta MCP tools (`mcp__asta__*`) and Brave Search are *skin* — used opportunistically for relevance ranking or non-academic context, never on the critical path. If MCP times out, research continues.
 3. **State is persistent.** Everything goes through `research_state.json`. Queries ran, papers seen, decisions made, phase progress. Research becomes resumable and auditable.
 4. **Citations are anchors, not decorations.** Every non-trivial claim in the draft carries `[^id]` where `id` matches a paper in state. Unanchored claims are treated as hallucinations and fail the gate.
 5. **Saturation, not exhaustion, is the stop signal.** A phase ends when a new round of search adds <20% novel papers AND no new paper has >100 citations.
@@ -339,10 +339,12 @@ The gate predicates are enforced in `scripts/_gates.py`. Direct `set --field pha
 
 ## Enrichment with MCP tools
 
-If the session has Semantic Scholar (asta) or Brave Search MCP tools available, use them as enrichment:
+Semantic Scholar coverage is *not* one of these — it is reached through the script path (`build_citation_graph.py --source s2|both`) and is a first-class Phase 4 backend, not enrichment. The MCP tools below are the genuine skin layer: they may time out, get renamed, or be absent entirely, and no phase output depends on them.
 
-- `mcp__asta__search_papers_by_relevance` — good for dense relevance ranking
-- `mcp__asta__get_citations` — lighter weight than citation graph for a few seed papers
+If the session has asta or Brave Search MCP tools available, use them as enrichment:
+
+- `mcp__asta__search_papers_by_relevance` — good for dense relevance ranking on top of the script searches
+- `mcp__asta__get_citations` — lighter weight than `build_citation_graph.py` for spot-checking a single seed paper
 - `mcp__asta__snippet_search` — grep-like search across abstracts
 - Brave Search — non-academic sources (blog posts, press releases, pre-print discussion)
 

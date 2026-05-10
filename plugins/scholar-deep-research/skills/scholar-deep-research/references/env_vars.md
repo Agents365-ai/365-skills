@@ -11,6 +11,11 @@ Trust-boundary configuration. These are set once by the human or orchestrator �
 | `S2_API_KEY` | `build_citation_graph.py --source s2\|both` | Semantic Scholar API key — raises the public ~1 req/s quota. Optional; without it the S2 backend still works at the lower quota |
 | `SCHOLAR_CACHE_DIR` | `build_citation_graph.py` (any command that takes `--idempotency-key`) | Cache directory for idempotent-retry responses; default `.scholar_cache/` in cwd |
 | `PAPER_FETCH_SCRIPT` | `extract_pdf.py` | Path to paper-fetch's `fetch.py`. If unset, auto-discovers across all known skill install paths (Claude Code, OpenCode, OpenClaw, Hermes, ~/.agents). If not found, falls back to Unpaywall |
+| `SCHOLAR_PHASE1_MAX_ROUNDS` | `research_state.py ingest` and every `search_*.py` that ingests through it | Hard cap on distinct discovery rounds before Phase 1 refuses further ingest with `phase1_budget_exhausted`; default `5`. Lifts automatically once `phase >= 2`. Raise it when a legitimately broad topic needs more rounds |
+| `SCHOLAR_PHASE1_MAX_REQUESTS_PER_SOURCE` | same as above | Hard cap on per-source ingest events during Phase 1; default `20`. Same `phase1_budget_exhausted` envelope when exceeded; same auto-lift at phase 2 |
+| `SCHOLAR_SEARCH_CACHE` | the 4 stdlib search scripts (`search_openalex/arxiv/crossref/pubmed`) | Set to `1` / `true` / `yes` / `on` to enable an opt-in TTL cache of HTTP search results. Default OFF — envelope is bit-identical to the un-cached path until enabled. When enabled, `meta.search_cache` is `"hit"` or `"miss"` for corpus-provenance audits |
+| `SCHOLAR_SEARCH_CACHE_TTL_HOURS` | as above, only when `SCHOLAR_SEARCH_CACHE` is on | TTL for cached search results; default `24` (hours). Distinct cache from `SCHOLAR_CACHE_DIR` — search cache lives under `<cache_dir>/searches/` and expires by clock; idempotency cache names a specific run and never expires |
+| `SCHOLAR_REQUEST_ID` | every script (envelope `meta.request_id`) | Override the auto-generated `req_<hex>` request id so an orchestrator can correlate envelopes with its own trace. Defaults to a fresh UUID-derived id per process |
 
 ## Why env-var, not CLI flag
 
