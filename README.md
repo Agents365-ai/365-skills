@@ -16,6 +16,8 @@ npx skills add Agents365-ai/365-skills -g
 
 ## Available plugins
 
+### Drawing & diagrams
+
 | Plugin | Description |
 |---|---|
 | `drawio` | Draw.io diagrams — PNG/SVG/PDF export with visual review loop |
@@ -23,6 +25,11 @@ npx skills add Agents365-ai/365-skills -g
 | `excalidraw` | Excalidraw — hand-drawn whiteboard style |
 | `plantuml` | PlantUML — UML, C4, sequence, class diagrams |
 | `tldraw` | Tldraw — infinite canvas, sketch-style |
+
+### Scientific research
+
+| Plugin | Description |
+|---|---|
 | `semanticscholar` | Semantic Scholar — academic paper search, citation graph, recommendations, BibTeX export |
 
 ## Install plugins

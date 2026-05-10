@@ -16,6 +16,8 @@ npx skills add Agents365-ai/365-skills -g
 
 ## 可用插件
 
+### 绘图与图表
+
 | 插件 | 说明 |
 |---|---|
 | `drawio` | Draw.io 流程图 —— 支持 PNG/SVG/PDF 导出与可视化审阅闭环 |
@@ -23,6 +25,11 @@ npx skills add Agents365-ai/365-skills -g
 | `excalidraw` | Excalidraw —— 手绘白板风格 |
 | `plantuml` | PlantUML —— UML、C4、时序图、类图 |
 | `tldraw` | Tldraw —— 无限画布、草图风格 |
+
+### 科研
+
+| 插件 | 说明 |
+|---|---|
 | `semanticscholar` | Semantic Scholar —— 学术论文检索、引文图谱、推荐、BibTeX 导出 |
 
 ## 安装插件
