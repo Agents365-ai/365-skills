@@ -57,30 +57,6 @@ java -jar plantuml.jar diagram.puml
 
 ## Workflow
 
-### Step 0. Update check (notify, don't pull) — first use per conversation
-
-Throttle to one check per 24 hours per installation; never mutate the skill directory without explicit user consent.
-
-1. If `<this-skill-dir>/.last_update` exists and is less than 24 hours old, skip this step entirely.
-
-2. Otherwise, fetch the latest tag from upstream:
-
-   ```bash
-   git -C <this-skill-dir> ls-remote --tags origin 'v*' 2>/dev/null \
-     | awk '{print $2}' | sed 's|refs/tags/||' \
-     | sort -V | tail -1
-   ```
-
-3. Compare with this skill's `metadata.version` from the frontmatter. If the upstream tag is strictly newer (semver), tell the user one line and ask:
-
-   > "A newer version of this skill is available: vX.Y.Z → vA.B.C. Want me to `git pull`?"
-
-   If they say yes, run `git -C <this-skill-dir> pull --ff-only`. Refresh `.last_update` either way so the prompt doesn't repeat for 24 hours.
-
-4. If upstream is the same or older, refresh `.last_update` silently and continue.
-
-5. On any failure (offline, not a git checkout — e.g. ClawHub-installed copy, read-only path, no permission), swallow the error silently and continue with the user's task. Do not mention the failure.
-
 ### Step 1: Check Dependencies
 ```bash
 curl --version
