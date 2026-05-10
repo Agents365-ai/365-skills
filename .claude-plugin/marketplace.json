@@ -11,7 +11,7 @@
             "name": "drawio",
             "source": "./plugins/drawio",
             "description": "Draw.io diagrams — generate .drawio XML, export to PNG/SVG/PDF via local CLI, with visual review loop and editable embedded XML",
-            "version": "1.5.0",
+            "version": "1.5.2",
             "author": { "name": "Agents365-ai" },
             "repository": "https://github.com/Agents365-ai/drawio-skill",
             "license": "MIT",
