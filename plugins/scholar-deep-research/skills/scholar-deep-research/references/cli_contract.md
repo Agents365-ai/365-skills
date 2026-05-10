@@ -15,7 +15,7 @@ Every script prints **exactly one** JSON envelope to stdout and exits with a cod
   "meta": {
     "request_id": "...",
     "latency_ms": 123,
-    "cli_version": "0.11.0",
+    "cli_version": "<X.Y.Z, matches scripts/_common.py:VERSION>",
     "schema_version": 1
   }
 }
