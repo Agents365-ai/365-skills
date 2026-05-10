@@ -31,11 +31,12 @@ npx skills add Agents365-ai/365-skills -g
 | Plugin | Description |
 |---|---|
 | `semanticscholar` | Semantic Scholar — academic paper search, citation graph, recommendations, BibTeX export |
+| `paper-fetch` | Paper PDF downloader by DOI / title — 7-source fallback (Unpaywall, S2, arXiv, PMC, bioRxiv, publisher, Sci-Hub) with batch mode and idempotent retries |
 
 ## Install plugins
 
 ```
-/plugin install drawio mermaid excalidraw plantuml tldraw semanticscholar
+/plugin install drawio mermaid excalidraw plantuml tldraw semanticscholar paper-fetch
 ```
 
 ## Development
@@ -47,9 +48,9 @@ cp -r ../drawio-skill/skills/drawio-skill/* plugins/drawio/skills/drawio-skill/
 git add plugins/drawio && git commit -m "chore: sync drawio-skill"
 ```
 
-### Auto-sync (semanticscholar)
+### Auto-sync (semanticscholar, paper-fetch)
 
-`semanticscholar-skill` ships a GitHub Actions workflow (`.github/workflows/sync-365-skills.yml`) that automatically pushes any change under `skills/semanticscholar-skill/**` here, and bumps the version field in `marketplace.json`. Requires the source repo to have a `SYNC_365_SKILLS_TOKEN` secret with `Contents: write` on this repo.
+`semanticscholar-skill` and `paper-fetch` each ship a GitHub Actions workflow (`.github/workflows/sync-365-skills.yml`) that automatically pushes any change under their respective `skills/<name>/**` here, and bumps the version field in `marketplace.json`. Requires each source repo to have a `SYNC_365_SKILLS_TOKEN` secret with `Contents: write` on this repo.
 
 ## Source repos
 
@@ -63,6 +64,7 @@ Each plugin mirrors a standalone skill repo — file issues there for plugin-spe
 | `plantuml` | [Agents365-ai/plantuml-skill](https://github.com/Agents365-ai/plantuml-skill) |
 | `tldraw` | [Agents365-ai/tldraw-skill](https://github.com/Agents365-ai/tldraw-skill) |
 | `semanticscholar` | [Agents365-ai/semanticscholar-skill](https://github.com/Agents365-ai/semanticscholar-skill) |
+| `paper-fetch` | [Agents365-ai/paper-fetch](https://github.com/Agents365-ai/paper-fetch) |
 
 ## Discord
 
