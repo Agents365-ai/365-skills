@@ -37,7 +37,7 @@ npx skills add Agents365-ai/365-skills -g
 ## 安装插件
 
 ```
-/plugin install drawio mermaid excalidraw plantuml tldraw semanticscholar paper-fetch scholar-deep-research
+/plugin install drawio
 ```
 
 ## 开发
