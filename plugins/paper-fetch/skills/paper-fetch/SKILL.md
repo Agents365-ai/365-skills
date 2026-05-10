@@ -1,6 +1,6 @@
 ---
 name: paper-fetch
-description: Use when the user wants to download a paper PDF from a DOI (or title, resolved to a DOI first). Tries Unpaywall, arXiv, bioRxiv/medRxiv, PubMed Central, Semantic Scholar, and Sci-Hub mirrors as a last-resort fallback.
+description: Use whenever the user wants to obtain, download, or fetch a paper's PDF — given a DOI, an arXiv id, a paper title, a citation, or a list of DOIs. Trigger on phrases like "download this paper", "find the PDF for [DOI]", "grab me the [Nature/bioRxiv/arXiv] paper on X", "get the open-access version", "I need this article", or any bulk/batch paper download request, even when the user doesn't explicitly say "PDF" or "DOI". Resolves via Unpaywall → Semantic Scholar → arXiv → PubMed Central → bioRxiv/medRxiv → publisher direct (institutional opt-in) → Sci-Hub mirrors as last-resort fallback.
 homepage: https://github.com/Agents365-ai/paper-fetch
 metadata: {"openclaw":{"requires":{"bins":["python3"]},"emoji":"📄"},"pimo":{"category":"research","tags":["paper","pdf","doi","open-access","download"]},"author":"Agents365-ai","version":"0.13.1"}
 ---
@@ -8,32 +8,6 @@ metadata: {"openclaw":{"requires":{"bins":["python3"]},"emoji":"📄"},"pimo":{"
 # paper-fetch
 
 Fetch the PDF for a paper given a DOI (or title). Tries multiple sources in priority order and stops at the first hit.
-
-**Agent-native.** Structured JSON envelope on stdout, NDJSON progress on stderr (with a session header emitting `schema_version` / `cli_version` for drift detection), stable exit codes, machine-readable schema, TTY-aware format default, idempotent retries. `retry_after_hours` is emitted on every retryable error class.
-
-## Step 0. Update check (notify, don't pull) — first use per conversation
-
-Throttle to one check per 24 hours per installation; never mutate the skill directory without explicit user consent.
-
-1. If `<this-skill-dir>/.last_update` exists and is less than 24 hours old, skip this step entirely.
-
-2. Otherwise, fetch the latest tag from upstream:
-
-   ```bash
-   git -C <this-skill-dir> ls-remote --tags origin 'v*' 2>/dev/null \
-     | awk '{print $2}' | sed 's|refs/tags/||' \
-     | sort -V | tail -1
-   ```
-
-3. Compare with this skill's `metadata.version` from the frontmatter. If the upstream tag is strictly newer (semver), tell the user one line and ask:
-
-   > "A newer version of this skill is available: vX.Y.Z → vA.B.C. Want me to `git pull`?"
-
-   If they say yes, run `git -C <this-skill-dir> pull --ff-only`. Refresh `.last_update` either way so the prompt doesn't repeat for 24 hours.
-
-4. If upstream is the same or older, refresh `.last_update` silently and continue.
-
-5. On any failure (offline, not a git checkout — e.g. ClawHub-installed copy, read-only path, no permission), swallow the error silently and continue with the user's task. Do not mention the failure.
 
 ## Resolution order
 
@@ -67,20 +41,16 @@ python scripts/fetch.py schema           # machine-readable self-description
 
 ### Flags
 
+The flags below are the ones an agent composes in normal use. For the complete contract — including `--dry-run`, `--pretty`, `--stream`, `--overwrite`, `--timeout`, `--version`, plus parameter types and exit-code mappings — run `python scripts/fetch.py schema` (machine-readable, drift-checked via `schema_version`).
+
 | Flag | Default | Description |
 |------|---------|-------------|
 | `doi` | — | DOI to fetch (positional). Use `-` to read a single DOI from stdin |
 | `--title TITLE` | — | Paper title; resolved to a DOI via Crossref before download. Mutually exclusive with positional DOI / `--batch` |
 | `--batch FILE` | — | File with one DOI per line for bulk download. Use `-` to read from stdin |
 | `--out DIR` | `pdfs` | Output directory |
-| `--dry-run` | off | Resolve sources without downloading; preview PDF URL and destination |
 | `--format` | auto | `json` for agents, `text` for humans. Auto-detects: `json` when stdout is not a TTY, `text` when it is |
-| `--pretty` | off | Pretty-print JSON with 2-space indent |
-| `--stream` | off | Emit one NDJSON per line on stdout as each DOI resolves, then a summary line (batch mode) |
-| `--overwrite` | off | Re-download even when destination file already exists |
 | `--idempotency-key KEY` | — | Safe-retry key. Re-running with the same key replays the original envelope from `<out>/.paper-fetch-idem/` without network I/O |
-| `--timeout SECONDS` | `30` | HTTP timeout per request |
-| `--version` | — | Print CLI + schema version and exit |
 
 ### Agent discovery: `schema` subcommand
 
@@ -117,8 +87,8 @@ Emits a complete machine-readable description of the CLI on stdout (no network).
   "meta": {
     "request_id": "req_a908f5156fc1",
     "latency_ms": 2036,
-    "schema_version": "1.3.0",
-    "cli_version": "0.7.0",
+    "schema_version": "1.9.0",
+    "cli_version": "0.13.1",
     "sources_tried": ["unpaywall"]
   }
 }
@@ -196,7 +166,7 @@ The cached envelope is returned verbatim, but `meta.request_id` and `meta.latenc
 When `--format json`, stderr emits one JSON object per line for liveness:
 
 ```
-{"event": "session",     "request_id": "req_...", "elapsed_ms": 0,    "cli_version": "0.6.1", "schema_version": "1.3.0"}
+{"event": "session",     "request_id": "req_...", "elapsed_ms": 0,    "cli_version": "0.13.1", "schema_version": "1.9.0"}
 {"event": "start",       "request_id": "req_...", "elapsed_ms": 2,    "doi": "10.1038/..."}
 {"event": "source_try",  "request_id": "req_...", "elapsed_ms": 2,    "doi": "...", "source": "unpaywall"}
 {"event": "source_hit",  "request_id": "req_...", "elapsed_ms": 2036, "doi": "...", "source": "unpaywall", "pdf_url": "..."}
@@ -320,11 +290,5 @@ Host reachability does not differ between modes — public mode already trusts U
 - **Auth is delegated.** The agent never runs a login subcommand. The human or the orchestrator sets `UNPAYWALL_EMAIL` in the environment; the agent inherits it. Missing email degrades gracefully to the remaining 4 sources.
 - **Trust is directional.** CLI arguments are validated once at the entry point. SSRF defense, the `%PDF` magic-byte check, and the 50 MB size cap are enforced in the environment layer, not at the agent's request. An agent cannot loosen safety by passing a flag — opting into institutional mode (and its rate-limit risk profile) is an operator action via environment variable.
 - **Downloads are naturally idempotent.** Re-running against the same `--out` skips files that already exist (deterministic filename: `{first_author}_{year}_{journal_abbrev}_{short_title}.pdf`; the journal segment is omitted if metadata lacks a journal/venue). Pair with `--idempotency-key` to also replay the exact envelope without any network I/O.
-- **Institutional mode** is opt-in via `PAPER_FETCH_INSTITUTIONAL=1` and uses the caller's own subscription (IP, cookies, or EZproxy).
 - **Default output directory:** `./pdfs/`.
 
-## Auto-update
-
-See **Step 0** at the top of this file. When installed via `git clone`, the agent runs a synchronous `git pull --ff-only` on the first invocation per conversation, throttled to once per 24h via `<skill_dir>/.last_update`. Updates apply to the current invocation.
-
-Force an immediate check with `rm <skill_dir>/.last_update`.
