@@ -105,7 +105,8 @@ def fetch_referenced(seed_id: str, oa_ids: list[str],
             "filter": "openalex_id:" + "|".join(batch),
             "per-page": chunk,
             "select": "id,doi,title,authorships,publication_year,"
-                      "primary_location,cited_by_count,abstract_inverted_index",
+                      "primary_location,cited_by_count,"
+                      "abstract_inverted_index,type",
         }
         if email:
             params["mailto"] = email
@@ -137,6 +138,39 @@ def fetch_cited_by(oa_id: str, limit: int, email: str | None) -> list[dict]:
     except httpx.HTTPError as e:
         _record_failure(oa_id, "fetch_cited_by", e)
         return []
+
+
+# OpenAlex `type` values that contribute noise rather than literature:
+#   - erratum, correction       — corrigenda, not standalone work
+#   - paratext                  — front matter, table of contents, mastheads
+#   - peer-review               — review-of-review records, not the work itself
+# `editorial`, `letter`, and `news` are deliberately NOT in this list:
+#   editorials sometimes carry useful field-level commentary (legal /
+#   policy stances), letters can be substantive correspondence with
+#   numbers, and `news` items occasionally point at primary results.
+# These ambiguous types stay in the corpus and the agent decides at
+# Phase 2 whether they earn a deep read. The drop-set is the truly
+# auditable garbage: corrigenda and front-matter.
+_DROP_TYPES = frozenset({"erratum", "correction", "paratext", "peer-review"})
+
+# Citation counts above this are almost always metadata bugs at the
+# upstream source — e.g. "Publisher's Note" cited by every issue of the
+# journal it heads, returned with cited_by_count > 250 000. Real
+# scholarly papers don't reach this number; the threshold lives well
+# above any legitimate paper (the most-cited papers in OpenAlex are
+# under 100 000 citations as of late 2025).
+_OUTLIER_CITATIONS_THRESHOLD = 100_000
+
+
+def _drop_reason(work: dict[str, Any]) -> str | None:
+    """Return a short reason code if this work should be dropped, else None."""
+    t = (work.get("type") or "").lower()
+    if t in _DROP_TYPES:
+        return f"type_{t.replace('-', '_')}"
+    cites = work.get("cited_by_count") or 0
+    if cites > _OUTLIER_CITATIONS_THRESHOLD:
+        return "outlier_citations"
+    return None
 
 
 def normalize(w: dict[str, Any]) -> dict[str, Any]:
@@ -327,6 +361,20 @@ def main() -> None:
     new_records: list[dict[str, Any]] = []
     seeds_any_success: set[str] = set()
     backends_used: list[str] = []
+    # Tally of records dropped at ingest by the metadata-noise filter,
+    # surfaced in the response so an agent can audit "where did the chase
+    # numbers go?". Common values: type_erratum, type_correction,
+    # type_paratext, type_peer_review, outlier_citations.
+    drop_counts: dict[str, int] = {}
+
+    def _accept_oa(works: list[dict[str, Any]]) -> None:
+        """Filter then normalize OpenAlex works; tally drops by reason."""
+        for w in works:
+            reason = _drop_reason(w)
+            if reason is not None:
+                drop_counts[reason] = drop_counts.get(reason, 0) + 1
+                continue
+            new_records.append(normalize(w))
 
     if use_openalex:
         backends_used.append("openalex")
@@ -340,14 +388,12 @@ def main() -> None:
                     ref_ids = [r.rsplit("/", 1)[-1] for r in refs if r]
                     if ref_ids:
                         works = fetch_referenced(oa_id, ref_ids, args.email)
-                        for w in works:
-                            new_records.append(normalize(w))
+                        _accept_oa(works)
                     seed_success = True
             if args.direction in ("forward", "both"):
                 cited_by = fetch_cited_by(oa_id, args.cited_by_limit, args.email)
                 if cited_by or not SEED_FAILURES or SEED_FAILURES[-1]["seed_id"] != oa_id:
-                    for w in cited_by:
-                        new_records.append(normalize(w))
+                    _accept_oa(cited_by)
                     seed_success = seed_success or True
             if seed_success:
                 seeds_any_success.add(seed["id"])
@@ -403,6 +449,8 @@ def main() -> None:
         "skipped_seeds_without_resolvable_id": skipped_s2,
         "direction": args.direction,
         "fetched": len(new_records),
+        "filtered_out": sum(drop_counts.values()),
+        "filtered_by_reason": drop_counts,
         "added": summary["added"],
         "merged": summary["merged"],
         "total_papers": summary["total_papers"],

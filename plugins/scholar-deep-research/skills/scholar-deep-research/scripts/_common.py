@@ -30,7 +30,7 @@ from typing import Any, Callable
 
 # Canonical version string. Bump in lockstep with the `version` field in
 # SKILL.md frontmatter so USER_AGENT, telemetry, and skill metadata agree.
-VERSION = "0.13.2"
+VERSION = "0.13.3"
 
 USER_AGENT = (
     f"scholar-deep-research/{VERSION} "
