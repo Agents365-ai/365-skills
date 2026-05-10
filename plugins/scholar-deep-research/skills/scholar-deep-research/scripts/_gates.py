@@ -360,6 +360,9 @@ _NEXT_HINTS: dict[str, list[str]] = {
         "python scripts/search_arxiv.py --query '...' --state {state} --round N",
         "python scripts/search_crossref.py --query '...' --state {state} --round N",
         "python scripts/search_pubmed.py --query '...' --state {state} --round N",
+        "python scripts/search_dblp.py --query '...' --state {state} --round N",
+        "python scripts/search_biorxiv.py --query '...' --state {state} --round N",
+        "python scripts/search_exa.py --query '...' --state {state} --round N",
     ],
     "saturation_overall": [
         "python scripts/search_openalex.py --query '<next cluster>' --state {state} --round N",
