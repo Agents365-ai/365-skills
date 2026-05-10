@@ -108,6 +108,10 @@ def score_paper(paper: dict[str, Any], question: str,
     cd = citation_density(paper.get("citations"), paper.get("year"), now_year)
     rec = recency(paper.get("year"), half_life, now_year)
     pdf = has_pdf_signal(paper)
+    # NOTE: weights happen to match rank_papers.py's α/β/γ/δ literally,
+    # but the inputs differ (citation_density vs log10(citations+1)/3,
+    # has_pdf vs venue_prior). Same numbers, different signals — do not
+    # treat the two scores as interchangeable.
     score = 0.4 * rel * aq + 0.3 * cd + 0.2 * rec + 0.1 * pdf
     return {
         "score": round(score, 4),
