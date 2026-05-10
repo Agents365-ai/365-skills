@@ -5,7 +5,7 @@ license: MIT
 homepage: https://github.com/Agents365-ai/scholar-deep-research
 compatibility: Requires Python 3.9+ with httpx and pypdf (see requirements.txt). Works offline-first (no MCP required) but enriches with Semantic Scholar / Brave MCP tools when available.
 platforms: [macos, linux, windows]
-metadata: {"openclaw":{"requires":{"bins":["python3"]},"emoji":"🔬"},"hermes":{"tags":["research","literature-review","academic","papers","citations","survey"],"category":"research"},"pimo":{"tags":["research","literature-review","academic"],"category":"research"},"author":"Agents365-ai","version":"0.13.0"}
+metadata: {"openclaw":{"requires":{"bins":["python3"]},"emoji":"🔬"},"hermes":{"tags":["research","literature-review","academic","papers","citations","survey"],"category":"research"},"pimo":{"tags":["research","literature-review","academic"],"category":"research"},"author":"Agents365-ai","version":"0.13.1"}
 ---
 
 # Scholar Deep Research
@@ -77,7 +77,13 @@ When in doubt about archetype, ask the user. The choice shapes everything downst
 
 ### Phase 1 — Discovery
 
-Run searches across all available sources in parallel. OpenAlex is primary; the others fill gaps.
+Run searches across all available sources, in parallel where the source can take it. OpenAlex is primary; the others fill gaps.
+
+**Where parallelism actually pays off.** The right place to fan out is **Phase 3** (one agent per paper to read PDFs concurrently — see `references/agent_prompts/phase3_deep_read.md`). At Phase 1 the bottleneck is the upstream API, not local compute, and parallel fan-out across the same source mostly buys 429s and sticky cooldowns. The skill's bias should be: parallel between *different* sources, serial within *one* source. Concretely:
+- **Parallel-friendly**: OpenAlex (polite-pool, very tolerant), Crossref (polite-pool), Exa (paid quota), bioRxiv (Europe PMC).
+- **Self-serialised** (file-locked, automatic): arXiv (≥3s/req), PubMed (≥0.34s/req without `NCBI_API_KEY`, ≥0.10s with), DBLP (1s buffer to avoid SSL EOF flakes).
+
+The serialised sources use a per-source file lock under `${SCHOLAR_CACHE_DIR:-.scholar_cache}/rate/<source>.lock`, so even N parallel `search_arxiv.py` invocations from the same agent will queue automatically and sleep the right gap — no agent-side coordination required, but parallel calls don't speed those sources up either, just don't error.
 
 ```bash
 # Primary (no API key, always available)

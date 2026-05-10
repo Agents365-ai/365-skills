@@ -30,7 +30,7 @@ from typing import Any, Callable
 
 # Canonical version string. Bump in lockstep with the `version` field in
 # SKILL.md frontmatter so USER_AGENT, telemetry, and skill metadata agree.
-VERSION = "0.13.0"
+VERSION = "0.13.1"
 
 USER_AGENT = (
     f"scholar-deep-research/{VERSION} "
@@ -78,6 +78,79 @@ def phase1_max_rounds() -> int:
 def phase1_max_requests_per_source() -> int:
     """Cap on per-source ingest events during Phase 1 (one event = one query call)."""
     return _env_int("SCHOLAR_PHASE1_MAX_REQUESTS_PER_SOURCE", 20)
+
+
+# ---------- per-source rate limiting ----------
+# Some upstream APIs enforce strict per-IP intervals: arXiv (3s), NCBI
+# E-utilities (~0.34s without a key, ~0.1s with), DBLP (no formal limit
+# but ~1s avoids the SSL EOF flakiness we see on bursts). The skill
+# encourages parallel multi-source search, but agents don't always know
+# which sources are quota-managed and which aren't — so each search
+# script self-serialises against a shared file-lock under
+# ${SCHOLAR_CACHE_DIR}/rate/<source>.lock. Effect: N parallel
+# search_arxiv.py invocations sharing the same cache dir queue
+# automatically and sleep the right gap between requests, even though
+# they're separate Python processes. Requires fcntl (Linux/macOS); on
+# Windows the lock is best-effort (worst case: a small burst gets
+# through, which is what we already had).
+
+_RATE_DIR = "rate"
+
+
+def _rate_state_path(source: str) -> Path:
+    """File the limiter reads/writes the last-call timestamp through.
+
+    Lives in the same idempotency-cache root so users only set one env
+    var. One file per source: parallel arxiv calls block each other but
+    not parallel openalex calls.
+    """
+    cache_dir = Path(os.environ.get("SCHOLAR_CACHE_DIR", ".scholar_cache"))
+    rate_dir = cache_dir / _RATE_DIR
+    rate_dir.mkdir(parents=True, exist_ok=True)
+    safe = "".join(c if c.isalnum() or c in ("_", "-") else "_"
+                   for c in source.lower())
+    return rate_dir / f"{safe}.lock"
+
+
+def enforce_min_interval(source: str, min_seconds: float) -> float:
+    """Block until ≥`min_seconds` has elapsed since the last call for `source`.
+
+    Cross-process: the function takes an exclusive flock on a per-source
+    sentinel file, reads the last-call timestamp, sleeps the difference
+    if needed, writes the new timestamp, and releases. N concurrent
+    invocations from N processes will serialise themselves.
+
+    Returns the actual sleep duration in seconds (0 if no wait was needed).
+    No-op when min_seconds <= 0. Best-effort on systems without fcntl —
+    falls back to timestamp-only coordination, which still sleeps
+    correctly when the timestamps don't race.
+    """
+    if min_seconds <= 0:
+        return 0.0
+    path = _rate_state_path(source)
+    # 'a+' both creates and lets us seek/read. Open in text mode for
+    # cross-platform consistency on the timestamp string.
+    with open(path, "a+") as f:
+        try:
+            import fcntl  # type: ignore[import-not-found]
+            fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+        except (ImportError, OSError):
+            # Windows or filesystem without flock — degrade silently.
+            pass
+        f.seek(0)
+        try:
+            last = float((f.read() or "0").strip() or "0")
+        except ValueError:
+            last = 0.0
+        now = time.time()
+        wait = (last + min_seconds) - now
+        if wait > 0:
+            time.sleep(wait)
+            now = time.time()
+        f.seek(0)
+        f.truncate()
+        f.write(f"{now:.6f}\n")
+        return max(0.0, wait)
 
 
 # ---------- TTY detection ----------

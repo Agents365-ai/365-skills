@@ -22,13 +22,19 @@ from typing import Any
 # `--schema` introspection works on machines without httpx installed.
 
 from _common import (
-    USER_AGENT, UpstreamError, emit, err, make_paper, make_payload,
-    maybe_emit_schema, record_search_failure, resolve_search_round,
-    set_command_meta, with_search_cache,
+    USER_AGENT, UpstreamError, emit, enforce_min_interval, err, make_paper,
+    make_payload, maybe_emit_schema, record_search_failure,
+    resolve_search_round, set_command_meta, with_search_cache,
 )
 
 ESEARCH = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
 ESUMMARY = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi"
+
+# NCBI E-utilities: 3 requests/s without an API key, 10 req/s with one.
+# Each search() makes two HTTP calls (esearch + esummary), so the per-call
+# minimum interval is half the per-second budget to keep both under the cap.
+_PUBMED_MIN_INTERVAL_NO_KEY = 0.34   # ~3 req/s
+_PUBMED_MIN_INTERVAL_WITH_KEY = 0.10  # ~10 req/s
 
 
 def search(query: str, limit: int, api_key: str | None,
@@ -51,7 +57,10 @@ def search(query: str, limit: int, api_key: str | None,
     if api_key:
         es_params["api_key"] = api_key
     headers = {"User-Agent": USER_AGENT}
+    min_interval = (_PUBMED_MIN_INTERVAL_WITH_KEY if api_key
+                    else _PUBMED_MIN_INTERVAL_NO_KEY)
 
+    enforce_min_interval("pubmed", min_interval)
     try:
         r = httpx.get(ESEARCH, params=es_params, headers=headers, timeout=30.0)
         r.raise_for_status()
@@ -72,6 +81,7 @@ def search(query: str, limit: int, api_key: str | None,
     }
     if api_key:
         sum_params["api_key"] = api_key
+    enforce_min_interval("pubmed", min_interval)
     try:
         r = httpx.get(ESUMMARY, params=sum_params, headers=headers, timeout=30.0)
         r.raise_for_status()

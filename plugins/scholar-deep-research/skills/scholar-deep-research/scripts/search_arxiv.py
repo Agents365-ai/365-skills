@@ -17,9 +17,9 @@ import xml.etree.ElementTree as ET
 import httpx
 
 from _common import (
-    USER_AGENT, UpstreamError, emit, err, make_paper, make_payload,
-    maybe_emit_schema, record_search_failure, resolve_search_round,
-    set_command_meta, with_search_cache,
+    USER_AGENT, UpstreamError, emit, enforce_min_interval, err, make_paper,
+    make_payload, maybe_emit_schema, record_search_failure,
+    resolve_search_round, set_command_meta, with_search_cache,
 )
 
 API = "https://export.arxiv.org/api/query"
@@ -27,6 +27,12 @@ NS = {
     "atom": "http://www.w3.org/2005/Atom",
     "arxiv": "http://arxiv.org/schemas/atom",
 }
+
+# arXiv enforces a strict ≥3s/request per-IP limit; bursts trigger 429
+# plus a sticky cooldown that lasts 60-90s. The per-source file-lock in
+# enforce_min_interval queues parallel calls automatically so multiple
+# search_arxiv.py invocations don't all hit the wall at once.
+_ARXIV_MIN_INTERVAL = 3.0
 
 
 def search(query: str, limit: int) -> list[dict]:
@@ -37,6 +43,7 @@ def search(query: str, limit: int) -> list[dict]:
         "sortBy": "relevance",
         "sortOrder": "descending",
     }
+    enforce_min_interval("arxiv", _ARXIV_MIN_INTERVAL)
     try:
         r = httpx.get(API, params=params,
                       headers={"User-Agent": USER_AGENT}, timeout=30.0)

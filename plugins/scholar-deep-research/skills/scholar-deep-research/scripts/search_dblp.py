@@ -26,12 +26,17 @@ from typing import Any
 # httpx imported lazily inside `search` so `--schema` works without it.
 
 from _common import (
-    USER_AGENT, UpstreamError, emit, err, make_paper, make_payload,
-    maybe_emit_schema, record_search_failure, resolve_search_round,
-    set_command_meta, with_search_cache,
+    USER_AGENT, UpstreamError, emit, enforce_min_interval, err, make_paper,
+    make_payload, maybe_emit_schema, record_search_failure,
+    resolve_search_round, set_command_meta, with_search_cache,
 )
 
 API = "https://dblp.org/search/publ/api"
+
+# DBLP doesn't publish a formal rate limit but its HTTPS endpoint
+# truncates SSL streams ("UNEXPECTED_EOF_WHILE_READING") under bursts of
+# 2-3 concurrent requests. A 1s gap empirically eliminates the flake.
+_DBLP_MIN_INTERVAL = 1.0
 
 
 def search(query: str, limit: int) -> list[dict[str, Any]]:
@@ -44,6 +49,7 @@ def search(query: str, limit: int) -> list[dict[str, Any]]:
     }
     headers = {"User-Agent": USER_AGENT}
 
+    enforce_min_interval("dblp", _DBLP_MIN_INTERVAL)
     try:
         r = httpx.get(API, params=params, headers=headers, timeout=30.0)
         r.raise_for_status()
