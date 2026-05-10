@@ -64,6 +64,10 @@ Each plugin mirrors a standalone skill repo — file issues there for plugin-spe
 | `tldraw` | [Agents365-ai/tldraw-skill](https://github.com/Agents365-ai/tldraw-skill) |
 | `semanticscholar` | [Agents365-ai/semanticscholar-skill](https://github.com/Agents365-ai/semanticscholar-skill) |
 
+## Other resources
+
+- [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) — community collection of scientific-research skills
+
 ## Discord
 
 Join the Discord community: [https://discord.gg/pCV3P9hNY](https://discord.gg/pCV3P9hNY)

@@ -64,6 +64,10 @@ git add plugins/drawio && git commit -m "chore: sync drawio-skill"
 | `tldraw` | [Agents365-ai/tldraw-skill](https://github.com/Agents365-ai/tldraw-skill) |
 | `semanticscholar` | [Agents365-ai/semanticscholar-skill](https://github.com/Agents365-ai/semanticscholar-skill) |
 
+## 其他资源
+
+- [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) —— 社区维护的科研类 skill 合集
+
 ## Discord
 
 加入 Discord 交流（面向海外用户）：[https://discord.gg/pCV3P9hNY](https://discord.gg/pCV3P9hNY)
