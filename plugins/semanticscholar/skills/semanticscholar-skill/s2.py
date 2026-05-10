@@ -60,9 +60,10 @@ _API_KEY = os.environ.get("S2_API_KEY", "").strip()
 HAS_KEY = bool(_API_KEY)
 HEADERS = {"x-api-key": _API_KEY} if HAS_KEY else {}
 
-# Authenticated quota is 1 req/s per S2 docs; 1.1s gap stays under it.
-# Anonymous limit is not published and is shared across all unauth callers,
-# so use a conservative 5s gap to avoid 429s on the shared pool.
+# Per S2 docs: anonymous calls share a 1000 req/s pool globally and can be
+# further throttled during heavy use; API keys get an introductory 1 req/s
+# dedicated quota across all endpoints. 1.1s under a key, 5s otherwise — the
+# anon pool can vanish under load, so we stay conservative without a key.
 _last_request_time = 0
 _MIN_GAP = 1.1 if HAS_KEY else 5.0
 

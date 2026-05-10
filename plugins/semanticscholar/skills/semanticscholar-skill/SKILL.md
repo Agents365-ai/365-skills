@@ -93,7 +93,7 @@ print(format_results(papers, "Stem-like CD4 T cells in IBD"))
 
 Save to `/tmp/s2_search.py`, then run with `python3 /tmp/s2_search.py` in a single Bash call. Rate limiting, retries, and backoff are automatic inside `s2.py`.
 
-**No API key:** The skill works without `S2_API_KEY`. When the key is absent or invalid, `s2.py` automatically switches to unauthenticated mode (no `x-api-key` header) and widens the request gap to 5 s. The anonymous limit is not published by S2 and is shared across all unauthenticated callers, so 5 s is a conservative default; if you still see sustained 429s, raise `_MIN_GAP` to 10 s. Keep `max_results` ≤ 30 per search and combine fewer searches per script.
+**No API key:** The skill works without `S2_API_KEY`. When the key is absent or invalid, `s2.py` automatically switches to unauthenticated mode (no `x-api-key` header) and widens the request gap to 5 s. Per S2 docs, anonymous calls share a global 1000 req/s pool across all unauthenticated users and can be "further throttled during periods of heavy use" — so a conservative 5 s gap protects against the heavy-use throttling, even though the steady-state pool is generous. If you still see sustained 429s, raise `_MIN_GAP` to 10 s. Keep `max_results` ≤ 30 per search and combine fewer searches per script. S2 recommends including an API key on every request — get one at https://www.semanticscholar.org/product/api#api-key-form.
 
 **Checkpoint:** Verify the script ran successfully (no exceptions) and returned results. If 0 results, broaden the query or relax filters before presenting.
 
@@ -308,12 +308,12 @@ All datasets are delivered as **JSON Lines** (one record per line). The diffs re
 
 | Mode | Gap | Official limit | Retries |
 |------|-----|----------------|---------|
-| Authenticated (valid key) | 1.1 s | **1 req/s** per key (dedicated quota, cumulative across all endpoints) | 5× exponential backoff (2s→60s) |
-| Unauthenticated (no key or invalid key) | 5.0 s | **Shared pool** across all anonymous users — limit not published, can be much stricter than 1/s | 5× exponential backoff (2s→60s) |
+| Authenticated (valid key) | 1.1 s | **Introductory 1 req/s** per key, dedicated quota, cumulative across all endpoints (raisable on request) | 5× exponential backoff (2s→60s) |
+| Unauthenticated (no key or invalid key) | 5.0 s | **1000 req/s shared globally** across all anonymous users; "may be further throttled during periods of heavy use" | 5× exponential backoff (2s→60s) |
 
-> From the official S2 tutorial: *"Users without API keys are affected by the traffic from all other unauthenticated users, who share a single API key."* A free key gives you a dedicated 1 req/s quota. Get one at https://www.semanticscholar.org/product/api#api-key-form
+> S2 recommends including an API key on every request, even for endpoints that work anonymously — it gives you a dedicated quota, a smoother experience under load, and better support if you need help. The introductory 1 req/s key can be raised on request. Get one at https://www.semanticscholar.org/product/api#api-key-form
 >
-> If your workload still hits 429s on the shared pool, set `_MIN_GAP = 10.0` in `s2.py` (or `unset` the key and re-run with the longer gap). The cumulative limit applies across all endpoints, so chained calls (e.g. `get_paper` → `get_citations`) count separately.
+> The anonymous 1000 req/s pool is generous in steady state, but the docs explicitly warn it can be throttled hard during heavy use — that is why `_MIN_GAP` defaults to 5 s without a key, not the 1 ms a 1000 req/s budget would technically allow. If your workload still hits sustained 429s, set `_MIN_GAP = 10.0` in `s2.py` or get a key. The 1 req/s key budget is cumulative across all endpoints, so chained calls (e.g. `get_paper` → `get_citations`) count separately.
 
 ### Bulk Search Response Structure
 
