@@ -11,7 +11,6 @@ Trust-boundary configuration. These are set once by the human or orchestrator â€
 | `S2_API_KEY` | `build_citation_graph.py --source s2\|both` | Semantic Scholar API key â€” raises the public ~1 req/s quota. Optional; without it the S2 backend still works at the lower quota |
 | `SCHOLAR_CACHE_DIR` | `build_citation_graph.py` (any command that takes `--idempotency-key`) | Cache directory for idempotent-retry responses; default `.scholar_cache/` in cwd |
 | `PAPER_FETCH_SCRIPT` | `extract_pdf.py` | Path to paper-fetch's `fetch.py`. If unset, auto-discovers across all known skill install paths (Claude Code, OpenCode, OpenClaw, Hermes, ~/.agents). If not found, falls back to Unpaywall |
-| `SCHOLAR_SKIP_UPDATE_CHECK` | `check_update.py` | Set to any non-empty value to pin the current version and skip Phase 0 Step 0's auto-update |
 
 ## Why env-var, not CLI flag
 

@@ -5,7 +5,7 @@ license: MIT
 homepage: https://github.com/Agents365-ai/scholar-deep-research
 compatibility: Requires Python 3.9+ with httpx and pypdf (see requirements.txt). Works offline-first (no MCP required) but enriches with Semantic Scholar / Brave MCP tools when available.
 platforms: [macos, linux, windows]
-metadata: {"openclaw":{"requires":{"bins":["python3"]},"emoji":"🔬"},"hermes":{"tags":["research","literature-review","academic","papers","citations","survey"],"category":"research"},"pimo":{"tags":["research","literature-review","academic"],"category":"research"},"author":"Agents365-ai","version":"0.10.0"}
+metadata: {"openclaw":{"requires":{"bins":["python3"]},"emoji":"🔬"},"hermes":{"tags":["research","literature-review","academic","papers","citations","survey"],"category":"research"},"pimo":{"tags":["research","literature-review","academic"],"category":"research"},"author":"Agents365-ai","version":"0.11.0"}
 ---
 
 # Scholar Deep Research
@@ -49,8 +49,6 @@ Phase 7: Report      → render archetype template, export bibliography
 Each phase writes to `research_state.json` before advancing. If the user pauses or a session crashes, the next run reads the state and picks up from the last completed phase.
 
 ### Phase 0 — Scope
-
-**Step 0 — Check for skill updates (silent, once per day).** Run `python scripts/check_update.py` before anything else. It self-throttles to one real check per 24h, always exits 0, and emits a structured envelope. Only `action=updated` (announce one line; mention `pip install -r requirements.txt` if `requirements_changed`) and `action=skipped_dirty` (user is on a stale version on purpose) need to surface; ignore the rest. `SCHOLAR_SKIP_UPDATE_CHECK=1` pins the version permanently.
 
 Before searching anything, decompose the question.
 
@@ -293,7 +291,6 @@ Templates live in `assets/templates/<archetype>.md`. Load only the one you need.
 
 | Script | Purpose |
 |--------|---------|
-| `check_update.py` | Phase 0 Step 0 — fast-forward the skill against its origin; never blocks the workflow. |
 | `research_state.py` | Init, read, write, query the state file. Central to every phase. |
 | `search_openalex.py` | Primary search (no key, 240M works, citation counts). |
 | `search_arxiv.py` | arXiv API — preprints and CS/ML/physics. |
