@@ -67,6 +67,7 @@ Each plugin mirrors a standalone skill repo — file issues there for plugin-spe
 ## Other resources
 
 - [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) — community collection of scientific-research skills
+- [anthropics/life-sciences](https://github.com/anthropics/life-sciences) — Anthropic's life-sciences skills
 
 ## Discord
 

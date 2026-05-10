@@ -67,6 +67,7 @@ git add plugins/drawio && git commit -m "chore: sync drawio-skill"
 ## 其他资源
 
 - [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) —— 社区维护的科研类 skill 合集
+- [anthropics/life-sciences](https://github.com/anthropics/life-sciences) —— Anthropic 官方的生命科学 skills
 
 ## Discord
 
