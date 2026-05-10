@@ -64,11 +64,6 @@ Each plugin mirrors a standalone skill repo — file issues there for plugin-spe
 | `tldraw` | [Agents365-ai/tldraw-skill](https://github.com/Agents365-ai/tldraw-skill) |
 | `semanticscholar` | [Agents365-ai/semanticscholar-skill](https://github.com/Agents365-ai/semanticscholar-skill) |
 
-## Other resources
-
-- [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) — community collection of scientific-research skills
-- [anthropics/life-sciences](https://github.com/anthropics/life-sciences) — Anthropic's life-sciences skills
-
 ## Discord
 
 Join the Discord community: [https://discord.gg/pCV3P9hNY](https://discord.gg/pCV3P9hNY)
@@ -116,3 +111,8 @@ If this skill set is helpful, consider supporting the author:
 
 - Bilibili: https://space.bilibili.com/441831884
 - GitHub: https://github.com/Agents365-ai
+
+## Other resources
+
+- [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) — community collection of scientific-research skills
+- [anthropics/life-sciences](https://github.com/anthropics/life-sciences) — Anthropic's life-sciences skills
