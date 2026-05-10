@@ -49,7 +49,6 @@ git add plugins/drawio && git commit -m "chore: sync drawio-skill"
 - **Issue 与功能建议**：[github.com/Agents365-ai/365-skills/issues](https://github.com/Agents365-ai/365-skills/issues)
 - **讨论区**：[github.com/Agents365-ai/365-skills/discussions](https://github.com/Agents365-ai/365-skills/discussions)
 - **组织主页**：[github.com/Agents365-ai](https://github.com/Agents365-ai)
-- **联系邮箱**：niehu2025@gmail.com
 
 ### 源仓库
 
