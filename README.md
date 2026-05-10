@@ -44,13 +44,7 @@ git add plugins/drawio && git commit -m "chore: sync drawio-skill"
 
 `semanticscholar-skill` 仓库中带有一个 GitHub Actions workflow（`.github/workflows/sync-365-skills.yml`），任何对 `skills/semanticscholar-skill/**` 的改动会自动推送到本仓库，并更新 `marketplace.json` 中的版本号。需要源仓库配置 `SYNC_365_SKILLS_TOKEN` secret，并对本仓库具有 `Contents: write` 权限。
 
-## 社区与交流
-
-- **Issue 与功能建议**：[github.com/Agents365-ai/365-skills/issues](https://github.com/Agents365-ai/365-skills/issues)
-- **讨论区**：[github.com/Agents365-ai/365-skills/discussions](https://github.com/Agents365-ai/365-skills/discussions)
-- **组织主页**：[github.com/Agents365-ai](https://github.com/Agents365-ai)
-
-### 源仓库
+## 源仓库
 
 每个插件都对应一个独立的 skill 仓库 —— 与具体插件相关的 bug 请到对应仓库提交 issue：
 
@@ -63,7 +57,11 @@ git add plugins/drawio && git commit -m "chore: sync drawio-skill"
 | `tldraw` | [Agents365-ai/tldraw-skill](https://github.com/Agents365-ai/tldraw-skill) |
 | `semanticscholar` | [Agents365-ai/semanticscholar-skill](https://github.com/Agents365-ai/semanticscholar-skill) |
 
-### 微信交流群
+## Discord
+
+加入 Discord 交流（面向海外用户）：[https://discord.gg/pCV3P9hNY](https://discord.gg/pCV3P9hNY)
+
+## 微信交流群
 
 扫描下方二维码加入微信交流群，获取帮助、提问和最新动态：
 

@@ -42,13 +42,7 @@ git add plugins/drawio && git commit -m "chore: sync drawio-skill"
 
 `semanticscholar-skill` ships a GitHub Actions workflow (`.github/workflows/sync-365-skills.yml`) that automatically pushes any change under `skills/semanticscholar-skill/**` here, and bumps the version field in `marketplace.json`. Requires the source repo to have a `SYNC_365_SKILLS_TOKEN` secret with `Contents: write` on this repo.
 
-## Community
-
-- **Issues & feature requests**: [github.com/Agents365-ai/365-skills/issues](https://github.com/Agents365-ai/365-skills/issues)
-- **Discussions**: [github.com/Agents365-ai/365-skills/discussions](https://github.com/Agents365-ai/365-skills/discussions)
-- **Organization**: [github.com/Agents365-ai](https://github.com/Agents365-ai)
-
-### Source repos
+## Source repos
 
 Each plugin mirrors a standalone skill repo — file issues there for plugin-specific bugs:
 
@@ -61,7 +55,11 @@ Each plugin mirrors a standalone skill repo — file issues there for plugin-spe
 | `tldraw` | [Agents365-ai/tldraw-skill](https://github.com/Agents365-ai/tldraw-skill) |
 | `semanticscholar` | [Agents365-ai/semanticscholar-skill](https://github.com/Agents365-ai/semanticscholar-skill) |
 
-### WeChat Community
+## Discord
+
+Join the Discord community: [https://discord.gg/pCV3P9hNY](https://discord.gg/pCV3P9hNY)
+
+## WeChat Community
 
 Scan the QR code below to join the WeChat group for help, Q&A, and updates:
 
