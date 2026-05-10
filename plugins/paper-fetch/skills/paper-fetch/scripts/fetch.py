@@ -36,13 +36,14 @@ import time
 import urllib.parse
 import urllib.request
 import uuid
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 # ---------------------------------------------------------------------------
 # Versioning
 # ---------------------------------------------------------------------------
 
-CLI_VERSION = "0.13.2"
+CLI_VERSION = "0.13.3"
 SCHEMA_VERSION = "1.9.0"
 
 # ---------------------------------------------------------------------------
@@ -522,6 +523,38 @@ def try_semantic_scholar(doi: str, *, timeout: int) -> tuple[str | None, dict, d
 
 def try_arxiv(arxiv_id: str) -> str:
     return f"https://arxiv.org/pdf/{arxiv_id}.pdf"
+
+
+def try_arxiv_metadata(arxiv_id: str, *, timeout: int) -> dict:
+    """Fetch title / year / first-author from arXiv's Atom API.
+
+    Used when neither Unpaywall nor S2 returned metadata — typical for
+    arXiv-only papers reached via the synthesized 10.48550/arXiv.<id> DOI
+    form, which S2's by-DOI endpoint does not index. Without this, the
+    deterministic filename falls back to encoding the DOI literal.
+
+    Best-effort: returns an empty dict on any failure (offline, malformed
+    response, paper not found).
+    """
+    bare = re.sub(r"v\d+$", "", arxiv_id)
+    try:
+        body = _get(
+            f"http://export.arxiv.org/api/query?id_list={bare}",
+            accept="application/atom+xml",
+            timeout=timeout,
+        )
+        ns = {"atom": "http://www.w3.org/2005/Atom"}
+        root = ET.fromstring(body)
+        entry = root.find("atom:entry", ns)
+        if entry is None:
+            return {}
+        title = (entry.findtext("atom:title", default="", namespaces=ns) or "").strip()
+        published = entry.findtext("atom:published", default="", namespaces=ns) or ""
+        year = int(published[:4]) if published[:4].isdigit() else None
+        author = entry.findtext("atom:author/atom:name", default=None, namespaces=ns)
+        return {"title": title or None, "year": year, "author": author}
+    except Exception:
+        return {}
 
 
 def try_pmc(pmcid: str) -> str:
@@ -1315,6 +1348,20 @@ def fetch(
     # arxiv source still gets tried.
     if not ext.get("ArXiv") and doi.lower().startswith("10.48550/arxiv."):
         ext["ArXiv"] = doi[len("10.48550/arxiv."):]
+        # Backfill metadata from arXiv's API only when our other sources
+        # missed — keeps the filename meaningful (Vaswani_2017_… instead of
+        # unknown_nd_10_48550_arXiv_…) without burning a round-trip when
+        # Unpaywall or S2 already gave us a title.
+        if not meta.get("title"):
+            ax_meta = try_arxiv_metadata(ext["ArXiv"], timeout=timeout)
+            if ax_meta:
+                added = _merge_meta(ax_meta)
+                if added:
+                    _progress("source_enrich", doi=doi, source="arxiv", fields=added)
+                    fname = _filename(meta or {"title": doi})
+                    dest = out_dir / fname
+            else:
+                _progress("source_enrich_failed", doi=doi, source="arxiv")
 
     if ext.get("ArXiv"):
         sources_tried.append("arxiv")
