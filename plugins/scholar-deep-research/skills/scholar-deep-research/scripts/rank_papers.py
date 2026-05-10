@@ -69,13 +69,14 @@ _STOPWORDS = frozenset({
 })
 
 # Suffix-stripping rules for a tiny stemmer. (suffix, min_root_len_after_strip)
-# Ordered longest-first so 'tions' beats 'tion' beats 'tion-'less rules.
-# Keeping this small and conservative — bigger lists invite false matches
-# (e.g. plain 'er' eats away at "her", "per"). The goal is not Porter
-# fidelity, just to fold the morphology that the test run actually missed:
-# evaluation/evaluating/evaluator/evaluations → evaluat;
-# bias/biases → bias; modes/mode → mode; strategies → strateg.
+# Order matters: rules are tried in this list order, first match wins. The
+# `ions`/`ion` rules come BEFORE `tions`/`tion` so that `evaluation` strips
+# `ion` (→ "evaluat") rather than `tion` (→ "evalua"); the latter would
+# leave it disconnected from `evaluating`/`evaluator` (both → "evaluat"),
+# which is the exact morphology the test run had to bridge.
+# Keep the list small — broader rules invite false matches.
 _STEM_SUFFIXES = (
+    ("ions", 4), ("ion", 4),
     ("tions", 3), ("tion", 3),
     ("ations", 3), ("ation", 3),
     ("ities", 4), ("ity", 3),

@@ -980,7 +980,7 @@ def cmd_advance(args: argparse.Namespace) -> None:
     # as an error and so the human reading the envelope gets a clear
     # "you're done" signal instead of `unknown_gate`.
     max_phase = max(GATES.keys())
-    if current >= max_phase and (args.to is None or args.to == current):
+    if current == max_phase and (args.to is None or args.to == current):
         ok({
             "advanced": False,
             "from": current,
