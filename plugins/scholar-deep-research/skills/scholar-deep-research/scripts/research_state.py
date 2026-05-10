@@ -230,8 +230,16 @@ def normalize_doi(raw: str | None) -> str | None:
     return m.group(0) if m else None
 
 
-def normalize_title(title: str) -> str:
-    """Aggressive normalization for fuzzy title match."""
+def normalize_title(title: str | None) -> str:
+    """Aggressive normalization for fuzzy title match.
+
+    Accepts None (some sources, notably Exa, deliberately emit `title=None`
+    for crawler-extracted PDFs without an extractable heading) and returns
+    the empty string. Without this guard one bad record would kill the
+    entire ingest batch via AttributeError in the boundary validator.
+    """
+    if not title:
+        return ""
     t = title.lower()
     t = re.sub(r"[^a-z0-9]+", " ", t)
     return " ".join(t.split())
@@ -248,8 +256,9 @@ def make_paper_id(paper: dict[str, Any]) -> str:
         return f"arxiv:{paper['arxiv_id']}"
     if paper.get("pmid"):
         return f"pmid:{paper['pmid']}"
-    # last resort: hash of normalized title
-    nt = normalize_title(paper.get("title", ""))
+    # last resort: hash of normalized title; `or ""` handles JSON null
+    # which would otherwise override the .get default.
+    nt = normalize_title(paper.get("title") or "")
     return f"title:{nt[:80]}"
 
 
@@ -329,32 +338,72 @@ def cmd_ingest(args: argparse.Namespace) -> None:
     try:
         with_idempotency(args, compute)
     except Phase1BudgetExhausted as exc:
+        env_var = ("SCHOLAR_PHASE1_MAX_ROUNDS"
+                   if exc.limit_kind == "max_rounds"
+                   else "SCHOLAR_PHASE1_MAX_REQUESTS_PER_SOURCE")
         err("phase1_budget_exhausted", str(exc),
             retryable=False, exit_code=EXIT_VALIDATION,
             limit_kind=exc.limit_kind, limit=exc.limit, current=exc.current,
-            source=exc.source)
+            source=exc.source,
+            next=[
+                f"# Raise the cap and retry: {env_var}={exc.limit * 2}",
+                "# Or: check saturation and consider advancing to phase 2:",
+                "python scripts/research_state.py saturation",
+                "python scripts/research_state.py advance --check-only",
+            ])
 
 
 def cmd_select(args: argparse.Namespace) -> None:
-    """Mark the top-N papers (by .score) as selected."""
+    """Mark the top-N papers (by .score) as selected.
+
+    `--include-ids id1 id2 ...` injects canonical papers the agent
+    knows are seminal but ranking missed (relevance signal can be
+    weak on short, hyphenated multi-word terms; clinical-domain papers
+    can outrank foundational LLM-judge work on surface keyword overlap).
+    Injected ids count toward `--top` and bump the lowest-scored
+    auto-selected paper out so the final selection remains size N.
+    Unknown ids return `unknown_paper_ids` (validation error).
+    """
     chosen_ids: list[str] = []
+    include_ids = list(getattr(args, "include_ids", None) or [])
 
     def mutator(state: dict[str, Any]) -> dict[str, Any]:
+        papers = state["papers"]
+        if include_ids:
+            unknown = [pid for pid in include_ids if pid not in papers]
+            if unknown:
+                err("unknown_paper_ids",
+                    f"--include-ids referenced papers not in state: {unknown}",
+                    retryable=False, exit_code=EXIT_VALIDATION,
+                    unknown=unknown)
         ranked = sorted(
-            state["papers"].values(),
+            papers.values(),
             key=lambda p: p.get("score", 0.0),
             reverse=True,
         )
-        chosen = ranked[: args.top]
-        ids = [p["id"] for p in chosen]
-        for pid, p in state["papers"].items():
+        ranked_ids = [p["id"] for p in ranked if p.get("id") not in include_ids]
+        # injected ids occupy the top slots, then fill the rest by rank
+        slots = max(0, args.top - len(include_ids))
+        ids = list(include_ids) + ranked_ids[:slots]
+        for pid, p in papers.items():
             p["selected"] = pid in ids
         state["selected_ids"] = ids
+        if include_ids:
+            log = state.setdefault("_selection_overrides", [])
+            log.append({
+                "when": now_iso(),
+                "include_ids": list(include_ids),
+                "top": args.top,
+            })
         chosen_ids.extend(ids)
         return state
 
     _locked_rmw(Path(args.state), mutator)
-    ok({"selected": len(chosen_ids), "ids": chosen_ids})
+    ok({
+        "selected": len(chosen_ids),
+        "ids": chosen_ids,
+        "manual_includes": include_ids or [],
+    })
 
 
 class SaturationInputError(Exception):
@@ -375,11 +424,11 @@ class SaturationInputError(Exception):
 def compute_saturation(
     state: dict[str, Any],
     *,
-    threshold: float = 20.0,
-    max_citations: int = 100,
-    min_rounds: int = 2,
-    threshold_authors: float = 25.0,
-    threshold_venues: float = 30.0,
+    threshold: float | None = None,
+    max_citations: int | None = None,
+    min_rounds: int | None = None,
+    threshold_authors: float | None = None,
+    threshold_venues: float | None = None,
     source: str | None = None,
 ) -> dict[str, Any]:
     """Pure function: compute saturation per-source and overall.
@@ -397,7 +446,30 @@ def compute_saturation(
     stalled even though the paper count keeps ticking). When a source
     never reports venues (e.g. arXiv abstracts), that axis evaluates to
     None and is excluded from the AND.
+
+    Env-var overrides (used when the corresponding kwarg is None — i.e.
+    neither the CLI flag nor the gate caller forced a value): broad CS
+    topics that cross subfields can fail to converge under the default
+    20% threshold, so operators can relax it without code changes.
+
+      SCHOLAR_SATURATION_NEW_PCT       (default 20.0)
+      SCHOLAR_SATURATION_MAX_CITATIONS (default 100)
+      SCHOLAR_SATURATION_MIN_ROUNDS    (default 2)
+      SCHOLAR_SATURATION_NEW_AUTHORS_PCT (default 25.0)
+      SCHOLAR_SATURATION_NEW_VENUES_PCT  (default 30.0)
     """
+    if threshold is None:
+        threshold = float(os.environ.get("SCHOLAR_SATURATION_NEW_PCT", 20.0))
+    if max_citations is None:
+        max_citations = int(os.environ.get("SCHOLAR_SATURATION_MAX_CITATIONS", 100))
+    if min_rounds is None:
+        min_rounds = int(os.environ.get("SCHOLAR_SATURATION_MIN_ROUNDS", 2))
+    if threshold_authors is None:
+        threshold_authors = float(
+            os.environ.get("SCHOLAR_SATURATION_NEW_AUTHORS_PCT", 25.0))
+    if threshold_venues is None:
+        threshold_venues = float(
+            os.environ.get("SCHOLAR_SATURATION_NEW_VENUES_PCT", 30.0))
     if not state["queries"]:
         raise SaturationInputError(
             "no_queries",
@@ -903,6 +975,26 @@ def cmd_advance(args: argparse.Namespace) -> None:
     current = state.get("phase", 0)
     target = args.to if args.to is not None else current + 1
 
+    # Phase 7 (Report) is terminal — there is no G8. Return a positive
+    # envelope so agents that loop on `advance` until "ok" don't see this
+    # as an error and so the human reading the envelope gets a clear
+    # "you're done" signal instead of `unknown_gate`.
+    max_phase = max(GATES.keys())
+    if current >= max_phase and (args.to is None or args.to == current):
+        ok({
+            "advanced": False,
+            "from": current,
+            "to": current,
+            "at_terminal_phase": True,
+            "message": (
+                f"Phase {current} is the terminal phase. Render is the final "
+                "step — run `python scripts/render_report.py --state <state>` "
+                "to produce the report (and `--lint` once you've filled the "
+                "AGENT prose slots)."
+            ),
+        })
+        return
+
     if target <= current:
         err("phase_not_advancing",
             f"Cannot advance to phase {target} from current phase {current}. "
@@ -1168,28 +1260,45 @@ def build_parser() -> argparse.ArgumentParser:
 
     s = sub.add_parser("select", help="Mark top-N (by score) as selected")
     s.add_argument("--top", type=int, default=20)
+    s.add_argument(
+        "--include-ids", nargs="*", default=None,
+        help="Paper ids to inject into the selection regardless of rank "
+             "(e.g. canonical papers the relevance signal missed). Each "
+             "injected id occupies one of the --top slots; the lowest-rank "
+             "auto-selections drop. Unknown ids return validation error.",
+    )
+    set_command_meta(s, since="0.13.0", tier="write")
     s.set_defaults(func=cmd_select)
 
     s = sub.add_parser("saturation",
                        help="Check whether discovery saturated (per source)")
-    s.add_argument("--threshold", type=float, default=20.0,
+    # Defaults are None so compute_saturation falls through to env-var
+    # overrides (SCHOLAR_SATURATION_*) and then its own defaults. Pass an
+    # explicit flag to force a value above any env-var override.
+    s.add_argument("--threshold", type=float, default=None,
                    help="New-paper percentage below which a source is "
-                        "considered saturated (default 20)")
-    s.add_argument("--max-citations", type=int, default=100,
+                        "considered saturated (default 20; "
+                        "env: SCHOLAR_SATURATION_NEW_PCT). Raise for "
+                        "broad CS topics where the default never converges.")
+    s.add_argument("--max-citations", type=int, default=None,
                    help="If a new paper has more citations than this, the "
-                        "source is NOT saturated (default 100)")
-    s.add_argument("--min-rounds", type=int, default=2,
+                        "source is NOT saturated (default 100; "
+                        "env: SCHOLAR_SATURATION_MAX_CITATIONS).")
+    s.add_argument("--min-rounds", type=int, default=None,
                    help="Minimum rounds before a source can be called "
                         "saturated. Prevents declaring saturation on a "
-                        "single-query source (default 2).")
-    s.add_argument("--threshold-authors-pct", type=float, default=25.0,
+                        "single-query source (default 2; "
+                        "env: SCHOLAR_SATURATION_MIN_ROUNDS).")
+    s.add_argument("--threshold-authors-pct", type=float, default=None,
                    help="Brand-new-author share below which the author "
-                        "axis is considered saturated (default 25). "
+                        "axis is considered saturated (default 25; "
+                        "env: SCHOLAR_SATURATION_NEW_AUTHORS_PCT). "
                         "Looser than --threshold because authors recur "
                         "more naturally than papers.")
-    s.add_argument("--threshold-venues-pct", type=float, default=30.0,
+    s.add_argument("--threshold-venues-pct", type=float, default=None,
                    help="Brand-new-venue share below which the venue "
-                        "axis is considered saturated (default 30). "
+                        "axis is considered saturated (default 30; "
+                        "env: SCHOLAR_SATURATION_NEW_VENUES_PCT). "
                         "Sources without venue metadata report null and "
                         "skip this axis.")
     s.add_argument("--source",

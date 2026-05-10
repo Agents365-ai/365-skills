@@ -30,7 +30,7 @@ from typing import Any, Callable
 
 # Canonical version string. Bump in lockstep with the `version` field in
 # SKILL.md frontmatter so USER_AGENT, telemetry, and skill metadata agree.
-VERSION = "0.12.0"
+VERSION = "0.13.0"
 
 USER_AGENT = (
     f"scholar-deep-research/{VERSION} "
@@ -65,8 +65,14 @@ def _env_int(name: str, default: int) -> int:
 
 
 def phase1_max_rounds() -> int:
-    """Cap on distinct discovery rounds before Phase 1 refuses further ingest."""
-    return _env_int("SCHOLAR_PHASE1_MAX_ROUNDS", 5)
+    """Cap on distinct discovery rounds before Phase 1 refuses further ingest.
+
+    Default 10 — enough for ~5 keyword clusters with one or two follow-up
+    refinement rounds without bumping the cap. Was 5 in 0.12.x; bumped
+    after a real test run hit the cap on a moderately-broad CS topic
+    (LLM-as-a-judge) before saturation. Override with the env var.
+    """
+    return _env_int("SCHOLAR_PHASE1_MAX_ROUNDS", 10)
 
 
 def phase1_max_requests_per_source() -> int:
@@ -309,10 +315,19 @@ def emit(payload: dict[str, Any], output: str | None,
         try:
             summary = apply_ingest(Path(state), payload)
         except Phase1BudgetExhausted as exc:
+            env_var = ("SCHOLAR_PHASE1_MAX_ROUNDS"
+                       if exc.limit_kind == "max_rounds"
+                       else "SCHOLAR_PHASE1_MAX_REQUESTS_PER_SOURCE")
             err("phase1_budget_exhausted", str(exc),
                 retryable=False, exit_code=EXIT_VALIDATION,
                 limit_kind=exc.limit_kind, limit=exc.limit,
-                current=exc.current, source=exc.source)
+                current=exc.current, source=exc.source,
+                next=[
+                    f"# Raise the cap and retry: {env_var}={exc.limit * 2}",
+                    "# Or: check saturation and consider advancing to phase 2:",
+                    "python scripts/research_state.py saturation",
+                    "python scripts/research_state.py advance --check-only",
+                ])
         ok(summary, meta=extra_meta)
         return
 

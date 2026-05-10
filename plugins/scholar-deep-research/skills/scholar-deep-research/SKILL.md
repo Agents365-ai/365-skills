@@ -5,7 +5,7 @@ license: MIT
 homepage: https://github.com/Agents365-ai/scholar-deep-research
 compatibility: Requires Python 3.9+ with httpx and pypdf (see requirements.txt). Works offline-first (no MCP required) but enriches with Semantic Scholar / Brave MCP tools when available.
 platforms: [macos, linux, windows]
-metadata: {"openclaw":{"requires":{"bins":["python3"]},"emoji":"🔬"},"hermes":{"tags":["research","literature-review","academic","papers","citations","survey"],"category":"research"},"pimo":{"tags":["research","literature-review","academic"],"category":"research"},"author":"Agents365-ai","version":"0.12.0"}
+metadata: {"openclaw":{"requires":{"bins":["python3"]},"emoji":"🔬"},"hermes":{"tags":["research","literature-review","academic","papers","citations","survey"],"category":"research"},"pimo":{"tags":["research","literature-review","academic"],"category":"research"},"author":"Agents365-ai","version":"0.13.0"}
 ---
 
 # Scholar Deep Research
@@ -110,6 +110,8 @@ python scripts/research_state.py saturation --state research_state.json
 ```
 
 `overall_saturated` is true only when every queried source has run at least `--min-rounds` (default 2) rounds AND each is individually below the new-paper percentage and new-citation thresholds. A source that has been queried only once cannot be declared saturated, which rules out the failure mode where a single quiet source falsely ends discovery. Use `--source openalex` to check one source in isolation.
+
+**Budget caps and broad-topic escape hatches.** Phase 1 has two hard caps to prevent runaway agents: `SCHOLAR_PHASE1_MAX_ROUNDS` (default 10 rounds per source) and `SCHOLAR_PHASE1_MAX_REQUESTS_PER_SOURCE` (default 20 ingests per source). Hitting either returns `phase1_budget_exhausted` with a `next:` hint. For genuinely broad topics that cross subfields (e.g. CS-ML topics with multiple keyword clusters), the saturation thresholds can also fail to converge under the defaults — relax them with `SCHOLAR_SATURATION_NEW_PCT` (default 20.0), `SCHOLAR_SATURATION_MAX_CITATIONS` (default 100), and `SCHOLAR_SATURATION_NEW_AUTHORS_PCT` / `SCHOLAR_SATURATION_NEW_VENUES_PCT`. These env vars are honored both by `python scripts/research_state.py saturation` *and* by the G2 gate, so raising them lets the gate accept "good enough" coverage on topics where the default is unreachable.
 
 ### Phase 2 — Triage
 
@@ -332,8 +334,8 @@ The gate predicates are enforced in `scripts/_gates.py`. Direct `set --field pha
 | G1 (→ 1) | Question set, archetype valid, state initialized. *`≥3 keyword clusters` is host-checked.* |
 | G2 (→ 2) | `overall_saturated == true` across all queried sources AND ≥3 distinct sources in `state.queries`. |
 | G3 (→ 3) | `state.ranking` recorded; `selected_ids` non-empty; every selected paper has `score_components`; `state.triage_complete=true` (run `skim_papers.py`). |
-| G4 (→ 4) | All selected papers have `depth ∈ {full, shallow}` AND every `tier=deep` paper either (a) has `depth=full`, or (b) has `depth=shallow` *with* `evidence.method` starting `evidence_unavailable:` — the documented failure-mode escape hatch for unreachable PDFs. Skim-tier `depth=shallow` is by design and does not block. |
-| G5 (→ 5) | ≥1 query with `source=openalex_citation_chase` and `hits > 0`. |
+| G4 (→ 4) | All selected papers have `depth ∈ {full, shallow}` AND every `tier=deep` paper either (a) has `depth=full`, or (b) has `depth=shallow` *with* `evidence.method` starting one of two documented escape-hatch prefixes: `evidence_unavailable:` (PDF unreachable — paywall, exhausted OA chain, scanned) or `topic_mismatch:` (PDF read fully but off-topic — Phase 2 ranking false-positive). Skim-tier `depth=shallow` is by design and does not block. |
+| G5 (→ 5) | ≥1 query whose `source` contains `citation_chase` (any backend layout — `openalex_citation_chase`, `s2_citation_chase`, or the default dual `openalex_s2_citation_chase`) AND `hits > 0`. |
 | G6 (→ 6) | `len(themes) ≥ 3` AND (`len(tensions) ≥ 1` OR a critique finding mentioning "no tensions"). |
 | G7 (→ 7) | `state.self_critique.appendix` non-empty; `len(resolved) ≥ len(findings)`. |
 
@@ -355,7 +357,7 @@ If the session has asta or Brave Search MCP tools available, use them as enrichm
 1. **Treating the first page of search results as "the literature"** — run multiple keyword clusters and chase citations.
 2. **Unanchored claims** — every non-trivial statement in the report needs a `[^id]` pointing to a paper in state.
 3. **Confirmation bias** — actively search for critiques of top-cited papers; see Phase 4 special case.
-4. **Preprint conflation** — arXiv/bioRxiv are preprints; tag them as such in the report and weight evidence accordingly.
+4. **Preprint conflation** — arXiv/bioRxiv are preprints; tag them as such in the report and weight evidence accordingly. Lint-safe convention: place the anchor and marker separately — `[^id] *(preprint)*`, not `[^id, preprint]` (commas inside footnote brackets break Markdown parsing and the `render_report.py --lint` check).
 5. **Venue monoculture** — if >60% of top-N come from one journal/venue, broaden sources.
 6. **Author monoculture** — same for a single lab or author.
 7. **Recency collapse** — the last 2 years matter for "state of the art" framings; check explicit coverage.

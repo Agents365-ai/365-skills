@@ -182,13 +182,17 @@ def gate_4(state: dict[str, Any]) -> GateResult:
     incompleteness can never block this gate; only an unfinished agent
     fan-out can.
 
-    Failure-mode escape hatch: when a deep-tier paper's full text is
-    genuinely unreachable (paywall, OA chain exhausted, scanned PDF), the
-    Phase 3 agent prompt instructs the agent to write
-    `depth='shallow'` plus `evidence.method='evidence_unavailable: <code>'`.
-    Such records count toward deep-tier coverage (the agent committed and
-    explicitly recorded the failure) — otherwise a single unreachable PDF
-    would block the entire workflow forever.
+    Failure-mode escape hatches: when a deep-tier paper's full text is
+    unreachable (paywall, OA chain exhausted, scanned PDF), the Phase 3
+    agent writes `depth='shallow'` plus
+    `evidence.method='evidence_unavailable: <code>'`. The companion
+    `topic_mismatch:` prefix covers the second-most-common case — the
+    PDF *was* read in full but the paper turned out to be on-topic only
+    by surface keyword overlap (Phase 2 ranking false-positive); the
+    agent's evidence is still useful but at depth=shallow because the
+    paper does not warrant a full extraction. Both prefixes count as
+    deep-tier coverage so a single mis-triaged paper or unreachable PDF
+    cannot block the workflow forever.
     """
     selected = state.get("selected_ids") or []
     papers = state.get("papers") or {}
@@ -199,20 +203,24 @@ def gate_4(state: dict[str, Any]) -> GateResult:
                 if (papers.get(pid) or {}).get("tier") == "deep"]
     deep_full: list[str] = []
     deep_unavailable: list[str] = []
+    deep_mismatch: list[str] = []
     for pid in deep_ids:
         p = papers.get(pid) or {}
         if p.get("depth") == "full":
             deep_full.append(pid)
             continue
-        # Accept depth=shallow when the agent explicitly recorded an
-        # evidence_unavailable failure — the deep-read attempt happened,
-        # the source was unreachable, the failure is auditable.
+        # Accept depth=shallow when the agent explicitly recorded either
+        # an evidence_unavailable failure (source was unreachable) or a
+        # topic_mismatch (PDF read, content off-topic). The deep-read
+        # attempt happened in both cases and the failure is auditable.
         method = ((p.get("evidence") or {}).get("method") or "")
-        if (p.get("depth") == "shallow"
-                and method.startswith("evidence_unavailable:")):
-            deep_unavailable.append(pid)
+        if p.get("depth") == "shallow":
+            if method.startswith("evidence_unavailable:"):
+                deep_unavailable.append(pid)
+            elif method.startswith("topic_mismatch:"):
+                deep_mismatch.append(pid)
 
-    deep_covered = len(deep_full) + len(deep_unavailable)
+    deep_covered = len(deep_full) + len(deep_unavailable) + len(deep_mismatch)
     # Vacuous truth when deep tier is empty (e.g. user ran with
     # --deep-ratio 0.0). The skill still ships, just with no agent-grade
     # evidence — that is a deliberate user choice.
@@ -224,9 +232,13 @@ def gate_4(state: dict[str, Any]) -> GateResult:
     )
     if deep_unavailable:
         coverage_detail += (
-            f"; {len(deep_unavailable)} additional accepted as "
-            f"depth='shallow' with method^='evidence_unavailable:' "
-            f"(unreachable source, failure recorded)"
+            f"; {len(deep_unavailable)} accepted as depth='shallow' with "
+            f"method^='evidence_unavailable:' (unreachable source)"
+        )
+    if deep_mismatch:
+        coverage_detail += (
+            f"; {len(deep_mismatch)} accepted as depth='shallow' with "
+            f"method^='topic_mismatch:' (read fully but off-topic)"
         )
     coverage_detail += " (skim-tier excluded; depth='shallow' is by design)"
 
@@ -248,18 +260,26 @@ def gate_4(state: dict[str, Any]) -> GateResult:
 
 
 def gate_5(state: dict[str, Any]) -> GateResult:
-    """4 → 5: Citation graph expanded on seeds (≥1 chase query with hits > 0)."""
+    """4 → 5: Citation graph expanded on seeds (≥1 chase query with hits > 0).
+
+    `build_citation_graph.py` writes the chase-source label as
+    `<backend>_citation_chase` (or `<backend1>_<backend2>_citation_chase` for
+    the default dual-backend `--source both`). Match on the substring rather
+    than a fixed literal so the gate accepts every supported backend layout.
+    """
     chase_queries = [
         q for q in state.get("queries", [])
-        if q.get("source") == "openalex_citation_chase"
+        if "citation_chase" in (q.get("source") or "")
     ]
     with_hits = [q for q in chase_queries if (q.get("hits") or 0) > 0]
+    chase_sources = sorted({q.get("source") for q in chase_queries if q.get("source")})
     checks = [
         _phase_is(state, 4),
         Check(
             name="citation_chase_run",
             ok=len(chase_queries) > 0,
-            detail=f"openalex_citation_chase queries: {len(chase_queries)}",
+            detail=f"chase queries: {len(chase_queries)} "
+                   f"(sources: {chase_sources or '[]'})",
         ),
         Check(
             name="citation_chase_productive",

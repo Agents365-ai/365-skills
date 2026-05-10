@@ -53,7 +53,7 @@ class FetchError(Exception):
 
 _FETCH_SCRIPT_REL = "scripts/fetch.py"
 
-# All known skill install paths across platforms.
+# All known direct-install skill paths across platforms.
 # Order: Claude Code → OpenCode (config + dotfile) → OpenClaw → Hermes →
 # agents convention.
 _CONVENTION_PATHS = [
@@ -65,15 +65,40 @@ _CONVENTION_PATHS = [
     Path.home() / ".agents" / "skills" / "paper-fetch" / _FETCH_SCRIPT_REL,
 ]
 
+# Plugin-marketplace install roots. The 365-skills marketplace lays out
+# `~/.claude/plugins/cache/<marketplace>/<skill>/<version>/skills/<skill>/
+# scripts/fetch.py`; we glob for any version and pick the newest.
+_MARKETPLACE_GLOB_ROOTS = [
+    Path.home() / ".claude" / "plugins" / "cache",
+    Path.home() / ".opencode" / "plugins" / "cache",
+]
+
+
+def _newest_marketplace_path() -> Path | None:
+    """Return the most recently modified marketplace-installed fetch.py."""
+    candidates: list[Path] = []
+    for root in _MARKETPLACE_GLOB_ROOTS:
+        if not root.is_dir():
+            continue
+        # */paper-fetch/*/skills/paper-fetch/scripts/fetch.py
+        candidates.extend(root.glob(
+            f"*/paper-fetch/*/skills/paper-fetch/{_FETCH_SCRIPT_REL}"
+        ))
+    if not candidates:
+        return None
+    candidates.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+    return candidates[0]
+
 
 def find_paper_fetch_script() -> Path | None:
     """Locate paper-fetch's fetch.py.
 
     Discovery chain:
       1. PAPER_FETCH_SCRIPT env var (explicit override)
-      2. Known skill install paths across platforms
+      2. Known direct-install skill paths across platforms
+      3. Plugin marketplace install paths (Claude Code / OpenCode plugin cache)
 
-    Returns None if neither resolves to an existing file.
+    Returns None if none resolves to an existing file.
     """
     env = os.environ.get("PAPER_FETCH_SCRIPT")
     if env:
@@ -87,7 +112,7 @@ def find_paper_fetch_script() -> Path | None:
     for path in _CONVENTION_PATHS:
         if path.is_file():
             return path
-    return None
+    return _newest_marketplace_path()
 
 
 # ---------- single-DOI fetch ----------

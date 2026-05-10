@@ -74,10 +74,60 @@ def _papers_for_ids(state: dict[str, Any], ids: list[str]) -> list[dict]:
 # ---------- render mode ----------
 
 
+def _smart_title_case(question: str) -> str:
+    """Title-case the question for an H1 without breaking acronyms or hyphens.
+
+    Naive `.title()` (or per-word `.capitalize()`) destroys acronyms like
+    LLM, MT, GPT and turns "LLM-as-a-judge" into "Llm-As-A-Judge". This
+    preserves any token that is already all-uppercase, capitalises only
+    the first letter of regular words, leaves short function words
+    lowercase except at position 0, and respects internal hyphens by
+    case-mapping each subtoken independently.
+    """
+    raw = (question or "Report").strip().rstrip(".?!")
+    if not raw:
+        return "Report"
+    lowercase_words = {
+        "a", "an", "the", "and", "or", "but", "of", "in", "on", "at",
+        "to", "for", "with", "by", "as", "is", "are", "vs",
+    }
+
+    def cap_subtoken(sub: str, *, first_in_word: bool) -> str:
+        if not sub:
+            return sub
+        # Preserve all-caps acronyms (LLM, MT, GPT, RAG, NLG, RLHF, …).
+        if sub.upper() == sub and any(c.isalpha() for c in sub):
+            return sub
+        # Preserve mixed-case identifiers (AlpacaEval, OpenAI, ChatGPT) —
+        # author-supplied capitalisation is almost always intentional.
+        if any(c.isupper() for c in sub[1:]):
+            return sub
+        # Function words stay lowercase even inside a hyphenated phrase,
+        # except as the first subtoken of the word.
+        if not first_in_word and sub.lower() in lowercase_words:
+            return sub.lower()
+        return sub[0].upper() + sub[1:].lower()
+
+    def cap_word(word: str, *, first: bool) -> str:
+        if not word:
+            return word
+        if word.lower() in lowercase_words and not first:
+            # short function words stay lower except at position 0
+            return word.lower()
+        # split on hyphens so each subtoken can preserve acronym shape
+        parts = word.split("-")
+        return "-".join(
+            cap_subtoken(p, first_in_word=(i == 0)) for i, p in enumerate(parts)
+        )
+
+    words = raw.split()
+    out = [cap_word(w, first=(i == 0)) for i, w in enumerate(words)]
+    return " ".join(out)
+
+
 def _render_header(state: dict[str, Any]) -> str:
     archetype = state.get("archetype", "literature_review")
-    title = " ".join(w.capitalize() for w in
-                     _slug(state.get("question") or "Report").split("-"))
+    title = _smart_title_case(state.get("question") or "Report")
     sel_ids = state.get("selected_ids") or []
     papers = state.get("papers") or {}
     selected = [papers[pid] for pid in sel_ids if pid in papers]
@@ -86,7 +136,7 @@ def _render_header(state: dict[str, Any]) -> str:
     sources = sorted({q.get("source") for q in state.get("queries") or []
                       if q.get("source")})
     return (
-        f"# {title}: A {archetype.replace('_', ' ').title()}\n"
+        f"# {title} — A {archetype.replace('_', ' ').title()}\n"
         f"\n"
         f"**Question:** {state.get('question', '')}\n"
         f"**Date:** {date.today().isoformat()}\n"

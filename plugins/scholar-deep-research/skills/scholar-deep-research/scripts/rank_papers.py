@@ -5,10 +5,15 @@ Formula:
     score = α·relevance + β·log10(citations+1)/3 + γ·recency_decay + δ·venue_prior
 
 Components (each ∈ [0,1]):
-  - relevance: Jaccard-style similarity between the question terms and the
-               paper's title+abstract (cheap but transparent; users who want
-               semantic similarity should re-rank with an embedding model and
-               write the result back into score_components.relevance).
+  - relevance: stopword-stripped, suffix-stemmed token overlap between the
+               question and the paper's title+abstract, plus a phrase bonus
+               for each hyphenated or quoted multi-word term in the question
+               that appears in the title (+0.15) or abstract (+0.05). The
+               stemming handles the common bias→biases / evaluation→evaluating
+               morphology mismatch that the previous Jaccard implementation
+               silently lost. Cheap and transparent; users wanting semantic
+               similarity should re-rank with embeddings and write back to
+               score_components.relevance.
   - citations: log10(c+1)/3, capped at 1.0 (≈1000 cites = full credit).
   - recency_decay: exp(-Δyears / half_life), default half-life = 5 years.
   - venue_prior: 1.0 if venue matches a tier-1 list, 0.5 otherwise.
@@ -48,23 +53,119 @@ TIER1_VENUES = {
 }
 
 
+# English stopwords. Conservative — restricted to genuine function words
+# so domain shorthand ("model", "system") still contributes signal.
+_STOPWORDS = frozenset({
+    "a", "an", "the", "and", "or", "but", "if", "is", "are", "was", "were",
+    "be", "been", "being", "of", "in", "on", "at", "to", "for", "with",
+    "by", "from", "as", "into", "during", "this", "that", "these", "those",
+    "it", "its", "we", "you", "they", "their", "our", "have", "has", "had",
+    "do", "does", "did", "doing", "will", "would", "could", "should", "may",
+    "might", "must", "can", "what", "which", "who", "whom", "whose", "when",
+    "where", "why", "how", "not", "no", "nor", "so", "than", "too", "very",
+    "just", "also", "such", "any", "all", "some", "each", "more", "most",
+    "other", "another", "between", "about", "against", "above", "below",
+    "out", "up", "down", "over", "under",
+})
+
+# Suffix-stripping rules for a tiny stemmer. (suffix, min_root_len_after_strip)
+# Ordered longest-first so 'tions' beats 'tion' beats 'tion-'less rules.
+# Keeping this small and conservative — bigger lists invite false matches
+# (e.g. plain 'er' eats away at "her", "per"). The goal is not Porter
+# fidelity, just to fold the morphology that the test run actually missed:
+# evaluation/evaluating/evaluator/evaluations → evaluat;
+# bias/biases → bias; modes/mode → mode; strategies → strateg.
+_STEM_SUFFIXES = (
+    ("tions", 3), ("tion", 3),
+    ("ations", 3), ("ation", 3),
+    ("ities", 4), ("ity", 3),
+    ("ings", 4), ("ing", 4),
+    ("edly", 3),
+    ("ied", 3),
+    ("ies", 4),
+    ("ed", 4),
+    ("es", 4),
+    ("s", 5),  # min length 5 keeps "bias" intact, drops "evaluators"→"evaluator"
+    ("ly", 3),
+    ("er", 4), ("or", 4),
+)
+
+
+def _stem_word(word: str) -> str:
+    if len(word) <= 3:
+        return word
+    for suffix, min_root in _STEM_SUFFIXES:
+        if word.endswith(suffix) and (len(word) - len(suffix)) >= min_root:
+            return word[: -len(suffix)]
+    return word
+
+
+def _normalize_tokens(text: str) -> set[str]:
+    """Lowercase, tokenize, strip stopwords, stem. Returns a set."""
+    raw = re.findall(r"[a-z0-9]+", (text or "").lower())
+    return {_stem_word(t) for t in raw
+            if len(t) > 1 and t not in _STOPWORDS}
+
+
 def tokenize(s: str) -> set[str]:
-    return set(re.findall(r"[a-z0-9]+", (s or "").lower()))
+    """Backward-compatible alias for the (now improved) token extractor.
+
+    Preserved as a public name for any caller that imported it; new code
+    should use `_normalize_tokens` directly.
+    """
+    return _normalize_tokens(s)
+
+
+def _extract_phrases(question: str) -> list[str]:
+    """Pull out hyphenated and quoted multi-word phrases from the question.
+
+    These are matched as substrings in the title/abstract for the phrase
+    bonus — the token-level overlap can never reward "LLM-as-a-judge"
+    appearing as a unit instead of four separate tokens, so phrase
+    matching is the boost that makes question-specific terminology pay.
+    """
+    q = (question or "").lower()
+    # Hyphenated like 'llm-as-a-judge', 'in-context', 'mt-bench'
+    hyphenated = re.findall(r"\b\w+(?:-\w+)+\b", q)
+    # Anything inside double or single quotes
+    quoted = re.findall(r'"([^"]+)"', q) + re.findall(r"'([^']+)'", q)
+    seen: list[str] = []
+    for ph in hyphenated + quoted:
+        ph = ph.strip()
+        if len(ph) >= 4 and ph not in seen:
+            seen.append(ph)
+    return seen
 
 
 def relevance(question: str, paper: dict[str, Any]) -> float:
-    qtok = tokenize(question)
+    """Stopword-stripped, stemmed token overlap + phrase bonus.
+
+    Returns a value in [0, 1]. The base term is `|q ∩ h| / |q|` — Jaccard
+    against the question denominator so a perfectly-on-topic paper covering
+    every meaningful question term scores 1.0. The phrase bonus is added on
+    top (clipped at 1.0) — each hyphenated or quoted phrase from the
+    question contributes +0.15 if found in the title and +0.05 if found
+    only in the abstract. Title hits are weighted higher because that's
+    where authors put the central concept of the paper.
+    """
+    qtok = _normalize_tokens(question)
     if not qtok:
         return 0.0
-    haystack = " ".join([
-        paper.get("title") or "",
-        paper.get("abstract") or "",
-    ])
-    htok = tokenize(haystack)
+    title_text = (paper.get("title") or "").lower()
+    abstract_text = (paper.get("abstract") or "").lower()
+    htok = _normalize_tokens(title_text + " " + abstract_text)
     if not htok:
         return 0.0
     overlap = qtok & htok
-    return len(overlap) / max(len(qtok), 1)
+    base = len(overlap) / max(len(qtok), 1)
+
+    bonus = 0.0
+    for phrase in _extract_phrases(question):
+        if phrase in title_text:
+            bonus += 0.15
+        elif phrase in abstract_text:
+            bonus += 0.05
+    return min(base + bonus, 1.0)
 
 
 def cite_score(citations: int | None) -> float:

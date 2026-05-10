@@ -88,10 +88,15 @@ ${question}
    {"paper_id": "${paper_id}", "status": "ok", "evidence_chars": <int>, "method_brevity": <int>}
    ```
 
-## Failure mode
+## Failure modes
 
-If full text is unreachable (paywall, OA chain exhausted, scanned PDF), do NOT
-fail the wave — write a marker so G4 can still pass once the rest finishes:
+There are two escape hatches that count as valid deep-tier coverage so a
+single bad paper does not block the whole workflow. Both keep `depth='shallow'`
+and prefix `evidence.method` with a magic string the gate recognises.
+
+### Failure mode A — full text unreachable
+
+Paywall, exhausted OA chain, scanned PDF, dead link. The PDF was *not* read.
 
 ```bash
 python scripts/research_state.py --state ${state_path} evidence \
@@ -107,6 +112,30 @@ Reason codes: `paywall_no_oa`, `pdf_fetch_failed`, `scanned_no_ocr`, `dead_link`
 Return:
 ```json
 {"paper_id": "${paper_id}", "status": "evidence_unavailable", "reason": "${reason_code}"}
+```
+
+### Failure mode B — PDF read but topic mismatch
+
+The PDF *was* extracted in full and you read it, but the paper turned out to
+be off-topic — Phase 2 ranking surfaced it on surface-token overlap (e.g. it
+shares words like "evaluation" or "LLM" with the question but is actually
+about a different problem). Record what little is usable and tag the
+mismatch so the synthesis can treat the paper as a contrast/baseline rather
+than a primary source. Do not silently mark it as `depth='full'` — the
+relevance flag matters for the report.
+
+```bash
+python scripts/research_state.py --state ${state_path} evidence \
+  --id '${paper_id}' --depth shallow \
+  --method 'topic_mismatch: ${one_sentence_what_paper_is_actually_about}' \
+  --findings '${useful_observation_1}' '${useful_observation_2}' \
+  --limitations 'Off-topic vs Phase 0 question; cite as contrast/baseline only, not primary evidence.' \
+  --relevance '${one_sentence_what_the_paper_can_anchor_in_the_report}'
+```
+
+Return:
+```json
+{"paper_id": "${paper_id}", "status": "topic_mismatch", "evidence_chars": <int>}
 ```
 
 ## Constraints

@@ -36,7 +36,7 @@ Long-form catalog of failure modes. The SKILL.md has the short list; this file i
 
 **Why it happens:** preprints look like papers. The schema does mark `source: arxiv`, but the model can forget.
 
-**Fix:** every citation in the bibliography that has only `source: ["arxiv"]` and no DOI should render as `[^id, preprint]` in the body. Make this a self-critique check.
+**Fix:** every citation in the bibliography that has only `source: ["arxiv"]` and no journal DOI should be marked as a preprint in the body — but anchors and tags are separate. Markdown footnote anchors must be a single token (commas inside the brackets break parsing and the `render_report.py --lint` check). The lint-compatible convention is: place the anchor first, then the marker as inline italic prose, e.g. `[^id] *(preprint)*`. Make the absence of `*(preprint)*` after a preprint id a self-critique check.
 
 ## 5. Venue monoculture
 
