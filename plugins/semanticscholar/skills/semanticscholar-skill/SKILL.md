@@ -93,7 +93,7 @@ print(format_results(papers, "Stem-like CD4 T cells in IBD"))
 
 Save to `/tmp/s2_search.py`, then run with `python3 /tmp/s2_search.py` in a single Bash call. Rate limiting, retries, and backoff are automatic inside `s2.py`.
 
-**No API key:** The skill works without `S2_API_KEY`. When the key is absent or invalid, `s2.py` automatically switches to unauthenticated mode (no `x-api-key` header) and widens the request gap to 3 s to stay within the anonymous rate limit (~100 req / 5 min shared per IP). Keep `max_results` ≤ 30 per search and combine fewer searches per script to avoid sustained 429s.
+**No API key:** The skill works without `S2_API_KEY`. When the key is absent or invalid, `s2.py` automatically switches to unauthenticated mode (no `x-api-key` header) and widens the request gap to 5 s. The anonymous limit is not published by S2 and is shared across all unauthenticated callers, so 5 s is a conservative default; if you still see sustained 429s, raise `_MIN_GAP` to 10 s. Keep `max_results` ≤ 30 per search and combine fewer searches per script.
 
 **Checkpoint:** Verify the script ran successfully (no exceptions) and returned results. If 0 results, broaden the query or relax filters before presenting.
 
@@ -308,10 +308,12 @@ All datasets are delivered as **JSON Lines** (one record per line). The diffs re
 
 | Mode | Gap | Official limit | Retries |
 |------|-----|----------------|---------|
-| Authenticated (valid key) | 1.1 s | **1 req/s** per key (dedicated quota) | 5× exponential backoff (2s→60s) |
-| Unauthenticated (no key or invalid key) | 3.0 s | **Shared pool** across all anonymous users — slower and less reliable | 5× exponential backoff (2s→60s) |
+| Authenticated (valid key) | 1.1 s | **1 req/s** per key (dedicated quota, cumulative across all endpoints) | 5× exponential backoff (2s→60s) |
+| Unauthenticated (no key or invalid key) | 5.0 s | **Shared pool** across all anonymous users — limit not published, can be much stricter than 1/s | 5× exponential backoff (2s→60s) |
 
 > From the official S2 tutorial: *"Users without API keys are affected by the traffic from all other unauthenticated users, who share a single API key."* A free key gives you a dedicated 1 req/s quota. Get one at https://www.semanticscholar.org/product/api#api-key-form
+>
+> If your workload still hits 429s on the shared pool, set `_MIN_GAP = 10.0` in `s2.py` (or `unset` the key and re-run with the longer gap). The cumulative limit applies across all endpoints, so chained calls (e.g. `get_paper` → `get_citations`) count separately.
 
 ### Bulk Search Response Structure
 
@@ -331,7 +333,7 @@ All datasets are delivered as **JSON Lines** (one record per line). The diffs re
 |-------|-------|-----|
 | `HTTPError 403` | `S2_API_KEY` is set but invalid/expired | `s2.py` auto-falls back to unauthenticated; or `unset S2_API_KEY`, or get a new key at https://www.semanticscholar.org/product/api#api-key-form |
 | `HTTPError 404` | Bad paper/author ID | Check ID format — S2 returns `{"error": "Paper/Author/Object not found"}` or `"...with id ### not found"` |
-| `HTTPError 429` after 5 retries | Sustained anonymous rate limit hit | Wait 60 s, keep `max_results` ≤ 30, or reduce searches per script |
+| `HTTPError 429` after 5 retries | Sustained anonymous rate limit hit | Wait 60 s, raise `_MIN_GAP` in `s2.py` from 5.0 → 10.0, keep `max_results` ≤ 30, or get an API key |
 | `ModuleNotFoundError: s2` | Skill directory not on path | Verify skill is installed at `~/.claude/skills/`, `~/.openclaw/skills/`, or as a Claude Code plugin under `~/.claude/plugins/` |
 | `ModuleNotFoundError: requests` | `requests` not installed | `pip install requests` or `uv pip install requests` |
 | 0 results returned | Query too specific or filters too narrow | Broaden query, remove filters, try `search_relevance()` instead of `search_bulk()` |

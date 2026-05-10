@@ -60,10 +60,11 @@ _API_KEY = os.environ.get("S2_API_KEY", "").strip()
 HAS_KEY = bool(_API_KEY)
 HEADERS = {"x-api-key": _API_KEY} if HAS_KEY else {}
 
-# Without a key the shared anonymous pool allows ~100 req/5 min per IP;
-# use a 3s gap to stay well inside that limit.
+# Authenticated quota is 1 req/s per S2 docs; 1.1s gap stays under it.
+# Anonymous limit is not published and is shared across all unauth callers,
+# so use a conservative 5s gap to avoid 429s on the shared pool.
 _last_request_time = 0
-_MIN_GAP = 1.1 if HAS_KEY else 3.0
+_MIN_GAP = 1.1 if HAS_KEY else 5.0
 
 
 def _request(method, url, params=None, json_data=None, max_retries=5):
@@ -99,7 +100,7 @@ def _request(method, url, params=None, json_data=None, max_retries=5):
             print("  [auth] S2_API_KEY rejected (403); switching to unauthenticated mode", file=sys.stderr)
             _self.HAS_KEY = False
             _self.HEADERS = {}
-            _self._MIN_GAP = 3.0
+            _self._MIN_GAP = 5.0
             continue
         if r.status_code in (429, 504):
             if attempt < max_retries:
