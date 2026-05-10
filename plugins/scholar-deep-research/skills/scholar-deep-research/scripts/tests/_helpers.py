@@ -81,9 +81,10 @@ def all_script_names() -> list[str]:
     """Every `scripts/*.py` that declares a `main()` via `__main__`.
 
     Skips helpers (`_common.py`, `_locking.py`, `_gates.py`) and the tests
-    directory.
+    directory. Also skips library modules like `state_apply.py` that are
+    imported by the CLI scripts but have no command-line surface.
     """
-    skip = {"__init__.py"}
+    skip = {"__init__.py", "state_apply.py"}
     out = []
     for f in sorted(SCRIPTS.glob("*.py")):
         if f.name in skip:
