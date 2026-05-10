@@ -32,11 +32,12 @@ npx skills add Agents365-ai/365-skills -g
 |---|---|
 | `semanticscholar` | Semantic Scholar —— 学术论文检索、引文图谱、推荐、BibTeX 导出 |
 | `paper-fetch` | 按 DOI / 标题下载论文 PDF —— 7 源回退链（Unpaywall、S2、arXiv、PMC、bioRxiv、出版商直链、Sci-Hub），支持批量与幂等重试 |
+| `scholar-deep-research` | 端到端文献综述流水线 —— 8 阶段脚本驱动工作流，跨 7 个数据源（OpenAlex、arXiv、Crossref、PubMed、DBLP、bioRxiv、Exa）联邦检索、去重、双 backend 引用追溯、并行精读派发、强制自我批判，输出 5 种原型的带引用报告 |
 
 ## 安装插件
 
 ```
-/plugin install drawio mermaid excalidraw plantuml tldraw semanticscholar paper-fetch
+/plugin install drawio mermaid excalidraw plantuml tldraw semanticscholar paper-fetch scholar-deep-research
 ```
 
 ## 开发
@@ -48,9 +49,9 @@ cp -r ../drawio-skill/skills/drawio-skill/* plugins/drawio/skills/drawio-skill/
 git add plugins/drawio && git commit -m "chore: sync drawio-skill"
 ```
 
-### 自动同步（semanticscholar、paper-fetch）
+### 自动同步（semanticscholar、paper-fetch、scholar-deep-research）
 
-`semanticscholar-skill` 和 `paper-fetch` 各自仓库中带有 GitHub Actions workflow（`.github/workflows/sync-365-skills.yml`），任何对各自 `skills/<name>/**` 的改动会自动推送到本仓库，并更新 `marketplace.json` 中的版本号。需要每个源仓库配置 `SYNC_365_SKILLS_TOKEN` secret，并对本仓库具有 `Contents: write` 权限。
+`semanticscholar-skill`、`paper-fetch` 与 `scholar-deep-research` 各自仓库中带有 GitHub Actions workflow（`.github/workflows/sync-365-skills.yml`），任何对各自 `skills/<name>/**` 的改动会自动推送到本仓库，并更新 `marketplace.json` 中的版本号。需要每个源仓库配置 `SYNC_365_SKILLS_TOKEN` secret，并对本仓库具有 `Contents: write` 权限。
 
 ## 源仓库
 
@@ -65,6 +66,7 @@ git add plugins/drawio && git commit -m "chore: sync drawio-skill"
 | `tldraw` | [Agents365-ai/tldraw-skill](https://github.com/Agents365-ai/tldraw-skill) |
 | `semanticscholar` | [Agents365-ai/semanticscholar-skill](https://github.com/Agents365-ai/semanticscholar-skill) |
 | `paper-fetch` | [Agents365-ai/paper-fetch](https://github.com/Agents365-ai/paper-fetch) |
+| `scholar-deep-research` | [Agents365-ai/scholar-deep-research](https://github.com/Agents365-ai/scholar-deep-research) |
 
 ## Discord
 
