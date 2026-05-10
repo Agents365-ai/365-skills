@@ -42,7 +42,7 @@ from pathlib import Path
 # Versioning
 # ---------------------------------------------------------------------------
 
-CLI_VERSION = "0.13.1"
+CLI_VERSION = "0.13.2"
 SCHEMA_VERSION = "1.9.0"
 
 # ---------------------------------------------------------------------------
@@ -1308,6 +1308,13 @@ def fetch(
         _add("semantic_scholar", s2_pdf)
     elif not up_url:
         _progress("source_miss", doi=doi, source="semantic_scholar")
+
+    # Synthesized arXiv DOIs (10.48550/arXiv.<id>) encode the arxiv id directly.
+    # S2 doesn't index by this DOI form, so a S2-by-DOI lookup returns 404 and
+    # externalIds stays empty — recover the id from the DOI literal so the
+    # arxiv source still gets tried.
+    if not ext.get("ArXiv") and doi.lower().startswith("10.48550/arxiv."):
+        ext["ArXiv"] = doi[len("10.48550/arxiv."):]
 
     if ext.get("ArXiv"):
         sources_tried.append("arxiv")
