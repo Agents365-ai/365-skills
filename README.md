@@ -33,6 +33,7 @@ npx skills add Agents365-ai/365-skills -g
 | `semanticscholar` | Semantic Scholar — academic paper search, citation graph, recommendations, BibTeX export |
 | `paper-fetch` | Paper PDF downloader by DOI / title — 7-source fallback (Unpaywall, S2, arXiv, PMC, bioRxiv, publisher, Sci-Hub) with batch mode and idempotent retries |
 | `scholar-deep-research` | End-to-end literature review pipeline — 8-phase script-driven workflow, 7 federated sources (OpenAlex, arXiv, Crossref, PubMed, DBLP, bioRxiv, Exa), cross-source dedup, dual-backend citation chasing, parallel deep-read fan-out, mandatory self-critique, cited reports across 5 archetypes |
+| `asta` | Ai2 Asta MCP — Semantic Scholar academic graph over MCP (no Python). Intent-to-tool routing, safe `fields` defaults, citation traversal, snippet evidence retrieval, and DOI/arXiv/PMID via `externalIds` |
 
 ## Install plugins
 
@@ -49,9 +50,9 @@ cp -r ../drawio-skill/skills/drawio-skill/* plugins/drawio/skills/drawio-skill/
 git add plugins/drawio && git commit -m "chore: sync drawio-skill"
 ```
 
-### Auto-sync (semanticscholar, paper-fetch, scholar-deep-research)
+### Auto-sync (semanticscholar, paper-fetch, scholar-deep-research, asta)
 
-`semanticscholar-skill`, `paper-fetch`, and `scholar-deep-research` each ship a GitHub Actions workflow (`.github/workflows/sync-365-skills.yml`) that automatically pushes any change under their respective `skills/<name>/**` here, and bumps the version field in `marketplace.json`. Requires each source repo to have a `SYNC_365_SKILLS_TOKEN` secret with `Contents: write` on this repo.
+`semanticscholar-skill`, `paper-fetch`, `scholar-deep-research`, and `asta-skill` each ship a GitHub Actions workflow (`.github/workflows/sync-365-skills.yml`) that automatically pushes any change under their respective `skills/<name>/**` here, and bumps the version field in `marketplace.json`. Requires each source repo to have a `SYNC_365_SKILLS_TOKEN` secret with `Contents: write` on this repo.
 
 ## Source repos
 
@@ -67,6 +68,7 @@ Each plugin mirrors a standalone skill repo — file issues there for plugin-spe
 | `semanticscholar` | [Agents365-ai/semanticscholar-skill](https://github.com/Agents365-ai/semanticscholar-skill) |
 | `paper-fetch` | [Agents365-ai/paper-fetch](https://github.com/Agents365-ai/paper-fetch) |
 | `scholar-deep-research` | [Agents365-ai/scholar-deep-research](https://github.com/Agents365-ai/scholar-deep-research) |
+| `asta` | [Agents365-ai/asta-skill](https://github.com/Agents365-ai/asta-skill) |
 
 ## Discord
 
