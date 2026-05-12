@@ -448,18 +448,20 @@ def compute_saturation(
     None and is excluded from the AND.
 
     Env-var overrides (used when the corresponding kwarg is None — i.e.
-    neither the CLI flag nor the gate caller forced a value): broad CS
-    topics that cross subfields can fail to converge under the default
-    20% threshold, so operators can relax it without code changes.
+    neither the CLI flag nor the gate caller forced a value): broad
+    topics rarely converge under a 20% novelty threshold in 2 rounds
+    against real corpora. The 0.16.0 default is 50% on the paper axis
+    — set it lower (e.g. 20–30) for systematic-review rigor, higher
+    for fast scoping.
 
-      SCHOLAR_SATURATION_NEW_PCT       (default 20.0)
+      SCHOLAR_SATURATION_NEW_PCT       (default 50.0, 0.16.0+; was 20.0)
       SCHOLAR_SATURATION_MAX_CITATIONS (default 100)
       SCHOLAR_SATURATION_MIN_ROUNDS    (default 2)
       SCHOLAR_SATURATION_NEW_AUTHORS_PCT (default 25.0)
       SCHOLAR_SATURATION_NEW_VENUES_PCT  (default 30.0)
     """
     if threshold is None:
-        threshold = float(os.environ.get("SCHOLAR_SATURATION_NEW_PCT", 20.0))
+        threshold = float(os.environ.get("SCHOLAR_SATURATION_NEW_PCT", 50.0))
     if max_citations is None:
         max_citations = int(os.environ.get("SCHOLAR_SATURATION_MAX_CITATIONS", 100))
     if min_rounds is None:

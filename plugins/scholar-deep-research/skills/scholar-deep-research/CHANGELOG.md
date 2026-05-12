@@ -6,6 +6,20 @@ Notable changes to `scholar-deep-research`. Format follows
 
 <!-- towncrier release notes start -->
 
+## 0.16.0 — 2026-05-12
+
+### Bug fixes
+
+- `SCHOLAR_SATURATION_NEW_PCT` default bumped from 20.0 → 50.0 on
+  the paper axis. The 0.13.x threshold was unreachable against real
+  broad-topic corpora — the v0.15.1 end-to-end DTI validation needed
+  2 rounds against 3 sources to advance G2 and still saw 78–93% new
+  in round 2, far above 20%. Operators who want systematic-review
+  rigor can pin `SCHOLAR_SATURATION_NEW_PCT=20` in their env. The
+  author/venue thresholds (25%/30%) are unchanged — they had
+  different conceptual headroom.
+
+
 ## 0.15.2 — 2026-05-12
 
 ### Bug fixes

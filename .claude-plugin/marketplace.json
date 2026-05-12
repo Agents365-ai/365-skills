@@ -81,7 +81,7 @@
             "name": "scholar-deep-research",
             "source": "./plugins/scholar-deep-research",
             "description": "End-to-end academic research pipeline — 8-phase (Phase 0..7) script-driven workflow across 7 federated sources (OpenAlex, arXiv, Crossref, PubMed, DBLP, bioRxiv, Exa), cross-source dedup, transparent ranking, dual-backend citation chasing (OpenAlex + Semantic Scholar), parallel deep-read fan-out, mandatory self-critique, and cited reports across 5 archetypes",
-            "version": "0.15.2",
+            "version": "0.16.0",
             "author": { "name": "Agents365-ai" },
             "repository": "https://github.com/Agents365-ai/scholar-deep-research",
             "license": "MIT",

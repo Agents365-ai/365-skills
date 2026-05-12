@@ -7,10 +7,10 @@ by setting env vars; both the standalone `saturation` subcommand and
 `gate_2` (called from `advance`) must read them.
 
 These tests construct a minimal state that fails saturation under the
-defaults (last round 50% new) and passes when SCHOLAR_SATURATION_NEW_PCT
-is bumped to 60. We assert behavior at the function level
-(`compute_saturation`) and through the CLI (subprocess) so a refactor
-that breaks the wiring on either side gets caught.
+defaults (last round 60% new vs. 50% threshold) and passes when
+SCHOLAR_SATURATION_NEW_PCT is bumped to 70. We assert behavior at the
+function level (`compute_saturation`) and through the CLI (subprocess)
+so a refactor that breaks the wiring on either side gets caught.
 """
 from __future__ import annotations
 
@@ -77,28 +77,28 @@ class SaturationEnvOverrideTest(unittest.TestCase):
             else:
                 os.environ[k] = v
 
-    def test_default_threshold_blocks_50pct_new(self) -> None:
-        state = _state_with_round_at_pct(50.0)
+    def test_default_threshold_blocks_60pct_new(self) -> None:
+        state = _state_with_round_at_pct(60.0)
         out = compute_saturation(state)
         self.assertFalse(out["per_source"]["openalex"]["saturated"])
-        self.assertEqual(out["threshold_pct"], 20.0)
+        self.assertEqual(out["threshold_pct"], 50.0)
 
-    def test_env_override_unsticks_50pct_new(self) -> None:
-        os.environ["SCHOLAR_SATURATION_NEW_PCT"] = "60"
+    def test_env_override_unsticks_60pct_new(self) -> None:
+        os.environ["SCHOLAR_SATURATION_NEW_PCT"] = "70"
         # Authors threshold also needs relaxing because every round-2
         # paper has a unique new author in this synthetic state.
         os.environ["SCHOLAR_SATURATION_NEW_AUTHORS_PCT"] = "100"
-        state = _state_with_round_at_pct(50.0)
+        state = _state_with_round_at_pct(60.0)
         out = compute_saturation(state)
         self.assertTrue(out["per_source"]["openalex"]["saturated"])
-        self.assertEqual(out["threshold_pct"], 60.0)
+        self.assertEqual(out["threshold_pct"], 70.0)
 
     def test_max_citations_env_override(self) -> None:
-        os.environ["SCHOLAR_SATURATION_NEW_PCT"] = "60"
+        os.environ["SCHOLAR_SATURATION_NEW_PCT"] = "70"
         os.environ["SCHOLAR_SATURATION_NEW_AUTHORS_PCT"] = "100"
         # New round-2 papers carry a high citation count → blocks
         # saturation under the default max_cit=100.
-        state = _state_with_round_at_pct(50.0, max_cit=500)
+        state = _state_with_round_at_pct(60.0, max_cit=500)
         out = compute_saturation(state)
         self.assertFalse(out["per_source"]["openalex"]["saturated"],
                          "max_cit=500 should block under default 100")
@@ -124,12 +124,12 @@ class SaturationEnvOverrideTest(unittest.TestCase):
 
     def test_explicit_kwarg_beats_env(self) -> None:
         # Caller's explicit kwarg wins over env override.
-        os.environ["SCHOLAR_SATURATION_NEW_PCT"] = "60"
-        state = _state_with_round_at_pct(50.0)
+        os.environ["SCHOLAR_SATURATION_NEW_PCT"] = "70"
+        state = _state_with_round_at_pct(60.0)
         out = compute_saturation(state, threshold=10.0)
         self.assertFalse(out["per_source"]["openalex"]["saturated"])
         self.assertEqual(out["threshold_pct"], 10.0,
-                         "explicit threshold=10 should override env 60")
+                         "explicit threshold=10 should override env 70")
 
 
 class SaturationCLIEnvOverrideTest(unittest.TestCase):
@@ -139,7 +139,7 @@ class SaturationCLIEnvOverrideTest(unittest.TestCase):
         self._tmp = tempfile.TemporaryDirectory()
         self._state_path = Path(self._tmp.name) / "state.json"
         # Hand-write state: avoid relying on init+ingest plumbing.
-        state = _state_with_round_at_pct(50.0)
+        state = _state_with_round_at_pct(60.0)
         state.update({
             "schema_version": 1,
             "phase": 1,
@@ -155,7 +155,7 @@ class SaturationCLIEnvOverrideTest(unittest.TestCase):
     def test_cli_honors_env_override(self) -> None:
         from _helpers import run_script
         env = os.environ.copy()
-        env["SCHOLAR_SATURATION_NEW_PCT"] = "60"
+        env["SCHOLAR_SATURATION_NEW_PCT"] = "70"
         env["SCHOLAR_SATURATION_NEW_AUTHORS_PCT"] = "100"
         envelope = run_script(
             "research_state.py",
@@ -163,7 +163,7 @@ class SaturationCLIEnvOverrideTest(unittest.TestCase):
             env=env,
         )
         self.assertTrue(envelope["ok"])
-        self.assertEqual(envelope["data"]["threshold_pct"], 60.0)
+        self.assertEqual(envelope["data"]["threshold_pct"], 70.0)
         self.assertTrue(
             envelope["data"]["per_source"]["openalex"]["saturated"],
             f"CLI didn't pick up env override: {envelope['data']}",
