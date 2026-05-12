@@ -283,6 +283,8 @@ ended up not cited inline.
 
 **Save path convention:** `reports/<slug>_<YYYYMMDD>.md`. The skill does not write outside the working directory unless the user specifies a path.
 
+**HTML / PDF delivery.** The pipeline ships markdown by design — it's the contract `render_report.py --lint` validates and what downstream agents can re-process. For a polished human-facing artifact, hand `reports/<slug>_<YYYYMMDD>.md` + `.bib` to the host coding agent with a prompt like *"render this as a polished HTML page suitable for sharing with my PI: serif body, ~70ch column, sidebar TOC, Phase 6 critique as a `<details>` block, citation hovers showing the bib entry"*. Visual styling sits outside the skill's correctness contract.
+
 ## Report archetype selection
 
 | Archetype | When to use | Primary output shape |
