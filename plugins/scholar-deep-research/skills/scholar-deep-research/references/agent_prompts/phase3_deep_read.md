@@ -43,7 +43,15 @@ ${question}
    b. `python scripts/extract_pdf.py --doi '${doi}' --output /tmp/${safe_id}.md`
       (uses the paper-fetch skill's 5-source OA chain when installed)
    c. `python scripts/extract_pdf.py --url '${pdf_url}' --output /tmp/${safe_id}.md`
-   d. If all fail: write evidence_unavailable (see "Failure mode" below) and stop.
+   d. **Last resort — host-native web fetch.** If your host runtime has
+      a `WebFetch` tool (Claude Code, OpenCode) or equivalent, try
+      fetching the paper's landing page directly:
+      `WebFetch(url=<pdf_url or doi.org/${doi}>)`. Publisher landing
+      pages often expose the abstract and key findings in HTML even
+      when the PDF is gated. Extract those into evidence with `depth:
+      "abstract_only"` rather than `"full"` so downstream consumers
+      know the coverage is partial.
+   e. If a..d all fail: write evidence_unavailable (see "Failure mode" below) and stop.
 
    If `pdf_path` is set but the file is missing (cache wiped between prefetch
    and dispatch), fall through to (b). Do **not** silently skip — that path

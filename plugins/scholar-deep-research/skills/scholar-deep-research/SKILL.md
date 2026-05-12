@@ -5,7 +5,7 @@ license: MIT
 homepage: https://github.com/Agents365-ai/scholar-deep-research
 compatibility: Requires Python 3.9+ with httpx and pypdf (see requirements.txt). Optional: `pip install docling` to enable layout-aware markdown PDF extraction (`extract_pdf.py --engine docling`); auto-used as a fallback for scanned/sparse PDFs. Works offline-first (no MCP required) but enriches with Semantic Scholar / Brave MCP tools when available.
 platforms: [macos, linux, windows]
-metadata: {"openclaw":{"requires":{"bins":["python3"]},"emoji":"🔬"},"hermes":{"tags":["research","literature-review","academic","papers","citations","survey"],"category":"research"},"pimo":{"tags":["research","literature-review","academic"],"category":"research"},"author":"Agents365-ai","version":"0.15.0"}
+metadata: {"openclaw":{"requires":{"bins":["python3"]},"emoji":"🔬"},"hermes":{"tags":["research","literature-review","academic","papers","citations","survey"],"category":"research"},"pimo":{"tags":["research","literature-review","academic"],"category":"research"},"author":"Agents365-ai","version":"0.15.1"}
 ---
 
 # Scholar Deep Research
@@ -358,6 +358,29 @@ If the session has asta or Brave Search MCP tools available, use them as enrichm
 - Brave Search — non-academic sources (blog posts, press releases, pre-print discussion)
 
 **Treat MCP tools as unreliable by design** — they may timeout or be unavailable. Never place a phase-critical step behind an MCP call. Scripts are the spine; MCP is the skin.
+
+## Enrichment with host-native web tools
+
+Some host runtimes ship built-in web tools that work zero-config — no MCP server, no API key, no env var. **Use them as enrichment alongside or in place of the MCP tools above.** Same discipline as MCP: side-input only, never on the critical path.
+
+Known surfaces (verify what your host actually exposes — tool names drift):
+
+| Host | Web search | Web fetch | Notes |
+|------|-----------|-----------|-------|
+| Claude Code | `WebSearch` | `WebFetch` | Zero-config, no API key needed |
+| OpenCode | `webfetch` | `webfetch` | Single tool covers fetch; search may require an MCP |
+| Codex CLI | varies by version | varies | Toolset depends on Codex profile + plugins |
+| OpenClaw / Hermes / pi-mono / Manus | varies | varies | These hosts generally route through configured MCP servers — see asta/Brave above |
+
+If you can't see any of these tools, fall back to the MCP options. If neither is available, the workflow continues — script searches alone are designed to suffice.
+
+**Where these add the most value in the 8-phase workflow:**
+
+1. **Phase 1 — time-sensitive enrichment.** For topics where the answer changed in the last 30 days, run a host-native web search in parallel with the academic sources. arXiv/bioRxiv lag is 1-3 days; OpenAlex/PubMed ~1 week. WebSearch catches the blog / Twitter / press-release frontier that hasn't hit a preprint yet.
+2. **Phase 3 — PDF-fetch last resort.** Before writing `evidence_unavailable`, try `WebFetch(landing_url_for_paper)` to pull the abstract / findings out of the publisher's HTML page when `extract_pdf.py --doi/--url` all failed. See step (d) in `references/agent_prompts/phase3_deep_read.md`.
+3. **Phase 6 — recency check.** During self-critique, WebSearch the paper title to catch retractions, corrections, or replication failures that appeared after the paper's publication date.
+
+**Don't pipe web results into `apply_ingest`.** Host-native results are unstructured (no DOI / authors / venue / source attribution), so they go into prose context or fact-checks, not into `research_state.json` paper records. The corpus stays auditable.
 
 ## Pitfalls (short list; see `references/pitfalls.md` for detail)
 

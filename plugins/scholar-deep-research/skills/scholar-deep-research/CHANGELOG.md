@@ -6,6 +6,22 @@ Notable changes to `scholar-deep-research`. Format follows
 
 <!-- towncrier release notes start -->
 
+## 0.15.1 — 2026-05-12
+
+### Documentation
+
+- SKILL.md now documents host-native web tool enrichment alongside the
+  existing MCP enrichment section, covering Claude Code (`WebSearch` /
+  `WebFetch`), OpenCode (`webfetch`), Codex CLI, and the
+  OpenClaw/Hermes/pi-mono/Manus pattern (route through configured MCP).
+  Phase 3 deep-read prompt gains a step (d) — WebFetch the paper's
+  landing page as the last resort before writing
+  `evidence_unavailable`, with `depth: "abstract_only"` to flag partial
+  coverage. Pure documentation; no code changes. Results are
+  intentionally not piped through `apply_ingest` — host-native results
+  lack DOI/authors/venue and would erode the corpus audit trail.
+
+
 ## 0.15.0 — 2026-05-12
 
 ### Features
