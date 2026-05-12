@@ -47,7 +47,7 @@ from pathlib import Path
 from typing import Any
 
 from _common import (
-    EXIT_RUNTIME, EXIT_UPSTREAM, EXIT_VALIDATION,
+    EXIT_RUNTIME, EXIT_UPSTREAM, EXIT_VALIDATION, USER_AGENT,
     SSRFRefused, command_signature, err, maybe_emit_schema, ok, read_cache,
     safe_get, set_command_meta, write_cache,
 )
@@ -410,7 +410,7 @@ def main() -> None:
         import httpx
         try:
             r = safe_get(args.url, follow_redirects=True, timeout=60.0,
-                         headers={"User-Agent": "scholar-deep-research/0.1"})
+                         headers={"User-Agent": USER_AGENT})
             r.raise_for_status()
         except SSRFRefused as e:
             err("ssrf_refused",

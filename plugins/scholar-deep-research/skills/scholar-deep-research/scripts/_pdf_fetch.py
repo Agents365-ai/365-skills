@@ -197,9 +197,10 @@ def _fetch_via_unpaywall(doi: str, out_dir: Path) -> tuple[Path, dict[str, Any]]
     email = os.environ.get("SCHOLAR_MAILTO", "scholar-deep-research@example.com")
     api_url = f"https://api.unpaywall.org/v2/{doi}?email={email}"
 
+    from _common import USER_AGENT
     try:
         r = httpx.get(api_url, follow_redirects=True, timeout=30.0,
-                      headers={"User-Agent": "scholar-deep-research/0.1"})
+                      headers={"User-Agent": USER_AGENT})
         r.raise_for_status()
     except httpx.HTTPError as e:
         status = getattr(getattr(e, "response", None), "status_code", None)
@@ -227,7 +228,7 @@ def _fetch_via_unpaywall(doi: str, out_dir: Path) -> tuple[Path, dict[str, Any]]
     from _common import SSRFRefused, safe_get
     try:
         r2 = safe_get(pdf_url, follow_redirects=True, timeout=60.0,
-                      headers={"User-Agent": "scholar-deep-research/0.1"})
+                      headers={"User-Agent": USER_AGENT})
         r2.raise_for_status()
     except SSRFRefused as e:
         raise FetchError(

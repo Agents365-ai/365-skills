@@ -6,6 +6,23 @@ Notable changes to `scholar-deep-research`. Format follows
 
 <!-- towncrier release notes start -->
 
+## 0.16.2 — 2026-05-12
+
+### Bug fixes
+
+- Three call sites (`extract_pdf.py --url`, `_pdf_fetch.py` Unpaywall
+  API and PDF download) hardcoded `User-Agent:
+  scholar-deep-research/0.1` — a stale version string from the
+  pre-0.5 era. Replaced with the canonical `USER_AGENT` from
+  `_common.py`, which already carries the live version + repo URL +
+  polite-pool marker. The honest-bot identity is more likely to pass
+  publisher UA filters than a bare `name/version` token, and the
+  single source of truth means future version bumps don't leave the
+  fetch headers behind. Caught while diagnosing why paper-fetch
+  failed on GraphDTA — paper-fetch's own UA filtering bug is filed
+  separately upstream.
+
+
 ## 0.16.1 — 2026-05-12
 
 ### Features
