@@ -6,6 +6,17 @@ Notable changes to `scholar-deep-research`. Format follows
 
 <!-- towncrier release notes start -->
 
+## 0.16.3 — 2026-05-12
+
+### Documentation
+
+- SKILL.md "Scripts reference" table now lists `search_dblp.py` and
+  `search_biorxiv.py`. They were already documented in the Phase 1
+  search-command examples, but missing from the central reference
+  table — agents browsing only the table would skip them when
+  planning multi-source coverage.
+
+
 ## 0.16.2 — 2026-05-12
 
 ### Bug fixes

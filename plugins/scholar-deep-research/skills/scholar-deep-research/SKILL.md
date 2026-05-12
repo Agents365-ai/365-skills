@@ -5,7 +5,7 @@ license: MIT
 homepage: https://github.com/Agents365-ai/scholar-deep-research
 compatibility: Requires Python 3.9+ with httpx and pypdf (see requirements.txt). Optional: `pip install docling` to enable layout-aware markdown PDF extraction (`extract_pdf.py --engine docling`); auto-used as a fallback for scanned/sparse PDFs. Works offline-first (no MCP required) but enriches with Semantic Scholar / Brave MCP tools when available.
 platforms: [macos, linux, windows]
-metadata: {"openclaw":{"requires":{"bins":["python3"]},"emoji":"🔬"},"hermes":{"tags":["research","literature-review","academic","papers","citations","survey"],"category":"research"},"pimo":{"tags":["research","literature-review","academic"],"category":"research"},"author":"Agents365-ai","version":"0.16.2"}
+metadata: {"openclaw":{"requires":{"bins":["python3"]},"emoji":"🔬"},"hermes":{"tags":["research","literature-review","academic","papers","citations","survey"],"category":"research"},"pimo":{"tags":["research","literature-review","academic"],"category":"research"},"author":"Agents365-ai","version":"0.16.3"}
 ---
 
 # Scholar Deep Research
@@ -304,6 +304,8 @@ Templates live in `assets/templates/<archetype>.md`. Load only the one you need.
 | `search_arxiv.py` | arXiv API — preprints and CS/ML/physics. |
 | `search_crossref.py` | Crossref REST — authoritative DOI metadata. |
 | `search_pubmed.py` | NCBI E-utilities — biomedical corpus with MeSH. |
+| `search_dblp.py` | DBLP — authoritative CS bibliography (conferences + journals, clean author disambiguation). Complement to OpenAlex/arXiv for CS reviews. No abstracts / citation counts. |
+| `search_biorxiv.py` | bioRxiv + medRxiv preprints via Europe PMC gateway (CSHL DOI prefix `10.1101/`). Catches life-sci preprints weeks-to-months before PubMed indexes them. |
 | `search_exa.py` | Exa neural web search (optional, key-gated) — open-web coverage the scholarly APIs miss. |
 | `list_sources.py` | Registry of all `search_*.py` sources with their capabilities (domain, index type, freshness lag, auth requirement, …). Filter by `--domain`, `--auth`, `--index-type`, or `--needs-relevance-filter` so an orchestrator can pick the right sources for the question. Schema defined in `_search_meta.py`. |
 | `dedupe_papers.py` | DOI normalization + title similarity merging across sources. |
