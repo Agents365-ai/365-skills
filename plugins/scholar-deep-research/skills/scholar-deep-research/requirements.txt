@@ -1,3 +1,6 @@
 httpx>=0.27.0
 pypdf>=4.0.0
 exa-py>=1.0.0  # optional: only needed for search_exa.py
+# docling>=2.0.0  # optional: enables --engine docling in extract_pdf.py
+                  #   (layout-aware markdown extraction; pulls torch + models on
+                  #   first run — leave commented unless you need it)

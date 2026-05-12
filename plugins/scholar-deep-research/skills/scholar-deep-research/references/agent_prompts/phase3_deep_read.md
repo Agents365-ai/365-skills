@@ -37,18 +37,26 @@ ${question}
 1. Get the full text. Try in this order, stopping at the first that yields >2000 chars:
    a. **If `pdf_path` is provided AND points at an existing file** (`prefetch_pdfs.py` ran):
       ```
-      python scripts/extract_pdf.py --input '${pdf_path}' --output /tmp/${safe_id}.txt
+      python scripts/extract_pdf.py --input '${pdf_path}' --output /tmp/${safe_id}.md
       ```
       No network call — fastest path. **Always prefer this when available.**
-   b. `python scripts/extract_pdf.py --doi '${doi}' --output /tmp/${safe_id}.txt`
+   b. `python scripts/extract_pdf.py --doi '${doi}' --output /tmp/${safe_id}.md`
       (uses the paper-fetch skill's 5-source OA chain when installed)
-   c. `python scripts/extract_pdf.py --url '${pdf_url}' --output /tmp/${safe_id}.txt`
+   c. `python scripts/extract_pdf.py --url '${pdf_url}' --output /tmp/${safe_id}.md`
    d. If all fail: write evidence_unavailable (see "Failure mode" below) and stop.
 
    If `pdf_path` is set but the file is missing (cache wiped between prefetch
    and dispatch), fall through to (b). Do **not** silently skip — that path
    is what `pdf_status='failed'` already records, and re-attempting via (b)
    gives the paper one more chance with a different transport.
+
+   **Extraction engine.** `extract_pdf.py` defaults to `--engine auto`: pypdf
+   first, auto-upgrading to docling when the pypdf result looks scanned/sparse
+   (and docling is installed via `pip install docling`). Output is markdown
+   when docling kicks in, plain text otherwise — both readable for evidence
+   extraction. The response envelope reports `engine` and `format` so you
+   know what you got. Force `--engine docling` for multi-column or
+   table-heavy PDFs where pypdf interleaves columns.
 
 2. Read the extracted text. Extract per-paper evidence covering:
    - method            : 1 sentence on the experimental/computational approach
