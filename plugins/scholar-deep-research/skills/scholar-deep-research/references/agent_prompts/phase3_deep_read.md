@@ -48,9 +48,12 @@ ${question}
       fetching the paper's landing page directly:
       `WebFetch(url=<pdf_url or doi.org/${doi}>)`. Publisher landing
       pages often expose the abstract and key findings in HTML even
-      when the PDF is gated. Extract those into evidence with `depth:
-      "abstract_only"` rather than `"full"` so downstream consumers
-      know the coverage is partial.
+      when the PDF is gated. Record evidence with `--depth shallow`
+      and prefix `--method` with `webfetch_landing_page:` (same prefix
+      convention as failure modes A/B below) so downstream consumers
+      know the coverage is partial. Many publishers (IEEE Xplore,
+      Elsevier) return 418/403 to WebFetch — when that happens, fall
+      through to (e).
    e. If a..d all fail: write evidence_unavailable (see "Failure mode" below) and stop.
 
    If `pdf_path` is set but the file is missing (cache wiped between prefetch

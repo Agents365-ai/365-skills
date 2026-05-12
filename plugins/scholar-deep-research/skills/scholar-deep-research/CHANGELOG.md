@@ -6,6 +6,21 @@ Notable changes to `scholar-deep-research`. Format follows
 
 <!-- towncrier release notes start -->
 
+## 0.15.2 — 2026-05-12
+
+### Bug fixes
+
+- Fix contract bug in `references/agent_prompts/phase3_deep_read.md`
+  step (d): the v0.15.1 instruction recorded WebFetch landing-page
+  evidence with `depth: "abstract_only"`, but the `evidence` CLI only
+  accepts `full` / `shallow` and would return `invalid_field`. The
+  prompt now uses `--depth shallow` with a `webfetch_landing_page:`
+  method prefix — the same prefix convention as failure modes A
+  (`evidence_unavailable:`) and B (`topic_mismatch:`). No code
+  changes; this is a docs/prompt fix only. Caught by the v0.15.1
+  end-to-end validation run.
+
+
 ## 0.15.1 — 2026-05-12
 
 ### Documentation
