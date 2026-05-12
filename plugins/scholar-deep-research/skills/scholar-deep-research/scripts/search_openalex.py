@@ -24,6 +24,19 @@ from _common import (
     resolve_search_round, set_command_meta, with_search_cache,
 )
 
+SOURCE_META = {
+    "name": "openalex",
+    "domain": "academic",
+    "index_type": "metadata_aggregator",
+    "covers": ["papers", "authors", "venues", "institutions"],
+    "lookup_by": ["doi", "openalex_id", "title"],
+    "freshness_lag_days": 7,
+    "rate_limit_qps_polite": 10.0,
+    "auth": "polite_email_optional",
+    "needs_relevance_filter": False,
+    "language_scope": ["en"],
+}
+
 API = "https://api.openalex.org/works"
 
 

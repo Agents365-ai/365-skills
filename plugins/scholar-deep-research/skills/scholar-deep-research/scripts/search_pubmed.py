@@ -27,6 +27,19 @@ from _common import (
     resolve_search_round, set_command_meta, with_search_cache,
 )
 
+SOURCE_META = {
+    "name": "pubmed",
+    "domain": "medical",
+    "index_type": "subject_aggregator",
+    "covers": ["papers"],
+    "lookup_by": ["pmid", "doi", "title"],
+    "freshness_lag_days": 1,
+    "rate_limit_qps_polite": 3.0,
+    "auth": "ncbi_key_optional",
+    "needs_relevance_filter": False,
+    "language_scope": ["en"],
+}
+
 ESEARCH = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
 ESUMMARY = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi"
 

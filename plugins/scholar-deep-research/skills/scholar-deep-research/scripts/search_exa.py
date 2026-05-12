@@ -35,6 +35,19 @@ from _common import (
     make_payload, maybe_emit_schema, resolve_search_round, set_command_meta,
 )
 
+SOURCE_META = {
+    "name": "exa",
+    "domain": "general",
+    "index_type": "web_search",
+    "covers": ["papers", "web_pages"],
+    "lookup_by": ["keyword", "url"],
+    "freshness_lag_days": 1,
+    "rate_limit_qps_polite": 5.0,
+    "auth": "api_key_required",
+    "needs_relevance_filter": True,
+    "language_scope": ["en", "zh", "ja", "de", "fr", "es"],
+}
+
 INTEGRATION_ID = "scholar-deep-research"
 
 

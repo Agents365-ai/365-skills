@@ -29,6 +29,19 @@ from _common import (
     set_command_meta, with_search_cache,
 )
 
+SOURCE_META = {
+    "name": "biorxiv",
+    "domain": "bio_preprint",
+    "index_type": "preprint_server",
+    "covers": ["papers"],
+    "lookup_by": ["doi", "title"],
+    "freshness_lag_days": 1,
+    "rate_limit_qps_polite": 1.0,
+    "auth": "none",
+    "needs_relevance_filter": False,
+    "language_scope": ["en"],
+}
+
 API = "https://www.ebi.ac.uk/europepmc/webservices/rest/search"
 BIORXIV_PREFIX = "10.1101/"
 

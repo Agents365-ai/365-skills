@@ -1,0 +1,38 @@
+# towncrier — incremental changelog fragments compiled at release time.
+# Use `towncrier.toml` (not pyproject.toml) to avoid pretending this skill
+# is a packaged Python project; it isn't, but we still want a managed
+# changelog.
+
+[tool.towncrier]
+name = "scholar-deep-research"
+filename = "CHANGELOG.md"
+directory = "changelog.d"
+title_format = "## {version} — {project_date}"
+issue_format = ""  # we don't link to PRs/issues per-fragment
+underlines = ["", "", ""]
+start_string = "<!-- towncrier release notes start -->\n"
+
+[[tool.towncrier.type]]
+directory = "feature"
+name = "Features"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "bugfix"
+name = "Bug fixes"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "doc"
+name = "Documentation"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "refactor"
+name = "Internal refactor"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "removal"
+name = "Removals"
+showcontent = true

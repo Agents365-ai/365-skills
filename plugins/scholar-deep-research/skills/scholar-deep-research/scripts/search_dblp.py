@@ -31,6 +31,19 @@ from _common import (
     resolve_search_round, set_command_meta, with_search_cache,
 )
 
+SOURCE_META = {
+    "name": "dblp",
+    "domain": "cs_academic",
+    "index_type": "subject_aggregator",
+    "covers": ["papers", "authors", "venues"],
+    "lookup_by": ["dblp_id", "doi", "title"],
+    "freshness_lag_days": 7,
+    "rate_limit_qps_polite": 1.0,
+    "auth": "none",
+    "needs_relevance_filter": False,
+    "language_scope": ["en"],
+}
+
 API = "https://dblp.org/search/publ/api"
 
 # DBLP doesn't publish a formal rate limit but its HTTPS endpoint

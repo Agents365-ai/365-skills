@@ -16,6 +16,19 @@ import xml.etree.ElementTree as ET
 
 import httpx
 
+SOURCE_META = {
+    "name": "arxiv",
+    "domain": "preprint",
+    "index_type": "preprint_server",
+    "covers": ["papers"],
+    "lookup_by": ["arxiv_id", "doi", "title"],
+    "freshness_lag_days": 1,
+    "rate_limit_qps_polite": 0.33,
+    "auth": "none",
+    "needs_relevance_filter": False,
+    "language_scope": ["en"],
+}
+
 from _common import (
     USER_AGENT, UpstreamError, emit, enforce_min_interval, err, make_paper,
     make_payload, maybe_emit_schema, record_search_failure,

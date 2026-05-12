@@ -36,7 +36,7 @@ logger = logging.getLogger("scholar_deep_research")
 
 # Canonical version string. Bump in lockstep with the `version` field in
 # SKILL.md frontmatter so USER_AGENT, telemetry, and skill metadata agree.
-VERSION = "0.14.2"
+VERSION = "0.15.0"
 
 USER_AGENT = (
     f"scholar-deep-research/{VERSION} "

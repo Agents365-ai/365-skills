@@ -22,6 +22,19 @@ from _common import (
     set_command_meta, with_search_cache,
 )
 
+SOURCE_META = {
+    "name": "crossref",
+    "domain": "academic",
+    "index_type": "metadata_aggregator",
+    "covers": ["papers", "journals"],
+    "lookup_by": ["doi", "title"],
+    "freshness_lag_days": 14,
+    "rate_limit_qps_polite": 50.0,
+    "auth": "polite_email_optional",
+    "needs_relevance_filter": False,
+    "language_scope": ["en", "zh", "ja", "de", "fr", "es"],
+}
+
 API = "https://api.crossref.org/works"
 
 
