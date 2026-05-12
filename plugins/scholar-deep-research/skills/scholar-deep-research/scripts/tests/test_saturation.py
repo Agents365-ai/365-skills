@@ -13,6 +13,7 @@ envelope.
 from __future__ import annotations
 
 import json
+import os
 import sys
 import tempfile
 import unittest
@@ -288,6 +289,108 @@ class NegligibleHitsTest(unittest.TestCase):
             else:
                 os.environ["SCHOLAR_SATURATION_NEGLIGIBLE_HITS"] = prev
         self.assertFalse(sat_tight["per_source"]["biorxiv"]["negligible_hits"])
+
+
+class MinAxesTest(unittest.TestCase):
+    """`SCHOLAR_SATURATION_MIN_AXES` controls how many converged axes are
+    required for a source to saturate. Default 4 = strict AND of papers /
+    citations / authors / venues (the prior behavior). Set 3 = soft mode
+    for hot fields where the papers axis stays high due to query
+    reformulation breadth while the other three axes converge cleanly.
+    """
+
+    def _hot_field_state(self) -> dict:
+        # Round 2 surfaces 7/10 new papers (70% — above the 50% papers-axis
+        # threshold) but the new papers reuse round-1 authors and round-1
+        # venues. citations stay low. Mirrors the Mamba-vs-Transformer +
+        # GLP-1 friction case: 3 of 4 axes converged, papers axis stuck.
+        # Two distinct venues in round 1 keep the venues axis evaluable
+        # (single-venue sources are skipped, reducing axes_evaluable to 3).
+        queries = [
+            {"source": "openalex", "query": "q1", "round": 1,
+             "hits": 10, "new": 10},
+            {"source": "openalex", "query": "q2", "round": 2,
+             "hits": 10, "new": 7},
+        ]
+        papers = {}
+        for i in range(1, 11):
+            papers[f"p{i}"] = _paper(
+                f"p{i}", source="openalex", round_=1,
+                authors=[f"A{i}", "A_shared"],
+                venue="V1" if i <= 5 else "V2",
+                citations=5,
+            )
+        for i in range(11, 18):
+            papers[f"p{i}"] = _paper(
+                f"p{i}", source="openalex", round_=2,
+                authors=["A_shared", f"A{(i % 5) + 1}"],
+                venue="V1" if i % 2 else "V2",
+                citations=5,
+            )
+        return _state(queries=queries, papers=papers)
+
+    def test_strict_default_blocks_when_papers_axis_high(self) -> None:
+        prev = os.environ.pop("SCHOLAR_SATURATION_MIN_AXES", None)
+        try:
+            sat = compute_saturation(self._hot_field_state())
+        finally:
+            if prev is not None:
+                os.environ["SCHOLAR_SATURATION_MIN_AXES"] = prev
+        ps = sat["per_source"]["openalex"]
+        self.assertFalse(ps["saturated"],
+                         msg="default min_axes=4 must require papers-axis to converge")
+        self.assertEqual(sat["min_axes"], 4)
+        self.assertGreaterEqual(ps["axes_passed"], 3,
+                                msg="3-of-4 axes should be passing in this fixture")
+
+    def test_soft_mode_saturates_when_3_of_4_axes_pass(self) -> None:
+        prev = os.environ.get("SCHOLAR_SATURATION_MIN_AXES")
+        os.environ["SCHOLAR_SATURATION_MIN_AXES"] = "3"
+        try:
+            sat = compute_saturation(self._hot_field_state())
+        finally:
+            if prev is None:
+                del os.environ["SCHOLAR_SATURATION_MIN_AXES"]
+            else:
+                os.environ["SCHOLAR_SATURATION_MIN_AXES"] = prev
+        ps = sat["per_source"]["openalex"]
+        self.assertTrue(ps["saturated"],
+                        msg="3-of-4 axes converged should saturate under min_axes=3")
+        self.assertEqual(sat["min_axes"], 3)
+        self.assertGreaterEqual(ps["axes_passed"], 3)
+
+    def test_required_falls_back_to_evaluable_count(self) -> None:
+        """When fewer axes are evaluable than min_axes, the requirement
+        falls back to "all evaluable" — strict mode is never weakened by
+        axis-absence (e.g. single-venue source has venues=None)."""
+        # Single-venue, no-citation source: only 2 axes evaluable
+        # (papers + citations), not 4.
+        queries = [
+            {"source": "biorxiv", "query": "q1", "round": 1, "hits": 10, "new": 10},
+            {"source": "biorxiv", "query": "q2", "round": 2, "hits": 10, "new": 1},
+        ]
+        papers = {}
+        for i in range(1, 11):
+            papers[f"p{i}"] = _paper(
+                f"p{i}", source="biorxiv", round_=1,
+                authors=[f"A{i}"], venue="bioRxiv", citations=0,
+            )
+        papers["p11"] = _paper(
+            "p11", source="biorxiv", round_=2,
+            authors=["A1"], venue="bioRxiv", citations=0,
+        )
+        prev = os.environ.pop("SCHOLAR_SATURATION_MIN_AXES", None)
+        try:
+            sat = compute_saturation(_state(queries=queries, papers=papers))
+        finally:
+            if prev is not None:
+                os.environ["SCHOLAR_SATURATION_MIN_AXES"] = prev
+        ps = sat["per_source"]["biorxiv"]
+        # Venues axis is None (single venue), papers + cit pass, authors pass.
+        # axes_evaluable=3, axes_required=min(4,3)=3.
+        self.assertEqual(ps["axes_required"], 3)
+        self.assertEqual(ps["axes_evaluable"], 3)
+        self.assertTrue(ps["saturated"])
 
 
 class SaturationCLITest(unittest.TestCase):

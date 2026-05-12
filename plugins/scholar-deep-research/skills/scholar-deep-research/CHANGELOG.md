@@ -6,6 +6,13 @@ Notable changes to `scholar-deep-research`. Format follows
 
 <!-- towncrier release notes start -->
 
+## 0.16.5 — 2026-05-12
+
+### Features
+
+- **G2 soft saturation** — `SCHOLAR_SATURATION_MIN_AXES` (default `4`, set `3` for soft mode) governs how many of the 4 novelty axes (papers / citations / authors / venues) must converge for a source to count as saturated. Hot ML topics like Mamba vs Transformer reproducibly converged on authors / venues / citations within 2-3 rounds while the papers axis stayed 70-100% on broad keyword reformulations; the prior strict-AND rule forced threshold tuning on every such run. Setting `SCHOLAR_SATURATION_MIN_AXES=3` lets such cases saturate naturally without weakening strict mode (which remains the default). When fewer axes are evaluable than `min_axes` — e.g. single-venue sources where the venues axis is skipped — the requirement falls back to "all evaluable axes", so axis-absence never silently weakens the rule. Per-source envelope and gate detail now carry `axes_passed` / `axes_required` / `axes_evaluable` for visibility.
+
+
 ## 0.16.4 — 2026-05-12
 
 ### Features

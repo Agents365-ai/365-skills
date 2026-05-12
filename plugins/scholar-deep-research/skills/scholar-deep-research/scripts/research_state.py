@@ -464,6 +464,15 @@ def compute_saturation(
         source counts as saturated by exhaustion. Without this guard, a
         narrow source like bioRxiv returning {2 hits, 1 new = 50%} blocks
         the gate on a tiny-denominator artifact.
+      SCHOLAR_SATURATION_MIN_AXES (default 4) — number of converged axes
+        required for a source to saturate. The default 4 keeps strict
+        AND-of-all-axes semantics. Lowering to 3 enables soft-saturation
+        for hot fields where author/venue/citation axes converge cleanly
+        but the papers axis stays high (query-reformulation breadth on
+        broad literature like 2024-onward ML). When fewer axes are
+        evaluable than `min_axes` (e.g. single-venue source has venues
+        None), the requirement falls back to "all evaluable axes" — so
+        the strict default is never weakened by axis-absence.
     """
     if threshold is None:
         threshold = float(os.environ.get("SCHOLAR_SATURATION_NEW_PCT", 50.0))
@@ -479,6 +488,7 @@ def compute_saturation(
             os.environ.get("SCHOLAR_SATURATION_NEW_VENUES_PCT", 30.0))
     negligible_hits = int(
         os.environ.get("SCHOLAR_SATURATION_NEGLIGIBLE_HITS", 5))
+    min_axes = int(os.environ.get("SCHOLAR_SATURATION_MIN_AXES", 4))
     if not state["queries"]:
         raise SaturationInputError(
             "no_queries",
@@ -559,17 +569,24 @@ def compute_saturation(
         # this, a narrow source like bioRxiv on a clinical topic can block
         # the AND-clause indefinitely.
         is_negligible = rounds_run >= min_rounds and hits < negligible_hits
+        # Count converged axes among the evaluable ones. Papers + citations
+        # are always evaluable; authors/venues only when not None. min_axes
+        # defaults to 4 (strict AND); 3 enables soft saturation for hot
+        # fields. When fewer axes are evaluable than min_axes, fall back to
+        # "all evaluable must converge" so strict mode is never weakened.
+        axes: list[tuple[str, bool]] = [
+            ("papers", pct_new < threshold),
+            ("citations", max_cit < max_citations),
+        ]
+        if new_authors_pct is not None:
+            axes.append(("authors", new_authors_pct < threshold_authors))
+        if new_venues_pct is not None:
+            axes.append(("venues", new_venues_pct < threshold_venues))
+        axes_passed = sum(1 for _, ok in axes if ok)
+        axes_required = min(min_axes, len(axes))
         saturated = (
             rounds_run >= min_rounds
-            and (
-                is_negligible
-                or (
-                    pct_new < threshold
-                    and max_cit < max_citations
-                    and (new_authors_pct is None or new_authors_pct < threshold_authors)
-                    and (new_venues_pct is None or new_venues_pct < threshold_venues)
-                )
-            )
+            and (is_negligible or axes_passed >= axes_required)
         )
         per_source[src] = {
             "rounds_run": rounds_run,
@@ -581,6 +598,9 @@ def compute_saturation(
             "new_authors_pct": new_authors_pct,
             "new_venues_pct": new_venues_pct,
             "max_new_citations": max_cit,
+            "axes_passed": axes_passed,
+            "axes_required": axes_required,
+            "axes_evaluable": len(axes),
             "saturated": saturated,
             "negligible_hits": is_negligible,
         }
@@ -597,6 +617,7 @@ def compute_saturation(
         "max_citations_threshold": max_citations,
         "min_rounds": min_rounds,
         "negligible_hits_threshold": negligible_hits,
+        "min_axes": min_axes,
     }
 
 

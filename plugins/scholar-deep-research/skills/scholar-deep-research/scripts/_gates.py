@@ -79,7 +79,8 @@ def _format_saturation_detail(sat: dict[str, Any]) -> str:
         f"authors<{sat.get('threshold_authors_pct')}% "
         f"venues<{sat.get('threshold_venues_pct')}% "
         f"max_cit<{sat.get('max_citations_threshold')} "
-        f"min_rounds={sat.get('min_rounds')}"
+        f"min_rounds={sat.get('min_rounds')} "
+        f"min_axes={sat.get('min_axes')}"
     )
     if not per_src:
         return f"{thr_line}; per_source=(empty)"
@@ -89,13 +90,18 @@ def _format_saturation_detail(sat: dict[str, Any]) -> str:
         if ps.get("negligible_hits"):
             parts.append(f"{src}={verdict}(negligible_hits={ps.get('hits_last_round')})")
             continue
+        axes_str = (
+            f"axes={ps.get('axes_passed')}/{ps.get('axes_required')}"
+            if ps.get("axes_required") is not None else ""
+        )
         parts.append(
             f"{src}={verdict}("
             f"new={ps.get('new_pct')}%, "
             f"auth={ps.get('new_authors_pct')}%, "
             f"ven={ps.get('new_venues_pct')}, "
             f"max_cit={ps.get('max_new_citations')}, "
-            f"rounds={ps.get('rounds_run')})"
+            f"rounds={ps.get('rounds_run')}"
+            f"{', ' + axes_str if axes_str else ''})"
         )
     return f"{thr_line}; " + " | ".join(parts)
 
