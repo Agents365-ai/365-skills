@@ -36,7 +36,7 @@ logger = logging.getLogger("scholar_deep_research")
 
 # Canonical version string. Bump in lockstep with the `version` field in
 # SKILL.md frontmatter so USER_AGENT, telemetry, and skill metadata agree.
-VERSION = "0.16.0"
+VERSION = "0.16.1"
 
 USER_AGENT = (
     f"scholar-deep-research/{VERSION} "
@@ -119,12 +119,21 @@ def _rate_state_path(source: str) -> Path:
 
 
 def enforce_min_interval(source: str, min_seconds: float) -> float:
-    """Block until ≥`min_seconds` has elapsed since the last call for `source`.
+    """Block until the source's `earliest_next` timestamp is reached.
 
     Cross-process: the function takes an exclusive flock on a per-source
-    sentinel file, reads the last-call timestamp, sleeps the difference
-    if needed, writes the new timestamp, and releases. N concurrent
-    invocations from N processes will serialise themselves.
+    sentinel file, reads `earliest_next`, sleeps the difference if
+    needed, writes a new `earliest_next = now + min_seconds`, and
+    releases. N concurrent invocations from N processes serialise
+    themselves automatically.
+
+    The stored value is the **earliest legal next-call time** (epoch
+    seconds), not a last-call timestamp. This lets sibling helpers like
+    `note_rate_limit_cooldown` push the gate forward without racing
+    this function. Files written by 0.15.x and earlier used the
+    last-call convention; reading those treats the timestamp as
+    earliest_next, which causes one extra `min_seconds` wait once and
+    then auto-migrates the file on write — harmless.
 
     Returns the actual sleep duration in seconds (0 if no wait was needed).
     No-op when min_seconds <= 0. Best-effort on systems without fcntl —
@@ -134,8 +143,6 @@ def enforce_min_interval(source: str, min_seconds: float) -> float:
     if min_seconds <= 0:
         return 0.0
     path = _rate_state_path(source)
-    # 'a+' both creates and lets us seek/read. Open in text mode for
-    # cross-platform consistency on the timestamp string.
     with open(path, "a+") as f:
         try:
             import fcntl  # type: ignore[import-not-found]
@@ -145,18 +152,57 @@ def enforce_min_interval(source: str, min_seconds: float) -> float:
             pass
         f.seek(0)
         try:
-            last = float((f.read() or "0").strip() or "0")
+            earliest_next = float((f.read() or "0").strip() or "0")
         except ValueError:
-            last = 0.0
+            earliest_next = 0.0
         now = time.time()
-        wait = (last + min_seconds) - now
+        wait = earliest_next - now
         if wait > 0:
             time.sleep(wait)
             now = time.time()
         f.seek(0)
         f.truncate()
-        f.write(f"{now:.6f}\n")
+        f.write(f"{now + min_seconds:.6f}\n")
         return max(0.0, wait)
+
+
+def note_rate_limit_cooldown(source: str, retry_after_seconds: float) -> None:
+    """Push the source's earliest_next-call timestamp forward.
+
+    Call from a search script after observing a 429 / 503 response so
+    that sibling processes wait out the upstream's cooldown window
+    rather than each retrying into the same wall. The new earliest is
+    `max(existing, now + retry_after_seconds)` — never pulls the gate
+    backward.
+
+    No-op when retry_after_seconds <= 0 or the file system rejects the
+    write (best-effort: a missed cooldown becomes a follow-up 429, not
+    a script crash).
+    """
+    if retry_after_seconds <= 0:
+        return
+    path = _rate_state_path(source)
+    try:
+        with open(path, "a+") as f:
+            try:
+                import fcntl  # type: ignore[import-not-found]
+                fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+            except (ImportError, OSError):
+                pass
+            f.seek(0)
+            try:
+                existing = float((f.read() or "0").strip() or "0")
+            except ValueError:
+                existing = 0.0
+            target = max(existing, time.time() + retry_after_seconds)
+            f.seek(0)
+            f.truncate()
+            f.write(f"{target:.6f}\n")
+    except OSError as e:
+        logger.debug(
+            "note_rate_limit_cooldown best-effort failure for %s: %s",
+            source, e,
+        )
 
 
 # ---------- TTY detection ----------

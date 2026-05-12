@@ -6,6 +6,23 @@ Notable changes to `scholar-deep-research`. Format follows
 
 <!-- towncrier release notes start -->
 
+## 0.16.1 — 2026-05-12
+
+### Features
+
+- arXiv 429 cooldown is now honored across processes. The per-source
+  rate limiter's lock-file semantics changed from "last-call
+  timestamp" to "earliest-next-call time", and a new
+  `note_rate_limit_cooldown(source, retry_after_seconds)` helper lets
+  search scripts push that gate forward when an upstream returns 429.
+  `search_arxiv.py` calls it with `Retry-After` header (when present)
+  or 90s default — sibling processes that share `SCHOLAR_CACHE_DIR`
+  will now wait out arXiv's sticky penalty box instead of each
+  hitting the wall in turn. Existing 0.15.x lock files auto-migrate
+  on first write; tests cover cooldown wait, no-op on
+  zero/negative, and never-pulls-gate-backward semantics.
+
+
 ## 0.16.0 — 2026-05-12
 
 ### Bug fixes

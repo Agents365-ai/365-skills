@@ -31,8 +31,9 @@ SOURCE_META = {
 
 from _common import (
     USER_AGENT, UpstreamError, emit, enforce_min_interval, err, make_paper,
-    make_payload, maybe_emit_schema, record_search_failure,
-    resolve_search_round, set_command_meta, with_search_cache,
+    make_payload, maybe_emit_schema, note_rate_limit_cooldown,
+    record_search_failure, resolve_search_round, set_command_meta,
+    with_search_cache,
 )
 
 API = "https://export.arxiv.org/api/query"
@@ -46,6 +47,11 @@ NS = {
 # enforce_min_interval queues parallel calls automatically so multiple
 # search_arxiv.py invocations don't all hit the wall at once.
 _ARXIV_MIN_INTERVAL = 3.0
+
+# Default cooldown when arXiv returns 429 with no Retry-After header.
+# Anecdotally the sticky penalty box runs 60-90s; pick the conservative
+# end so a sibling call doesn't immediately re-trip the wall.
+_ARXIV_429_DEFAULT_COOLDOWN = 90.0
 
 
 def search(query: str, limit: int) -> list[dict]:
@@ -63,6 +69,16 @@ def search(query: str, limit: int) -> list[dict]:
         r.raise_for_status()
     except httpx.HTTPError as e:
         status = getattr(getattr(e, "response", None), "status_code", None)
+        if status == 429:
+            retry_after = None
+            resp = getattr(e, "response", None)
+            if resp is not None:
+                hdr = resp.headers.get("Retry-After")
+                if hdr and hdr.strip().isdigit():
+                    retry_after = float(hdr.strip())
+            note_rate_limit_cooldown(
+                "arxiv", retry_after or _ARXIV_429_DEFAULT_COOLDOWN,
+            )
         raise UpstreamError(
             "arxiv", f"{type(e).__name__}: {e}",
             retryable=True, status=status,

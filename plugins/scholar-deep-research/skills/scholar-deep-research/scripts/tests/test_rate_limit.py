@@ -16,7 +16,7 @@ import unittest
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from _common import enforce_min_interval
+from _common import enforce_min_interval, note_rate_limit_cooldown
 
 
 class EnforceMinIntervalTest(unittest.TestCase):
@@ -107,6 +107,57 @@ class EnforceMinIntervalTest(unittest.TestCase):
         self.assertEqual(len(files), 1, f"unexpected layout: {files}")
         self.assertNotIn("/", files[0].name)
         self.assertNotIn(" ", files[0].name)
+
+
+class NoteRateLimitCooldownTest(unittest.TestCase):
+    """A 429 cooldown should block sibling processes (same lock file)."""
+
+    def setUp(self) -> None:
+        self._tmp = tempfile.TemporaryDirectory()
+        self._prev_cache = os.environ.get("SCHOLAR_CACHE_DIR")
+        os.environ["SCHOLAR_CACHE_DIR"] = self._tmp.name
+
+    def tearDown(self) -> None:
+        if self._prev_cache is None:
+            os.environ.pop("SCHOLAR_CACHE_DIR", None)
+        else:
+            os.environ["SCHOLAR_CACHE_DIR"] = self._prev_cache
+        self._tmp.cleanup()
+
+    def test_cooldown_makes_next_call_wait(self) -> None:
+        # No prior calls — set a 0.5s cooldown, then the next limiter
+        # call should sleep approximately that long.
+        note_rate_limit_cooldown("cool_source", 0.5)
+        t0 = time.time()
+        slept = enforce_min_interval("cool_source", 0.0)  # would-be no-op
+        # 0.0 interval means the limiter still returns 0 sleep — exercise
+        # with a real interval to surface the cooldown effect.
+        self.assertEqual(slept, 0.0,
+                         "min_seconds<=0 stays a no-op even when cooldown is set")
+        slept = enforce_min_interval("cool_source", 0.1)
+        elapsed = time.time() - t0
+        self.assertGreater(slept, 0.0)
+        self.assertGreaterEqual(elapsed, 0.4,
+                                f"expected cooldown wait ~0.5s, got {elapsed:.3f}s")
+
+    def test_zero_or_negative_cooldown_is_noop(self) -> None:
+        note_rate_limit_cooldown("cool_zero", 0)
+        note_rate_limit_cooldown("cool_zero", -1.0)
+        slept = enforce_min_interval("cool_zero", 0.1)
+        self.assertEqual(slept, 0.0,
+                         "non-positive cooldown should not push the gate forward")
+
+    def test_cooldown_never_pulls_gate_backward(self) -> None:
+        # A long enforce_min_interval already pushed the gate far out;
+        # a smaller cooldown must not reduce it.
+        enforce_min_interval("cool_max", 5.0)  # earliest_next ≈ now + 5
+        note_rate_limit_cooldown("cool_max", 0.1)  # smaller — should be ignored
+        path = Path(self._tmp.name) / "rate" / "cool_max.lock"
+        stored = float(path.read_text().strip())
+        self.assertGreater(
+            stored, time.time() + 4.0,
+            "cooldown smaller than existing earliest_next should leave it",
+        )
 
 
 if __name__ == "__main__":
