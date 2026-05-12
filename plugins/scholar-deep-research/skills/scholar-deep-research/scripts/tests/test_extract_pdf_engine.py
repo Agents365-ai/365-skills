@@ -39,6 +39,31 @@ class EngineSchemaTest(unittest.TestCase):
         self.assertEqual(params["engine"]["default"], "auto")
         self.assertIn("idempotency_key", params)
 
+    def test_schema_exposes_ocr_flags(self):
+        env = run_script("extract_pdf.py", ["--schema"])
+        params = env["data"]["params"]
+        self.assertIn("ocr_backend", params)
+        self.assertEqual(set(params["ocr_backend"]["choices"]),
+                         {"auto", "rapidocr", "ocrmac", "easyocr",
+                          "tesseract", "none"})
+        self.assertEqual(params["ocr_backend"]["default"], "auto")
+        self.assertIn("ocr_lang", params)
+
+    def test_invalid_ocr_backend_rejected(self):
+        # argparse rejects unknown choices with exit code 2 (not the
+        # CLI's exit_codes vocab — argparse owns this case before main()).
+        import subprocess
+        import sys
+        from pathlib import Path
+        scripts = Path(__file__).resolve().parents[1]
+        proc = subprocess.run([
+            sys.executable, str(scripts / "extract_pdf.py"),
+            "--input", "/tmp/anything.pdf",
+            "--ocr-backend", "bogus",
+        ], capture_output=True, text=True)
+        self.assertEqual(proc.returncode, 2)
+        self.assertIn("invalid choice", proc.stderr)
+
 
 class PypdfEngineTest(unittest.TestCase):
     def test_pypdf_engine_returns_text_format(self):

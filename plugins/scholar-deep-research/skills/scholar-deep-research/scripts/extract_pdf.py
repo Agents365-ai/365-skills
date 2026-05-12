@@ -16,10 +16,19 @@ Engine selection (--engine):
   - pypdf: force pypdf.
   - docling: force docling. Errors with `missing_dependency` if not installed.
 
+OCR for the docling engine (--ocr-backend / --ocr-lang):
+  Docling has OCR ON by default (do_ocr=True). Override the backend
+  with --ocr-backend {auto,rapidocr,ocrmac,easyocr,tesseract,none}
+  (default `auto` lets docling pick). Pass --ocr-lang to specify the
+  language; lang vocab differs per backend — see --help for details.
+  Use `--ocr-backend none` to skip OCR entirely on a known-clean PDF
+  and save the ~10s model-load cost.
+
 Usage:
   python scripts/extract_pdf.py --input paper.pdf --output paper.md
-  python scripts/extract_pdf.py --doi 10.1038/x --output paper.md --engine docling
-  python scripts/extract_pdf.py --url https://arxiv.org/pdf/2301.12345 --pages 1-5
+  python scripts/extract_pdf.py --doi 10.1038/x --engine docling --output paper.md
+  python scripts/extract_pdf.py --input scan.pdf --engine docling --ocr-lang en
+  python scripts/extract_pdf.py --input clean.pdf --engine docling --ocr-backend none
 
 DOI resolution (--doi):
   1. paper-fetch skill if installed (5-source OA chain)
@@ -116,22 +125,80 @@ def extract_pypdf(pdf_path: Path, pages: list[int]) -> tuple[str, dict]:
     return text, meta
 
 
-def extract_docling(pdf_path: Path) -> tuple[str, dict]:
+def _build_ocr_options(backend: str, lang: str | None):
+    """Map --ocr-backend / --ocr-lang to a docling `ocr_options` instance.
+
+    Returns the options object, or None when `backend=="none"` (caller
+    sets `do_ocr=False` instead). Each backend uses its own language
+    code vocabulary — RapidOCR: 'chinese'/'english'/'japan'; EasyOCR:
+    'ch_sim'/'en'; OcrMac: BCP-47 like 'en-US'/'zh-CN'; Tesseract:
+    'eng'/'chi_sim'. The CLI passes the user's string through verbatim
+    (split on ',') rather than trying to normalize across backends.
+    """
+    if backend == "none":
+        return None
+
+    # Lazy import — only fail if the user actually requested docling.
+    from docling.datamodel.pipeline_options import (
+        EasyOcrOptions, OcrAutoOptions, OcrMacOptions, RapidOcrOptions,
+        TesseractOcrOptions,
+    )
+    cls = {
+        "auto": OcrAutoOptions,
+        "rapidocr": RapidOcrOptions,
+        "ocrmac": OcrMacOptions,
+        "easyocr": EasyOcrOptions,
+        "tesseract": TesseractOcrOptions,
+    }[backend]
+
+    kwargs: dict = {}
+    if lang:
+        kwargs["lang"] = [s.strip() for s in lang.split(",") if s.strip()]
+    return cls(**kwargs)
+
+
+def extract_docling(pdf_path: Path, *,
+                    ocr_backend: str = "auto",
+                    ocr_lang: str | None = None) -> tuple[str, dict]:
     """Convert a PDF to markdown via docling.
 
     Lazy import so the optional dep is only required when docling is
     actually selected. Returns the markdown text and a meta dict with
-    `engine="docling"`, `format="markdown"`.
+    `engine="docling"`, `format="markdown"`, and the OCR config that
+    was actually used.
+
+    OCR is on by default (docling's `do_ocr=True`). Pass
+    `ocr_backend="none"` to skip OCR for a known-clean PDF.
     """
     try:
-        from docling.document_converter import DocumentConverter
+        from docling.datamodel.base_models import InputFormat
+        from docling.datamodel.pipeline_options import PdfPipelineOptions
+        from docling.document_converter import (
+            DocumentConverter, PdfFormatOption,
+        )
     except ImportError:
         err("missing_dependency",
             "docling not installed. Run: pip install docling (or use --engine pypdf).",
             retryable=False, exit_code=EXIT_RUNTIME,
             dependency="docling")
 
-    converter = DocumentConverter()
+    pipeline_options = PdfPipelineOptions()
+    if ocr_backend == "none":
+        pipeline_options.do_ocr = False
+    else:
+        try:
+            pipeline_options.ocr_options = _build_ocr_options(
+                ocr_backend, ocr_lang,
+            )
+        except KeyError:
+            err("invalid_ocr_backend",
+                f"Unknown --ocr-backend: {ocr_backend!r}",
+                retryable=False, exit_code=EXIT_VALIDATION,
+                backend=ocr_backend)
+
+    converter = DocumentConverter(format_options={
+        InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options),
+    })
     try:
         result = converter.convert(str(pdf_path))
     except Exception as e:
@@ -167,22 +234,28 @@ def extract_docling(pdf_path: Path) -> tuple[str, dict]:
         "char_count": char_count,
         "looks_scanned": False,
         "warnings": [],
+        "ocr_backend": ocr_backend,
+        "ocr_lang": ocr_lang,
+        "do_ocr": pipeline_options.do_ocr,
     }
     return markdown, meta
 
 
-def _do_extract(pdf_path: Path, engine: str, page_spec: str | None
-                ) -> tuple[str, dict]:
+def _do_extract(pdf_path: Path, engine: str, page_spec: str | None,
+                *, ocr_backend: str = "auto",
+                ocr_lang: str | None = None) -> tuple[str, dict]:
     """Engine selector. Returns `(text, meta)`."""
     if engine == "docling":
         if page_spec:
             # docling converts whole documents; surface this clearly
             # rather than silently ignoring --pages.
             return _with_warning(
-                extract_docling(pdf_path),
+                extract_docling(pdf_path, ocr_backend=ocr_backend,
+                                ocr_lang=ocr_lang),
                 "docling ignores --pages; converted whole document.",
             )
-        return extract_docling(pdf_path)
+        return extract_docling(pdf_path, ocr_backend=ocr_backend,
+                               ocr_lang=ocr_lang)
 
     # pypdf path (also the auto-mode starting point).
     reader = PdfReader(str(pdf_path))
@@ -209,7 +282,8 @@ def _do_extract(pdf_path: Path, engine: str, page_spec: str | None
 
     # Re-extract with docling. Preserve the pypdf attempt's diagnostic
     # data in the meta so the agent can see why we upgraded.
-    doc_text, doc_meta = extract_docling(pdf_path)
+    doc_text, doc_meta = extract_docling(pdf_path, ocr_backend=ocr_backend,
+                                          ocr_lang=ocr_lang)
     doc_meta["engine_fallback_reason"] = (
         f"pypdf produced {meta['char_count']} chars across "
         f"{meta['pages_extracted']} pages (looks_scanned); "
@@ -250,6 +324,25 @@ def main() -> None:
                    help="Extraction engine. 'auto' tries pypdf then "
                         "upgrades to docling for scanned/sparse output "
                         "when docling is installed.")
+    p.add_argument("--ocr-backend",
+                   choices=("auto", "rapidocr", "ocrmac", "easyocr",
+                            "tesseract", "none"),
+                   default="auto",
+                   help="OCR backend for the docling engine. 'auto' lets "
+                        "docling pick whichever is installed (RapidOCR is "
+                        "the typical default). 'none' disables OCR for "
+                        "known-clean PDFs to skip the ~10s model-load cost. "
+                        "Only consulted when the docling engine actually "
+                        "runs (force via --engine docling, or let --engine "
+                        "auto upgrade on a scanned PDF).")
+    p.add_argument("--ocr-lang",
+                   help="Comma-separated language hint passed verbatim to "
+                        "the OCR backend. Vocab differs per backend: "
+                        "RapidOCR uses 'chinese'/'english'/'japan'; EasyOCR "
+                        "'ch_sim'/'en'; OcrMac 'en-US'/'zh-CN'; Tesseract "
+                        "'eng'/'chi_sim'. Example: --ocr-lang en for an "
+                        "English-only scan (avoids the Chinese-comma "
+                        "artifact RapidOCR's default model produces).")
     p.add_argument("--idempotency-key",
                    help="Cache the extracted text under this key so retries "
                         "replay the same response (and rewrite --output) "
@@ -337,7 +430,9 @@ def main() -> None:
                 path=str(pdf_path))
 
     try:
-        text, meta = _do_extract(pdf_path, args.engine, args.pages)
+        text, meta = _do_extract(pdf_path, args.engine, args.pages,
+                                  ocr_backend=args.ocr_backend,
+                                  ocr_lang=args.ocr_lang)
     except SystemExit:
         # err() inside the engine helpers already emitted the envelope.
         raise

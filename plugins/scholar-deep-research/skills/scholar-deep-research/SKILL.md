@@ -5,7 +5,7 @@ license: MIT
 homepage: https://github.com/Agents365-ai/scholar-deep-research
 compatibility: Requires Python 3.9+ with httpx and pypdf (see requirements.txt). Optional: `pip install docling` to enable layout-aware markdown PDF extraction (`extract_pdf.py --engine docling`); auto-used as a fallback for scanned/sparse PDFs. Works offline-first (no MCP required) but enriches with Semantic Scholar / Brave MCP tools when available.
 platforms: [macos, linux, windows]
-metadata: {"openclaw":{"requires":{"bins":["python3"]},"emoji":"🔬"},"hermes":{"tags":["research","literature-review","academic","papers","citations","survey"],"category":"research"},"pimo":{"tags":["research","literature-review","academic"],"category":"research"},"author":"Agents365-ai","version":"0.14.0"}
+metadata: {"openclaw":{"requires":{"bins":["python3"]},"emoji":"🔬"},"hermes":{"tags":["research","literature-review","academic","papers","citations","survey"],"category":"research"},"pimo":{"tags":["research","literature-review","academic"],"category":"research"},"author":"Agents365-ai","version":"0.14.1"}
 ---
 
 # Scholar Deep Research
@@ -310,7 +310,7 @@ Templates live in `assets/templates/<archetype>.md`. Load only the one you need.
 | `skim_papers.py` | Phase-3 triage. Splits selected papers into `deep` / `skim` / `defer` tiers on cheap deterministic signals, refines `selected_ids`, auto-fills evidence stubs for skim tier. Runs at the close of Phase 2 before G3. |
 | `prefetch_pdfs.py` | Optional. Pulls deep-tier PDFs into a stable cache via paper-fetch (with Unpaywall fallback) before Phase 3 agent fan-out. Concurrent (`--concurrency`), idempotent on re-run, fail-soft per paper. Writes `pdf_path` / `pdf_status` per paper so agents read a local file instead of re-downloading. |
 | `build_citation_graph.py` | Forward/backward snowballing via OpenAlex. |
-| `extract_pdf.py` | Full-text extraction (pypdf). Accepts `--input`, `--url`, or `--doi`. DOI mode resolves via [paper-fetch](https://github.com/Agents365-ai/paper-fetch) skill if installed, falls back to Unpaywall. Safe on scanned PDFs (skips, emits warning). |
+| `extract_pdf.py` | Full-text extraction. `--engine auto` (default) tries pypdf first and auto-upgrades to **docling** (markdown output, layout-aware, OCR for scanned regions) when pypdf result looks scanned/sparse — install with `pip install docling`. Force with `--engine pypdf\|docling`. Tune docling's OCR with `--ocr-backend {auto,rapidocr,ocrmac,easyocr,tesseract,none}` and `--ocr-lang <list>` (per-backend lang vocab — see `--help`). Accepts `--input`, `--url`, or `--doi`. DOI mode resolves via [paper-fetch](https://github.com/Agents365-ai/paper-fetch) skill if installed, falls back to Unpaywall. `--idempotency-key` caches extracted text so retries skip re-extraction. |
 | `export_bibtex.py` | BibTeX / CSL-JSON / RIS export from state. |
 | `render_report.py` | Phase 7 — render an archetype scaffold from `state.themes` / `state.tensions` / `state.queries` / `state.ranking` / `state.self_critique`, with `<!-- AGENT: ... -->` slots for prose. `--lint <report.md>` validates every `[^id]` anchor against `state.papers`. |
 
