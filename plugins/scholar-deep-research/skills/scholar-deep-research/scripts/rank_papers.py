@@ -201,6 +201,12 @@ def main() -> None:
     p.add_argument("--question",
                    help="Override the question used for relevance "
                         "(default: state.question)")
+    p.add_argument("--archetype",
+                   help="Documentation-only — archetype is read from state. "
+                        "Accepted (but ignored) so agents that guess the flag "
+                        "from the workflow doc get a clear no-op instead of "
+                        "an argparse error. Tune ranking via --alpha/beta/"
+                        "gamma/delta instead.")
     p.add_argument("--alpha", type=float, default=0.4, help="weight: relevance")
     p.add_argument("--beta", type=float, default=0.3, help="weight: citations")
     p.add_argument("--gamma", type=float, default=0.2, help="weight: recency")
