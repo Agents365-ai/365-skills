@@ -220,10 +220,23 @@ def _fetch_via_unpaywall(doi: str, out_dir: Path) -> tuple[Path, dict[str, Any]]
             retryable=False, doi=doi, is_oa=data.get("is_oa", False),
         )
 
+    # SSRF guard: Unpaywall's `url_for_pdf` is attacker-influenced — a
+    # malicious DOI could route us to internal IPs (169.254.169.254 cloud
+    # metadata, 10.x RFC1918). safe_get refuses those before opening the
+    # connection.
+    from _common import SSRFRefused, safe_get
     try:
-        r2 = httpx.get(pdf_url, follow_redirects=True, timeout=60.0,
-                       headers={"User-Agent": "scholar-deep-research/0.1"})
+        r2 = safe_get(pdf_url, follow_redirects=True, timeout=60.0,
+                      headers={"User-Agent": "scholar-deep-research/0.1"})
         r2.raise_for_status()
+    except SSRFRefused as e:
+        raise FetchError(
+            "ssrf_refused",
+            f"refused PDF download from {pdf_url}: "
+            f"{e.host} → {e.ip} is internal",
+            retryable=False, doi=doi, pdf_url=pdf_url,
+            host=e.host, ip=e.ip,
+        )
     except httpx.HTTPError as e:
         status = getattr(getattr(e, "response", None), "status_code", None)
         raise FetchError(

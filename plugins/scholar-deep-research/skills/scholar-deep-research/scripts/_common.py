@@ -20,6 +20,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import logging
 import os
 import sys
 import time
@@ -28,9 +29,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
 
+# Module logger for diagnostic-only paths (cache corruption, advisory
+# writes, retryable IO). Emits to stderr when the host has configured a
+# handler; silent by default. Stdout remains envelope-only (P1).
+logger = logging.getLogger("scholar_deep_research")
+
 # Canonical version string. Bump in lockstep with the `version` field in
 # SKILL.md frontmatter so USER_AGENT, telemetry, and skill metadata agree.
-VERSION = "0.14.1"
+VERSION = "0.14.2"
 
 USER_AGENT = (
     f"scholar-deep-research/{VERSION} "
@@ -265,6 +271,85 @@ class UpstreamError(Exception):
         self.status = status
 
 
+class SSRFRefused(Exception):
+    """Raised by safe_get when the URL resolves to an internal IP.
+
+    Callers catch this separately from network errors so they can emit
+    a validation-class envelope (exit 3, retryable=False) rather than
+    an upstream-retryable one — the request is structurally invalid,
+    retrying won't help.
+    """
+
+    def __init__(self, url: str, host: str, ip: str) -> None:
+        super().__init__(
+            f"refused {url}: host {host!r} resolves to internal IP {ip}"
+        )
+        self.url = url
+        self.host = host
+        self.ip = ip
+
+
+def safe_get(url: str, **kwargs: Any):
+    """`httpx.get` with an SSRF guard for the first hop.
+
+    Resolves the URL's hostname and refuses to call when *any* resolved
+    address is private, loopback, link-local, multicast, or reserved.
+    Mitigates the common attack where an upstream API returns a URL
+    pointing to 169.254.169.254 (cloud metadata service) or 10.x.x.x
+    (internal RFC1918) and we naively download it.
+
+    Use this wrapper for URLs whose host is **not** a hardcoded constant
+    in the script — e.g., `--url <user-input>` or a PDF URL pulled from
+    an Unpaywall API response. Search-script base URLs like
+    `https://api.openalex.org/works` do not need it: an attacker would
+    have to poison DNS, which is out of scope for this skill.
+
+    Limitations: only the first hop is checked. If you also need to
+    block redirects to internal IPs, pass `follow_redirects=False`,
+    inspect the response, and recursively call safe_get on `Location`.
+
+    Raises SSRFRefused on a private-IP match. DNS failures still bubble
+    up as httpx errors via the underlying httpx.get call, except for
+    pre-flight `gaierror` which becomes httpx.ConnectError so the
+    caller's existing httpx.HTTPError handler catches it.
+    """
+    import ipaddress
+    import socket
+    from urllib.parse import urlparse
+
+    import httpx
+
+    parsed = urlparse(url)
+    host = parsed.hostname
+    if not host:
+        # Malformed URL — let httpx handle it via its own error type.
+        return httpx.get(url, **kwargs)
+
+    try:
+        infos = socket.getaddrinfo(host, parsed.port or None,
+                                   type=socket.SOCK_STREAM)
+    except socket.gaierror as e:
+        # Resolution failed — translate to an httpx error so existing
+        # `except httpx.HTTPError` clauses keep working without an
+        # extra except branch for socket errors.
+        raise httpx.ConnectError(
+            f"DNS resolution failed for {host}: {e}"
+        ) from e
+
+    for _family, _type, _proto, _canon, sockaddr in infos:
+        ip_str = sockaddr[0]
+        try:
+            ip = ipaddress.ip_address(ip_str)
+        except ValueError:
+            continue
+        if (ip.is_private or ip.is_loopback or ip.is_link_local
+                or ip.is_multicast or ip.is_reserved
+                or ip.is_unspecified):
+            raise SSRFRefused(url, host, str(ip))
+
+    return httpx.get(url, **kwargs)
+
+
 def record_search_failure(state_path: str | None, source: str, message: str,
                           *, status: int | None = None) -> None:
     """Persist an upstream search failure into state.search_diagnostics.
@@ -282,9 +367,12 @@ def record_search_failure(state_path: str | None, source: str, message: str,
     try:
         from research_state import apply_search_failure
         apply_search_failure(Path(state_path), source, message, status=status)
-    except Exception:
+    except Exception as e:
         # Diagnostic writes are advisory; never block the real error path.
-        pass
+        logger.debug(
+            "record_search_failure: state write failed for %s (%s): %s",
+            source, state_path, e,
+        )
 
 # Fields that every normalized paper should have (None if unknown).
 PAPER_FIELDS = (
@@ -503,9 +591,12 @@ def with_search_cache(*, source: str, query: str, limit: int,
                     "search_cache": "hit",
                     "cached_at": cached_at_str,
                 }
-        except (json.JSONDecodeError, OSError, KeyError, ValueError, TypeError):
+        except (json.JSONDecodeError, OSError, KeyError, ValueError, TypeError) as e:
             # Any corruption → fall through to fetch + overwrite.
-            pass
+            logger.debug(
+                "search_cache: dropping corrupt entry %s (%s: %s)",
+                path, type(e).__name__, e,
+            )
 
     papers = fetch()
     now = datetime.now(timezone.utc).isoformat(timespec="seconds")
@@ -519,9 +610,9 @@ def with_search_cache(*, source: str, query: str, limit: int,
             "cached_at": now,
             "papers": papers,
         }, ensure_ascii=False))
-    except OSError:
+    except OSError as e:
         # Don't fail the search just because we couldn't write the cache.
-        pass
+        logger.debug("search_cache: write failed for %s: %s", path, e)
     return papers, {"search_cache": "miss"}
 
 

@@ -29,11 +29,14 @@ Known limitations (document in SKILL.md if a user hits this):
 from __future__ import annotations
 
 import json
+import logging
 import os
 import sys
 import time
 from pathlib import Path
 from typing import Any, Callable
+
+logger = logging.getLogger("scholar_deep_research")
 
 _PLATFORM_POSIX = sys.platform != "win32"
 
@@ -88,8 +91,10 @@ def _release(lock_fd: int) -> None:
 
         try:
             msvcrt.locking(lock_fd, msvcrt.LK_UNLCK, 1)
-        except OSError:
-            pass
+        except OSError as e:
+            # Lock may already be released or the fd is in a torn state;
+            # release path is best-effort, the caller closes fd next.
+            logger.debug("msvcrt unlock best-effort failure: %s", e)
 
 
 def locked_rmw(

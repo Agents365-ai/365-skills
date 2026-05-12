@@ -48,8 +48,8 @@ from typing import Any
 
 from _common import (
     EXIT_RUNTIME, EXIT_UPSTREAM, EXIT_VALIDATION,
-    command_signature, err, maybe_emit_schema, ok, read_cache,
-    set_command_meta, write_cache,
+    SSRFRefused, command_signature, err, maybe_emit_schema, ok, read_cache,
+    safe_get, set_command_meta, write_cache,
 )
 from _pdf_fetch import FetchError, fetch_pdf, find_paper_fetch_script
 
@@ -76,6 +76,7 @@ _FETCH_EXIT = {
     "unpaywall_request_failed": EXIT_UPSTREAM,
     "no_open_access_pdf": EXIT_VALIDATION,
     "pdf_download_failed": EXIT_UPSTREAM,
+    "ssrf_refused": EXIT_VALIDATION,
 }
 
 # Heuristic threshold (chars/page). Below this, pypdf almost certainly
@@ -408,9 +409,21 @@ def main() -> None:
     elif args.url:
         import httpx
         try:
-            r = httpx.get(args.url, follow_redirects=True, timeout=60.0,
-                          headers={"User-Agent": "scholar-deep-research/0.1"})
+            r = safe_get(args.url, follow_redirects=True, timeout=60.0,
+                         headers={"User-Agent": "scholar-deep-research/0.1"})
             r.raise_for_status()
+        except SSRFRefused as e:
+            err("ssrf_refused",
+                f"SSRF guard refused {args.url}: {e.host} → {e.ip} is internal",
+                retryable=False, exit_code=EXIT_VALIDATION,
+                url=args.url, host=e.host, ip=e.ip,
+                next=[
+                    "# The URL host resolved to a private/internal IP and was refused.",
+                    "# If you meant a local file, switch transports:",
+                    "#   python scripts/extract_pdf.py --input <path-to-pdf>",
+                    "# If you meant a public PDF, verify the host resolves publicly:",
+                    f"#   nslookup {e.host}",
+                ])
         except httpx.HTTPError as e:
             status = getattr(getattr(e, "response", None), "status_code", None)
             err("download_failed",
