@@ -6,6 +6,22 @@ Notable changes to `scholar-deep-research`. Format follows
 
 <!-- towncrier release notes start -->
 
+## 0.17.0 — 2026-05-12
+
+### Features
+
+- **Surface OpenAlex concepts in ranker top-N output** (F2).
+  `search_openalex.py` now extracts up to 3 concepts per paper (top by
+  score, level≥1, level-0 roots filtered out as too generic). `rank_papers.py`
+  surfaces the `concepts` field in every preview entry so the host LLM
+  can spot domain-cluster skew at triage time — e.g. a CRISPR/cancer paper
+  mixed into an AAV-capsid top-N now shows `[{"name":"CRISPR","level":3},…]`
+  rather than relying on title parsing. No ranker math change; no new flags.
+  Closes the keyword-only-ranker friction confirmed in two example runs
+  (Mamba comparative + AAV grant_background).
+- **`rank_papers.py --archetype` documentation flag** — accepts (but ignores) `--archetype <name>` as a no-op. Archetype is and remains read from state. Agents that intuit the flag from the workflow doc previously got an argparse error and `rc=2`; now they get a clean envelope. Real tuning still goes through `--alpha/beta/gamma/delta`. Friction surfaced by the Mamba-vs-Transformer example run.
+
+
 ## 0.16.5 — 2026-05-12
 
 ### Features

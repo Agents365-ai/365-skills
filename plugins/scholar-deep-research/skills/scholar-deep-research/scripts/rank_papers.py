@@ -266,6 +266,7 @@ def main() -> None:
             "citations": paper.get("citations"),
             "score": scored_papers[pid]["score"],
             "components": scored_papers[pid]["score_components"],
+            "concepts": paper.get("concepts"),
         })
 
     meta = {

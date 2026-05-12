@@ -50,7 +50,7 @@ def search(query: str, limit: int, email: str | None,
         "select": ",".join([
             "id", "doi", "title", "authorships", "publication_year",
             "primary_location", "cited_by_count",
-            "abstract_inverted_index", "open_access",
+            "abstract_inverted_index", "open_access", "concepts",
         ]),
     }
     filters = []
@@ -120,6 +120,22 @@ def _normalize(w: dict[str, Any]) -> dict[str, Any]:
         pdf_url = w["open_access"]["oa_url"]
 
     landing = primary.get("landing_page_url")
+
+    # OpenAlex concepts: keep top 3 by score, drop the level-0 root concepts
+    # ("Biology", "Computer science") that match every paper in a field.
+    # This is the semantic-cluster signal the host LLM uses in Phase 2 to
+    # spot domain-skew in top-N ranking output.
+    raw_concepts = w.get("concepts") or []
+    concepts = [
+        {
+            "name": c.get("display_name"),
+            "level": c.get("level"),
+            "score": round(c.get("score") or 0.0, 3),
+        }
+        for c in raw_concepts
+        if c.get("display_name") and (c.get("level") or 0) >= 1
+    ][:3] or None
+
     return make_paper(
         doi=doi,
         title=w.get("title"),
@@ -131,6 +147,7 @@ def _normalize(w: dict[str, Any]) -> dict[str, Any]:
         url=landing or (f"https://doi.org/{doi}" if doi else None),
         pdf_url=pdf_url,
         openalex_id=oa_id,
+        concepts=concepts,
     )
 
 
