@@ -6,6 +6,22 @@ Notable changes to `scholar-deep-research`. Format follows
 
 <!-- towncrier release notes start -->
 
+## 0.16.4 — 2026-05-12
+
+### Features
+
+- G2 `saturation_overall` gate failures now include effective thresholds and a per-source pass/fail breakdown inline in the `detail` field, instead of just listing source names. Agents no longer need a second `saturation` subcommand round-trip to diagnose what failed. Example: `thresholds: new<30.0% authors<25.0% venues<30.0% max_cit<1000 min_rounds=2; pubmed=FAIL(new=70%, auth=22%, ven=15.2, max_cit=118, rounds=5) | openalex=FAIL(...)`. Surfaced by an end-to-end real-world run on GLP-1 / non-diabetic obesity systematic review.
+- Saturation has a new "negligible activity" axis: once a source has met `min_rounds`, if its last round returned fewer than `SCHOLAR_SATURATION_NEGLIGIBLE_HITS` (default 5) hits, the source counts as saturated-by-exhaustion regardless of percentage axes. Without this, a narrow source like bioRxiv on a clinical topic that returns `{2 hits, 1 new}` reports `new_pct=50%` and blocks the overall AND-clause forever — a tiny-denominator artifact, not a genuine novelty signal. The `per_source` envelope now includes a `negligible_hits` boolean so gate diagnostics can distinguish exhaustion from genuine saturation.
+
+### Bug fixes
+
+- `_s2_citations.py` no longer crashes with `TypeError` when Semantic Scholar returns `{"data": null}` (observed after 429 cooldowns). The `body.get("data", [])` default was returning `None` instead of the default list because the key was present-but-null; `body.get("data") or []` is the fix. Without it the entire `build_citation_graph.py --source s2|both` run died with a Python traceback and no JSON envelope on stdout — a P1 violation.
+
+### Documentation
+
+- Document the HTML-delivery pattern: pipeline outputs markdown by design; polished HTML pages are rendered by the host coding agent. SKILL.md Phase 7, README capability tables (EN/CN), and the WALKTHROUGH docs (EN/CN) now include the rationale and an example prompt for the agent. No code change — the skill's contract stays markdown + `.bib`.
+
+
 ## 0.16.3 — 2026-05-12
 
 ### Documentation

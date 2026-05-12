@@ -111,7 +111,9 @@ def _request_paginated(path: str, *, max_results: int) -> list[dict[str, Any]]:
                           status=r.status_code, retryable=False)
 
         body = r.json()
-        out.extend(body.get("data", []))
+        # S2 occasionally returns {"data": null, ...} — `get(...,[])` returns
+        # None in that case (key present, value None), so guard with `or []`.
+        out.extend(body.get("data") or [])
         if "next" not in body:
             break
         offset = body["next"]

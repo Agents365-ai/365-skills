@@ -205,6 +205,91 @@ class SaturationAxesTest(unittest.TestCase):
         self.assertFalse(sat_strict["per_source"]["openalex"]["saturated"])
 
 
+class NegligibleHitsTest(unittest.TestCase):
+    """A source whose last round returns <5 hits saturates by exhaustion.
+
+    Without this guard a narrow source like bioRxiv on a clinical topic that
+    returns {2 hits, 1 new} reports new_pct=50% and blocks the AND-clause
+    forever — the percent axis is dominated by tiny-denominator noise once a
+    source has effectively exhausted its corpus.
+    """
+
+    def test_tiny_hits_saturate_after_min_rounds(self) -> None:
+        state = _state(
+            queries=[
+                {"source": "biorxiv", "query": "q", "round": 1,
+                 "hits": 8, "new": 8},
+                {"source": "biorxiv", "query": "q", "round": 2,
+                 "hits": 2, "new": 1},  # 50% — would normally block
+            ],
+            papers={
+                **{f"p{i}": _paper(f"p{i}", source="biorxiv", round_=1,
+                                   authors=[f"A{i}"], venue="bioRxiv")
+                   for i in range(1, 9)},
+                "p9": _paper("p9", source="biorxiv", round_=2,
+                             authors=["A9"], venue="bioRxiv"),
+            },
+        )
+        sat = compute_saturation(state)
+        ps = sat["per_source"]["biorxiv"]
+        self.assertTrue(ps["saturated"], f"expected saturated; got {ps}")
+        self.assertTrue(ps["negligible_hits"])
+        self.assertEqual(sat["negligible_hits_threshold"], 5)
+
+    def test_tiny_hits_do_not_saturate_before_min_rounds(self) -> None:
+        state = _state(
+            queries=[
+                {"source": "biorxiv", "query": "q", "round": 1,
+                 "hits": 2, "new": 1},  # only 1 round so far
+            ],
+            papers={
+                "p1": _paper("p1", source="biorxiv", round_=1,
+                             authors=["A1"], venue="bioRxiv"),
+                "p2": _paper("p2", source="biorxiv", round_=1,
+                             authors=["A2"], venue="bioRxiv"),
+            },
+        )
+        sat = compute_saturation(state)
+        ps = sat["per_source"]["biorxiv"]
+        self.assertFalse(ps["saturated"])
+        self.assertFalse(ps["negligible_hits"])
+
+    def test_threshold_env_override(self) -> None:
+        """SCHOLAR_SATURATION_NEGLIGIBLE_HITS shifts the cutoff."""
+        import os
+        state = _state(
+            queries=[
+                {"source": "biorxiv", "query": "q", "round": 1,
+                 "hits": 10, "new": 10},
+                {"source": "biorxiv", "query": "q", "round": 2,
+                 "hits": 3, "new": 2},  # 3 hits
+            ],
+            papers={
+                **{f"p{i}": _paper(f"p{i}", source="biorxiv", round_=1,
+                                   authors=[f"A{i}"], venue="bioRxiv")
+                   for i in range(1, 11)},
+                "p11": _paper("p11", source="biorxiv", round_=2,
+                              authors=["A11"], venue="bioRxiv"),
+                "p12": _paper("p12", source="biorxiv", round_=2,
+                              authors=["A12"], venue="bioRxiv"),
+            },
+        )
+        # Default cutoff is 5; 3 hits < 5 → negligible.
+        sat_default = compute_saturation(state)
+        self.assertTrue(sat_default["per_source"]["biorxiv"]["negligible_hits"])
+        # Tighten cutoff to 2; 3 hits >= 2 → no longer negligible.
+        prev = os.environ.get("SCHOLAR_SATURATION_NEGLIGIBLE_HITS")
+        os.environ["SCHOLAR_SATURATION_NEGLIGIBLE_HITS"] = "2"
+        try:
+            sat_tight = compute_saturation(state)
+        finally:
+            if prev is None:
+                del os.environ["SCHOLAR_SATURATION_NEGLIGIBLE_HITS"]
+            else:
+                os.environ["SCHOLAR_SATURATION_NEGLIGIBLE_HITS"] = prev
+        self.assertFalse(sat_tight["per_source"]["biorxiv"]["negligible_hits"])
+
+
 class SaturationCLITest(unittest.TestCase):
     """The new axes must appear in the saturation subcommand envelope."""
 

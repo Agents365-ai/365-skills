@@ -459,6 +459,11 @@ def compute_saturation(
       SCHOLAR_SATURATION_MIN_ROUNDS    (default 2)
       SCHOLAR_SATURATION_NEW_AUTHORS_PCT (default 25.0)
       SCHOLAR_SATURATION_NEW_VENUES_PCT  (default 30.0)
+      SCHOLAR_SATURATION_NEGLIGIBLE_HITS (default 5) — below this hit count
+        per round, percentage axes are too noisy to be meaningful; the
+        source counts as saturated by exhaustion. Without this guard, a
+        narrow source like bioRxiv returning {2 hits, 1 new = 50%} blocks
+        the gate on a tiny-denominator artifact.
     """
     if threshold is None:
         threshold = float(os.environ.get("SCHOLAR_SATURATION_NEW_PCT", 50.0))
@@ -472,6 +477,8 @@ def compute_saturation(
     if threshold_venues is None:
         threshold_venues = float(
             os.environ.get("SCHOLAR_SATURATION_NEW_VENUES_PCT", 30.0))
+    negligible_hits = int(
+        os.environ.get("SCHOLAR_SATURATION_NEGLIGIBLE_HITS", 5))
     if not state["queries"]:
         raise SaturationInputError(
             "no_queries",
@@ -545,12 +552,24 @@ def compute_saturation(
         else:
             new_venues_pct = None
 
+        # Tiny-denominator guard: when min_rounds has been satisfied but the
+        # last round returned <SCHOLAR_SATURATION_NEGLIGIBLE_HITS hits, the
+        # percentage axes are dominated by noise (1/2 = 50% is not a real
+        # novelty signal). Treat the source as exhausted-by-coverage. Without
+        # this, a narrow source like bioRxiv on a clinical topic can block
+        # the AND-clause indefinitely.
+        is_negligible = rounds_run >= min_rounds and hits < negligible_hits
         saturated = (
             rounds_run >= min_rounds
-            and pct_new < threshold
-            and max_cit < max_citations
-            and (new_authors_pct is None or new_authors_pct < threshold_authors)
-            and (new_venues_pct is None or new_venues_pct < threshold_venues)
+            and (
+                is_negligible
+                or (
+                    pct_new < threshold
+                    and max_cit < max_citations
+                    and (new_authors_pct is None or new_authors_pct < threshold_authors)
+                    and (new_venues_pct is None or new_venues_pct < threshold_venues)
+                )
+            )
         )
         per_source[src] = {
             "rounds_run": rounds_run,
@@ -563,6 +582,7 @@ def compute_saturation(
             "new_venues_pct": new_venues_pct,
             "max_new_citations": max_cit,
             "saturated": saturated,
+            "negligible_hits": is_negligible,
         }
 
     overall_saturated = bool(per_source) and all(
@@ -576,6 +596,7 @@ def compute_saturation(
         "threshold_venues_pct": threshold_venues,
         "max_citations_threshold": max_citations,
         "min_rounds": min_rounds,
+        "negligible_hits_threshold": negligible_hits,
     }
 
 

@@ -65,6 +65,41 @@ def _distinct_sources(state: dict[str, Any]) -> set[str]:
     return {q.get("source") for q in state.get("queries", []) if q.get("source")}
 
 
+def _format_saturation_detail(sat: dict[str, Any]) -> str:
+    """Render the effective thresholds plus a per-source pass/fail summary.
+
+    Agents that see `saturation_overall` fail need to know (a) which thresholds
+    were in effect for this evaluation and (b) which source on which axis
+    failed. The previous detail string listed source names only and forced a
+    second `saturation` subcommand call to diagnose.
+    """
+    per_src = sat.get("per_source") or {}
+    thr_line = (
+        f"thresholds: new<{sat.get('threshold_pct')}% "
+        f"authors<{sat.get('threshold_authors_pct')}% "
+        f"venues<{sat.get('threshold_venues_pct')}% "
+        f"max_cit<{sat.get('max_citations_threshold')} "
+        f"min_rounds={sat.get('min_rounds')}"
+    )
+    if not per_src:
+        return f"{thr_line}; per_source=(empty)"
+    parts: list[str] = []
+    for src, ps in per_src.items():
+        verdict = "SAT" if ps.get("saturated") else "FAIL"
+        if ps.get("negligible_hits"):
+            parts.append(f"{src}={verdict}(negligible_hits={ps.get('hits_last_round')})")
+            continue
+        parts.append(
+            f"{src}={verdict}("
+            f"new={ps.get('new_pct')}%, "
+            f"auth={ps.get('new_authors_pct')}%, "
+            f"ven={ps.get('new_venues_pct')}, "
+            f"max_cit={ps.get('max_new_citations')}, "
+            f"rounds={ps.get('rounds_run')})"
+        )
+    return f"{thr_line}; " + " | ".join(parts)
+
+
 def gate_1(state: dict[str, Any]) -> GateResult:
     """0 → 1: Question restated, archetype chosen, state initialized."""
     checks: list[Check] = [
@@ -103,7 +138,7 @@ def gate_2(state: dict[str, Any],
     try:
         sat = compute_saturation(state)
         overall = bool(sat.get("overall_saturated"))
-        sat_detail = f"per_source={list(sat.get('per_source', {}).keys())}"
+        sat_detail = _format_saturation_detail(sat)
     except Exception as exc:
         # compute_saturation raises SaturationInputError when no queries
         # exist; treat that as "not yet saturated" without killing the

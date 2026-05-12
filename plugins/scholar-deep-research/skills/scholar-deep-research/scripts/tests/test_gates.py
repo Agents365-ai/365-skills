@@ -213,6 +213,47 @@ class GatesTest(unittest.TestCase):
             failing = [c["name"] for c in env["error"]["gate"]["checks"] if not c["ok"]]
             self.assertIn("themes_defined", failing)
 
+    def test_g2_saturation_detail_includes_per_source_diagnosis(self) -> None:
+        """When saturation_overall fails, the gate detail must surface per-source
+        pass/fail with the actual thresholds inline — without it, the agent
+        has to call `saturation` separately to diagnose."""
+        with tempfile.TemporaryDirectory() as tmp:
+            state_path = Path(tmp) / "s.json"
+            init_state(state_path)
+            # Phase 1 with 3 sources × 2 rounds, papers identical across rounds
+            # so new_pct=100% in round 2 — fails saturation.
+            queries = []
+            papers = {}
+            for src in ("openalex", "pubmed", "crossref"):
+                for rd in (1, 2):
+                    queries.append({"source": src, "query": "q", "round": rd,
+                                    "hits": 10, "new": 10})
+                for i in range(1, 11):
+                    pid = f"{src}_p{i}"
+                    papers[pid] = dummy_paper(pid, source=[src],
+                                              first_seen_round=2)
+            self._write_state(state_path, phase=1, queries=queries,
+                              papers=papers)
+            env = run_script("research_state.py", [
+                "--state", str(state_path), "advance", "--to", "2",
+                "--check-only",
+            ], expect_rc=3)
+            sat_check = next(
+                c for c in env["error"]["gate"]["checks"]
+                if c["name"] == "saturation_overall"
+            )
+            self.assertFalse(sat_check["ok"])
+            detail = sat_check["detail"]
+            # Effective thresholds must be inline.
+            self.assertIn("thresholds:", detail)
+            self.assertIn("new<", detail)
+            self.assertIn("min_rounds=", detail)
+            # Per-source verdicts with numbers must be inline.
+            self.assertIn("openalex=FAIL", detail)
+            self.assertIn("pubmed=FAIL", detail)
+            self.assertIn("crossref=FAIL", detail)
+            self.assertIn("new=", detail)
+
     def test_skip_two_is_forbidden(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             state = Path(tmp) / "s.json"

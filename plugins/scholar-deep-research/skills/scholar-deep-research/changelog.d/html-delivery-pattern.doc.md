@@ -1,1 +1,0 @@
-Document the HTML-delivery pattern: pipeline outputs markdown by design; polished HTML pages are rendered by the host coding agent. SKILL.md Phase 7, README capability tables (EN/CN), and the WALKTHROUGH docs (EN/CN) now include the rationale and an example prompt for the agent. No code change — the skill's contract stays markdown + `.bib`.
