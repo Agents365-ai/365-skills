@@ -39,9 +39,9 @@ The draw.io desktop app must be installed and the CLI accessible:
 **macOS sandbox / sandbox isolation note (e.g., codex.app):** In some sandboxed macOS environments, invoking the draw.io desktop CLI (even `draw.io --version`) can crash the draw.io process or produce no output. If that happens, treat the CLI as **unavailable in this sandbox isolation** — do not keep retrying inside the sandbox. Prefer a **non-sandboxed host environment** (outside sandbox isolation) for any CLI export work, or use the browser fallback / XML-only outputs.
 
 ```bash
-# macOS (Homebrew — recommended)
+# macOS (Homebrew — recommended; CLI binary is `drawio`, not `draw.io`)
 brew install --cask drawio
-draw.io --version
+drawio --version
 
 # macOS (full path if not in PATH)
 /Applications/draw.io.app/Contents/MacOS/draw.io --version
@@ -90,6 +90,10 @@ When a preset loads successfully, mention it in the first line of the reply: *"U
 - Do not keep retrying CLI invocations inside the sandbox.
 - Skip steps 4, 5, 6, and 7 (CLI export + PNG-based review) and use **Browser fallback** (`scripts/encode_drawio_url.py`) or deliver the `.drawio` XML only.
 - If the user needs PNG/SVG/PDF outputs, ask them to run the export commands in a **non-sandboxed host environment** (outside sandbox isolation) and share the resulting files.
+
+Escalation rule:
+- If the binary exists on PATH (or known app path exists) but execution fails with abnormal exit, empty output, Electron startup failure, display/session error, or likely sandbox restriction, prefer one escalated retry before falling back.
+- If the binary is missing entirely, do not escalate just to search more aggressively; go to install guidance or fallback.
 
 ### Step 5: Self-Check
 
