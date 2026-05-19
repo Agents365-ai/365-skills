@@ -34,6 +34,7 @@ npx skills add Agents365-ai/365-skills -g
 | `paper-fetch` | 按 DOI / 标题下载论文 PDF —— 7 源回退链（Unpaywall、S2、arXiv、PMC、bioRxiv、出版商直链、Sci-Hub），支持批量与幂等重试 |
 | `scholar-deep-research` | 端到端文献综述流水线 —— 8 阶段脚本驱动工作流，跨 7 个数据源（OpenAlex、arXiv、Crossref、PubMed、DBLP、bioRxiv、Exa）联邦检索、去重、双 backend 引用追溯、并行精读派发、强制自我批判，输出 5 种原型的带引用报告 |
 | `asta` | Ai2 Asta MCP —— Semantic Scholar 学术图谱以 MCP 暴露（无需 Python）。意图到工具的路由、安全 `fields` 默认值（避免上下文炸开）、引文遍历、片段证据检索，并通过 `externalIds` 获取 DOI / arXiv / PMID |
+| `journal-abbrev` | 期刊名称缩写查询 —— 支持 ISO 4 与 MEDLINE 两种标准，多源级联（JabRef → AbbrevISO → NLM）、BibTeX 字段批量重写并支持 `--idempotency-key` 幂等重试、原子缓存重建，agent-native JSON 信封带稳定错误码与 dry-run |
 
 ## 安装插件
 
@@ -69,6 +70,7 @@ git add plugins/drawio && git commit -m "chore: sync drawio-skill"
 | `paper-fetch` | [Agents365-ai/paper-fetch](https://github.com/Agents365-ai/paper-fetch) |
 | `scholar-deep-research` | [Agents365-ai/scholar-deep-research](https://github.com/Agents365-ai/scholar-deep-research) |
 | `asta` | [Agents365-ai/asta-skill](https://github.com/Agents365-ai/asta-skill) |
+| `journal-abbrev` | [Agents365-ai/journal-abbrev](https://github.com/Agents365-ai/journal-abbrev) |
 
 ## Discord
 

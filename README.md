@@ -34,6 +34,7 @@ npx skills add Agents365-ai/365-skills -g
 | `paper-fetch` | Paper PDF downloader by DOI / title — 7-source fallback (Unpaywall, S2, arXiv, PMC, bioRxiv, publisher, Sci-Hub) with batch mode and idempotent retries |
 | `scholar-deep-research` | End-to-end literature review pipeline — 8-phase script-driven workflow, 7 federated sources (OpenAlex, arXiv, Crossref, PubMed, DBLP, bioRxiv, Exa), cross-source dedup, dual-backend citation chasing, parallel deep-read fan-out, mandatory self-critique, cited reports across 5 archetypes |
 | `asta` | Ai2 Asta MCP — Semantic Scholar academic graph over MCP (no Python). Intent-to-tool routing, safe `fields` defaults, citation traversal, snippet evidence retrieval, and DOI/arXiv/PMID via `externalIds` |
+| `journal-abbrev` | Journal name abbreviation lookup — ISO 4 + MEDLINE, multi-source cascade (JabRef → AbbrevISO → NLM), BibTeX rewrite with `--idempotency-key`, atomic cache rebuild, agent-native JSON envelope with stable error codes and dry-run |
 
 ## Install plugins
 
@@ -69,6 +70,7 @@ Each plugin mirrors a standalone skill repo — file issues there for plugin-spe
 | `paper-fetch` | [Agents365-ai/paper-fetch](https://github.com/Agents365-ai/paper-fetch) |
 | `scholar-deep-research` | [Agents365-ai/scholar-deep-research](https://github.com/Agents365-ai/scholar-deep-research) |
 | `asta` | [Agents365-ai/asta-skill](https://github.com/Agents365-ai/asta-skill) |
+| `journal-abbrev` | [Agents365-ai/journal-abbrev](https://github.com/Agents365-ai/journal-abbrev) |
 
 ## Discord
 
