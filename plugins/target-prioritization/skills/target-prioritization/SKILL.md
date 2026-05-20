@@ -1,7 +1,7 @@
 ---
 name: target-prioritization
-description: Prioritize drug targets from a ranked gene list (e.g., scRNA-seq DE output) by orchestrating parallel API queries against UniProt, OpenTargets, and PubMed, then re-ranking by a composite score combining protein localization, druggability, disease genetics, and research maturity. Use whenever the user wants to filter, triage, prioritize, or "do due diligence" on a list of candidate genes for drug discovery, especially after a DE / DEG analysis when they say things like "which of these should I follow up on", "filter for druggable targets", "make a target dossier", "rank these for tractability", "annotate these genes for druggability", or "build a target report". Trigger even when the user says just "filter these candidate genes" or hands over a CSV from a DE pipeline.
-metadata: {"openclaw":{"requires":{"bins":["python3","curl"]},"emoji":"🎯"},"version":"0.2.0"}
+description: Prioritize drug targets from a ranked gene list (e.g., scRNA-seq DE output) by orchestrating parallel API queries against UniProt, OpenTargets, PubMed, and the Human Protein Atlas (HPA), then re-ranking by a composite score combining protein localization, druggability, disease genetics, tissue specificity (safety), focus-cell-type expression, and research maturity. Use whenever the user wants to filter, triage, prioritize, or "do due diligence" on a list of candidate genes for drug discovery, especially after a DE / DEG analysis when they say things like "which of these should I follow up on", "filter for druggable targets", "make a target dossier", "rank these for tractability", "annotate these genes for druggability", or "build a target report". Trigger even when the user says just "filter these candidate genes" or hands over a CSV from a DE pipeline.
+metadata: {"openclaw":{"requires":{"bins":["python3","curl"]},"emoji":"🎯"},"version":"0.3.0"}
 ---
 
 # Target Prioritization
@@ -42,7 +42,9 @@ scripts/orchestrate.py
    ├─► fetch_opentargets.py    → tractability, approved drugs, associated
    │                              diseases (subsumes GWAS Catalog via OT's
    │                              integrated genetics evidence)
-   └─► fetch_pubmed.py         → paper counts (total + focus_disease + cell_context)
+   ├─► fetch_pubmed.py         → paper counts (total + focus_disease + cell_context)
+   └─► fetch_hpa.py            → HPA tissue / single-cell specificity + nCPM,
+                                  expression cluster, cancer prognostics
    │
    ▼
 scripts/aggregate.py
@@ -70,7 +72,7 @@ python3 ~/myagents/myskills/target-prioritization/scripts/orchestrate.py \
 - `--top` limits the dossier to the top N input genes (default 50) — input
   order is preserved up to that cut, then composite-score re-ranks within.
 
-`orchestrate.py` runs the three fetchers in parallel (Python threads, since
+`orchestrate.py` runs the four fetchers in parallel (Python threads, since
 all calls are I/O-bound). Each writes a self-contained JSON to
 `<output_dir>/raw_data/<source>.json`. Then `aggregate.py` merges them,
 computes the composite score using `weights.yaml`, writes
@@ -81,16 +83,18 @@ Claude to fill**.
 ## Composite score
 
 Weights live in `weights.yaml` and can be overridden per-run with `--weights`.
-Defaults aim for "find druggable, genetically supported targets with known
-biology":
+Defaults aim for "find druggable, genetically supported targets with clean
+therapeutic window and expression in the cell of interest":
 
 ```
 composite_score = w1 * druggability_score        (approved drugs, tractability, clin trials)
                 + w2 * disease_genetics_score    (OpenTargets disease associations + focus-disease bonus)
                 + w3 * tractability_bonus        (surface or secreted vs intracellular)
-                + w4 * expression_score          (from input DE if present)
-                + w5 * novelty_bonus             (favors moderately studied)
-                - w6 * over_studied_penalty      (PubMed total > cap → diminishing returns)
+                + w4 * tissue_specificity        (HPA tissue tag — narrow expression = cleaner window)
+                + w5 * cell_context_score        (HPA single-cell nCPM rank in FOCUS_CELL_TYPES)
+                + w6 * expression_score          (from input DE if present)
+                + w7 * novelty_bonus             (favors moderately studied)
+                - w8 * over_studied_penalty      (PubMed total > cap → diminishing returns)
 ```
 
 Each component is normalized to [0, 1]. The composite is therefore
@@ -115,6 +119,7 @@ All free, no API key needed. Rate limits handled in fetchers:
 - **UniProt REST** — 100 req/sec, batched via `accession` query
 - **OpenTargets GraphQL** — generous, single endpoint; provides disease genetics signal via integrated `associatedDiseases`
 - **PubMed E-utilities** — 3 req/sec without key; fetchers respect this
+- **Human Protein Atlas** — `search_download.php` for symbol→ENSG, then per-ENSG `/<ENSG>.json`; no rate limit documented, fetcher sleeps 0.15s/gene
 
 For deeper API details and field mappings, see
 `references/api_endpoints.md`.
@@ -122,7 +127,7 @@ For deeper API details and field mappings, see
 ## Retargeting the focus disease + cell context
 
 The skill ships with an autoimmunity / T-cell default but is intentionally
-disease-agnostic. Two edits switch the focus:
+disease-agnostic. Three edits switch the focus:
 
 - `scripts/fetch_opentargets.py` and `scripts/aggregate.py` — change
   `FOCUS_DISEASE_TERMS` to the lowercased substrings that should mark a
@@ -130,9 +135,13 @@ disease-agnostic. Two edits switch the focus:
   `("cancer", "carcinoma", "lymphoma")` for oncology;
   `("alzheimer", "parkinson", "huntington", "als")` for neurodegeneration;
   `("diabetes", "obesity", "fatty liver", "nash")` for metabolic disease).
+- `scripts/aggregate.py` — change `FOCUS_CELL_TYPES` to the HPA single-cell
+  type names that should drive `cell_context_score`. Must match HPA's exact
+  strings (case-sensitive); see comment block above the tuple for examples
+  per domain.
 - `scripts/fetch_pubmed.py` — adjust the `focus_disease` and
-  `cell_context` queries in `CONTEXTS` (e.g.
-  `"hepatocyte"`, `"neuron"`, `"macrophage"` instead of `"T cell"`).
+  `cell_context` queries in `CONTEXTS` (these power the PubMed counts in
+  the dossier).
 
 No other code changes are needed; the CSV column names already use the
 neutral `focus_disease_*` / `cell_context` prefixes.

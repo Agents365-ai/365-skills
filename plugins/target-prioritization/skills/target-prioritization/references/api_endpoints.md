@@ -33,6 +33,27 @@ All endpoints are free and require no API key.
 - Rate: generous; 0.2s sleep between targets to avoid hammering.
 - Docs: https://platform-docs.opentargets.org/data-access/graphql-api
 
+## Human Protein Atlas
+
+- Symbol → Ensembl resolver:
+  `https://www.proteinatlas.org/api/search_download.php?search=SYMBOL&format=json&columns=g,eg&compress=no`
+- Per-entry JSON: `https://www.proteinatlas.org/<ENSG>.json` (≈100 fields)
+- Subcellular fields are **not** consumed here — UniProt is authoritative.
+  HPA contributes:
+  - `RNA tissue specificity` (tag like `Tissue enriched / Group enriched
+    / Tissue enhanced / Low tissue specificity / Not detected`) and
+    `RNA tissue specific nTPM` (dict tissue→nTPM)
+  - `RNA single cell type specificity` (analogous tag) and
+    `RNA single cell type specific nCPM` (dict cell-type→nCPM)
+  - `Single cell expression cluster` (label of HPA's UMAP cluster)
+  - `Cancer prognostics - <cancer name>` per-cancer dicts — aggregated into
+    `n_prognostic_cancers` + top-3 cancers with `prognostic type` + `p_val`,
+    plus the global `RNA cancer specificity` tag
+- `FOCUS_CELL_TYPES` in `scripts/aggregate.py` must match HPA's exact
+  cell-type strings (e.g. `"T-cells"`, `"Hepatocytes"`, `"Microglial cells"`).
+- No documented rate limit; fetcher sleeps 0.15s between calls.
+- Docs: https://www.proteinatlas.org/about/help/dataaccess
+
 ## PubMed E-utilities
 
 - Endpoint: `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi`

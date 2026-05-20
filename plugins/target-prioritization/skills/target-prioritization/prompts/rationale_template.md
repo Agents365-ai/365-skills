@@ -13,6 +13,12 @@ from the dossier row):
   GWAS / text-mining evidence…"
 - Else if `any_focus_disease_drug` → "Already targeted by an approved
   focus-disease drug ([drug name])…"
+- Else if `hpa_focus_cell_hits` non-empty AND `cell_context_score >= 0.7`
+  → "HPA single-cell data ranks [cell type] in the top-2 expressing cell
+  types for this gene (nCPM [val]) — strong target-cell expression…"
+- Else if `tissue_specificity == 1.0` (HPA `Tissue enriched` / `Group
+  enriched`) → "Narrow tissue expression in [top tissue] (HPA enriched) —
+  cleaner therapeutic window than a broadly expressed target…"
 - Else if `is_surface` AND `highest_clinical_phase >= 3` → "Surface protein
   with phase III drugs in adjacent indications…"
 - Else if `is_surface` AND `maturity_tag in {novel, moderate}` → "Surface
@@ -31,6 +37,12 @@ Sentence 2 — **main risk or caveat**:
   dimension — confirm with orthogonal evidence before pursuing."
 - No disease association → "Stat signal from DE only; lacks genetic
   corroboration."
+- `tissue_specificity <= 0.2` (HPA `Low tissue specificity`) → "Broadly
+  expressed across tissues — narrow therapeutic window unlikely without a
+  delivery / targeting strategy."
+- `cell_context_score == 0` and `hpa_focus_cell_hits` empty → "Not in the
+  top-expressing cell types per HPA single-cell data — efficacy in the
+  target population uncertain."
 
 Sentence 3 (optional) — **specific project context** if obvious from the
 dossier (e.g. "Persists in non-responder cells at post-treatment,

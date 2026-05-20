@@ -44,6 +44,60 @@ def clamp01(x: float) -> float:
 # Override to retarget for your project — see fetch_opentargets.py for examples.
 FOCUS_DISEASE_TERMS = ("crohn", "ulcerative colitis", "inflammatory bowel", "ibd")
 
+# HPA single-cell type names that count as "in-scope" for cell_context_score.
+# Must match HPA's exact strings (case-sensitive). Examples for retargeting:
+#   Oncology / tumor microenv: ("Macrophages", "Fibroblasts", "T-cells")
+#   Neurodegeneration:         ("Excitatory neurons", "Microglial cells", "Astrocytes")
+#   Metabolic / liver:         ("Hepatocytes", "Kupffer cells")
+#   Cardiovascular:            ("Cardiomyocytes", "Endothelial cells")
+#   Pancreatic / diabetes:     ("Pancreatic beta cells", "Pancreatic alpha cells")
+FOCUS_CELL_TYPES = ("T-cells",)
+
+
+def derive_hpa_signal(hpa_entry: dict) -> dict:
+    """Translate HPA entry into score-ready signals.
+
+    - tissue_specificity_score: cleaner therapeutic window → higher
+    - cell_context_score: focus-cell-type nCPM rank within this gene's
+      cell-type expression dict (1.0 if a focus cell is top-1, decays
+      down the rank). Returns 0 if no focus cell is expressed.
+    """
+    tissue_tag = (hpa_entry.get("tissue_specificity_tag") or "").strip()
+    TISSUE_MAP = {
+        "Tissue enriched": 1.0,
+        "Group enriched":  1.0,
+        "Tissue enhanced": 0.7,
+        "Low tissue specificity": 0.2,
+        "Not detected": 0.0,
+    }
+    tissue_score = TISSUE_MAP.get(tissue_tag, 0.3)
+
+    cell_full = hpa_entry.get("cell_nCPM_full") or {}
+    if cell_full:
+        ranked = sorted(cell_full.items(), key=lambda kv: -kv[1])
+        focus_rank = None
+        focus_hits = []
+        for i, (ct, _val) in enumerate(ranked, 1):
+            if ct in FOCUS_CELL_TYPES:
+                focus_hits.append(ct)
+                if focus_rank is None:
+                    focus_rank = i
+        if focus_rank is None:
+            cell_score = 0.0
+        else:
+            # rank 1 → 1.0, rank 2 → 0.7, rank 3 → 0.5, then linear decay
+            ladder = {1: 1.0, 2: 0.7, 3: 0.5}
+            cell_score = ladder.get(focus_rank, max(0.0, 0.5 - 0.05 * (focus_rank - 3)))
+    else:
+        focus_hits = []
+        cell_score = 0.0
+
+    return {
+        "tissue_score": tissue_score,
+        "cell_score": cell_score,
+        "focus_cell_hits": focus_hits,
+    }
+
 
 def derive_disease_signal(ot_entry: dict) -> dict:
     """Derive a disease_genetics-style signal from OpenTargets associated diseases.
@@ -69,13 +123,17 @@ def derive_disease_signal(ot_entry: dict) -> dict:
     }
 
 
-def compute_components(g: str, uniprot: dict, ot: dict, pubmed: dict,
+def compute_components(g: str, uniprot: dict, ot: dict, pubmed: dict, hpa: dict,
                        weights: dict, input_expr: dict) -> dict:
     w = weights["weights"]; c = weights["caps"]; f = weights["flags"]
     u = (uniprot.get(g) or {})
     o = (ot.get(g) or {})
     gw = derive_disease_signal(o)
     pm = (pubmed.get(g) or {})
+    hp = (hpa.get(g) or {})
+    hs = derive_hpa_signal(hp)
+    tissue_specificity = clamp01(hs["tissue_score"])
+    cell_context_score = clamp01(hs["cell_score"])
 
     # 2) druggability score
     drug = 0.0
@@ -126,22 +184,26 @@ def compute_components(g: str, uniprot: dict, ot: dict, pubmed: dict,
         over_studied = clamp01((total - cap) / (5 * cap))
 
     composite = (
-        w.get("druggability_score", 0)    * druggability
-        + w.get("disease_genetics_score", 0)* disease_genetics
-        + w.get("tractability_bonus", 0)    * tractability
-        + w.get("expression_score", 0)      * expression
-        + w.get("novelty_bonus", 0)         * novelty
-        - w.get("over_studied_penalty", 0)  * over_studied
+        w.get("druggability_score", 0)     * druggability
+        + w.get("disease_genetics_score", 0) * disease_genetics
+        + w.get("tractability_bonus", 0)     * tractability
+        + w.get("tissue_specificity", 0)     * tissue_specificity
+        + w.get("cell_context_score", 0)     * cell_context_score
+        + w.get("expression_score", 0)       * expression
+        + w.get("novelty_bonus", 0)          * novelty
+        - w.get("over_studied_penalty", 0)   * over_studied
     )
 
     return {
-        "druggability":  round(druggability, 3),
-        "disease_genetics": round(disease_genetics, 3),
-        "tractability":  round(tractability, 3),
-        "expression":    round(expression, 3),
-        "novelty":       round(novelty, 3),
-        "over_studied":  round(over_studied, 3),
-        "composite_raw": round(composite, 4),
+        "druggability":       round(druggability, 3),
+        "disease_genetics":   round(disease_genetics, 3),
+        "tractability":       round(tractability, 3),
+        "tissue_specificity": round(tissue_specificity, 3),
+        "cell_context_score": round(cell_context_score, 3),
+        "expression":         round(expression, 3),
+        "novelty":            round(novelty, 3),
+        "over_studied":       round(over_studied, 3),
+        "composite_raw":      round(composite, 4),
     }
 
 
@@ -197,21 +259,26 @@ def main():
     uniprot = load_json(raw / "uniprot.json")
     ot      = load_json(raw / "opentargets.json")
     pubmed  = load_json(raw / "pubmed.json")
+    hpa     = load_json(raw / "hpa.json")
     input_expr = load_input_expr(args.input_csv)
 
     rows = []
     for g in genes:
-        comp = compute_components(g, uniprot, ot, pubmed, weights, input_expr)
+        comp = compute_components(g, uniprot, ot, pubmed, hpa, weights, input_expr)
         u = uniprot.get(g, {}) or {}
         o = ot.get(g, {}) or {}
         gw = derive_disease_signal(o)
         pm = pubmed.get(g, {}) or {}
+        hp = hpa.get(g, {}) or {}
+        hs = derive_hpa_signal(hp)
         rows.append({
             "gene": g,
             "composite_raw": comp["composite_raw"],
             "druggability": comp["druggability"],
             "disease_genetics": comp["disease_genetics"],
             "tractability": comp["tractability"],
+            "tissue_specificity": comp["tissue_specificity"],
+            "cell_context_score": comp["cell_context_score"],
             "expression": comp["expression"],
             "novelty": comp["novelty"],
             "over_studied_penalty": comp["over_studied"],
@@ -237,6 +304,14 @@ def main():
             "pubmed_focus_disease": pm.get("pubmed_focus_disease", 0),
             "pubmed_cell_context": pm.get("pubmed_cell_context", 0),
             "maturity_tag": pm.get("maturity_tag"),
+            "hpa_tissue_specificity_tag": hp.get("tissue_specificity_tag"),
+            "hpa_tissue_top_types": "; ".join(f"{k}={v}" for k, v in (hp.get("tissue_top_types") or [])),
+            "hpa_cell_specificity_tag": hp.get("cell_specificity_tag"),
+            "hpa_cell_top_types": "; ".join(f"{k}={v}" for k, v in (hp.get("cell_top_types") or [])),
+            "hpa_focus_cell_hits": "; ".join(hs["focus_cell_hits"]),
+            "hpa_expression_cluster": hp.get("expression_cluster"),
+            "hpa_n_prognostic_cancers": (hp.get("pathology") or {}).get("n_prognostic_cancers", 0),
+            "hpa_cancer_specificity": (hp.get("pathology") or {}).get("rna_cancer_specificity"),
         })
 
     # Min-max rescale composite into [0,1] for tier assignment
@@ -275,7 +350,10 @@ def main():
         md.append(f"| Tractability | sm_mol={r['tractability_small_molecule'] or '—'}  Ab={r['tractability_antibody'] or '—'} |")
         md.append(f"| Disease assoc (OT) | any={r['any_disease_assoc']}  focus={r['is_focus_disease_associated']}  focus_traits={r['focus_disease_traits'] or '—'}  max_score={r['max_disease_assoc_score']} |")
         md.append(f"| PubMed | total={r['pubmed_total']}  focus_disease={r['pubmed_focus_disease']}  cell_context={r['pubmed_cell_context']}  maturity={r['maturity_tag']} |")
-        md.append(f"| Component breakdown | drug={r['druggability']}  genetics={r['disease_genetics']}  tract={r['tractability']}  expr={r['expression']}  novelty={r['novelty']}  over_studied={r['over_studied_penalty']} |")
+        md.append(f"| HPA tissue | tag={r['hpa_tissue_specificity_tag'] or '—'}  top={r['hpa_tissue_top_types'] or '—'} |")
+        md.append(f"| HPA single-cell | tag={r['hpa_cell_specificity_tag'] or '—'}  top={r['hpa_cell_top_types'] or '—'}  focus_cell_hits={r['hpa_focus_cell_hits'] or '—'}  cluster={r['hpa_expression_cluster'] or '—'} |")
+        md.append(f"| HPA pathology | n_prognostic_cancers={r['hpa_n_prognostic_cancers']}  cancer_specificity={r['hpa_cancer_specificity'] or '—'} |")
+        md.append(f"| Component breakdown | drug={r['druggability']}  genetics={r['disease_genetics']}  tract={r['tractability']}  tissue_spec={r['tissue_specificity']}  cell_ctx={r['cell_context_score']}  expr={r['expression']}  novelty={r['novelty']}  over_studied={r['over_studied_penalty']} |")
         md.append("")
         md.append("**Rationale**: _TO BE FILLED BY CLAUDE — 2–3 sentences. Use prompts/rationale_template.md._")
         md.append("")

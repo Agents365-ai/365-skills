@@ -16,6 +16,7 @@ FETCHERS = [
     ("uniprot",     SCRIPTS_DIR / "fetch_uniprot.py"),
     ("opentargets", SCRIPTS_DIR / "fetch_opentargets.py"),
     ("pubmed",      SCRIPTS_DIR / "fetch_pubmed.py"),
+    ("hpa",         SCRIPTS_DIR / "fetch_hpa.py"),
 ]
 
 

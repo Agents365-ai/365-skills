@@ -3,9 +3,11 @@
 # Edit and re-run aggregate.py to re-score without re-fetching APIs.
 
 weights:
-  druggability_score:     0.30   # approved drugs, OpenTargets tractability
-  disease_genetics_score: 0.25   # OpenTargets associated diseases (incl. GWAS-derived signal), with focus-disease bonus
+  druggability_score:     0.25   # approved drugs, OpenTargets tractability
+  disease_genetics_score: 0.20   # OpenTargets associated diseases (incl. GWAS-derived signal), with focus-disease bonus
   tractability_bonus:     0.15   # surface or secreted protein vs intracellular
+  tissue_specificity:     0.10   # HPA tissue specificity tag → therapeutic-window safety
+  cell_context_score:     0.10   # HPA single-cell nCPM rank in FOCUS_CELL_TYPES → efficacy in target population
   expression_score:       0.10   # from input DE table (mean expression in the contrast)
   novelty_bonus:          0.10   # moderately studied genes preferred over uncharted / over-studied
   over_studied_penalty:   0.10   # subtracted if pubmed total > cap
@@ -21,8 +23,9 @@ flags:
   secreted_protein_bonus:    0.8    # tractability_bonus value if secreted
   intracellular_default:     0.3    # tractability_bonus value if intracellular only
 
-# Focus-disease + cell-context terms are configured in code, not here:
+# Focus-disease + focus-cell-type + cell-context terms are configured in code, not here:
 # - edit FOCUS_DISEASE_TERMS in scripts/fetch_opentargets.py + scripts/aggregate.py
+# - edit FOCUS_CELL_TYPES in scripts/aggregate.py (must match HPA's exact cell-type strings)
 # - edit CONTEXTS in scripts/fetch_pubmed.py
-# Default terms target an autoimmunity (IBD) example; see those files for
+# Default terms target an autoimmunity (IBD) + T-cell example; see those files for
 # alternative configurations (oncology, neurodegeneration, metabolic, ...).
