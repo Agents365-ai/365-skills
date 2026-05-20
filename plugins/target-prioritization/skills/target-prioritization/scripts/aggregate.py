@@ -70,17 +70,12 @@ def derive_disease_signal(ot_entry: dict) -> dict:
 
 
 def compute_components(g: str, uniprot: dict, ot: dict, pubmed: dict,
-                       local: dict, weights: dict, input_expr: dict) -> dict:
+                       weights: dict, input_expr: dict) -> dict:
     w = weights["weights"]; c = weights["caps"]; f = weights["flags"]
     u = (uniprot.get(g) or {})
     o = (ot.get(g) or {})
     gw = derive_disease_signal(o)
     pm = (pubmed.get(g) or {})
-    ld = (local.get(g) or {})
-
-    # 1) cross-lineage convergence — count distinct supporting DE files
-    n_files = ld.get("n_supporting_files", 0)
-    cross_lineage = clamp01(n_files / max(c.get("cross_lineage_max", 3), 1))
 
     # 2) druggability score
     drug = 0.0
@@ -131,8 +126,7 @@ def compute_components(g: str, uniprot: dict, ot: dict, pubmed: dict,
         over_studied = clamp01((total - cap) / (5 * cap))
 
     composite = (
-        w.get("cross_lineage_score", 0)    * cross_lineage
-        + w.get("druggability_score", 0)    * druggability
+        w.get("druggability_score", 0)    * druggability
         + w.get("disease_genetics_score", 0)* disease_genetics
         + w.get("tractability_bonus", 0)    * tractability
         + w.get("expression_score", 0)      * expression
@@ -141,7 +135,6 @@ def compute_components(g: str, uniprot: dict, ot: dict, pubmed: dict,
     )
 
     return {
-        "cross_lineage": round(cross_lineage, 3),
         "druggability":  round(druggability, 3),
         "disease_genetics": round(disease_genetics, 3),
         "tractability":  round(tractability, 3),
@@ -204,21 +197,18 @@ def main():
     uniprot = load_json(raw / "uniprot.json")
     ot      = load_json(raw / "opentargets.json")
     pubmed  = load_json(raw / "pubmed.json")
-    local   = load_json(raw / "local_de.json")
     input_expr = load_input_expr(args.input_csv)
 
     rows = []
     for g in genes:
-        comp = compute_components(g, uniprot, ot, pubmed, local, weights, input_expr)
+        comp = compute_components(g, uniprot, ot, pubmed, weights, input_expr)
         u = uniprot.get(g, {}) or {}
         o = ot.get(g, {}) or {}
         gw = derive_disease_signal(o)
         pm = pubmed.get(g, {}) or {}
-        ld = local.get(g, {}) or {}
         rows.append({
             "gene": g,
             "composite_raw": comp["composite_raw"],
-            "cross_lineage": comp["cross_lineage"],
             "druggability": comp["druggability"],
             "disease_genetics": comp["disease_genetics"],
             "tractability": comp["tractability"],
@@ -247,8 +237,6 @@ def main():
             "pubmed_focus_disease": pm.get("pubmed_focus_disease", 0),
             "pubmed_cell_context": pm.get("pubmed_cell_context", 0),
             "maturity_tag": pm.get("maturity_tag"),
-            "n_supporting_de_files": ld.get("n_supporting_files", 0),
-            "supporting_de_files": " | ".join((ld.get("supporting_files") or [])[:5]),
         })
 
     # Min-max rescale composite into [0,1] for tier assignment
@@ -287,8 +275,7 @@ def main():
         md.append(f"| Tractability | sm_mol={r['tractability_small_molecule'] or '—'}  Ab={r['tractability_antibody'] or '—'} |")
         md.append(f"| Disease assoc (OT) | any={r['any_disease_assoc']}  focus={r['is_focus_disease_associated']}  focus_traits={r['focus_disease_traits'] or '—'}  max_score={r['max_disease_assoc_score']} |")
         md.append(f"| PubMed | total={r['pubmed_total']}  focus_disease={r['pubmed_focus_disease']}  cell_context={r['pubmed_cell_context']}  maturity={r['maturity_tag']} |")
-        md.append(f"| Local DE convergence | n_files={r['n_supporting_de_files']}  examples={r['supporting_de_files'] or '—'} |")
-        md.append(f"| Component breakdown | cross_lineage={r['cross_lineage']}  drug={r['druggability']}  genetics={r['disease_genetics']}  tract={r['tractability']}  expr={r['expression']}  novelty={r['novelty']}  over_studied={r['over_studied_penalty']} |")
+        md.append(f"| Component breakdown | drug={r['druggability']}  genetics={r['disease_genetics']}  tract={r['tractability']}  expr={r['expression']}  novelty={r['novelty']}  over_studied={r['over_studied_penalty']} |")
         md.append("")
         md.append("**Rationale**: _TO BE FILLED BY CLAUDE — 2–3 sentences. Use prompts/rationale_template.md._")
         md.append("")

@@ -3,10 +3,9 @@
 # Edit and re-run aggregate.py to re-score without re-fetching APIs.
 
 weights:
-  cross_lineage_score:    0.25   # DE convergence across sibling pipelines / lineages
-  druggability_score:     0.20   # approved drugs, OpenTargets tractability
-  disease_genetics_score: 0.15   # OpenTargets associated diseases (incl. GWAS-derived signal), with focus-disease bonus
-  tractability_bonus:     0.10   # surface or secreted protein vs intracellular
+  druggability_score:     0.30   # approved drugs, OpenTargets tractability
+  disease_genetics_score: 0.25   # OpenTargets associated diseases (incl. GWAS-derived signal), with focus-disease bonus
+  tractability_bonus:     0.15   # surface or secreted protein vs intracellular
   expression_score:       0.10   # from input DE table (mean expression in the contrast)
   novelty_bonus:          0.10   # moderately studied genes preferred over uncharted / over-studied
   over_studied_penalty:   0.10   # subtracted if pubmed total > cap
@@ -14,7 +13,6 @@ weights:
 caps:
   pubmed_total_for_maturity: 100    # above this, over_studied_penalty kicks in
   pubmed_well_studied_floor: 5      # below this, novelty_bonus deflates (no evidence at all is bad)
-  cross_lineage_max:        3       # number of sibling DE sources used to normalize
 
 flags:
   focus_disease_assoc_bonus: 0.5    # added to disease_genetics_score if the gene is OT-associated with the focus disease

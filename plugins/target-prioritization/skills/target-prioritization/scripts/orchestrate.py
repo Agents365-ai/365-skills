@@ -75,31 +75,12 @@ def run_fetcher(name: str, script: Path, genes: list[str], out_dir: Path) -> tup
         return name, False, f"ERROR: {e}"
 
 
-def run_local_de(genes: list[str], project_root: Path, out_dir: Path) -> tuple[str, bool, str]:
-    script = SCRIPTS_DIR / "fetch_local_de.py"
-    out_file = out_dir / "raw_data" / "local_de.json"
-    cmd = [
-        sys.executable, str(script),
-        "--genes", ",".join(genes),
-        "--project-root", str(project_root),
-        "--output", str(out_file),
-    ]
-    try:
-        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
-        ok = proc.returncode == 0 and out_file.exists()
-        msg = proc.stderr.strip().splitlines()[-1] if proc.stderr.strip() else proc.stdout.strip()[:200]
-        return "local_de", ok, msg
-    except Exception as e:
-        return "local_de", False, f"ERROR: {e}"
-
-
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--input", required=True, help="CSV/TSV/TXT with gene symbols")
     ap.add_argument("--output", required=True, help="Output directory")
     ap.add_argument("--gene-col", default="gene", help="Column name for gene symbols (default: gene)")
     ap.add_argument("--top", type=int, default=DEFAULT_TOP, help=f"Top-N input genes to process (default: {DEFAULT_TOP})")
-    ap.add_argument("--project-root", default=None, help="Repo root for cross-lineage DE scan; omit to skip")
     ap.add_argument("--weights", default=str(SCRIPTS_DIR.parent / "weights.yaml"), help="Path to weights.yaml")
     args = ap.parse_args()
 
@@ -114,11 +95,9 @@ def main():
 
     # Run fetchers in parallel
     results = {}
-    with ThreadPoolExecutor(max_workers=len(FETCHERS) + 1) as pool:
+    with ThreadPoolExecutor(max_workers=len(FETCHERS)) as pool:
         futures = {pool.submit(run_fetcher, name, script, genes, out_dir): name
                    for name, script in FETCHERS}
-        if args.project_root:
-            futures[pool.submit(run_local_de, genes, Path(args.project_root).expanduser().resolve(), out_dir)] = "local_de"
         for fut in as_completed(futures):
             name, ok, msg = fut.result()
             results[name] = ok

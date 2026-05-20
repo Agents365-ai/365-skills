@@ -13,8 +13,6 @@ from the dossier row):
   GWAS / text-mining evidence…"
 - Else if `any_focus_disease_drug` → "Already targeted by an approved
   focus-disease drug ([drug name])…"
-- Else if `n_supporting_de_files >= 2` → "Cross-lineage DE convergence:
-  significant in [N] sibling DE outputs…"
 - Else if `is_surface` AND `highest_clinical_phase >= 3` → "Surface protein
   with phase III drugs in adjacent indications…"
 - Else if `is_surface` AND `maturity_tag in {novel, moderate}` → "Surface
@@ -31,8 +29,8 @@ Sentence 2 — **main risk or caveat**:
   inhibit selectively."
 - `composite` driven by single dimension only → "Score concentrated in one
   dimension — confirm with orthogonal evidence before pursuing."
-- No disease association + no convergence → "Stat signal from DE only;
-  lacks genetic / cross-pipeline corroboration."
+- No disease association → "Stat signal from DE only; lacks genetic
+  corroboration."
 
 Sentence 3 (optional) — **specific project context** if obvious from the
 dossier (e.g. "Persists in non-responder cells at post-treatment,

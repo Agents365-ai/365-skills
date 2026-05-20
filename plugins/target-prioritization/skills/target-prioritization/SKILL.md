@@ -1,7 +1,7 @@
 ---
 name: target-prioritization
-description: Prioritize drug targets from a ranked gene list (e.g., scRNA-seq DE output) by orchestrating parallel API queries against UniProt, OpenTargets, and PubMed, then re-ranking by a composite score combining protein localization, druggability, disease genetics, cross-lineage DE convergence, and research maturity. Use whenever the user wants to filter, triage, prioritize, or "do due diligence" on a list of candidate genes for drug discovery, especially after a DE / DEG analysis when they say things like "which of these should I follow up on", "filter for druggable targets", "make a target dossier", "rank these for tractability", "annotate these genes for druggability", or "build a target report". Trigger even when the user says just "filter these candidate genes" or hands over a CSV from a DE pipeline.
-metadata: {"openclaw":{"requires":{"bins":["python3","curl"]},"emoji":"🎯"},"version":"0.1.0"}
+description: Prioritize drug targets from a ranked gene list (e.g., scRNA-seq DE output) by orchestrating parallel API queries against UniProt, OpenTargets, and PubMed, then re-ranking by a composite score combining protein localization, druggability, disease genetics, and research maturity. Use whenever the user wants to filter, triage, prioritize, or "do due diligence" on a list of candidate genes for drug discovery, especially after a DE / DEG analysis when they say things like "which of these should I follow up on", "filter for druggable targets", "make a target dossier", "rank these for tractability", "annotate these genes for druggability", or "build a target report". Trigger even when the user says just "filter these candidate genes" or hands over a CSV from a DE pipeline.
+metadata: {"openclaw":{"requires":{"bins":["python3","curl"]},"emoji":"🎯"},"version":"0.2.0"}
 ---
 
 # Target Prioritization
@@ -42,10 +42,7 @@ scripts/orchestrate.py
    ├─► fetch_opentargets.py    → tractability, approved drugs, associated
    │                              diseases (subsumes GWAS Catalog via OT's
    │                              integrated genetics evidence)
-   ├─► fetch_pubmed.py         → paper counts (total + focus_disease + cell_context)
-   └─► fetch_local_de.py       → cross-lineage DE in sibling project dirs
-                                  (scans hu_de_*, pert_de_*, cluster_degs* in
-                                   parent project for the same gene)
+   └─► fetch_pubmed.py         → paper counts (total + focus_disease + cell_context)
    │
    ▼
 scripts/aggregate.py
@@ -64,19 +61,16 @@ python3 ~/myagents/myskills/target-prioritization/scripts/orchestrate.py \
     --input <gene_list.csv_or_txt> \
     --output <output_dir> \
     [--gene-col gene] \
-    [--project-root <repo_root_for_local_de_scan>] \
     [--top 50]
 ```
 
 - `--input` accepts a CSV (with `--gene-col`, default `gene`), a `.txt`/`.tsv`,
   or any file where the first column has gene symbols. Skips header if first
   cell is `gene`/`symbol`/case-insensitive.
-- `--project-root` enables the local-evidence scan; if omitted, that
-  dimension is skipped and the composite score down-weights accordingly.
 - `--top` limits the dossier to the top N input genes (default 50) — input
   order is preserved up to that cut, then composite-score re-ranks within.
 
-`orchestrate.py` runs the five fetchers in parallel (Python threads, since
+`orchestrate.py` runs the three fetchers in parallel (Python threads, since
 all calls are I/O-bound). Each writes a self-contained JSON to
 `<output_dir>/raw_data/<source>.json`. Then `aggregate.py` merges them,
 computes the composite score using `weights.yaml`, writes
@@ -87,17 +81,16 @@ Claude to fill**.
 ## Composite score
 
 Weights live in `weights.yaml` and can be overridden per-run with `--weights`.
-Defaults aim for "find druggable, genetically supported, cross-lineage-robust
-targets with known biology":
+Defaults aim for "find druggable, genetically supported targets with known
+biology":
 
 ```
-composite_score = w1 * cross_lineage_score      (DE convergence across pipelines/lineages)
-                + w2 * druggability_score        (approved drugs, tractability, clin trials)
-                + w3 * disease_genetics_score    (OpenTargets disease associations + focus-disease bonus)
-                + w4 * tractability_bonus        (surface or secreted vs intracellular)
-                + w5 * expression_score          (from input DE if present)
-                + w6 * novelty_bonus             (favors moderately studied)
-                - w7 * over_studied_penalty      (PubMed total > cap → diminishing returns)
+composite_score = w1 * druggability_score        (approved drugs, tractability, clin trials)
+                + w2 * disease_genetics_score    (OpenTargets disease associations + focus-disease bonus)
+                + w3 * tractability_bonus        (surface or secreted vs intracellular)
+                + w4 * expression_score          (from input DE if present)
+                + w5 * novelty_bonus             (favors moderately studied)
+                - w6 * over_studied_penalty      (PubMed total > cap → diminishing returns)
 ```
 
 Each component is normalized to [0, 1]. The composite is therefore
