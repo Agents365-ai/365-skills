@@ -3,14 +3,16 @@
 # Edit and re-run aggregate.py to re-score without re-fetching APIs.
 
 weights:
-  druggability_score:     0.25   # approved drugs, OpenTargets tractability
-  disease_genetics_score: 0.20   # OpenTargets associated diseases (incl. GWAS-derived signal), with focus-disease bonus
-  tractability_bonus:     0.15   # surface or secreted protein vs intracellular
-  tissue_specificity:     0.10   # HPA tissue specificity tag → therapeutic-window safety
-  cell_context_score:     0.10   # HPA single-cell nCPM rank in FOCUS_CELL_TYPES → efficacy in target population
-  expression_score:       0.10   # from input DE table (mean expression in the contrast)
-  novelty_bonus:          0.10   # moderately studied genes preferred over uncharted / over-studied
-  over_studied_penalty:   0.10   # subtracted if pubmed total > cap
+  druggability_score:       0.20   # approved drugs, OpenTargets tractability
+  disease_genetics_score:   0.15   # OpenTargets associated diseases (incl. GWAS-derived signal), with focus-disease bonus
+  tractability_bonus:       0.15   # surface or secreted protein vs intracellular
+  tissue_specificity:       0.10   # HPA tissue specificity tag → therapeutic-window safety
+  cell_context_score:       0.10   # HPA single-cell nCPM rank in FOCUS_CELL_TYPES → efficacy in target population
+  essentiality_score:       0.10   # DepMap CRISPR % essential (selective sweet spot, pan-essential capped)
+  safety_constraint_score:  0.05   # gnomAD LOEUF — high LOEUF = LoF tolerated in humans → safer to inhibit
+  expression_score:         0.10   # from input DE table (mean expression in the contrast)
+  novelty_bonus:            0.05   # moderately studied genes preferred over uncharted / over-studied
+  over_studied_penalty:     0.10   # subtracted if pubmed total > cap
 
 caps:
   pubmed_total_for_maturity: 100    # above this, over_studied_penalty kicks in

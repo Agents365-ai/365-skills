@@ -44,6 +44,16 @@ query Target($id: String!) {
     associatedDiseases(page: {index:0, size:10}) {
       rows { disease { id name } score }
     }
+    depMapEssentiality {
+      tissueName
+      screens { cellLineName geneEffect }
+    }
+    geneticConstraint {
+      constraintType
+      oe
+      oeUpper
+      upperBin
+    }
   }
 }
 """
@@ -121,6 +131,13 @@ def fetch_one(gene: str) -> dict:
         "any_focus_disease_drug": False,
         "focus_disease_drugs": [],
         "associated_diseases_top5": [],
+        "depmap_n_screens": 0,
+        "depmap_n_tissues": 0,
+        "depmap_mean_gene_effect": None,
+        "depmap_pct_essential": 0.0,
+        "loeuf": None,
+        "constraint_oe_lof": None,
+        "constraint_top_decile": False,
     }
     # resolve
     r = gql(ID_QUERY, {"q": gene})
@@ -196,6 +213,31 @@ def fetch_one(gene: str) -> dict:
             "name": (row.get("disease") or {}).get("name"),
             "score": row.get("score"),
         })
+
+    # DepMap CRISPR essentiality — geneEffect < 0 means KO reduces fitness.
+    # We summarize across all screened cell lines; pan-essentials (>80%) and
+    # never-essentials (<5%) both flag low-priority targets via the cap.
+    effects: list[float] = []
+    tissues = tgt.get("depMapEssentiality") or []
+    for tissue in tissues:
+        for s in tissue.get("screens") or []:
+            ge = s.get("geneEffect")
+            if isinstance(ge, (int, float)):
+                effects.append(float(ge))
+    if effects:
+        out["depmap_n_screens"] = len(effects)
+        out["depmap_n_tissues"] = len(tissues)
+        out["depmap_mean_gene_effect"] = sum(effects) / len(effects)
+        out["depmap_pct_essential"] = sum(1 for e in effects if e < -0.5) / len(effects)
+
+    # gnomAD-derived constraint (loaded from OT's geneticConstraint table).
+    # The "lof" row carries LOEUF (oeUpper) — lower = more constrained.
+    for row in tgt.get("geneticConstraint") or []:
+        if row.get("constraintType") == "lof":
+            out["loeuf"] = row.get("oeUpper")
+            out["constraint_oe_lof"] = row.get("oe")
+            out["constraint_top_decile"] = (row.get("upperBin") == 1)
+            break
 
     return out
 

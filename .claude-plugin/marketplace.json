@@ -111,7 +111,7 @@
             "name": "target-prioritization",
             "source": "./plugins/target-prioritization",
             "description": "Multi-source drug-target due-diligence — turn a ranked gene list (e.g. scRNA-seq DE output) into a per-gene dossier across UniProt, OpenTargets, and PubMed, plus a local cross-lineage DE scan, then re-rank by a configurable composite score (cross-lineage convergence + druggability + disease genetics + tractability + novelty). Disease-agnostic: configurable focus disease and cell-context queries.",
-            "version": "0.3.0",
+            "version": "0.4.0",
             "author": { "name": "Agents365-ai" },
             "repository": "https://github.com/Agents365-ai/target-prioritization",
             "license": "PolyForm-NC-1.0.0",

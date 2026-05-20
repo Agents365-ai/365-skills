@@ -1,7 +1,7 @@
 ---
 name: target-prioritization
-description: Prioritize drug targets from a ranked gene list (e.g., scRNA-seq DE output) by orchestrating parallel API queries against UniProt, OpenTargets, PubMed, and the Human Protein Atlas (HPA), then re-ranking by a composite score combining protein localization, druggability, disease genetics, tissue specificity (safety), focus-cell-type expression, and research maturity. Use whenever the user wants to filter, triage, prioritize, or "do due diligence" on a list of candidate genes for drug discovery, especially after a DE / DEG analysis when they say things like "which of these should I follow up on", "filter for druggable targets", "make a target dossier", "rank these for tractability", "annotate these genes for druggability", or "build a target report". Trigger even when the user says just "filter these candidate genes" or hands over a CSV from a DE pipeline.
-metadata: {"openclaw":{"requires":{"bins":["python3","curl"]},"emoji":"🎯"},"version":"0.3.0"}
+description: Prioritize drug targets from a ranked gene list (e.g., scRNA-seq DE output) by orchestrating parallel API queries against UniProt, OpenTargets (with integrated DepMap CRISPR essentiality + gnomAD constraint), PubMed, the Human Protein Atlas (HPA), and ChEMBL tool compounds, then re-ranking by a composite score combining protein localization, druggability, disease genetics, tissue specificity (safety), focus-cell-type expression, CRISPR essentiality, LoF safety constraint, and research maturity. Use whenever the user wants to filter, triage, prioritize, or "do due diligence" on a list of candidate genes for drug discovery, especially after a DE / DEG analysis when they say things like "which of these should I follow up on", "filter for druggable targets", "make a target dossier", "rank these for tractability", "annotate these genes for druggability", or "build a target report". Trigger even when the user says just "filter these candidate genes" or hands over a CSV from a DE pipeline.
+metadata: {"openclaw":{"requires":{"bins":["python3","curl"]},"emoji":"🎯"},"version":"0.4.0"}
 ---
 
 # Target Prioritization
@@ -41,10 +41,13 @@ scripts/orchestrate.py
    ├─► fetch_uniprot.py        → protein localization, surface, MHC, coding
    ├─► fetch_opentargets.py    → tractability, approved drugs, associated
    │                              diseases (subsumes GWAS Catalog via OT's
-   │                              integrated genetics evidence)
+   │                              integrated genetics evidence), DepMap CRISPR
+   │                              essentiality, gnomAD LOEUF / pLI constraint
    ├─► fetch_pubmed.py         → paper counts (total + focus_disease + cell_context)
-   └─► fetch_hpa.py            → HPA tissue / single-cell specificity + nCPM,
-                                  expression cluster, cancer prognostics
+   ├─► fetch_hpa.py            → HPA tissue / single-cell specificity + nCPM,
+   │                              expression cluster, cancer prognostics
+   └─► fetch_chembl.py         → top-potency tool compounds per gene (pIC50,
+                                  IC50 nM, mechanism) — dossier-only, no score
    │
    ▼
 scripts/aggregate.py
@@ -72,7 +75,7 @@ python3 ~/myagents/myskills/target-prioritization/scripts/orchestrate.py \
 - `--top` limits the dossier to the top N input genes (default 50) — input
   order is preserved up to that cut, then composite-score re-ranks within.
 
-`orchestrate.py` runs the four fetchers in parallel (Python threads, since
+`orchestrate.py` runs the five fetchers in parallel (Python threads, since
 all calls are I/O-bound). Each writes a self-contained JSON to
 `<output_dir>/raw_data/<source>.json`. Then `aggregate.py` merges them,
 computes the composite score using `weights.yaml`, writes
@@ -87,15 +90,21 @@ Defaults aim for "find druggable, genetically supported targets with clean
 therapeutic window and expression in the cell of interest":
 
 ```
-composite_score = w1 * druggability_score        (approved drugs, tractability, clin trials)
-                + w2 * disease_genetics_score    (OpenTargets disease associations + focus-disease bonus)
-                + w3 * tractability_bonus        (surface or secreted vs intracellular)
-                + w4 * tissue_specificity        (HPA tissue tag — narrow expression = cleaner window)
-                + w5 * cell_context_score        (HPA single-cell nCPM rank in FOCUS_CELL_TYPES)
-                + w6 * expression_score          (from input DE if present)
-                + w7 * novelty_bonus             (favors moderately studied)
-                - w8 * over_studied_penalty      (PubMed total > cap → diminishing returns)
+composite_score = w1 * druggability_score          (approved drugs, tractability, clin trials)
+                + w2 * disease_genetics_score      (OpenTargets disease associations + focus-disease bonus)
+                + w3 * tractability_bonus          (surface or secreted vs intracellular)
+                + w4 * tissue_specificity          (HPA tissue tag — narrow expression = cleaner window)
+                + w5 * cell_context_score          (HPA single-cell nCPM rank in FOCUS_CELL_TYPES)
+                + w6 * essentiality_score          (DepMap CRISPR % essential, pan-essentials capped)
+                + w7 * safety_constraint_score     (gnomAD LOEUF — high = LoF tolerated → safer to inhibit)
+                + w8 * expression_score            (from input DE if present)
+                + w9 * novelty_bonus               (favors moderately studied)
+                - w10 * over_studied_penalty       (PubMed total > cap → diminishing returns)
 ```
+
+ChEMBL contributes dossier columns (`chembl_target_id`, `chembl_best_pchembl`,
+`chembl_best_ic50_nm`, `chembl_top_compounds`) but no score component — its
+job is to surface concrete tool compounds for the "Suggested next step" slot.
 
 Each component is normalized to [0, 1]. The composite is therefore
 roughly in [-w7, sum(w1..w6)] and is min-max rescaled before reporting.
@@ -120,6 +129,9 @@ All free, no API key needed. Rate limits handled in fetchers:
 - **OpenTargets GraphQL** — generous, single endpoint; provides disease genetics signal via integrated `associatedDiseases`
 - **PubMed E-utilities** — 3 req/sec without key; fetchers respect this
 - **Human Protein Atlas** — `search_download.php` for symbol→ENSG, then per-ENSG `/<ENSG>.json`; no rate limit documented, fetcher sleeps 0.15s/gene
+- **DepMap CRISPR essentiality** — fetched via `target.depMapEssentiality` inside the OpenTargets call (no separate endpoint)
+- **gnomAD constraint** — fetched via `target.geneticConstraint` inside the OpenTargets call (avoids gnomAD's WAF on direct API access)
+- **ChEMBL REST** — `target/search.json` then `activity.json`; ~5 req/sec friendly, fetcher sleeps 0.2s/gene
 
 For deeper API details and field mappings, see
 `references/api_endpoints.md`.

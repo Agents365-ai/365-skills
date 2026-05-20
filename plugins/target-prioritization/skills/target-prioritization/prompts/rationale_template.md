@@ -13,6 +13,12 @@ from the dossier row):
   GWAS / text-mining evidence…"
 - Else if `any_focus_disease_drug` → "Already targeted by an approved
   focus-disease drug ([drug name])…"
+- Else if `depmap_pct_essential >= 0.3` AND `depmap_pct_essential <= 0.8`
+  → "Selectively essential in [N]% of DepMap cell lines (mean
+  geneEffect [val]) — clear dependency in the relevant lineage…"
+- Else if `chembl_best_pchembl >= 9` → "ChEMBL surfaces a sub-nM tool
+  compound ([compound name], pIC50 [val]) — chemistry available now for
+  ex-vivo validation…"
 - Else if `hpa_focus_cell_hits` non-empty AND `cell_context_score >= 0.7`
   → "HPA single-cell data ranks [cell type] in the top-2 expressing cell
   types for this gene (nCPM [val]) — strong target-cell expression…"
@@ -43,6 +49,15 @@ Sentence 2 — **main risk or caveat**:
 - `cell_context_score == 0` and `hpa_focus_cell_hits` empty → "Not in the
   top-expressing cell types per HPA single-cell data — efficacy in the
   target population uncertain."
+- `depmap_pct_essential >= 0.85` → "Pan-essential in DepMap (≥85% of cell
+  lines depend on it) — broad cytotoxicity risk; therapeutic window
+  unlikely without selective delivery."
+- `safety_constraint_score <= 0.4` (LOEUF in top decile) → "gnomAD flags
+  this gene as highly LoF-constrained (LOEUF [val]) — full inhibition
+  may approach haploinsufficient territory."
+- `chembl_target_id is None` or `chembl_best_pchembl is None` → "No
+  potent IC50 tool compound in ChEMBL (pIC50 ≥ 7) — chemical biology
+  starting point is limited."
 
 Sentence 3 (optional) — **specific project context** if obvious from the
 dossier (e.g. "Persists in non-responder cells at post-treatment,

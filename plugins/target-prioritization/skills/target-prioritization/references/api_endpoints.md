@@ -21,9 +21,14 @@ All endpoints are free and require no API key.
      symbol → Ensembl ID
   2. `target(ensemblId: ENSG…)` to get tractability,
      `drugAndClinicalCandidates` (returns rows with
-     `maxClinicalStage` like `APPROVAL`, `PHASE_3`, etc.), and
+     `maxClinicalStage` like `APPROVAL`, `PHASE_3`, etc.),
      `associatedDiseases` (integrates GWAS Catalog + other genetics
-     evidence sources — so we do NOT call GWAS Catalog directly)
+     evidence sources — so we do NOT call GWAS Catalog directly),
+     `depMapEssentiality` (per-tissue + per-cell-line CRISPR `geneEffect`
+     — we do NOT call the DepMap portal API directly), and
+     `geneticConstraint` (gnomAD-derived LOEUF / oe_lof / upperBin —
+     we do NOT call the gnomAD GraphQL directly, which is also
+     useful for avoiding its WAF).
 - Stage tokens are uppercase: `APPROVAL` (=approved), `PHASE_4..PHASE_1`,
   `EARLY_PHASE_1`, `PRECLINICAL`, `WITHDRAWN`, `UNKNOWN`. Mapping lives
   in `PHASE_MAP` inside `fetch_opentargets.py`.
@@ -71,6 +76,20 @@ All endpoints are free and require no API key.
   - `30-99` = moderate
   - `100-499` = well_studied
   - `≥500` = saturated
+
+## ChEMBL REST
+
+- Two HTTP calls per gene:
+  1. `https://www.ebi.ac.uk/chembl/api/data/target/search.json?q=SYMBOL&limit=10`
+     — filter results client-side to `organism == "Homo sapiens"` and
+     `target_type == "SINGLE PROTEIN"`; prefer exact `pref_name` /
+     synonym match.
+  2. `https://www.ebi.ac.uk/chembl/api/data/activity.json?target_chembl_id=ID&standard_type=IC50&pchembl_value__gte=7&limit=5&order_by=-pchembl_value`
+     — pulls the 5 most-potent IC50 assays with pIC50 ≥ 7 (≈ 100 nM).
+- Output is dossier-only: top compound ID, pIC50, IC50 (nM), optional
+  `molecule_pref_name` (named tool compounds like MOBOCERTINIB).
+- No API key, ~5 req/sec friendly; fetcher sleeps 0.2s/gene.
+- Docs: https://www.ebi.ac.uk/chembl/api/data/docs
 
 ## Adding a new source
 
