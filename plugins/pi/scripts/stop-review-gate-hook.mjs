@@ -3,11 +3,12 @@
 import fs from "node:fs";
 import process from "node:process";
 import path from "node:path";
-import { spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 import { getPiAvailability } from "./lib/pi.mjs";
 import { loadPromptTemplate, interpolateTemplate } from "./lib/prompts.mjs";
+import { terminateProcessTree } from "./lib/process.mjs";
 import { getConfig, listJobs } from "./lib/state.mjs";
 import { sortJobsNewestFirst } from "./lib/job-control.mjs";
 import { SESSION_ID_ENV } from "./lib/tracked-jobs.mjs";
@@ -94,6 +95,10 @@ function parseStopReviewOutput(rawOutput) {
   };
 }
 
+// Spawn the pi-companion worker in its own process group so that, on timeout,
+// terminateProcessTree can SIGTERM (and SIGKILL-escalate) the entire tree —
+// including the pi grandchild that would otherwise be orphaned and keep
+// burning API quota.
 function runStopReview(cwd, input = {}) {
   const scriptPath = path.join(SCRIPT_DIR, "pi-companion.mjs");
   const prompt = buildStopReviewPrompt(input);
@@ -101,44 +106,94 @@ function runStopReview(cwd, input = {}) {
     ...process.env,
     ...(input.session_id ? { [SESSION_ID_ENV]: input.session_id } : {})
   };
-  const result = spawnSync(process.execPath, [scriptPath, "task", "--json", prompt], {
-    cwd,
-    env: childEnv,
-    encoding: "utf8",
-    timeout: STOP_REVIEW_TIMEOUT_MS
+
+  return new Promise((resolve) => {
+    let child;
+    try {
+      child = spawn(process.execPath, [scriptPath, "task", "--json", prompt], {
+        cwd,
+        env: childEnv,
+        detached: process.platform !== "win32",
+        windowsHide: true,
+        stdio: ["ignore", "pipe", "pipe"]
+      });
+    } catch (error) {
+      resolve({
+        ok: false,
+        reason: `The stop-time Pi review task could not start: ${error instanceof Error ? error.message : String(error)}`
+      });
+      return;
+    }
+
+    let stdout = "";
+    let stderr = "";
+    let timedOut = false;
+    child.stdout.setEncoding("utf8");
+    child.stderr.setEncoding("utf8");
+    child.stdout.on("data", (chunk) => {
+      stdout += chunk;
+    });
+    child.stderr.on("data", (chunk) => {
+      stderr += chunk;
+    });
+
+    const timer = setTimeout(() => {
+      timedOut = true;
+      if (Number.isFinite(child.pid)) {
+        try {
+          terminateProcessTree(child.pid);
+        } catch {
+          // best-effort
+        }
+      }
+    }, STOP_REVIEW_TIMEOUT_MS);
+    timer.unref?.();
+
+    child.on("error", (error) => {
+      clearTimeout(timer);
+      resolve({
+        ok: false,
+        reason: `The stop-time Pi review task failed: ${error.message}`
+      });
+    });
+
+    child.on("close", (code) => {
+      clearTimeout(timer);
+      if (timedOut) {
+        resolve({
+          ok: false,
+          reason:
+            "The stop-time Pi review task timed out after 15 minutes. Run /pi:review --wait manually or bypass the gate."
+        });
+        return;
+      }
+
+      if (code !== 0) {
+        const detail = (stderr || stdout).trim();
+        resolve({
+          ok: false,
+          reason: detail
+            ? `The stop-time Pi review task failed: ${detail}`
+            : "The stop-time Pi review task failed. Run /pi:review --wait manually or bypass the gate."
+        });
+        return;
+      }
+
+      try {
+        const payload = JSON.parse(stdout);
+        resolve(parseStopReviewOutput(payload?.rawOutput));
+      } catch {
+        resolve({
+          ok: false,
+          reason:
+            "The stop-time Pi review task returned invalid JSON. Run /pi:review --wait manually or bypass the gate."
+        });
+      }
+    });
   });
-
-  if (result.error?.code === "ETIMEDOUT") {
-    return {
-      ok: false,
-      reason:
-        "The stop-time Pi review task timed out after 15 minutes. Run /pi:review --wait manually or bypass the gate."
-    };
-  }
-
-  if (result.status !== 0) {
-    const detail = String(result.stderr || result.stdout || "").trim();
-    return {
-      ok: false,
-      reason: detail
-        ? `The stop-time Pi review task failed: ${detail}`
-        : "The stop-time Pi review task failed. Run /pi:review --wait manually or bypass the gate."
-    };
-  }
-
-  try {
-    const payload = JSON.parse(result.stdout);
-    return parseStopReviewOutput(payload?.rawOutput);
-  } catch {
-    return {
-      ok: false,
-      reason:
-        "The stop-time Pi review task returned invalid JSON. Run /pi:review --wait manually or bypass the gate."
-    };
-  }
 }
 
-function main() {
+async function main() {
   const input = readHookInput();
   const cwd = input.cwd || process.env.CLAUDE_PROJECT_DIR || process.cwd();
   const workspaceRoot = resolveWorkspaceRoot(cwd);
@@ -155,14 +210,19 @@ function main() {
     return;
   }
 
+  // If the user explicitly enabled the gate but pi is not usable, BLOCK
+  // instead of silently letting the session end. A silently-broken gate is
+  // worse than no gate: the user believes they have protection but do not.
   const setupNote = buildSetupNote(cwd);
   if (setupNote) {
-    logNote(setupNote);
-    logNote(runningTaskNote);
+    emitDecision({
+      decision: "block",
+      reason: runningTaskNote ? `${runningTaskNote} ${setupNote}` : setupNote
+    });
     return;
   }
 
-  const review = runStopReview(cwd, input);
+  const review = await runStopReview(cwd, input);
   if (!review.ok) {
     emitDecision({
       decision: "block",
@@ -174,10 +234,8 @@ function main() {
   logNote(runningTaskNote);
 }
 
-try {
-  main();
-} catch (error) {
+main().catch((error) => {
   const message = error instanceof Error ? error.message : String(error);
   process.stderr.write(`${message}\n`);
   process.exitCode = 1;
-}
+});

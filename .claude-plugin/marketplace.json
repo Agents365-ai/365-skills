@@ -121,7 +121,7 @@
             "name": "pi",
             "source": "./plugins/pi",
             "description": "Drive the Pi coding agent (default: DeepSeek V4 Flash for review, Pro for adversarial review) from Claude Code — /pi:review with structured findings, /pi:adversarial-review for design challenges, /pi:rescue with background job control (status/result/cancel), and an optional stop-time review gate. No OAuth (API key only). 1:1 fork of openai/codex-plugin-cc with the runtime swapped from Codex to Pi.",
-            "version": "0.1.0",
+            "version": "0.1.1",
             "author": { "name": "Agents365-ai" },
             "repository": "https://github.com/Agents365-ai/pi-plugin-cc",
             "license": "Apache-2.0",

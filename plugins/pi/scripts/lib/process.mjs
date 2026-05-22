@@ -54,6 +54,32 @@ function looksLikeMissingProcessMessage(text) {
   return /not found|no running instance|cannot find|does not exist|no such process/i.test(text);
 }
 
+// Default grace period before escalating SIGTERM to SIGKILL on Unix.
+// Set to null to disable escalation. Windows taskkill /F is already forceful;
+// escalation is a no-op there.
+const DEFAULT_ESCALATE_MS = 5000;
+
+function scheduleSigkillEscalation(pid, killImpl, escalateAfterMs) {
+  if (!Number.isFinite(escalateAfterMs) || escalateAfterMs <= 0) {
+    return;
+  }
+  const timer = setTimeout(() => {
+    try {
+      killImpl(-pid, "SIGKILL");
+    } catch (error) {
+      if (error?.code === "ESRCH") {
+        return;
+      }
+      try {
+        killImpl(pid, "SIGKILL");
+      } catch {
+        // process is already gone
+      }
+    }
+  }, escalateAfterMs);
+  timer.unref?.();
+}
+
 export function terminateProcessTree(pid, options = {}) {
   if (!Number.isFinite(pid)) {
     return { attempted: false, delivered: false, method: null };
@@ -62,6 +88,7 @@ export function terminateProcessTree(pid, options = {}) {
   const platform = options.platform ?? process.platform;
   const runCommandImpl = options.runCommandImpl ?? runCommand;
   const killImpl = options.killImpl ?? process.kill.bind(process);
+  const escalateAfterMs = options.escalateAfterMs ?? DEFAULT_ESCALATE_MS;
 
   if (platform === "win32") {
     const result = runCommandImpl("taskkill", ["/PID", String(pid), "/T", "/F"], {
@@ -99,11 +126,13 @@ export function terminateProcessTree(pid, options = {}) {
 
   try {
     killImpl(-pid, "SIGTERM");
+    scheduleSigkillEscalation(pid, killImpl, escalateAfterMs);
     return { attempted: true, delivered: true, method: "process-group" };
   } catch (error) {
     if (error?.code !== "ESRCH") {
       try {
         killImpl(pid, "SIGTERM");
+        scheduleSigkillEscalation(pid, killImpl, escalateAfterMs);
         return { attempted: true, delivered: true, method: "process" };
       } catch (innerError) {
         if (innerError?.code === "ESRCH") {

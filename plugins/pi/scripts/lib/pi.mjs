@@ -371,16 +371,25 @@ async function runPiAgentRun(client, prompt, options = {}) {
   if (options.sessionName) {
     try {
       await client.setSessionName(options.sessionName);
-    } catch {
-      // best-effort: pi versions without set_session_name should not block the run
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      // best-effort: pi versions without set_session_name should not block the run.
+      // Log only when the failure shape is not the expected "method not found",
+      // since that case is part of the soft contract.
+      if (!/method|command|unknown/i.test(msg)) {
+        process.stderr.write(`[pi] note: set_session_name failed: ${msg}\n`);
+      }
     }
   }
 
   if (options.effort && VALID_THINKING_LEVELS.has(options.effort)) {
     try {
       await client.setThinkingLevel(options.effort);
-    } catch {
-      // model may not support thinking; pi reports null/ignored — non-fatal
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      process.stderr.write(
+        `[pi] note: thinking level "${options.effort}" requested but pi rejected it (${msg}). The configured model may not support thinking.\n`
+      );
     }
   }
 
@@ -391,10 +400,13 @@ async function runPiAgentRun(client, prompt, options = {}) {
     agentEndReject = reject;
   });
 
+  const detachHandler = () => client.setEventHandler(null);
+
   client.setEventHandler((event) => {
     try {
       handlePiEvent(state, event);
     } catch (err) {
+      detachHandler();
       agentEndReject(err);
       return;
     }
@@ -407,34 +419,57 @@ async function runPiAgentRun(client, prompt, options = {}) {
   try {
     await client.sendPrompt(prompt);
   } catch (error) {
+    // Detach the handler so any late stdout events cannot trigger a dangling
+    // rejection on agentEndPromise (which nobody is awaiting after this early
+    // return). Node ≥15 terminates the process on unhandled rejection.
+    detachHandler();
+    agentEndResolve();
     state.error = { message: error instanceof Error ? error.message : String(error) };
     state.completed = false;
     state.finalTurn = { id: state.turnId ?? "rejected", status: "failed" };
     return state;
   }
 
-  await agentEndPromise;
+  // Race against the client's exit promise so that a crashing pi process which
+  // never emits agent_end does not deadlock the run. If the pi process exits
+  // first, treat that as a failure and surface the captured exit error.
+  await Promise.race([agentEndPromise, client.exitPromise]);
+  detachHandler();
 
-  // After agent_end, fetch the canonical last assistant text and current session info.
-  try {
-    const final = await client.getLastAssistantText();
-    if (final && typeof final.text === "string" && final.text) {
-      state.lastAgentMessage = final.text;
-    }
-  } catch {
-    // pi may already be tearing down; rely on streamed message_end
+  if (!state.completed) {
+    const exitErrorMessage =
+      client.exitError instanceof Error ? client.exitError.message : "pi exited before agent_end";
+    state.error = state.error ?? { message: exitErrorMessage };
+    state.finalTurn = { id: state.turnId ?? "interrupted", status: "failed" };
+    return state;
   }
 
-  try {
-    const finalState = await client.getState();
-    if (finalState?.sessionId && !state.sessionId) {
-      state.sessionId = finalState.sessionId;
+  // After agent_end, fetch the canonical last assistant text and current
+  // session info. Skip if pi already tore down its stdin pipe; otherwise the
+  // silent catch would shadow the streamed message_end capture with an empty
+  // value if the RPC happens to succeed against a half-closed pipe.
+  const stdinAlive = Boolean(client.proc?.stdin && !client.proc.stdin.destroyed && !client.closed);
+  if (stdinAlive) {
+    try {
+      const final = await client.getLastAssistantText();
+      if (final && typeof final.text === "string" && final.text) {
+        state.lastAgentMessage = final.text;
+      }
+    } catch {
+      // pi may already be tearing down; rely on streamed message_end
     }
-    if (finalState?.sessionFile && !state.sessionFile) {
-      state.sessionFile = finalState.sessionFile;
+
+    try {
+      const finalState = await client.getState();
+      if (finalState?.sessionId && !state.sessionId) {
+        state.sessionId = finalState.sessionId;
+      }
+      if (finalState?.sessionFile && !state.sessionFile) {
+        state.sessionFile = finalState.sessionFile;
+      }
+    } catch {
+      // tolerate teardown races
     }
-  } catch {
-    // tolerate teardown races
   }
 
   state.finalTurn = {

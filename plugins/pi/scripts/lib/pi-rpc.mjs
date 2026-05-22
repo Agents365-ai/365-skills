@@ -10,6 +10,14 @@ const CHANNEL_DEFAULTS = {
   extraArgs: []
 };
 
+// Cap accumulated stderr to last STDERR_MAX_BYTES so a long-running task
+// cannot OOM the companion via verbose pi stderr.
+const STDERR_MAX_BYTES = 64 * 1024;
+
+// SIGTERM grace before SIGKILL when closing a stuck pi process.
+const KILL_GRACE_MS = 5000;
+const SIGTERM_DELAY_MS = 50;
+
 export class PiRpcClient {
   constructor(cwd, options = {}) {
     this.cwd = cwd;
@@ -31,6 +39,9 @@ export class PiRpcClient {
     this.exitResolved = false;
     this.stdoutBuffer = "";
     this.decoder = new StringDecoder("utf8");
+    this.exitDetail = null;
+    this._termTimer = null;
+    this._killTimer = null;
 
     this.exitPromise = new Promise((resolve) => {
       this.resolveExit = resolve;
@@ -46,34 +57,79 @@ export class PiRpcClient {
   }
 
   async start() {
-    this.proc = spawn(this.command, this.spawnArgs, {
-      cwd: this.cwd,
-      env: this.env,
-      stdio: ["pipe", "pipe", "pipe"],
-      shell: process.platform === "win32" ? (process.env.SHELL || true) : false,
-      windowsHide: true
-    });
+    try {
+      this.proc = spawn(this.command, this.spawnArgs, {
+        cwd: this.cwd,
+        env: this.env,
+        stdio: ["pipe", "pipe", "pipe"],
+        shell: process.platform === "win32" ? (process.env.SHELL || true) : false,
+        windowsHide: true
+      });
+    } catch (error) {
+      this._handleExit(error);
+      throw error;
+    }
 
     this.proc.stderr.setEncoding("utf8");
     this.proc.stderr.on("data", (chunk) => {
       this.stderr += chunk;
+      if (this.stderr.length > STDERR_MAX_BYTES * 2) {
+        this.stderr = this.stderr.slice(-STDERR_MAX_BYTES);
+      }
     });
 
     this.proc.on("error", (error) => {
       this._handleExit(error);
     });
 
+    // Capture exit code/signal first; resolve the lifecycle promise only on
+    // 'close', which fires after all stdio streams are drained. This avoids
+    // dropping the final agent_end line that may still be buffered on stdout
+    // when 'exit' fires.
     this.proc.on("exit", (code, signal) => {
-      const detail =
-        code === 0
-          ? null
-          : new Error(`pi --mode rpc exited unexpectedly (${signal ? `signal ${signal}` : `exit ${code}`}).`);
-      this._handleExit(detail);
+      if (code !== 0 || signal) {
+        this.exitDetail = new Error(
+          `pi --mode rpc exited unexpectedly (${signal ? `signal ${signal}` : `exit ${code}`}).`
+        );
+      }
+    });
+
+    this.proc.on("close", () => {
+      this._drainStdoutDecoder();
+      this._handleExit(this.exitDetail);
     });
 
     this.proc.stdout.on("data", (chunk) => {
       this._handleChunk(chunk);
     });
+  }
+
+  _drainStdoutDecoder() {
+    const residual = this.decoder.end();
+    if (!residual) {
+      return;
+    }
+    this.stdoutBuffer += residual;
+    if (this.stdoutBuffer.length > 0) {
+      // Process any complete lines, then any trailing partial line as a final record.
+      while (true) {
+        const newlineIndex = this.stdoutBuffer.indexOf("\n");
+        if (newlineIndex === -1) {
+          break;
+        }
+        let line = this.stdoutBuffer.slice(0, newlineIndex);
+        this.stdoutBuffer = this.stdoutBuffer.slice(newlineIndex + 1);
+        if (line.endsWith("\r")) {
+          line = line.slice(0, -1);
+        }
+        this._handleLine(line);
+      }
+      const trailing = this.stdoutBuffer;
+      this.stdoutBuffer = "";
+      if (trailing.trim()) {
+        this._handleLine(trailing);
+      }
+    }
   }
 
   _handleChunk(chunk) {
@@ -139,12 +195,24 @@ export class PiRpcClient {
     pending.reject(new Error(errorMessage));
   }
 
+  _clearKillTimers() {
+    if (this._termTimer) {
+      clearTimeout(this._termTimer);
+      this._termTimer = null;
+    }
+    if (this._killTimer) {
+      clearTimeout(this._killTimer);
+      this._killTimer = null;
+    }
+  }
+
   _handleExit(error) {
     if (this.exitResolved) {
       return;
     }
     this.exitResolved = true;
     this.exitError = error ?? null;
+    this._clearKillTimers();
 
     for (const pending of this.pending.values()) {
       pending.reject(this.exitError ?? new Error("pi RPC connection closed."));
@@ -158,10 +226,6 @@ export class PiRpcClient {
       throw new Error("pi RPC stdin is not available.");
     }
     this.proc.stdin.write(`${JSON.stringify(payload)}\n`);
-  }
-
-  command_send(commandObject, options = {}) {
-    return this.request(commandObject, options);
   }
 
   request(commandObject, options = {}) {
@@ -201,29 +265,57 @@ export class PiRpcClient {
     }
     this.closed = true;
 
+    // start() may have failed before assigning this.proc (e.g. spawn threw
+    // synchronously); short-circuit so we do not await an exitPromise that
+    // nobody will resolve.
+    if (!this.proc) {
+      this._handleExit(null);
+      return;
+    }
+
     try {
-      this.proc?.stdin?.end();
+      this.proc.stdin?.end();
     } catch {
       // ignore stdin teardown errors
     }
 
-    setTimeout(() => {
-      if (this.proc && !this.proc.killed && this.proc.exitCode === null) {
+    const procStillAlive = () =>
+      this.proc && !this.proc.killed && this.proc.exitCode === null && !this.exitResolved;
+
+    this._termTimer = setTimeout(() => {
+      this._termTimer = null;
+      if (!procStillAlive()) {
+        return;
+      }
+      try {
+        terminateProcessTree(this.proc.pid);
+      } catch {
+        // best-effort cleanup
+      }
+      this._killTimer = setTimeout(() => {
+        this._killTimer = null;
+        if (!procStillAlive()) {
+          return;
+        }
         if (process.platform === "win32") {
           try {
             terminateProcessTree(this.proc.pid);
           } catch {
-            // best-effort
+            // taskkill /F already attempted; nothing more to do
           }
-        } else {
+          return;
+        }
+        try {
+          process.kill(-this.proc.pid, "SIGKILL");
+        } catch {
           try {
-            this.proc.kill("SIGTERM");
+            this.proc.kill("SIGKILL");
           } catch {
-            // process may already be gone
+            // process is already gone
           }
         }
-      }
-    }, 50).unref?.();
+      }, KILL_GRACE_MS).unref?.();
+    }, SIGTERM_DELAY_MS).unref?.();
 
     await this.exitPromise;
   }
