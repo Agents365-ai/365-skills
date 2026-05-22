@@ -67,8 +67,13 @@ const VALID_REASONING_EFFORTS = new Set(["off", "minimal", "low", "medium", "hig
 const EFFORT_ALIASES = new Map([["none", "off"]]);
 const STOP_REVIEW_TASK_MARKER = "Run a stop-gate review of the previous Claude turn.";
 
-const DEFAULT_REVIEW_MODEL = "deepseek-v4-flash";
-const DEFAULT_ADVERSARIAL_REVIEW_MODEL = "deepseek-v4-pro";
+// Model selection is delegated to pi by default. The plugin only forces a
+// specific model when the user pins one explicitly via --model on the slash
+// command or via these env vars. With both unset, pi picks the model it is
+// configured for (any provider pi supports: DeepSeek, OpenAI, Anthropic,
+// Google, Ollama, LM Studio, or any OpenAI-compatible endpoint).
+const ENV_REVIEW_MODEL = process.env.PI_PLUGIN_REVIEW_MODEL?.trim() || null;
+const ENV_ADVERSARIAL_REVIEW_MODEL = process.env.PI_PLUGIN_ADVERSARIAL_REVIEW_MODEL?.trim() || null;
 
 function printUsage() {
   console.log(
@@ -339,8 +344,11 @@ async function executeReviewRun(request) {
   const reviewName = request.reviewName ?? "Review";
   const isAdversarial = reviewName === "Adversarial Review";
   const templateName = isAdversarial ? "adversarial-review" : "review";
-  const defaultModel = isAdversarial ? DEFAULT_ADVERSARIAL_REVIEW_MODEL : DEFAULT_REVIEW_MODEL;
-  const model = request.model ?? defaultModel;
+  // request.model: explicit --model on the slash command. Highest priority.
+  // ENV_*_REVIEW_MODEL: opt-in pin via env var.
+  // null: defer to pi's own configured default model.
+  const envDefault = isAdversarial ? ENV_ADVERSARIAL_REVIEW_MODEL : ENV_REVIEW_MODEL;
+  const model = request.model ?? envDefault ?? null;
 
   const context = collectReviewContext(request.cwd, target);
   const prompt = buildReviewPrompt(templateName, context, focusText);
