@@ -1,0 +1,21 @@
+{
+  "tts_backend": "azure",
+  "voice": "zh-CN-XiaoxiaoNeural",
+  "voice_alternates": {
+    "male_serious": "zh-CN-YunjianNeural",
+    "male_news": "zh-CN-YunyangNeural",
+    "female_warm": "zh-CN-XiaohanNeural"
+  },
+  "rate": "+5%",
+  "rate_range": {
+    "slow": "+0%",
+    "normal": "+5%",
+    "fast": "+10%"
+  },
+  "style": "",
+  "style_notes": "Empty style avoids vocoder artifacts that some styles trigger on Multilingual variants. For pure zh-CN voice, 'serious' / 'newscast' / 'cheerful' all work but test first. Default empty = neutral natural prosody.",
+  "avoid": {
+    "voice": "zh-CN-XiaoxiaoMultilingualNeural",
+    "reason": "This preset's content is mostly Chinese with bare English abbreviations (AI/ML/GPT). Multilingual triggers <lang en-US> switching which causes deterministic vocoder artifacts at certain Chinese-tone → English-vowel transitions. See references/azure-tts-pitfalls.md."
+  }
+}

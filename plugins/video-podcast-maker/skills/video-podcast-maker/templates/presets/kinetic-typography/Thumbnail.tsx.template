@@ -1,0 +1,78 @@
+/**
+ * Kinetic Typography Thumbnail Template
+ *
+ * Replace {{COMPONENT_NAME}} with your composition name.
+ * Replace {{TITLE_LINE_1}} (huge white) and {{TITLE_LINE_2}} (mint marker subtitle).
+ * Replace {{FLAG_TEXT}} (top accent badge), {{LEFT_TAG}}, {{RIGHT_TAG}}, {{CORNER_TAG}}.
+ * Replace {{PUNCH_LEFT}} and {{PUNCH_RIGHT}} (the bottom contrast punch line).
+ */
+import React from 'react'
+import { AbsoluteFill } from 'remotion'
+
+const BLACK = '#000000'
+const BG = '#08091A'
+const WHITE = '#FFFFFF'
+const MINT = '#5EEAD4'
+const FONT_FAMILY = '"PingFang SC", "Noto Sans SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif'
+
+export const {{COMPONENT_NAME}}Thumbnail: React.FC<{ aspectRatio?: string }> = ({ aspectRatio = '16:9' }) => {
+  const is4x3 = aspectRatio === '4:3'
+  const titleSize = is4x3 ? 220 : 260
+  const subSize = is4x3 ? 140 : 160
+  const badgeSize = is4x3 ? 38 : 44
+  const flagSize = is4x3 ? 56 : 64
+
+  const particles = React.useMemo(() => {
+    const seed = (i: number) => Math.sin(i * 9301 + 49297) * 233280
+    const rand = (i: number, o: number) => Math.abs((seed(i + o) - Math.floor(seed(i + o))) * 1)
+    return Array.from({ length: 70 }).map((_, i) => ({
+      x: rand(i, 1) * 100,
+      y: rand(i, 2) * 100,
+      size: 2 + rand(i, 3) * 5,
+      o: 0.25 + rand(i, 4) * 0.6,
+    }))
+  }, [])
+
+  return (
+    <AbsoluteFill style={{ backgroundColor: BG, fontFamily: FONT_FAMILY, overflow: 'hidden' }}>
+      {particles.map((p, i) => (
+        <div key={i} style={{ position: 'absolute', left: `${p.x}%`, top: `${p.y}%`, width: p.size, height: p.size, borderRadius: '50%', backgroundColor: WHITE, opacity: p.o, filter: p.size > 4 ? 'blur(1px)' : 'none' }} />
+      ))}
+      <div style={{ position: 'absolute', left: '50%', top: '50%', width: '70%', height: '70%', transform: 'translate(-50%, -50%)', background: 'radial-gradient(circle, rgba(94,234,212,0.18) 0%, rgba(94,234,212,0) 60%)', pointerEvents: 'none' }} />
+
+      {/* Right vertical decor */}
+      <div style={{ position: 'absolute', right: 36, top: 36, bottom: 36, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+        <div style={{ writingMode: 'vertical-rl', color: MINT, fontWeight: 900, fontSize: badgeSize, letterSpacing: 8 }}>{{RIGHT_TAG}}</div>
+        <div style={{ writingMode: 'vertical-rl', color: 'rgba(255,255,255,0.4)', fontWeight: 900, fontSize: badgeSize - 4, letterSpacing: 6 }}>{{CORNER_TAG}}</div>
+      </div>
+
+      {/* Left vertical decor */}
+      <div style={{ position: 'absolute', left: 36, top: 36, writingMode: 'vertical-rl', color: MINT, fontWeight: 900, fontSize: badgeSize, letterSpacing: 8 }}>{{LEFT_TAG}}</div>
+
+      <AbsoluteFill style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '0 200px', gap: 12 }}>
+        {/* Top flag */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, color: MINT, fontWeight: 900, fontSize: flagSize, letterSpacing: 4, marginBottom: 18, border: `4px solid ${MINT}`, padding: '12px 36px', transform: 'skewX(-6deg)' }}>
+          <span style={{ transform: 'skewX(6deg)' }}>{{FLAG_TEXT}}</span>
+        </div>
+
+        {/* Hero title — huge white */}
+        <div style={{ color: WHITE, fontWeight: 900, fontSize: titleSize, letterSpacing: -8, lineHeight: 0.95, textAlign: 'center', textShadow: '0 0 40px rgba(255,255,255,0.15)' }}>
+          {{TITLE_LINE_1}}
+        </div>
+
+        {/* Mint marker subtitle */}
+        <div style={{ color: MINT, fontWeight: 800, fontSize: subSize, letterSpacing: 2, transform: 'skewX(-6deg)', lineHeight: 1, marginTop: 16, textShadow: '0 0 24px rgba(94,234,212,0.45)', position: 'relative', paddingBottom: 14 }}>
+          {{TITLE_LINE_2}}
+          <div style={{ position: 'absolute', left: 8, right: 8, bottom: -4, height: 10, backgroundColor: MINT, opacity: 0.6, transform: 'skewX(-12deg)' }} />
+        </div>
+
+        {/* Punch line */}
+        <div style={{ display: 'flex', gap: 22, marginTop: 36, fontWeight: 900, fontSize: badgeSize + 14, letterSpacing: 1 }}>
+          <span style={{ color: 'rgba(255,255,255,0.85)' }}>{{PUNCH_LEFT}}</span>
+          <span style={{ color: MINT }}>/</span>
+          <span style={{ color: MINT }}>{{PUNCH_RIGHT}}</span>
+        </div>
+      </AbsoluteFill>
+    </AbsoluteFill>
+  )
+}

@@ -1,0 +1,54 @@
+{
+  "default": {
+    "name": "mint-yellow",
+    "bg": "#08091A",
+    "text_primary": "#FFFFFF",
+    "accent_1": "#5EEAD4",
+    "accent_1_glow": "rgba(94, 234, 212, 0.35)",
+    "accent_2": "#FACC15",
+    "accent_2_glow": "rgba(250, 204, 21, 0.40)",
+    "vignette": "rgba(0, 0, 0, 0.55)",
+    "use_for": "Educational / argumentative / opinion videos. Friendly mint primary, warning-yellow secondary."
+  },
+  "alternates": [
+    {
+      "name": "magenta-cyan",
+      "bg": "#0A0F1F",
+      "text_primary": "#FFFFFF",
+      "accent_1": "#22D3EE",
+      "accent_1_glow": "rgba(34, 211, 238, 0.35)",
+      "accent_2": "#F472B6",
+      "accent_2_glow": "rgba(244, 114, 182, 0.40)",
+      "vignette": "rgba(0, 0, 0, 0.55)",
+      "use_for": "Tech / future / sci-fi tone. Cooler, more digital."
+    },
+    {
+      "name": "warm-cinema",
+      "bg": "#0F0A0A",
+      "text_primary": "#F5F5F4",
+      "accent_1": "#F59E0B",
+      "accent_1_glow": "rgba(245, 158, 11, 0.35)",
+      "accent_2": "#EF4444",
+      "accent_2_glow": "rgba(239, 68, 68, 0.40)",
+      "vignette": "rgba(0, 0, 0, 0.65)",
+      "use_for": "Narrative / cinematic / emotional. Warmer, more dramatic."
+    },
+    {
+      "name": "monochrome-punk",
+      "bg": "#000000",
+      "text_primary": "#FFFFFF",
+      "accent_1": "#FFFFFF",
+      "accent_1_glow": "rgba(255, 255, 255, 0.30)",
+      "accent_2": "#EAB308",
+      "accent_2_glow": "rgba(234, 179, 8, 0.40)",
+      "vignette": "rgba(0, 0, 0, 0.45)",
+      "use_for": "Minimalist statement videos. White-on-black with a single punch colour."
+    }
+  ],
+  "rules": {
+    "max_full_screen_overlay_opacity": 0.30,
+    "min_snap_duration_frames": 10,
+    "ambient_pulse_max_opacity": 0.15,
+    "ambient_pulse_min_period_seconds": 2.0
+  }
+}

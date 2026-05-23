@@ -1,0 +1,331 @@
+/**
+ * Kinetic Typography Video Template
+ *
+ * Replace {{COMPONENT_NAME}} with your composition name (e.g. AiEraLearningExpertise).
+ * Replace {{TIMING_IMPORT_PATH}} with your project's timing.json import path.
+ * Replace {{AUDIO_FILE}} with your audio file name (default: 'podcast_audio.wav').
+ * Fill in SECTION_BEATS with `startSec` values sourced from your podcast_audio.srt.
+ *
+ * After filling in, audit alignment with:
+ *   python3 ${SKILL_DIR}/scripts/audit_beat_sync.py <this_file> <timing.json>
+ */
+import React from 'react'
+import {
+  AbsoluteFill,
+  Audio,
+  Sequence,
+  staticFile,
+  useCurrentFrame,
+  useVideoConfig,
+  interpolate,
+  spring,
+  Easing,
+} from 'remotion'
+import { Scale4K } from './components/layouts'
+import timing from '{{TIMING_IMPORT_PATH}}'
+
+const FPS = 30
+const BLACK = '#000000'
+const BG = '#08091A' // dark navy — not pure black; from colors.json default
+const WHITE = '#FFFFFF'
+const MINT = '#5EEAD4'
+const YELLOW = '#FACC15'
+const MINT_DIM = 'rgba(94, 234, 212, 0.35)'
+const YELLOW_DIM = 'rgba(250, 204, 21, 0.4)'
+const FONT_FAMILY =
+  '"PingFang SC", "Noto Sans SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif'
+
+// ============================================================================
+// AMBIENT BACKGROUND LAYERS (do not modify unless changing the overall feel)
+// ============================================================================
+
+const GlowOrbs: React.FC = () => {
+  const frame = useCurrentFrame()
+  const t = frame / 60
+  const o1x = 480 + Math.sin(t * 0.18) * 360
+  const o1y = 540 + Math.cos(t * 0.13) * 220
+  const o2x = 1480 + Math.sin(t * 0.15 + 2) * 320
+  const o2y = 540 + Math.cos(t * 0.21 + 1) * 240
+  return (
+    <AbsoluteFill style={{ pointerEvents: 'none' }}>
+      <div style={{ position: 'absolute', left: o1x - 600, top: o1y - 600, width: 1200, height: 1200, borderRadius: '50%', background: 'radial-gradient(circle, rgba(94,234,212,0.16) 0%, rgba(94,234,212,0.05) 35%, rgba(94,234,212,0) 70%)', filter: 'blur(40px)' }} />
+      <div style={{ position: 'absolute', left: o2x - 600, top: o2y - 600, width: 1200, height: 1200, borderRadius: '50%', background: 'radial-gradient(circle, rgba(250,204,21,0.10) 0%, rgba(250,204,21,0.03) 35%, rgba(250,204,21,0) 70%)', filter: 'blur(40px)' }} />
+      <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at center, rgba(8,9,26,0) 30%, rgba(0,0,0,0.55) 100%)' }} />
+    </AbsoluteFill>
+  )
+}
+
+const ParticleField: React.FC<{ count?: number; opacity?: number }> = ({ count = 45, opacity = 0.55 }) => {
+  const frame = useCurrentFrame()
+  const particles = React.useMemo(() => {
+    const seed = (i: number) => Math.sin(i * 9301 + 49297) * 233280
+    const rand = (i: number, o: number) => Math.abs((seed(i + o) - Math.floor(seed(i + o))) * 1)
+    return Array.from({ length: count }).map((_, i) => ({
+      x: rand(i, 1) * 1920,
+      yOffset: rand(i, 2) * 1080,
+      speed: 0.4 + rand(i, 3) * 1.6,
+      size: 2 + rand(i, 4) * 4,
+      drift: rand(i, 5) * 60 - 30,
+      o: 0.3 + rand(i, 6) * 0.7,
+    }))
+  }, [count])
+  return (
+    <AbsoluteFill style={{ pointerEvents: 'none' }}>
+      {particles.map((p, i) => {
+        const y = (p.yOffset + frame * p.speed) % 1180 - 50
+        const x = p.x + Math.sin(frame / 30 + i) * p.drift
+        return <div key={i} style={{ position: 'absolute', left: x, top: y, width: p.size, height: p.size, borderRadius: '50%', backgroundColor: WHITE, opacity: p.o * opacity, filter: `blur(${p.size > 4 ? 1 : 0.3}px)` }} />
+      })}
+    </AbsoluteFill>
+  )
+}
+
+const FilmGrain: React.FC<{ opacity?: number }> = ({ opacity = 0.05 }) => {
+  const frame = useCurrentFrame()
+  const offset = (frame % 7) * 13
+  return <AbsoluteFill style={{ opacity, pointerEvents: 'none', backgroundImage: 'radial-gradient(rgba(255,255,255,0.6) 1px, transparent 1px), radial-gradient(rgba(255,255,255,0.4) 1px, transparent 1px)', backgroundSize: '3px 3px, 5px 5px', backgroundPosition: `${offset}px ${offset}px, ${-offset}px ${offset}px`, mixBlendMode: 'overlay' }} />
+}
+
+const VerticalDecor: React.FC<{ chapter: string; total: string; label: string }> = ({ chapter, total, label }) => {
+  const frame = useCurrentFrame()
+  const fade = interpolate(frame, [0, 18], [0, 1], { extrapolateRight: 'clamp' })
+  return (
+    <div style={{ position: 'absolute', right: 36, top: 60, bottom: 60, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'space-between', opacity: fade, pointerEvents: 'none' }}>
+      <div style={{ writingMode: 'vertical-rl', fontFamily: FONT_FAMILY, fontWeight: 900, color: MINT, fontSize: 40, letterSpacing: 6, textTransform: 'uppercase' }}>CHAPTER {chapter} / {total}</div>
+      <div style={{ writingMode: 'vertical-rl', fontFamily: FONT_FAMILY, fontWeight: 900, color: 'rgba(255,255,255,0.35)', fontSize: 32, letterSpacing: 4 }}>{label}</div>
+    </div>
+  )
+}
+
+const LeftTag: React.FC<{ text: string }> = ({ text }) => {
+  const frame = useCurrentFrame()
+  const fade = interpolate(frame, [0, 18], [0, 1], { extrapolateRight: 'clamp' })
+  return <div style={{ position: 'absolute', left: 36, top: 60, opacity: fade, writingMode: 'vertical-rl', fontFamily: FONT_FAMILY, fontWeight: 900, color: 'rgba(255,255,255,0.25)', fontSize: 30, letterSpacing: 8, textTransform: 'uppercase' }}>{text}</div>
+}
+
+// ============================================================================
+// BEAT TYPES
+// ============================================================================
+
+type Color = 'white' | 'mint' | 'black' | 'yellow'
+type Variant = 'pop' | 'flash' | 'slide' | 'numbered' | 'quote' | 'title'
+
+type Line = { t: string; c?: Color; size?: number; marker?: boolean }
+
+type Beat = {
+  variant?: Variant
+  number?: string
+  who?: string
+  lines: Line[]
+  weight?: number          // legacy fallback
+  startSec?: number        // PREFERRED — absolute seconds from section start (sourced from SRT)
+}
+
+// ============================================================================
+// CHARACTER REVEALS (do not modify unless tweaking the type-pop feel)
+// ============================================================================
+
+const PopChar: React.FC<{ char: string; delay: number; color: string; size: number; weight?: number; marker?: boolean }> = ({ char, delay, color, size, weight = 900, marker = false }) => {
+  const frame = useCurrentFrame()
+  const { fps } = useVideoConfig()
+  const local = frame - delay
+  const s = spring({ frame: local, fps, config: { damping: 14, stiffness: 220, mass: 0.6 } })
+  const scale = interpolate(s, [0, 1], [2.4, 1])
+  const opacity = interpolate(local, [-1, 0, 4], [0, 0, 1], { extrapolateRight: 'clamp' })
+  const blur = interpolate(s, [0, 1], [10, 0])
+  return <span style={{ display: 'inline-block', transform: `scale(${scale}) ${marker ? 'skewX(-6deg)' : ''}`, opacity, color, fontWeight: weight, fontSize: size, filter: `blur(${blur}px)`, letterSpacing: marker ? 2 : -2, lineHeight: 1, whiteSpace: 'pre' }}>{char}</span>
+}
+
+const MarkerLine: React.FC<{ text: string; delay: number; size: number; color?: string }> = ({ text, delay, size, color = MINT }) => {
+  const frame = useCurrentFrame()
+  const local = frame - delay
+  const reveal = interpolate(local, [0, 14], [0, 100], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })
+  const lift = interpolate(local, [0, 14], [12, 0], { extrapolateRight: 'clamp', easing: Easing.out(Easing.cubic) })
+  const glow = color === YELLOW ? YELLOW_DIM : MINT_DIM
+  return (
+    <div style={{ position: 'relative', display: 'inline-block', transform: `translateY(${lift}px)`, clipPath: `inset(0 ${100 - reveal}% 0 0)` }}>
+      <span style={{ display: 'inline-block', color, fontWeight: 800, fontSize: size, fontFamily: FONT_FAMILY, transform: 'skewX(-5deg)', letterSpacing: 1, lineHeight: 1, textShadow: `0 0 18px ${glow}` }}>{text}</span>
+      <div style={{ position: 'absolute', left: 0, right: 0, bottom: -10, height: 6, backgroundColor: color, opacity: 0.55, clipPath: `inset(0 ${100 - reveal}% 0 0)`, transform: 'skewX(-12deg)' }} />
+    </div>
+  )
+}
+
+// ============================================================================
+// KINETIC BEAT (renders one beat object)
+// ============================================================================
+
+const KineticBeat: React.FC<{ beat: Beat; durationFrames: number }> = ({ beat, durationFrames }) => {
+  const frame = useCurrentFrame()
+  const variant = beat.variant ?? 'pop'
+
+  // Soft accent pulse for "flash" variant — capped at 0.10 opacity per design-guide animation safety
+  const flashAlpha =
+    variant === 'flash'
+      ? interpolate(frame, [0, 6, 14], [0, 0.10, 0], { extrapolateRight: 'clamp' })
+      : 0
+
+  const exitOpacity = interpolate(frame, [durationFrames - 8, durationFrames], [1, 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })
+  const baseFontSize = 200
+
+  const renderLine = (line: Line, lineIdx: number, baseDelay: number) => {
+    const color = line.c === 'mint' ? MINT : line.c === 'yellow' ? YELLOW : line.c === 'black' ? BLACK : WHITE
+    const size = line.size ?? baseFontSize
+    const text = line.t
+    if (line.marker) {
+      return (
+        <div key={lineIdx} style={{ display: 'flex', justifyContent: 'center', margin: '6px 0', paddingLeft: 16 }}>
+          <MarkerLine text={text} delay={baseDelay} size={size} color={color} />
+        </div>
+      )
+    }
+    const chars = Array.from(text)
+    return (
+      <div key={lineIdx} style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', margin: '6px 0', fontFamily: FONT_FAMILY }}>
+        {chars.map((ch, i) => (
+          <PopChar key={i} char={ch} delay={baseDelay + i * 2} color={color} size={size} weight={900} />
+        ))}
+      </div>
+    )
+  }
+
+  if (variant === 'numbered' && beat.number) {
+    const numS = spring({ frame, fps: FPS, config: { damping: 12, stiffness: 200, mass: 0.7 } })
+    return (
+      <AbsoluteFill style={{ opacity: exitOpacity }}>
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 60 }}>
+          <div style={{ fontFamily: FONT_FAMILY, fontWeight: 900, fontSize: 520, color: MINT, lineHeight: 1, transform: `scale(${interpolate(numS, [0, 1], [0.4, 1])})`, opacity: interpolate(frame, [0, 8], [0, 1], { extrapolateRight: 'clamp' }), letterSpacing: -20, textShadow: `0 0 60px ${MINT_DIM}` }}>{beat.number}</div>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {beat.lines.map((line, i) => renderLine(line, i, 6 + i * 8))}
+          </div>
+        </div>
+      </AbsoluteFill>
+    )
+  }
+
+  if (variant === 'quote') {
+    return (
+      <AbsoluteFill style={{ opacity: exitOpacity }}>
+        <div style={{ position: 'absolute', top: 80, left: 80, fontSize: 360, lineHeight: 0.6, color: MINT, fontFamily: 'Georgia, serif', opacity: interpolate(frame, [0, 12], [0, 0.55], { extrapolateRight: 'clamp' }), transform: `translateY(${interpolate(frame, [0, 12], [-30, 0], { extrapolateRight: 'clamp' })}px)` }}>“</div>
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 100px' }}>
+          {beat.lines.map((line, i) => renderLine(line, i, 6 + i * 6))}
+          {beat.who && <div style={{ marginTop: 36, fontFamily: FONT_FAMILY, color: MINT, fontWeight: 700, fontSize: 44, letterSpacing: 4, opacity: interpolate(frame, [20, 32], [0, 1], { extrapolateRight: 'clamp' }) }}>— {beat.who}</div>}
+        </div>
+      </AbsoluteFill>
+    )
+  }
+
+  if (variant === 'title') {
+    return (
+      <AbsoluteFill style={{ opacity: exitOpacity }}>
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 8, padding: '0 80px' }}>
+          {beat.lines.map((line, i) => renderLine(line, i, 4 + i * 14))}
+        </div>
+      </AbsoluteFill>
+    )
+  }
+
+  return (
+    <AbsoluteFill style={{ opacity: exitOpacity }}>
+      {flashAlpha > 0 && <AbsoluteFill style={{ backgroundColor: WHITE, opacity: flashAlpha }} />}
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '0 80px' }}>
+        {beat.lines.map((line, i) => renderLine(line, i, 4 + i * 10))}
+      </div>
+    </AbsoluteFill>
+  )
+}
+
+// Distribute beats across section duration. If startSec present on all → absolute. Else weights.
+const distributeBeats = (totalFrames: number, beats: Beat[]) => {
+  const useAbsolute = beats.every((b) => typeof b.startSec === 'number')
+  if (useAbsolute) {
+    return beats.map((beat, i) => {
+      const start = Math.round((beat.startSec as number) * FPS)
+      const nextStart = i < beats.length - 1 ? Math.round((beats[i + 1].startSec as number) * FPS) : totalFrames
+      return { beat, start, dur: nextStart - start }
+    })
+  }
+  const weights = beats.map((b) => b.weight ?? 1)
+  const sum = weights.reduce((a, b) => a + b, 0)
+  let cursor = 0
+  return beats.map((beat, i) => {
+    const dur = i === beats.length - 1 ? totalFrames - cursor : Math.round((weights[i] / sum) * totalFrames)
+    const start = cursor
+    cursor += dur
+    return { beat, start, dur }
+  })
+}
+
+// ============================================================================
+// SECTION BEATS — FILL IN FROM YOUR podcast_audio.srt
+// ============================================================================
+//
+// For each section in your podcast.txt, pick 4-8 beats. Each beat:
+//   - startSec: seconds from SECTION start (NOT from video start). Read these
+//     from podcast_audio.srt — pick the start time of the phrase you want to
+//     punch on screen.
+//   - lines: 1-3 short text lines. Mix sizes (small intro + huge punch).
+//   - variant: 'pop' (default) | 'flash' (accent pulse) | 'numbered' (big number)
+//             | 'quote' (with `who:` author) | 'title' (centered stacked)
+//   - marker: true → mint/yellow handwritten skewed reveal (use for accent lines)
+//
+// EXAMPLE — replace with your sections.
+
+const HERO_BEATS: Beat[] = [
+  {
+    variant: 'pop',
+    startSec: 0,
+    lines: [
+      { t: '大家好', size: 220 },
+      { t: '欢迎来到我的频道', size: 110, c: 'mint', marker: true },
+    ],
+  },
+  // ... add more beats here
+]
+
+// const SECTION_2_BEATS: Beat[] = [...]
+// const SECTION_3_BEATS: Beat[] = [...]
+// ... etc
+
+const SECTION_CONFIG: Record<string, { beats: Beat[]; chapter: string; label: string; tag: string }> = {
+  hero: { beats: HERO_BEATS, chapter: '00', label: 'INTRO', tag: '{{TOPIC_TAG}}' },
+  // section_2: { beats: SECTION_2_BEATS, chapter: '01', label: 'CHAPTER ONE', tag: 'KEY POINT' },
+  // ... map every section name from timing.json to a beats array + decor
+}
+
+// ============================================================================
+// MAIN COMPOSITION
+// ============================================================================
+
+export const {{COMPONENT_NAME}}Video: React.FC = () => {
+  const total = timing.sections.length
+  return (
+    <AbsoluteFill style={{ backgroundColor: BG }}>
+      <Audio src={staticFile('{{AUDIO_FILE}}')} />
+      <Scale4K>
+        <AbsoluteFill style={{ backgroundColor: BG }}>
+          <GlowOrbs />
+          <ParticleField count={45} opacity={0.55} />
+          <FilmGrain opacity={0.05} />
+          {timing.sections.map((section) => {
+            const cfg = SECTION_CONFIG[section.name]
+            if (!cfg) return null
+            const beats = distributeBeats(section.duration_frames, cfg.beats)
+            return (
+              <Sequence key={section.name} from={section.start_frame} durationInFrames={section.duration_frames} name={section.name}>
+                <AbsoluteFill>
+                  {beats.map(({ beat, start, dur }, bi) => (
+                    <Sequence key={bi} from={start} durationInFrames={dur} name={`${section.name}-beat-${bi}`}>
+                      <KineticBeat beat={beat} durationFrames={dur} />
+                    </Sequence>
+                  ))}
+                  <VerticalDecor chapter={cfg.chapter} total={String(total - 1).padStart(2, '0')} label={cfg.label} />
+                  <LeftTag text={cfg.tag} />
+                </AbsoluteFill>
+              </Sequence>
+            )
+          })}
+        </AbsoluteFill>
+      </Scale4K>
+    </AbsoluteFill>
+  )
+}

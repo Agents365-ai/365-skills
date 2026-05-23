@@ -1,0 +1,37 @@
+{
+  "fps": 30,
+  "character_pop": {
+    "stagger_per_char_frames": 2,
+    "spring_damping": 14,
+    "spring_stiffness": 220,
+    "spring_mass": 0.6,
+    "scale_from": 2.4,
+    "blur_from_px": 10
+  },
+  "marker_reveal": {
+    "wipe_duration_frames": 14,
+    "lift_distance_px": 12,
+    "skew_deg": -5,
+    "underline_height_px": 6
+  },
+  "exit_fade": {
+    "duration_frames": 8,
+    "applies_to": "last frames of every beat"
+  },
+  "ambient_orbs": {
+    "drift_period_seconds": 30,
+    "max_opacity": 0.15,
+    "blur_px": 40,
+    "diameter_px": 1200
+  },
+  "particles": {
+    "count": 45,
+    "max_opacity": 0.55,
+    "speed_range": [0.4, 2.0]
+  },
+  "section_transition": {
+    "type": "cut_or_color_pulse",
+    "max_pulse_opacity": 0.15,
+    "FORBIDDEN": "white_strobe_above_0_30_opacity"
+  }
+}
