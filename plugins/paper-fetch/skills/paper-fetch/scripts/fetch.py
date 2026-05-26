@@ -31,6 +31,8 @@ import json
 import os
 import re
 import shlex
+import shutil
+import subprocess
 import sys
 import time
 import urllib.parse
@@ -43,8 +45,8 @@ from pathlib import Path
 # Versioning
 # ---------------------------------------------------------------------------
 
-CLI_VERSION = "0.13.3"
-SCHEMA_VERSION = "1.9.0"
+CLI_VERSION = "0.14.0"
+SCHEMA_VERSION = "1.10.0"
 
 # ---------------------------------------------------------------------------
 # Config
@@ -159,6 +161,92 @@ def _is_institutional() -> bool:
 
 def _auth_mode() -> str:
     return "institutional" if _is_institutional() else "public"
+
+
+# ---------------------------------------------------------------------------
+# CloakBrowser fallback (operator-controlled, off by default)
+# ---------------------------------------------------------------------------
+
+# When PAPER_FETCH_CLOAK is set, a download blocked by Cloudflare (HTTP 403/429
+# or an HTML interstitial served in place of the PDF) is retried through
+# CloakBrowser — a stealth Chromium that can pass the JS challenge. fetch.py
+# shells out to the companion `cloak_pdf.py` via a cloakbrowser-importable
+# Python, so this file keeps its stdlib-only footprint. Bytes returned by the
+# helper are re-validated through the same %PDF + size checks as any other
+# download; the agent cannot opt in (env var is an operator action).
+
+# URLs that were ultimately downloaded via CloakBrowser, so the result envelope
+# can flag `via: cloak` for orchestrator visibility.
+_CLOAK_DOWNLOADS: set[str] = set()
+
+
+def _is_cloak_enabled() -> bool:
+    """True iff the operator opted into the CloakBrowser fallback."""
+    return bool(os.environ.get("PAPER_FETCH_CLOAK"))
+
+
+def _resolve_cloak_python() -> str | None:
+    """Locate a Python interpreter that can import cloakbrowser.
+
+    Order: CLOAKBROWSER_PYTHON env → ~/github/CloakBrowser/.venv/bin/python →
+    the current interpreter. Mirrors cloakFetch's cloak_fetch.sh resolution.
+    Returns None when no candidate can import cloakbrowser.
+    """
+    candidates = [
+        os.environ.get("CLOAKBROWSER_PYTHON", "").strip(),
+        str(Path.home() / "github" / "CloakBrowser" / ".venv" / "bin" / "python"),
+        sys.executable,
+    ]
+    for c in candidates:
+        if not c:
+            continue
+        if not (os.path.isfile(c) or shutil.which(c)):
+            continue
+        try:
+            r = subprocess.run(
+                [c, "-c", "import cloakbrowser"],
+                capture_output=True,
+                timeout=30,
+            )
+            if r.returncode == 0:
+                return c
+        except Exception:
+            continue
+    return None
+
+
+def _cloak_fetch_pdf(url: str, *, timeout: int) -> bytes | None:
+    """Fetch PDF bytes through CloakBrowser. Returns bytes, or None on failure.
+
+    Shells out to the companion cloak_pdf.py via a cloakbrowser-importable
+    Python. Fails closed: a missing dependency or any error returns None so the
+    caller falls through to the next source.
+    """
+    py = _resolve_cloak_python()
+    if not py:
+        _progress("download_cloak_skip", url=url, reason="no_cloakbrowser_python")
+        return None
+    helper = Path(__file__).with_name("cloak_pdf.py")
+    if not helper.exists():
+        _progress("download_cloak_skip", url=url, reason="helper_missing")
+        return None
+    _progress("download_cloak_try", url=url)
+    try:
+        # Browser launch + challenge solve is slow; give it headroom over the
+        # per-request timeout.
+        r = subprocess.run(
+            [py, str(helper), url, str(timeout)],
+            capture_output=True,
+            timeout=timeout + 90,
+        )
+    except Exception as e:
+        _progress("download_cloak_error", url=url, error=str(e))
+        return None
+    if r.returncode != 0 or not r.stdout:
+        tail = r.stderr.decode("utf-8", "replace")[-200:] if r.stderr else ""
+        _progress("download_cloak_error", url=url, reason="helper_failed", stderr=tail)
+        return None
+    return r.stdout
 
 
 def _is_safe_url(url: str) -> tuple[bool, str]:
@@ -406,6 +494,37 @@ def _download(url: str, dest: Path, *, timeout: int) -> str | None:
     if not _is_allowed_host(url):
         _progress("download_error", reason="host_not_allowed", url=url)
         return "host_not_allowed"
+
+    def _finalize(data: bytes) -> str | None:
+        """Validate (%PDF magic + size cap) and write. Shared by both the
+        urllib path and the CloakBrowser fallback so safety checks live in one
+        place regardless of how the bytes were obtained."""
+        if len(data) > MAX_PDF_SIZE:
+            _progress("download_error", reason="size_exceeded", bytes=len(data), limit=MAX_PDF_SIZE)
+            return "size_exceeded"
+        if not data[:5].startswith(b"%PDF"):
+            _progress("download_error", reason="not_a_pdf")
+            return "not_a_pdf"
+        try:
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            dest.write_bytes(data)
+        except OSError as e:
+            _progress("download_error", reason="io_error", error=str(e))
+            return "io_error"
+        return None
+
+    def _try_cloak() -> bool:
+        """Retry this URL through CloakBrowser. Returns True iff a valid PDF was
+        fetched and written. No-op (False) when the operator hasn't opted in."""
+        if not _is_cloak_enabled():
+            return False
+        data = _cloak_fetch_pdf(url, timeout=timeout)
+        if not data or _finalize(data) is not None:
+            return False
+        _CLOAK_DOWNLOADS.add(url)
+        _progress("download_cloak_ok", url=url, bytes=len(data))
+        return True
+
     _rate_limit_gate()
     req = urllib.request.Request(
         url,
@@ -422,6 +541,10 @@ def _download(url: str, dest: Path, *, timeout: int) -> str | None:
         # Lets agents distinguish a 403 publisher block (try a VPN / different
         # source) from a generic timeout (just retry).
         http_status = getattr(e, "code", None)
+        # Cloudflare answers non-browser clients with 403/429. If the operator
+        # opted into the CloakBrowser fallback, retry through it before failing.
+        if isinstance(http_status, int) and http_status in (403, 429) and _try_cloak():
+            return None
         fields: dict = {"reason": "network_error", "error": str(e)}
         if isinstance(http_status, int):
             fields["http_status"] = http_status
@@ -430,7 +553,11 @@ def _download(url: str, dest: Path, *, timeout: int) -> str | None:
     if len(data) > MAX_PDF_SIZE:
         _progress("download_error", reason="size_exceeded", bytes=len(data), limit=MAX_PDF_SIZE)
         return "size_exceeded"
+    # A 200 whose body is not a PDF is often a Cloudflare "Just a moment..."
+    # interstitial served in place of the file — worth a CloakBrowser retry.
     if not data[:5].startswith(b"%PDF"):
+        if _try_cloak():
+            return None
         _progress("download_error", reason="not_a_pdf")
         return "not_a_pdf"
     try:
@@ -1292,6 +1419,8 @@ def fetch(
         }
         if src in source_details:
             out["source_detail"] = source_details[src]
+        if url in _CLOAK_DOWNLOADS:
+            out["via"] = "cloak"
         if extra:
             out.update(extra)
         return out
@@ -1649,6 +1778,7 @@ def build_schema() -> dict:
         },
         "result_fields": {
             "source_detail": "Optional per-source diagnostics (e.g. {'mirror': 'sci-hub.ru'} when source='scihub'). Present only when the resolving source has additional context worth surfacing for orchestrator routing.",
+            "via": "Optional. Set to 'cloak' when the PDF was fetched through the CloakBrowser fallback (a Cloudflare-blocked URL retried via stealth Chromium). Absent for ordinary downloads. Requires PAPER_FETCH_CLOAK.",
         },
         "deprecations": [],
         "meta_fields": {
@@ -1665,6 +1795,8 @@ def build_schema() -> dict:
             "PAPER_FETCH_INSTITUTIONAL": "Optional. Set to any value to opt into institutional mode: activates a 1 req/s rate limiter and enables the publisher-direct fallback. Intended for callers whose IP / cookies / EZproxy already grant subscription access. SSRF defense applies in every mode.",
             "PAPER_FETCH_NO_SCIHUB": "Optional. Set to any value to disable the Sci-Hub fallback (enabled by default).",
             "PAPER_FETCH_SCIHUB_MIRRORS": "Optional. Comma-separated list of Sci-Hub mirror hostnames to try, in priority order, overriding the built-in defaults (e.g. 'sci-hub.ru,sci-hub.st,sci-hub.su').",
+            "PAPER_FETCH_CLOAK": "Optional. Set to any value to enable the CloakBrowser fallback: when a download is blocked by Cloudflare (HTTP 403/429 or a non-PDF interstitial), the URL is retried through a stealth Chromium that can pass the JS challenge. Off by default; requires the cloak_pdf.py companion and a cloakbrowser-importable Python (see CLOAKBROWSER_PYTHON). Bytes are re-validated through the same %PDF + 50 MB checks. Operator action only — the agent cannot opt in.",
+            "CLOAKBROWSER_PYTHON": "Optional. Path to a Python interpreter that can import cloakbrowser, used by the PAPER_FETCH_CLOAK fallback. If unset, falls back to ~/github/CloakBrowser/.venv/bin/python then the current interpreter.",
         },
     }
 

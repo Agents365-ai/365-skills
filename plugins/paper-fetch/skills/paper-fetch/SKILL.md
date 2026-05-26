@@ -2,7 +2,7 @@
 name: paper-fetch
 description: Use whenever the user wants to obtain, download, or fetch a paper's PDF — given a DOI, an arXiv id, a paper title, a citation, or a list of DOIs. Trigger on phrases like "download this paper", "find the PDF for [DOI]", "grab me the [Nature/bioRxiv/arXiv] paper on X", "get the open-access version", "I need this article", or any bulk/batch paper download request, even when the user doesn't explicitly say "PDF" or "DOI". Resolves via Unpaywall → Semantic Scholar → arXiv → PubMed Central → bioRxiv/medRxiv → publisher direct (institutional opt-in) → Sci-Hub mirrors as last-resort fallback.
 homepage: https://github.com/Agents365-ai/paper-fetch
-metadata: {"openclaw":{"requires":{"bins":["python3"]},"emoji":"📄"},"pimo":{"category":"research","tags":["paper","pdf","doi","open-access","download"]},"author":"Agents365-ai","version":"0.13.3"}
+metadata: {"openclaw":{"requires":{"bins":["python3"]},"emoji":"📄"},"pimo":{"category":"research","tags":["paper","pdf","doi","open-access","download"]},"author":"Agents365-ai","version":"0.14.0"}
 ---
 
 # paper-fetch
@@ -19,6 +19,8 @@ Fetch the PDF for a paper given a DOI (or title). Tries multiple sources in prio
 6. **Publisher direct** *(institutional mode only — `PAPER_FETCH_INSTITUTIONAL=1`)* — DOI-prefix → publisher PDF template (Nature / Science / Wiley / Springer / ACS / PNAS / NEJM / Sage / T&F / Elsevier). The caller's own subscription IP / cookies / EZproxy are what authorize the fetch; unauthorized responses fail the `%PDF` check and fall through to step 7.
 7. **Sci-Hub mirrors** *(on by default; disable with `PAPER_FETCH_NO_SCIHUB=1`)* — last-resort fallback. Tries the mirror list in `PAPER_FETCH_SCIHUB_MIRRORS` (or built-in defaults `sci-hub.ru`, `sci-hub.st`, `sci-hub.su`, `sci-hub.box`, `sci-hub.red`, `sci-hub.al`, `sci-hub.mk`, `sci-hub.ee`) in order; on full miss, scrapes `https://www.sci-hub.pub/` once per process for fresh mirrors. CAPTCHA / missing-paper pages have no PDF iframe and fall through silently.
 8. Otherwise → report failure with title/authors so the user can request via ILL
+
+**CloakBrowser fallback (download layer, opt-in — `PAPER_FETCH_CLOAK=1`).** This is not a separate source: it sits at the download chokepoint, so it applies to *any* of the sources above. When a resolved PDF URL is blocked by Cloudflare — HTTP 403/429, or a "Just a moment…" HTML interstitial served in place of the file — and the operator opted in, the URL is retried through [CloakBrowser](https://github.com/CloakHQ/CloakBrowser) (a stealth Chromium that passes the JS challenge) via the `cloak_pdf.py` companion. Bytes it returns are re-validated through the same `%PDF` magic-byte + 50 MB checks; on success the result carries `via: "cloak"`. Off by default, fails closed (missing CloakBrowser → silent fall-through), and the agent cannot opt in — see *CloakBrowser access* below.
 
 If only a title is given, pass it directly via `--title "<title>"`. Resolution chain:
 
@@ -257,6 +259,26 @@ python scripts/fetch.py 10.1038/s41586-020-2649-2
 | `PAPER_FETCH_INSTITUTIONAL` | unset | Set to any value (e.g. `1`) to opt into **institutional mode** — activates a 1 req/s rate limiter and the publisher-direct fallback. See below. |
 | `PAPER_FETCH_NO_SCIHUB` | unset | Set to any value to disable the Sci-Hub fallback (step 7). |
 | `PAPER_FETCH_SCIHUB_MIRRORS` | unset | Comma-separated mirror hostnames to try in priority order (e.g. `sci-hub.ru,sci-hub.st,sci-hub.su`). Overrides built-in defaults. |
+| `PAPER_FETCH_CLOAK` | unset | Set to any value to enable the **CloakBrowser fallback** — Cloudflare-blocked PDFs (HTTP 403/429 or a non-PDF interstitial) are retried through a stealth Chromium. See *CloakBrowser access* below. |
+| `CLOAKBROWSER_PYTHON` | auto | Path to a Python that can `import cloakbrowser`, used by the cloak fallback. Auto-detect order: this var → `~/github/CloakBrowser/.venv/bin/python` → the current interpreter. |
+
+## CloakBrowser access (opt-in)
+
+Some publishers (e.g. `science.org`) sit behind Cloudflare, which answers a plain HTTP client with a `403`/`429` or a "Just a moment…" JS-challenge page instead of the PDF — so the default `urllib` download can't get through even when the URL is legitimately accessible from a browser. [CloakBrowser](https://github.com/CloakHQ/CloakBrowser) is a stealth Chromium that passes those challenges. This skill borrows the approach from [cloakFetch](https://github.com/Agents365-ai/cloakFetch).
+
+**Opt in:** `export PAPER_FETCH_CLOAK=1` (plus a `cloakbrowser`-importable Python — see `CLOAKBROWSER_PYTHON`).
+
+**How it works:** the fallback lives at the **download layer**, not as a new source — so it applies to any resolved URL (Unpaywall, publisher-direct, Sci-Hub, …). On a Cloudflare block, `fetch.py` shells out to the `cloak_pdf.py` companion via the resolved Python; CloakBrowser solves the JS challenge, fetches the PDF through the browser context (carrying the `cf_clearance` cookie), and returns the bytes on stdout. `fetch.py` itself stays stdlib-only — it never imports `cloakbrowser`.
+
+**What stays the same:**
+
+- Returned bytes are re-validated through the same `%PDF` magic-byte check and 50 MB size cap. SSRF defense still gates the URL before the browser is ever launched.
+- **No CAPTCHA solving.** CloakBrowser passes automated JS challenges, not interactive ones; an interactive Turnstile still fails closed and falls through.
+- **Fails closed.** No `cloakbrowser`-importable Python, helper missing, or any error → silent fall-through to the next source. The agent is never told a blocked fetch succeeded.
+- Agent cannot opt in on its own — `PAPER_FETCH_CLOAK` must be set by the human operator. Same trust boundary as institutional mode.
+- On success the per-result object carries `via: "cloak"` so an orchestrator can see the fallback was used.
+
+**Cost:** a triggered fallback launches a real browser (~20–40 s, ~200 MB Chromium on first download). It only fires *after* a normal download was blocked, so the happy path is unaffected.
 
 ## Institutional access (opt-in)
 
@@ -280,7 +302,7 @@ Host reachability does not differ between modes — public mode already trusts U
 
 - `%PDF` magic-byte check and 50 MB size cap (prevents HTML landing pages and oversized responses slipping through)
 - No CAPTCHA solving, ever. If a publisher shows a challenge, the response won't start with `%PDF` and paper-fetch falls through to the next source.
-- No browser automation, no Playwright, no stealth.
+- Institutional mode itself uses no browser automation, no Playwright, no stealth — it is a plain HTTP fetch against publisher-direct URLs. (Browser automation is a *separate* opt-in: the CloakBrowser fallback above, gated by `PAPER_FETCH_CLOAK`.)
 - Agent cannot opt in on its own — `PAPER_FETCH_INSTITUTIONAL` must be set by the human operator in the shell environment. This is the trust boundary.
 
 **When paper-fetch can't find an OA copy and you're in public mode**, the error envelope includes `suggest_institutional: true` and a hint telling the user to set the env var. Agents can surface this verbatim rather than failing silently.
