@@ -45,8 +45,8 @@ from pathlib import Path
 # Versioning
 # ---------------------------------------------------------------------------
 
-CLI_VERSION = "0.14.0"
-SCHEMA_VERSION = "1.10.0"
+CLI_VERSION = "0.14.1"
+SCHEMA_VERSION = "1.10.1"
 
 # ---------------------------------------------------------------------------
 # Config
@@ -1797,6 +1797,7 @@ def build_schema() -> dict:
             "PAPER_FETCH_SCIHUB_MIRRORS": "Optional. Comma-separated list of Sci-Hub mirror hostnames to try, in priority order, overriding the built-in defaults (e.g. 'sci-hub.ru,sci-hub.st,sci-hub.su').",
             "PAPER_FETCH_CLOAK": "Optional. Set to any value to enable the CloakBrowser fallback: when a download is blocked by Cloudflare (HTTP 403/429 or a non-PDF interstitial), the URL is retried through a stealth Chromium that can pass the JS challenge. Off by default; requires the cloak_pdf.py companion and a cloakbrowser-importable Python (see CLOAKBROWSER_PYTHON). Bytes are re-validated through the same %PDF + 50 MB checks. Operator action only — the agent cannot opt in.",
             "CLOAKBROWSER_PYTHON": "Optional. Path to a Python interpreter that can import cloakbrowser, used by the PAPER_FETCH_CLOAK fallback. If unset, falls back to ~/github/CloakBrowser/.venv/bin/python then the current interpreter.",
+            "PAPER_FETCH_CLOAK_HEADED": "Optional. Set to any value to make the cloak fallback launch a headed (visible) browser instead of headless. Harder Cloudflare challenges (e.g. science.org) defeat headless mode; the headed window clears them. Requires a display. Read by the cloak_pdf.py companion.",
         },
     }
 

@@ -2,7 +2,7 @@
 name: paper-fetch
 description: Use whenever the user wants to obtain, download, or fetch a paper's PDF — given a DOI, an arXiv id, a paper title, a citation, or a list of DOIs. Trigger on phrases like "download this paper", "find the PDF for [DOI]", "grab me the [Nature/bioRxiv/arXiv] paper on X", "get the open-access version", "I need this article", or any bulk/batch paper download request, even when the user doesn't explicitly say "PDF" or "DOI". Resolves via Unpaywall → Semantic Scholar → arXiv → PubMed Central → bioRxiv/medRxiv → publisher direct (institutional opt-in) → Sci-Hub mirrors as last-resort fallback.
 homepage: https://github.com/Agents365-ai/paper-fetch
-metadata: {"openclaw":{"requires":{"bins":["python3"]},"emoji":"📄"},"pimo":{"category":"research","tags":["paper","pdf","doi","open-access","download"]},"author":"Agents365-ai","version":"0.14.0"}
+metadata: {"openclaw":{"requires":{"bins":["python3"]},"emoji":"📄"},"pimo":{"category":"research","tags":["paper","pdf","doi","open-access","download"]},"author":"Agents365-ai","version":"0.14.1"}
 ---
 
 # paper-fetch
@@ -261,6 +261,7 @@ python scripts/fetch.py 10.1038/s41586-020-2649-2
 | `PAPER_FETCH_SCIHUB_MIRRORS` | unset | Comma-separated mirror hostnames to try in priority order (e.g. `sci-hub.ru,sci-hub.st,sci-hub.su`). Overrides built-in defaults. |
 | `PAPER_FETCH_CLOAK` | unset | Set to any value to enable the **CloakBrowser fallback** — Cloudflare-blocked PDFs (HTTP 403/429 or a non-PDF interstitial) are retried through a stealth Chromium. See *CloakBrowser access* below. |
 | `CLOAKBROWSER_PYTHON` | auto | Path to a Python that can `import cloakbrowser`, used by the cloak fallback. Auto-detect order: this var → `~/github/CloakBrowser/.venv/bin/python` → the current interpreter. |
+| `PAPER_FETCH_CLOAK_HEADED` | unset | Set to any value to launch a **headed** (visible) browser instead of headless. Harder Cloudflare challenges (e.g. `science.org`) defeat headless mode and only clear in a real window — set this when the cloak fallback keeps returning HTTP 403 / "Just a moment…". Requires a display. |
 
 ## CloakBrowser access (opt-in)
 
@@ -268,7 +269,11 @@ Some publishers (e.g. `science.org`) sit behind Cloudflare, which answers a plai
 
 **Opt in:** `export PAPER_FETCH_CLOAK=1` (plus a `cloakbrowser`-importable Python — see `CLOAKBROWSER_PYTHON`).
 
-**How it works:** the fallback lives at the **download layer**, not as a new source — so it applies to any resolved URL (Unpaywall, publisher-direct, Sci-Hub, …). On a Cloudflare block, `fetch.py` shells out to the `cloak_pdf.py` companion via the resolved Python; CloakBrowser solves the JS challenge, fetches the PDF through the browser context (carrying the `cf_clearance` cookie), and returns the bytes on stdout. `fetch.py` itself stays stdlib-only — it never imports `cloakbrowser`.
+**How it works:** the fallback lives at the **download layer**, not as a new source — so it applies to any resolved URL (Unpaywall, publisher-direct, Sci-Hub, …). On a Cloudflare block, `fetch.py` shells out to the `cloak_pdf.py` companion via the resolved Python; CloakBrowser loads the PDF host's origin to solve the JS challenge, then fetches the PDF with an **in-page `fetch()`** (so the request carries the browser's real fingerprint and `cf_clearance` cookie) and returns the bytes on stdout. `fetch.py` itself stays stdlib-only — it never imports `cloakbrowser`.
+
+**Headless vs. headed.** The companion runs headless by default. Some challenges (e.g. `science.org`) defeat headless Chromium and stay stuck on "Just a moment…" — set `PAPER_FETCH_CLOAK_HEADED=1` to use a visible window, which clears them. Verified: a `www.science.org/doi/pdf/…` PDF that returns 403 to the plain client downloads cleanly via the headed cloak fallback.
+
+**Same-origin only.** The in-page fetch is same-origin, so the fallback works when the resolved URL is a direct PDF link on the blocked host (e.g. `www.science.org/doi/pdf/…`). A URL that cross-origin-redirects (e.g. a bare `doi.org/…` link) or a legacy host whose challenge never clears will fail closed and fall through to the next source.
 
 **What stays the same:**
 
