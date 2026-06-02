@@ -234,6 +234,8 @@ Both `api_gateway` and `auth_service` must include in their `boundElements`:
 "boundElements": [{ "id": "arrow_gw_to_auth", "type": "arrow" }]
 ```
 
+**Endpoints must reach the shape borders.** `startBinding`/`endBinding` (and their `gap`) only affect interactive editing on excalidraw.com — they do **NOT** clip the line when exporting via Kroki or the local CLI. The exporter draws your `points` literally. So compute endpoints edge-to-edge: set the arrow's `x`/`y` to the source shape's border (the side facing the target) and the last point to the target's border. Center-to-center points draw the line straight *through* both shapes.
+
 ### Arrow labels
 
 To label an arrow, bind a `text` element to it exactly like shape text: set the label's `containerId` to the **arrow's** id, and add the label to the arrow's `boundElements`. Excalidraw then centers the label on the arrow and masks the line behind the text, so it stays readable (no strike-through).
@@ -422,6 +424,7 @@ excalidraw-brute-export-cli -i diagram.excalidraw -o diagram.svg -f svg -s 1 -b 
 | Missing `id` on elements | Use descriptive string IDs per element |
 | Overlapping elements | Use spacing reference table; minimum 40px gap |
 | Arrows not interactive in excalidraw.com | Add `boundElements` to shapes referencing all bound arrows/text |
+| Arrow/line cuts straight through the shapes | Compute endpoints at the shape borders, not centers — bindings don't clip the static export |
 | Arrow invisible — only its label shows | Bound label `width` spans the whole arrow and masks the line; set label `width` to fit the text (`charCount * 9`) |
 | Exported PNG/SVG has no background | CLI export is transparent by default; pass `-b true` to bake in `viewBackgroundColor` |
 | Text not centered in shape | Set `containerId` on text AND add text to shape's `boundElements` |
