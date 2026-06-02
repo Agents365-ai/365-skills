@@ -343,13 +343,13 @@ Namespace element seeds by section (100xxx, 200xxx, 300xxx) to avoid collisions.
 ```bash
 # SVG via Kroki API
 curl -s -X POST https://kroki.io/excalidraw/svg \
-  -H "Content-Type: application/json" \
+  -H "Content-Type: text/plain" \
   --data-binary "@diagram.excalidraw" \
   -o diagram.svg
 
 # Via local Kroki Docker (offline)
 curl -s -X POST http://localhost:8000/excalidraw/svg \
-  -H "Content-Type: application/json" \
+  -H "Content-Type: text/plain" \
   --data-binary "@diagram.excalidraw" \
   -o diagram.svg
 ```
@@ -385,7 +385,7 @@ excalidraw-brute-export-cli -i diagram.excalidraw -o diagram.svg -f svg -s 1
 
 | Mistake | Fix |
 |---------|-----|
-| Kroki returns error | Ensure file is valid JSON with `"type": "excalidraw"` and `"elements"` array |
+| Kroki returns HTTP 400 | Send `-H "Content-Type: text/plain"` (NOT `application/json`, which Kroki reads as a `{"diagram_source": ...}` wrapper and rejects); ensure valid JSON with `"type": "excalidraw"` and `"elements"` array |
 | Kroki only outputs SVG | Use local CLI (`excalidraw-brute-export-cli`) for PNG |
 | Export fails with "Missing required flag" | Always pass `-f png` and `-s 2` |
 | Export fails with "Executable doesn't exist" | Run `npx playwright install firefox` |
