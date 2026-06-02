@@ -114,7 +114,7 @@ Follow the **60-30-10 rule**: 60% whitespace/neutral, 30% primary accent, 10% hi
 
 | Style | Meaning |
 |-------|---------|
-| Solid (`strokeStyle: null`) | Primary flow, main path |
+| Solid (`strokeStyle: "solid"`) | Primary flow, main path |
 | Dashed (`"dashed"`) | Response, async, callback |
 | Dotted (`"dotted"`) | Optional, reference, weak dependency |
 
@@ -233,6 +233,32 @@ Both `api_gateway` and `auth_service` must include in their `boundElements`:
 ```json
 "boundElements": [{ "id": "arrow_gw_to_auth", "type": "arrow" }]
 ```
+
+### Arrow labels
+
+To label an arrow, bind a `text` element to it exactly like shape text: set the label's `containerId` to the **arrow's** id, and add the label to the arrow's `boundElements`. Excalidraw then centers the label on the arrow and masks the line behind the text, so it stays readable (no strike-through).
+
+```json
+{
+  "id": "arrow_valid_to_grant",
+  "type": "arrow",
+  "points": [[0, 0], [0, 120]],
+  "boundElements": [{ "id": "lbl_yes", "type": "text" }]
+}
+```
+```json
+{
+  "id": "lbl_yes",
+  "type": "text",
+  "text": "Yes",
+  "fontSize": 14,
+  "width": 36,
+  "strokeColor": "#1e293b",
+  "containerId": "arrow_valid_to_grant"
+}
+```
+
+**CRITICAL: the label `width` must fit the text (`charCount * 9`), NOT the arrow length.** Excalidraw masks the line behind the label's full bounding box — a label as wide as the arrow masks the *entire* arrow, so the line disappears and only floating text remains. Keep label widths small.
 
 ### Arrow routing
 
@@ -357,17 +383,19 @@ curl -s -X POST http://localhost:8000/excalidraw/svg \
 ### Option B: Local CLI (PNG + SVG)
 
 ```bash
-# PNG at 2x scale (recommended)
-excalidraw-brute-export-cli -i diagram.excalidraw -o diagram.png -f png -s 2
+# PNG at 2x scale, with background baked in (recommended)
+excalidraw-brute-export-cli -i diagram.excalidraw -o diagram.png -f png -s 2 -b true
 
 # PNG at 1x scale
-excalidraw-brute-export-cli -i diagram.excalidraw -o diagram.png -f png -s 1
+excalidraw-brute-export-cli -i diagram.excalidraw -o diagram.png -f png -s 1 -b true
 
 # SVG
-excalidraw-brute-export-cli -i diagram.excalidraw -o diagram.svg -f svg -s 1
+excalidraw-brute-export-cli -i diagram.excalidraw -o diagram.svg -f svg -s 1 -b true
 ```
 
 **Required flags:** `-f` (format: `png` or `svg`) and `-s` (scale: `1`, `2`, or `3`).
+
+**Optional flags:** `-b true` bakes the `viewBackgroundColor` into the image — **the export is transparent by default**, so omit `-b` (or pass `-b false`) only when you want a transparent background. `-d true` exports dark mode; `-e true` embeds the scene so the PNG/SVG reopens as an editable drawing in excalidraw.com.
 
 ## Anti-Patterns
 
@@ -375,7 +403,7 @@ excalidraw-brute-export-cli -i diagram.excalidraw -o diagram.svg -f svg -s 1
 
 **Avoid cross-zone arrows.** Long diagonal arrows create visual spaghetti. Route arrows within zones or along zone edges. If a cross-zone connection is unavoidable, route it along the perimeter.
 
-**Use arrow labels sparingly.** Labels placed at the arrow midpoint overlap on short arrows. Keep labels to ≤12 characters and ensure ≥120px clear space between connected shapes. Omit labels when the connection meaning is obvious from context.
+**Use arrow labels sparingly.** Bind labels to the arrow (see **Arrow labels**) so the line is masked behind the text instead of striking through it — but keep the label `width` to the text, never the arrow length. Keep labels to ≤12 characters and ensure ≥120px clear space between connected shapes. Omit labels when the connection meaning is obvious from context.
 
 **Don't use filled backgrounds on containers that hold other elements.** Use `opacity: 30` (or 25-40 range) for zone/container rectangles so contained elements remain visible.
 
@@ -394,6 +422,8 @@ excalidraw-brute-export-cli -i diagram.excalidraw -o diagram.svg -f svg -s 1
 | Missing `id` on elements | Use descriptive string IDs per element |
 | Overlapping elements | Use spacing reference table; minimum 40px gap |
 | Arrows not interactive in excalidraw.com | Add `boundElements` to shapes referencing all bound arrows/text |
+| Arrow invisible — only its label shows | Bound label `width` spans the whole arrow and masks the line; set label `width` to fit the text (`charCount * 9`) |
+| Exported PNG/SVG has no background | CLI export is transparent by default; pass `-b true` to bake in `viewBackgroundColor` |
 | Text not centered in shape | Set `containerId` on text AND add text to shape's `boundElements` |
 | All text same size | Use font size hierarchy: 28 → 24 → 20 → 16 → 14 |
 | Diagram looks monotone | Apply semantic colors from the palette, follow 60-30-10 rule |
