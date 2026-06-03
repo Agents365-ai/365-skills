@@ -143,6 +143,8 @@ Follow the **60-30-10 rule**: 60% whitespace/neutral, 30% primary accent, 10% hi
 | line      | undirected connections           |
 | text      | standalone labels                |
 
+`image`, `frame`, and `embeddable` are **not covered** by this skill: `image` needs a separate `files` map plus a `fileId`, and frames/embeds render inconsistently through the export path. Stick to the six types above.
+
 ### Element sizing
 
 Calculate element width from label text to prevent truncation:
@@ -189,6 +191,21 @@ Give each element a unique `seed` (integer). Namespace by section: 100xxx, 200xx
 - Do NOT include: `frameId`, `index`, `versionNonce`, `rawText`
 - `points` in arrows: always start at `[0, 0]`
 - `seed`: must be a positive integer, unique per element
+
+### Property values
+
+Use only these values — all verified to render via Kroki and the local CLI:
+
+| Property | Valid values |
+|----------|--------------|
+| `fillStyle` | `"solid"`, `"hachure"`, `"cross-hatch"`, `"zigzag"` |
+| `strokeStyle` | `"solid"` (or omit), `"dashed"`, `"dotted"` |
+| `fontFamily` | `1` (Virgil, hand-drawn), `2` (Helvetica), `3` (Cascadia, code) |
+| `textAlign` | `"left"`, `"center"`, `"right"` |
+| `verticalAlign` | `"top"`, `"middle"`, `"bottom"` |
+| `startArrowhead` / `endArrowhead` | `null`, `"arrow"`, `"triangle"`, `"bar"`, `"dot"`, `"circle"`, `"diamond"`, `"crowfoot_many"` |
+
+Arrows default to `endArrowhead: "arrow"` and `startArrowhead: null` — omit both for a standard one-way arrow. Use `"triangle"` for UML inheritance, `"diamond"` for composition, and `"crowfoot_many"` for ER cardinality.
 
 ### Text inside shapes (contained text)
 
@@ -397,7 +414,7 @@ excalidraw-brute-export-cli -i diagram.excalidraw -o diagram.svg -f svg -s 1 -b 
 
 **Required flags:** `-f` (format: `png` or `svg`) and `-s` (scale: `1`, `2`, or `3`).
 
-**Optional flags:** `-b true` bakes the `viewBackgroundColor` into the image — **the export is transparent by default**, so omit `-b` (or pass `-b false`) only when you want a transparent background. `-d true` exports dark mode; `-e true` embeds the scene so the PNG/SVG reopens as an editable drawing in excalidraw.com.
+**Optional flags:** `-b true` bakes the `viewBackgroundColor` into the image — **the export is transparent by default**, so omit `-b` (or pass `-b false`) only when you want a transparent background. `-d true` exports dark mode; `-e true` embeds the scene so the PNG/SVG reopens as an editable drawing in excalidraw.com. (Long forms also work: `--background`, `--dark-mode`, `--embed-scene`, `--format`, `--scale`, `--input`, `--output`.)
 
 ## Anti-Patterns
 
