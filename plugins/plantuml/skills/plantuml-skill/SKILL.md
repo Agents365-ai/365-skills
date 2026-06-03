@@ -5,7 +5,7 @@ license: MIT
 homepage: https://github.com/Agents365-ai/plantuml-skill
 compatibility: Requires curl on PATH (pre-installed on macOS/Linux/Windows Git Bash). Default renderer is the public Kroki API at https://kroki.io; can also point to a local Kroki Docker instance, or fall back to a local PlantUML jar + Java + Graphviz.
 platforms: [macos, linux, windows]
-metadata: {"openclaw":{"requires":{"bins":["curl"]},"emoji":"🧩","os":["darwin","linux","win32"]},"hermes":{"tags":["plantuml","diagram","flowchart","sequence","class","uml","architecture","kroki"],"category":"design","requires_tools":["curl"],"related_skills":["drawio","mermaid","excalidraw","tldraw"]},"author":"Agents365-ai","version":"1.1.0"}
+metadata: {"openclaw":{"requires":{"bins":["curl"]},"emoji":"🧩","os":["darwin","linux","win32"]},"hermes":{"tags":["plantuml","diagram","flowchart","sequence","class","uml","architecture","kroki"],"category":"design","requires_tools":["curl"],"related_skills":["drawio","mermaid","excalidraw","tldraw"]},"author":"Agents365-ai","version":"1.2.0"}
 ---
 
 # PlantUML Diagram Skill
@@ -74,23 +74,40 @@ Choose the most appropriate PlantUML diagram type (see reference below).
 ### Step 3: Generate .puml File
 Write the PlantUML source file with `@startuml` / `@enduml` markers.
 
-### Step 4: Export via Kroki
+### Step 4: Export via Kroki (capture the HTTP status)
 ```bash
-# PNG (recommended)
-curl -s -X POST https://kroki.io/plantuml/png \
+# PNG (recommended) — keep the status code so Step 5 can verify it
+http=$(curl -s -w "%{http_code}" -o diagram.png \
+  -X POST https://kroki.io/plantuml/png \
   -H "Content-Type: text/plain" \
-  --data-binary "@diagram.puml" \
-  -o diagram.png
+  --data-binary "@diagram.puml")
+echo "HTTP $http"
 
 # SVG
-curl -s -X POST https://kroki.io/plantuml/svg \
+http=$(curl -s -w "%{http_code}" -o diagram.svg \
+  -X POST https://kroki.io/plantuml/svg \
   -H "Content-Type: text/plain" \
-  --data-binary "@diagram.puml" \
-  -o diagram.svg
+  --data-binary "@diagram.puml")
+echo "HTTP $http"
 ```
 
-### Step 5: Report to User
-Tell the user:
+### Step 5: Validate & self-correct (loop — do NOT skip)
+Never report success on a blind `curl`. Verify the output first; treat the export as **failed** if any of these hold:
+- `$http` is not `200`. Kroki returns `400` on a syntax error and writes the error text into the output file, so a `.png` can exist yet be broken.
+- The file is empty: `[ -s diagram.png ]` fails.
+- The bytes aren't a real image: `file diagram.png` should report `PNG image data`; for SVG the file should start with `<svg` or `<?xml`.
+
+```bash
+if [ "$http" != "200" ] || [ ! -s diagram.png ]; then
+  echo "Render failed — Kroki said:"
+  cat diagram.png    # the 400 body holds the offending line + reason
+fi
+```
+
+On failure: read Kroki's error, fix the flagged `.puml` line (see **Common Mistakes**), then re-run Step 4. **Repeat up to 3 times.** If it still fails after 3 tries, stop and show the user the raw Kroki error — do not claim the diagram was produced.
+
+### Step 6: Report to User
+Only after Step 5 passes. Tell the user:
 - Path to the `.puml` source file
 - Path to the exported PNG/SVG
 - Brief description of what was generated
@@ -358,6 +375,8 @@ Other levels: `<C4/C4_Container>` (`Container`, `ContainerDb`), `<C4/C4_Componen
 
 ## Export Commands
 
+Quick reference for the renderer variants. The Kroki ones drop the status capture for brevity — when actually exporting, use the Step 4 form and run the Step 5 validation loop.
+
 ```bash
 # PNG via Kroki API (recommended)
 curl -s -X POST https://kroki.io/plantuml/png \
@@ -409,7 +428,7 @@ skinparam FontName Arial
 | Mistake | Fix |
 |---------|-----|
 | `curl` POST returns HTML error page | Check network; try `curl -v` to see error details |
-| Kroki returns 400 Bad Request | Validate PlantUML syntax at https://www.plantuml.com/plantuml/uml/ |
+| Kroki returns 400 Bad Request | `cat` the output file — Kroki wrote the offending line + reason there; fix it and re-render via the Step 5 loop. Validate syntax at https://www.plantuml.com/plantuml/uml/ |
 | Arrow direction unexpected | Use `-->` for downward/right; explicitly use `-up->`, `-down->`, `-left->`, `-right->` |
 | Diagram too large/crowded | Split into multiple diagrams or use `package`/`rectangle` grouping |
 | Missing `@startuml` / `@enduml` | Always wrap diagram in these markers |
