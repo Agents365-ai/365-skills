@@ -30,6 +30,12 @@ Generate modern whiteboard-style diagrams as `.tldr` JSON files and export to PN
 
 **Skip when:** a simple list or table suffices, the user wants a polished business-presentation diagram (prefer drawio-skill), or the user is in a quick Q&A flow.
 
+**When NOT to use it — route elsewhere:**
+- Logos / solid-color graphics / filled icons: tldraw has **no opaque fill** (`solid` = light tint; white-on-dark can't be reproduced) → use the **drawio** skill or the original vector file.
+- Precise vector geometry or strict (hollow-arrow) UML → **drawio** (or **plantuml** for UML).
+- Auto-layout of many nodes → **mermaid** (tldraw needs manual coordinates).
+- A pixel-faithful copy of an existing image → not a diagram-skill task.
+
 ## Prerequisites
 
 ```bash
