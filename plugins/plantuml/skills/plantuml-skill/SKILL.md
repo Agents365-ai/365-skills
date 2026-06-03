@@ -5,7 +5,7 @@ license: MIT
 homepage: https://github.com/Agents365-ai/plantuml-skill
 compatibility: Requires curl on PATH (pre-installed on macOS/Linux/Windows Git Bash). Default renderer is the public Kroki API at https://kroki.io; can also point to a local Kroki Docker instance, or fall back to a local PlantUML jar + Java + Graphviz.
 platforms: [macos, linux, windows]
-metadata: {"openclaw":{"requires":{"bins":["curl"]},"emoji":"🧩","os":["darwin","linux","win32"]},"hermes":{"tags":["plantuml","diagram","flowchart","sequence","class","uml","architecture","kroki"],"category":"design","requires_tools":["curl"],"related_skills":["drawio","mermaid","excalidraw","tldraw"]},"author":"Agents365-ai","version":"1.2.0"}
+metadata: {"openclaw":{"requires":{"bins":["curl"]},"emoji":"🧩","os":["darwin","linux","win32"]},"hermes":{"tags":["plantuml","diagram","flowchart","sequence","class","uml","architecture","kroki"],"category":"design","requires_tools":["curl"],"related_skills":["drawio","mermaid","excalidraw","tldraw"]},"author":"Agents365-ai","version":"1.3.0"}
 ---
 
 # PlantUML Diagram Skill
@@ -104,7 +104,16 @@ if [ "$http" != "200" ] || [ ! -s diagram.png ]; then
 fi
 ```
 
-On failure: read Kroki's error, fix the flagged `.puml` line (see **Common Mistakes**), then re-run Step 4. **Repeat up to 3 times.** If it still fails after 3 tries, stop and show the user the raw Kroki error — do not claim the diagram was produced.
+On failure: `cat` the output file to read Kroki's error, fix the flagged `.puml` line (see **Common Mistakes**), then re-run Step 4. **Repeat up to 3 times.** If a targeted line fix doesn't clear it, degrade in this order, re-rendering after each step — stop as soon as it renders:
+
+1. remove exotic shapes → plain `rectangle`/`component`/`node`
+2. strip `skinparam` / `!theme` (render plain first)
+3. remove `note` lines
+4. simplify labels, wrap in `"…"`
+5. reduce edges
+6. switch to a simpler diagram type rather than forcing the current one
+
+For a per-diagram-type error catalog and the Kroki safe subset, read [`references/kroki-troubleshooting.md`](references/kroki-troubleshooting.md). If it still fails after 3 tries, stop and show the user the raw Kroki error — do not claim the diagram was produced.
 
 ### Step 6: Report to User
 Only after Step 5 passes. Tell the user:
@@ -424,6 +433,8 @@ skinparam FontName Arial
 ---
 
 ## Common Mistakes
+
+Quick table below; for a per-diagram-type error catalog, the Kroki safe subset, and the failure-degradation ladder, see [`references/kroki-troubleshooting.md`](references/kroki-troubleshooting.md).
 
 | Mistake | Fix |
 |---------|-----|
