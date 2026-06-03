@@ -138,8 +138,8 @@ After self-check, show the exported image and ask the user for feedback.
 - All shapes go in the `records` array after the page record.
 - All shapes have `"parentId": "page:page1"`.
 - Shape IDs use format `"shape:xxx"` with unique suffix (e.g., `"shape:s1"`, `"shape:a1"`).
-- `index` values MUST start with `"a"` followed by digits or uppercase letters: `"a1"`, `"a2"`, ..., `"a9"`, `"aA"`, `"aB"`, ..., `"aZ"`, `"a10"`, etc.
-- **Never use `"b1"`, `"c1"` etc. as indices** — only `"a*"` format is valid for shapes.
+- `index` values are fractional-index keys. Use `"a"` + **one** base-62 character, in order: `"a0"`–`"a9"`, then `"aA"`–`"aZ"`, then `"aa"`–`"az"` (62 ordered keys — enough for any normal diagram).
+- **Do not append a second character: `"a10"` is invalid.** And never use a leading `"b"`/`"c"` (`"b1"`, `"c1"`, `"b0"`) — those encode a longer integer part, so they are malformed fractional keys and trigger `invalidRecords`. Stick to the single-character `"a*"` keys above.
 
 ---
 
@@ -294,7 +294,8 @@ Indices control z-order (stacking). Use this sequence:
 ```
 a1, a2, a3, a4, a5, a6, a7, a8, a9,
 aA, aB, aC, aD, aE, aF, aG, aH, aI, aJ, aK, aL, aM,
-aN, aO, aP, aQ, aR, aS, aT, aU, aV, aW, aX, aY, aZ
+aN, aO, aP, aQ, aR, aS, aT, aU, aV, aW, aX, aY, aZ,
+aa, ab, ac, ... az          ← continue here past aZ; never "a10"
 ```
 - Geo shapes first: `a1` through `aF` (or as many as needed).
 - Arrow shapes after: `aG`, `aH`, etc.
@@ -472,7 +473,7 @@ Or upload to https://tldraw.com (drag-and-drop the `.tldr` file) for browser edi
 | Mistake | Fix |
 |---------|-----|
 | `tldraw` command not found | Run `npm install -g @kitschpatrol/tldraw-cli` |
-| `invalidRecords` on export | Check: index values must start with `a` (e.g., `a1`, `aA`) — never `b1`, `c1` |
+| `invalidRecords` on export | Use single-character `a` keys (`a1`…`a9`, `aA`…`aZ`, `aa`…`az`); `a10`, `b1`, `c1` are malformed fractional-index keys |
 | Blank/empty export | Verify `document:document` and `page:page1` records are present |
 | Output file not found | `-o` is a directory; file name matches input: `tldraw export foo.tldr -o ./` → `./foo.png` |
 | Arrow doesn't appear | Use `"type": "binding"` with `boundShapeId`; set arrow `x`/`y` to `0,0` |
