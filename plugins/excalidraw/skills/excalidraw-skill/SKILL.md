@@ -60,10 +60,11 @@ sed -i '' 's/keyboard.press("Control+Shift+E")/keyboard.press("Meta+Shift+E")/' 
 ## Workflow
 
 1. **Check deps** — use Kroki (curl) for SVG; use local CLI for PNG
-2. **Plan** — identify diagram type, pick a visual pattern, choose color palette
+2. **Plan** — pick the visual metaphor (see **Relationship-to-layout map**), then the diagram type and color palette
 3. **Generate** — write `.excalidraw` JSON file (section-by-section for large diagrams)
 4. **Export** — run Kroki or CLI command
-5. **Report** — tell user the output file path
+5. **Verify the render** — view the exported PNG, fix any defects, re-export (see **Verify the Render**)
+6. **Report** — tell user the output file path
 
 ## Design Principles
 
@@ -72,6 +73,15 @@ sed -i '' 's/keyboard.press("Control+Shift+E")/keyboard.press("Meta+Shift+E")/' 
 - `roughness: 0` — clean, modern look for all technical diagrams (use `1` only when user requests hand-drawn/casual style)
 - `fontFamily: 2` (Helvetica) — professional look; use `1` (Virgil) only for casual/sketch style, `3` (Cascadia) for code snippets
 - `fillStyle: "solid"` — default fill
+
+### Containers: prefer typography over boxes
+
+A box around every label makes a diagram look like a wireframe. The cleanest Excalidraw diagrams use **free-floating text and lines** for structure and reserve filled boxes for things that are genuinely *components*.
+
+- **Default to no container** — use a standalone `text` element unless the box earns its place.
+- **Add a box only when** the element is a real system component, an arrow binds to it, the shape itself carries meaning (decision diamond, start/end ellipse), or it groups a zone.
+- Aim for **under ~30% of text elements inside boxes.**
+- For timelines, trees, and hierarchies, use a **line/connector + free-floating labels**, not a stack of rectangles. Size, weight, and color create hierarchy without boxes.
 
 ### Font size hierarchy
 
@@ -157,6 +167,8 @@ Mixed text:  estimate each character individually, sum up
 
 Height: use `60` for single-line labels, add `24` per additional line.
 
+**Standalone `text` does NOT auto-wrap.** For multi-line standalone labels, insert manual `\n` line breaks yourself — aim for ≤ ~30 Latin (≤ ~15 CJK) characters per line at 16px — and add `24` height per line. (Text *bound inside a shape* via `containerId` wraps to the container width automatically, so size the container instead of adding `\n`.)
+
 ### Required properties (all elements)
 
 ```json
@@ -206,6 +218,8 @@ Use only these values — all verified to render via Kroki and the local CLI:
 | `startArrowhead` / `endArrowhead` | `null`, `"arrow"`, `"triangle"`, `"bar"`, `"dot"`, `"circle"`, `"diamond"`, `"crowfoot_many"` |
 
 Arrows default to `endArrowhead: "arrow"` and `startArrowhead: null` — omit both for a standard one-way arrow. Use `"triangle"` for UML inheritance, `"diamond"` for composition, and `"crowfoot_many"` for ER cardinality.
+
+> **Need copy-paste templates or the full property/arrowhead catalogue?** Read `references/schema-reference.md` — complete element templates (component+label, bound arrow, arrow label, swimlane zone, mind-map connector) and every verified property value.
 
 ### Text inside shapes (contained text)
 
@@ -319,6 +333,21 @@ Related elements share `groupIds`. Nested groups list IDs innermost-first:
 
 Choose the right visual pattern for each diagram type.
 
+### Relationship-to-layout map
+
+Before locking in a *diagram type*, pick the *visual metaphor* that matches the relationship in the idea — it drives the layout more than the type label does:
+
+| Relationship in the idea | Visual metaphor | Build with |
+|---|---|---|
+| One → many (broadcast, dispatch) | **Fan-out** | one node, arrows radiating outward |
+| Many → one (aggregate, merge) | **Convergence** | several inputs, arrows into one node |
+| Parent → children (hierarchy) | **Tree** | trunk + branch *lines*, free-floating text |
+| Repeating cycle (loop, feedback) | **Cycle** | nodes in a ring, curved arrows back to start |
+| Input → transform → output | **Assembly line** | left-to-right pipeline of steps |
+| A vs B (comparison) | **Side-by-side** | two parallel columns on a shared baseline |
+| Before / after, phase break | **Gap** | whitespace or a dashed divider between groups |
+| Fuzzy / overlapping state | **Cloud** | overlapping ellipses, no hard borders |
+
 ### Spacing Reference
 
 | Scenario | Spacing |
@@ -361,6 +390,7 @@ Choose the right visual pattern for each diagram type.
 - Level 3: 90x40, `Neutral` color
 - Use lines (not arrows) for connections
 - 4–6 branches (max 8), 2–4 sub-topics per branch
+- **Place level-1 branches on a circle** of radius `R ≈ 280` around the center `(cx, cy)`: for branch `i` of `n`, `angle = 2π·i/n`, `x = cx + R·cos(angle)`, `y = cy + R·sin(angle)`. Even spacing prevents the crossed-line tangle that ad-hoc placement produces.
 
 ### Swimlane
 
@@ -415,6 +445,28 @@ excalidraw-brute-export-cli -i diagram.excalidraw -o diagram.svg -f svg -s 1 -b 
 **Required flags:** `-f` (format: `png` or `svg`) and `-s` (scale: `1`, `2`, or `3`).
 
 **Optional flags:** `-b true` bakes the `viewBackgroundColor` into the image — **the export is transparent by default**, so omit `-b` (or pass `-b false`) only when you want a transparent background. `-d true` exports dark mode; `-e true` embeds the scene so the PNG/SVG reopens as an editable drawing in excalidraw.com. (Long forms also work: `--background`, `--dark-mode`, `--embed-scene`, `--format`, `--scale`, `--input`, `--output`.)
+
+## Verify the Render
+
+**You cannot judge a diagram from its JSON.** The JSON can look perfect while the image has clipped text, overlapping boxes, or an arrow slicing through a shape. After exporting, *look at the result and fix it* — this is the single highest-leverage step.
+
+1. **Render to PNG** (the image must be viewable — PNG, not SVG, even if the user ultimately wants SVG):
+   ```bash
+   excalidraw-brute-export-cli -i diagram.excalidraw -o /tmp/check.png -f png -s 2 -b true
+   ```
+   View `/tmp/check.png` (Claude can read PNGs directly). *Visual audit needs the local CLI; with Kroki-only (SVG), fall back to the structural checks below.*
+2. **Audit the image:**
+
+   | Look for | Fix |
+   |----------|-----|
+   | Text clipped / overflowing its shape | Widen the shape (`max(160, charCount * 9)`, ×2 for CJK) or pre-wrap with `\n` |
+   | Boxes or labels overlapping | Re-space using the Spacing Reference (≥40px gap) |
+   | Arrow cutting straight through a shape | Move endpoints to the shape borders, not centers |
+   | Arrow invisible — only its label shows | Shrink the label `width` to fit the text |
+   | Element off-canvas or floating with no connection | Reposition / connect it |
+   | **Isomorphism Test:** mentally delete all text — does the structure alone still convey the idea? | If not, the *layout* is wrong, not the labels — restructure |
+
+3. **Fix the JSON and re-export.** Repeat until clean — typically 1–3 passes. Skip only for trivial 2–3 element diagrams.
 
 ## Anti-Patterns
 
