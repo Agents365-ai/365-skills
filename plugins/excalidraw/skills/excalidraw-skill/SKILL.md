@@ -153,7 +153,31 @@ Follow the **60-30-10 rule**: 60% whitespace/neutral, 30% primary accent, 10% hi
 | line      | undirected connections           |
 | text      | standalone labels                |
 
-`image`, `frame`, and `embeddable` are **not covered** by this skill: `image` needs a separate `files` map plus a `fileId`, and frames/embeds render inconsistently through the export path. Stick to the six types above.
+`image`, `frame`, and `embeddable` are **not covered** by this skill: `image` needs a separate `files` map plus a `fileId`, and frames/embeds render inconsistently through the export path. Stick to the six types above — and for ready-made icons built *from* these primitives, see **Community shape & icon libraries** below.
+
+### Community shape & icon libraries
+
+Need a real AWS / Azure / GCP / network / UML / BPMN icon instead of a plain box? The [Excalidraw community libraries](https://libraries.excalidraw.com) (200+ `.excalidrawlib` files) are built almost entirely from the **same vector primitives** above — so their items **render through Kroki and the local CLI** with no `image` element and no `files` map. Use the helper in `scripts/excalidraw_lib.py`:
+
+```bash
+# 1. Find a library (matches name / description / item names)
+python scripts/excalidraw_lib.py search aws
+
+# 2. List its items (index, name, element count; flags any image-based item)
+python scripts/excalidraw_lib.py items slobodan/aws-serverless.excalidrawlib
+
+# 3. Build your base scene first, then drop an item in at (x, y). IDs are
+#    namespaced and coordinates translated, so it merges without collisions:
+python scripts/excalidraw_lib.py merge scene.excalidraw \
+    slobodan/aws-serverless.excalidrawlib 0 455 257 --scale 0.9 --prefix lambda
+```
+
+**Rules:**
+- **Vector only.** `merge` refuses any item containing an `image` element (won't render via the export path); `items` flags them up front.
+- **Use sparingly.** An icon is just a labeled node — keep the design system's spacing, labels, and arrow semantics. Icons accent a diagram; they don't replace it.
+- **Arrows don't bind to library groups** — draw connectors with explicit edge-to-edge `points` (bindings don't affect the static export anyway).
+- Libraries are MIT-licensed; a courtesy credit is welcome, not required.
+- Still run **Verify the Render** afterward — icon bounding boxes vary, so check alignment and spacing.
 
 ### Element sizing
 
