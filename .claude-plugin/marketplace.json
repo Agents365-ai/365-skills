@@ -41,7 +41,7 @@
             "name": "plantuml",
             "source": "./plugins/plantuml",
             "description": "PlantUML diagrams — UML, sequence, class, ER, and C4 architecture diagrams via text-based DSL",
-            "version": "1.3.0",
+            "version": "1.4.0",
             "author": { "name": "Agents365-ai" },
             "repository": "https://github.com/Agents365-ai/plantuml-skill",
             "license": "MIT",

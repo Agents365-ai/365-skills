@@ -1,11 +1,11 @@
 ---
 name: plantuml-skill
-description: Use when user requests diagrams, flowcharts, sequence diagrams, class diagrams, component diagrams, ER diagrams, architecture charts, or visualizations. Also use proactively when explaining systems with 3+ components, APIs, data flows, or class hierarchies. Generates .puml files and exports to PNG/SVG via Kroki API (no local install required).
+description: Use when user requests diagrams, flowcharts, sequence diagrams, class diagrams, component diagrams, ER diagrams, architecture charts, or visualizations — including generating a diagram from existing source code, or rendering/extracting PlantUML embedded in a Markdown file to images (e.g. preparing docs for Confluence/Notion). Also use proactively when explaining systems with 3+ components, APIs, data flows, or class hierarchies. Generates .puml files and exports to PNG/SVG via Kroki API (no local install required).
 license: MIT
 homepage: https://github.com/Agents365-ai/plantuml-skill
 compatibility: Requires curl on PATH (pre-installed on macOS/Linux/Windows Git Bash). Default renderer is the public Kroki API at https://kroki.io; can also point to a local Kroki Docker instance, or fall back to a local PlantUML jar + Java + Graphviz.
 platforms: [macos, linux, windows]
-metadata: {"openclaw":{"requires":{"bins":["curl"]},"emoji":"🧩","os":["darwin","linux","win32"]},"hermes":{"tags":["plantuml","diagram","flowchart","sequence","class","uml","architecture","kroki"],"category":"design","requires_tools":["curl"],"related_skills":["drawio","mermaid","excalidraw","tldraw"]},"author":"Agents365-ai","version":"1.3.0"}
+metadata: {"openclaw":{"requires":{"bins":["curl"]},"emoji":"🧩","os":["darwin","linux","win32"]},"hermes":{"tags":["plantuml","diagram","flowchart","sequence","class","uml","architecture","kroki"],"category":"design","requires_tools":["curl"],"related_skills":["drawio","mermaid","excalidraw","tldraw"]},"author":"Agents365-ai","version":"1.4.0"}
 ---
 
 # PlantUML Diagram Skill
@@ -152,6 +152,15 @@ Only after Steps 5–7 pass. Tell the user:
 - Path to the `.puml` source file
 - Path to the exported PNG/SVG
 - Brief description of what was generated
+
+---
+
+## Import Workflows
+
+Two non-default modes — load the linked playbook when triggered, then run the same Step 4–8 loop:
+
+- **Generate a diagram from existing source code** — class diagram of a module, sequence from a request handler, component map of a repo, ER from ORM models. Read the code, extract the real entities/relationships, draw only what's there. → [`references/from-source-code.md`](references/from-source-code.md)
+- **Render PlantUML embedded in Markdown** — extract ` ```plantuml ` / ` ```puml ` blocks (and linked `.puml`), render each to an image, and rewrite the Markdown with image links (e.g. to publish to Confluence / Notion, which don't render fenced PlantUML). → [`references/markdown-embed.md`](references/markdown-embed.md)
 
 ---
 
