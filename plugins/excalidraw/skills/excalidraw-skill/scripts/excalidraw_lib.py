@@ -19,7 +19,7 @@ Usage:
 <source> is "author/name.excalidrawlib" (fetched + cached from the official repo)
 or a path to a local .excalidrawlib file.
 """
-import argparse, copy, json, os, sys, urllib.request
+import argparse, copy, json, math, os, sys, urllib.request
 
 BASE = "https://raw.githubusercontent.com/excalidraw/excalidraw-libraries/main"
 CACHE = "/tmp/excalidraw-libs"
@@ -55,12 +55,31 @@ def items_of(lib):
     return out
 
 
+def _elem_bounds(e):
+    """True visual bounds of one element — accounts for `points` (lines/arrows)
+    and `angle` (rotation), both of which a naive x/y/w/h box misses and which
+    otherwise mis-place rotated or arrow-based library icons."""
+    x, y, w, h = e.get("x", 0), e.get("y", 0), e.get("width", 0), e.get("height", 0)
+    pts = e.get("points")
+    if pts:
+        xs = [x + p[0] for p in pts]; ys = [y + p[1] for p in pts]
+        x0, y0, x1, y1 = min(xs), min(ys), max(xs), max(ys)
+    else:
+        x0, y0, x1, y1 = x, y, x + w, y + h
+    a = e.get("angle", 0) or 0
+    if a:
+        cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
+        ca, sa = math.cos(a), math.sin(a)
+        corners = [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
+        rx = [cx + (px - cx) * ca - (py - cy) * sa for px, py in corners]
+        ry = [cy + (px - cx) * sa + (py - cy) * ca for px, py in corners]
+        x0, x1, y0, y1 = min(rx), max(rx), min(ry), max(ry)
+    return x0, y0, x1, y1
+
+
 def bbox(els):
-    xs = [e.get("x", 0) for e in els]
-    ys = [e.get("y", 0) for e in els]
-    xe = [e.get("x", 0) + e.get("width", 0) for e in els]
-    ye = [e.get("y", 0) + e.get("height", 0) for e in els]
-    return min(xs), min(ys), max(xe), max(ye)
+    b = [_elem_bounds(e) for e in els]
+    return min(p[0] for p in b), min(p[1] for p in b), max(p[2] for p in b), max(p[3] for p in b)
 
 
 def place(els, tx, ty, prefix, scale):
