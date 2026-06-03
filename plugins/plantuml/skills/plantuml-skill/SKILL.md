@@ -115,8 +115,40 @@ On failure: `cat` the output file to read Kroki's error, fix the flagged `.puml`
 
 For a per-diagram-type error catalog and the Kroki safe subset, read [`references/kroki-troubleshooting.md`](references/kroki-troubleshooting.md). If it still fails after 3 tries, stop and show the user the raw Kroki error — do not claim the diagram was produced.
 
-### Step 6: Report to User
-Only after Step 5 passes. Tell the user:
+### Step 6: Self-check (vision)
+
+The Step 5 loop only proves Kroki returned a **valid image** — not that the diagram is **readable**. After it renders, use the agent's vision capability to read the PNG and catch what auto-layout (Graphviz) can't prevent. PlantUML positions everything itself, so the failures here are about readability, not your coordinates:
+
+| Check | What to look for | Fix |
+|---|---|---|
+| Label truncation / overrun | Text clipped or spilling past a box | Shorten the label, wrap in `"…"`, or break with `\n` |
+| Component overlap / cramped | Boxes touching or crowded; unreadable | Add `together { }`, layout hints, or split the diagram |
+| Wrong orientation / aspect | Diagram far too wide or too tall to read | Switch `left to right direction` ↔ `top to bottom direction` |
+| Edge spaghetti | Many relations crossing, hard to follow | Reorder declarations, group with `package`/`together`, or add hidden edges for layout |
+| Wrong diagram type | Type doesn't suit the content | Switch type (sequence, state, C4, …) |
+| Low contrast | Text blends into the fill / theme | Adjust `skinparam` / `!theme` so text contrasts the fill |
+
+- Max **2 self-check rounds** — if issues remain after 2 fixes, show the user anyway.
+- **Re-render (Step 4) and re-validate (Step 5) after every fix.**
+- If vision is unavailable, skip self-check and show the PNG directly.
+
+### Step 7: Review loop
+
+After self-check, show the exported image and collect feedback. Apply the **minimal `.puml` edit** for each request, then re-render and re-validate:
+
+| User request | Edit action |
+|---|---|
+| Change a label | Edit the element / message text in the `.puml` |
+| Add / remove an element or relation | Add or delete the matching line |
+| Change a color | `skinparam`, `!theme`, or an inline `#color` on the element |
+| Change layout direction | Swap `left to right direction` ↔ `top to bottom direction` |
+| Restructure / group | Wrap related elements in a `package` / `together { }`, or regenerate |
+
+- Overwrite the same `diagram.puml` / output file each round — don't create `v1`, `v2`, …
+- **Safety valve:** after 5 rounds, suggest the user fine-tune the `.puml` directly or at [plantuml.com](https://www.plantuml.com/plantuml/uml/).
+
+### Step 8: Report to User
+Only after Steps 5–7 pass. Tell the user:
 - Path to the `.puml` source file
 - Path to the exported PNG/SVG
 - Brief description of what was generated
