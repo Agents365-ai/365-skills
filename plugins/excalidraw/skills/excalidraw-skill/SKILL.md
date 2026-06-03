@@ -28,6 +28,11 @@ Generate `.excalidraw` JSON files and export to PNG/SVG.
 
 **Skip when:** a simple list or table suffices, or user is in a quick Q&A flow
 
+**When NOT to use it — route elsewhere:**
+- Polished, precise diagrams, strict UML, or branded vendor icons → **drawio**.
+- Diagrams-as-code in git, auto-laid-out from text → **mermaid** (general) or **plantuml** (UML).
+- An infinite-canvas whiteboard or programmatic freehand strokes → **tldraw**.
+
 ## Prerequisites
 
 ### Option A: Kroki API (recommended — zero install, SVG only)
