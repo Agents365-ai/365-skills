@@ -69,7 +69,8 @@ sed -i '' 's/keyboard.press("Control+Shift+E")/keyboard.press("Meta+Shift+E")/' 
 3. **Generate** — write `.excalidraw` JSON file (section-by-section for large diagrams)
 4. **Export** — run Kroki or CLI command
 5. **Verify the render** — view the exported PNG, fix any defects, re-export (see **Verify the Render**)
-6. **Report** — tell user the output file path
+6. **Review loop** — show the image to the user, apply the minimal `.excalidraw` edit per request, re-export until approved (see **Review Loop**)
+7. **Report** — tell user the output file path
 
 ## Design Principles
 
@@ -496,6 +497,22 @@ excalidraw-brute-export-cli -i diagram.excalidraw -o diagram.svg -f svg -s 1 -b 
    | **Isomorphism Test:** mentally delete all text — does the structure alone still convey the idea? | If not, the *layout* is wrong, not the labels — restructure |
 
 3. **Fix the JSON and re-export.** Repeat until clean — typically 1–3 passes. Skip only for trivial 2–3 element diagrams.
+
+## Review Loop
+
+Verify-the-render fixes *defects*; the review loop incorporates *the user's* wishes. After the render is clean, show it and collect feedback, then apply the **minimal `.excalidraw` edit** for each request and re-export:
+
+| User request | Edit action |
+|---|---|
+| Change a label | Edit the `text` (or the bound label element) |
+| Change a color | Update `backgroundColor` / `strokeColor` on the element |
+| Add / remove an element | Append or delete the element (fix any `boundElements` / binding refs) |
+| Move / resize | Update `x` / `y` / `width` / `height` |
+| Restructure / re-route | Re-apply the pattern's spacing & routing rules, or regenerate |
+
+- Overwrite the same `diagram.excalidraw` / output file each round — don't create `v1`, `v2`, …
+- Re-run **Verify the Render** after each edit (a change can introduce a new clip / overlap).
+- **Safety valve:** after 5 rounds, suggest the user fine-tune in [excalidraw.com](https://excalidraw.com) — the output preserves arrow binding, so it opens fully editable.
 
 ## Anti-Patterns
 
