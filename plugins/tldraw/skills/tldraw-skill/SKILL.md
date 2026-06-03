@@ -5,7 +5,7 @@ license: MIT
 homepage: https://github.com/Agents365-ai/tldraw-skill
 compatibility: Requires Node.js + @kitschpatrol/tldraw-cli on PATH (macOS/Linux/Windows). Self-check step requires a vision-enabled model (e.g., Claude Sonnet/Opus); gracefully skipped if unavailable.
 platforms: [macos, linux, windows]
-metadata: {"openclaw":{"requires":{"bins":["tldraw"]},"emoji":"📝","os":["darwin","linux","win32"],"install":[{"id":"npm-tldraw","kind":"npm","package":"@kitschpatrol/tldraw-cli","global":true,"bins":["tldraw"],"label":"Install tldraw-cli via npm"}]},"hermes":{"tags":["tldraw","diagram","flowchart","architecture","whiteboard","visualization"],"category":"design","requires_tools":["tldraw"],"related_skills":["drawio","mermaid","excalidraw","plantuml"]},"author":"Agents365-ai","version":"1.2.0"}
+metadata: {"openclaw":{"requires":{"bins":["tldraw"]},"emoji":"📝","os":["darwin","linux","win32"],"install":[{"id":"npm-tldraw","kind":"npm","package":"@kitschpatrol/tldraw-cli","global":true,"bins":["tldraw"],"label":"Install tldraw-cli via npm"}]},"hermes":{"tags":["tldraw","diagram","flowchart","architecture","whiteboard","visualization"],"category":"design","requires_tools":["tldraw"],"related_skills":["drawio","mermaid","excalidraw","plantuml"]},"author":"Agents365-ai","version":"1.2.1"}
 ---
 
 # tldraw Whiteboard Diagrams
@@ -71,13 +71,15 @@ Skip clarification if the request already specifies these details or is clearly 
 
 ### Step 5: Self-Check
 
-After exporting the draft PNG, use the agent's vision capability (e.g., Claude's image input) to read the image and check for these issues before showing the user. If the agent does not support vision, skip self-check and show the PNG directly:
+After exporting the draft PNG, use the agent's vision capability (e.g., Claude's image input) to read the image and check for these issues before showing the user. If the agent does not support vision, skip self-check and show the PNG directly.
+
+tldraw's own AI agent flags exactly three structural defects — **text overflow** (a box too small for its label), **overlapping text**, and **friendless arrows** (an arrow with an unbound end). The first three rows below target those; size boxes correctly up front (see "Sizing boxes to fit labels") and they rarely occur.
 
 | Check | What to look for | Auto-fix action |
 |-------|-----------------|-----------------|
-| Overlapping shapes | Two or more shapes stacked on top of each other | Shift shapes apart by ≥200px |
-| Clipped labels | Text cut off at shape boundaries | Increase shape `w`/`h` to fit label |
-| Missing arrows | Arrows that don't visually connect to shapes | Verify `boundShapeId` matches an existing shape's id |
+| Text overflow | Label spills past the shape's border, or the box looks taller than you set (tldraw auto-grows an undersized box) | Increase `w`/`h` to fit the label — see the sizing formula below |
+| Overlapping text | Two text-bearing shapes' labels touch or overlap, hurting legibility | Shift shapes apart by ≥200px |
+| Friendless arrow | An arrow with one end not connected to a shape (floats loose) | Bind both ends: every arrow's `start` and `end` need a `boundShapeId` matching an existing shape |
 | Off-canvas shapes | Shapes at negative coordinates or far from the main group | Move to positive coordinates near the cluster |
 | Arrow-shape overlap | An arrow visually crosses through an unrelated shape | Adjust `bend` value or move endpoints to a different `normalizedAnchor` side |
 | Stacked arrows | Multiple arrows overlap each other on the same path | Distribute `normalizedAnchor` across the shape perimeter (use different x/y values) |
@@ -425,6 +427,8 @@ With `padding = 16` on each side:
 
 Example: a size-`m` box labeled `"API Gateway"` (11 chars, 1 line) → `w ≈ 11*15 + 32 = 197 → 200`, `h ≈ 28 + 32 = 60`. Multi-line labels (with `\n`) count the **longest** line for `w` and the line count for `h`. Err slightly large — extra padding looks fine, a too-narrow box hard-wraps a word mid-letters.
 
+**Why this matters:** if a box is too short for its text, tldraw silently **grows it taller** on render (it sets the shape's `growY`) — so the box ends up bigger than the `h` you wrote and collides with whatever you placed below it. Sizing correctly up front keeps `growY` at 0 and your layout intact. This is the single most common cause of "the diagram looks cramped / boxes overlap" after export.
+
 **Routing corridors:** between shape rows/columns, leave an extra ~80px empty corridor where arrows can route without crossing other shapes. Never place a shape in a gap that arrows need to traverse.
 
 **Grid alignment:** snap all `x`, `y`, `w`, `h` values to **multiples of 10** — this matches tldraw's default `gridSize: 10` and makes manual editing easier.
@@ -592,6 +596,7 @@ Or upload to https://tldraw.com (drag-and-drop the `.tldr` file) for browser edi
 | Output file not found | `-o` is a directory; file name matches input: `tldraw export foo.tldr -o ./` → `./foo.png` |
 | Arrow doesn't appear | Use `"type": "binding"` with `boundShapeId`; set arrow `x`/`y` to `0,0` |
 | Shapes overlap | Plan a 200px+ grid before assigning x/y; scale spacing with complexity |
+| Box taller than expected / collides below | Label overflowed an undersized box, so tldraw auto-grew it (`growY`). Size `w`/`h` to the label up front using the sizing formula |
 | Text not visible | Check `props.text` is set; if `fill: "none"`, ensure text color contrasts |
 | Index collision | All shapes must have unique `index` values |
 | Shape ID clash | Use unique IDs: `"shape:s1"`, `"shape:s2"`, `"shape:a1"`, etc. |
