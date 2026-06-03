@@ -5,7 +5,7 @@ license: MIT
 homepage: https://github.com/Agents365-ai/plantuml-skill
 compatibility: Requires curl on PATH (pre-installed on macOS/Linux/Windows Git Bash). Default renderer is the public Kroki API at https://kroki.io; can also point to a local Kroki Docker instance, or fall back to a local PlantUML jar + Java + Graphviz.
 platforms: [macos, linux, windows]
-metadata: {"openclaw":{"requires":{"bins":["curl"]},"emoji":"🧩","os":["darwin","linux","win32"]},"hermes":{"tags":["plantuml","diagram","flowchart","sequence","class","uml","architecture","kroki"],"category":"design","requires_tools":["curl"],"related_skills":["drawio","mermaid","excalidraw","tldraw"]},"author":"Agents365-ai","version":"1.4.0"}
+metadata: {"openclaw":{"requires":{"bins":["curl"]},"emoji":"🧩","os":["darwin","linux","win32"]},"hermes":{"tags":["plantuml","diagram","flowchart","sequence","class","uml","architecture","kroki"],"category":"design","requires_tools":["curl"],"related_skills":["drawio","mermaid","excalidraw","tldraw"]},"author":"Agents365-ai","version":"1.5.0"}
 ---
 
 # PlantUML Diagram Skill
@@ -36,6 +36,18 @@ Generate `.puml` PlantUML diagram files and export to PNG/SVG using **Kroki** �
 - General, non-UML quick diagrams embedded in Markdown → **mermaid**.
 - Freeform, heavily-styled, or branded diagrams needing pixel control → **drawio**.
 - A hand-drawn / sketchy look → **excalidraw** or **tldraw**.
+
+## Modes
+
+Once triggered, route by what the user actually wants — then run the shared render loop (Steps 4–8):
+
+| Mode | The user wants… | Entry point |
+|---|---|---|
+| **Generate** (default) | a diagram from a text description | Steps 1–8 below |
+| **From code** | a diagram of existing source code | [`references/from-source-code.md`](references/from-source-code.md) → Steps 4–8 |
+| **Embed** | the PlantUML inside a Markdown doc rendered to images | [`references/markdown-embed.md`](references/markdown-embed.md) |
+| **Refine** | to change an existing diagram | load its `.puml`, apply the minimal edit (Step 7), re-render (Steps 4–6) |
+| **Review** | to know whether an existing diagram is readable / correct | run the Step 6 vision self-check on the image |
 
 ## Prerequisites
 
@@ -75,6 +87,8 @@ Choose the most appropriate PlantUML diagram type (see reference below).
 Write the PlantUML source file with `@startuml` / `@enduml` markers.
 
 ### Step 4: Export via Kroki (capture the HTTP status)
+Pick the backend first. The default below (public Kroki) **uploads the `.puml` source to kroki.io** — for sensitive diagrams use a local backend instead, and never silently fall back. See [`references/rendering-backends.md`](references/rendering-backends.md). For local Kroki, swap `https://kroki.io` → `http://localhost:8000`.
+
 ```bash
 # PNG (recommended) — keep the status code so Step 5 can verify it
 http=$(curl -s -w "%{http_code}" -o diagram.png \
@@ -152,6 +166,7 @@ Only after Steps 5–7 pass. Tell the user:
 - Path to the `.puml` source file
 - Path to the exported PNG/SVG
 - Brief description of what was generated
+- Which backend rendered it, and whether the source left the machine — e.g. "via public Kroki (uploaded to kroki.io)" vs "via local Kroki (stayed local)"
 
 ---
 
