@@ -328,6 +328,29 @@ Cancelled --> [*]
 
 ---
 
+### C4 Context Diagram
+
+C4 uses the bundled C4-PlantUML standard library via `!include <C4/...>`, which Kroki and recent local jars resolve with no network fetch. Export with the **standard** `plantuml` endpoint (the `c4plantuml` Kroki type also works).
+
+```plantuml
+@startuml
+!include <C4/C4_Context>
+
+title System Context — Internet Banking
+
+Person(customer, "Banking Customer", "A customer of the bank")
+System(banking, "Internet Banking System", "Lets customers view their accounts")
+System_Ext(mail, "E-mail System", "The internal Microsoft Exchange system")
+
+Rel(customer, banking, "Uses", "HTTPS")
+Rel(banking, mail, "Sends e-mail via", "SMTP")
+@enduml
+```
+
+Other levels: `<C4/C4_Container>` (`Container`, `ContainerDb`), `<C4/C4_Component>` (`Component`). Common macros: `Person`, `System`, `System_Ext`, `Container`, `Rel`, `Boundary`. **Do not** use a remote `!includeurl https://…` — Kroki cannot fetch external URLs; always use the bundled `<C4/…>` form.
+
+---
+
 ## Export Commands
 
 ```bash
@@ -386,6 +409,6 @@ skinparam FontName Arial
 | Diagram too large/crowded | Split into multiple diagrams or use `package`/`rectangle` grouping |
 | Missing `@startuml` / `@enduml` | Always wrap diagram in these markers |
 | Special chars in labels | Wrap in quotes: `"Label: value"` |
-| C4 includes not found via Kroki | Use Kroki's `c4plantuml` diagram type instead of `plantuml` for C4 diagrams |
+| C4 includes not found | Use the bundled `!include <C4/C4_Context>` (resolved on the standard `plantuml` endpoint and `c4plantuml`); never a remote `!includeurl https://…` — Kroki cannot fetch external URLs |
 | Component overlap | Use `together { }` or explicit layout hints (`top to bottom direction`) |
 | Sequence participants out of order | Declare `participant` explicitly at top in desired left-to-right order |
