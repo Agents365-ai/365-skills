@@ -5,7 +5,7 @@ license: MIT
 homepage: https://github.com/Agents365-ai/tldraw-skill
 compatibility: Requires Node.js + @kitschpatrol/tldraw-cli on PATH (macOS/Linux/Windows). Self-check step requires a vision-enabled model (e.g., Claude Sonnet/Opus); gracefully skipped if unavailable.
 platforms: [macos, linux, windows]
-metadata: {"openclaw":{"requires":{"bins":["tldraw"]},"emoji":"📝","os":["darwin","linux","win32"],"install":[{"id":"npm-tldraw","kind":"npm","package":"@kitschpatrol/tldraw-cli","global":true,"bins":["tldraw"],"label":"Install tldraw-cli via npm"}]},"hermes":{"tags":["tldraw","diagram","flowchart","architecture","whiteboard","visualization"],"category":"design","requires_tools":["tldraw"],"related_skills":["drawio","mermaid","excalidraw","plantuml"]},"author":"Agents365-ai","version":"1.1.0"}
+metadata: {"openclaw":{"requires":{"bins":["tldraw"]},"emoji":"📝","os":["darwin","linux","win32"],"install":[{"id":"npm-tldraw","kind":"npm","package":"@kitschpatrol/tldraw-cli","global":true,"bins":["tldraw"],"label":"Install tldraw-cli via npm"}]},"hermes":{"tags":["tldraw","diagram","flowchart","architecture","whiteboard","visualization"],"category":"design","requires_tools":["tldraw"],"related_skills":["drawio","mermaid","excalidraw","plantuml"]},"author":"Agents365-ai","version":"1.2.0"}
 ---
 
 # tldraw Whiteboard Diagrams
@@ -40,7 +40,16 @@ npm install -g @kitschpatrol/tldraw-cli
 tldraw --version
 ```
 
-Works identically on macOS, Windows, and Linux — no extra setup required.
+Works identically on macOS, Windows, and Linux.
+
+**First-export note:** `tldraw export` renders through a pinned Chrome build via puppeteer. The first export can fail with `Could not find Chrome (ver. <x>)`. The error names the exact version it needs — install it once, then exports work:
+
+```bash
+# The error message names the version; substitute it here
+npx puppeteer browsers install chrome@<version-from-error>
+```
+
+(Installs to `~/.cache/puppeteer`; only needed once per CLI version.)
 
 ## Workflow
 
@@ -183,11 +192,22 @@ After self-check, show the exported image and ask the user for feedback.
 |-------------|---------|
 | `rectangle` | services, modules, components |
 | `ellipse` | databases, start/end nodes |
+| `oval` | pill-shaped start/end terminators (flowcharts) |
 | `diamond` | decision points |
 | `cloud` | external services, infrastructure |
 | `hexagon` | event hubs, message buses |
 | `triangle` | gateways, load balancers |
 | `star` | highlights, key features |
+| `pentagon` | stages, milestones |
+| `octagon` | stop / terminal / blocking states |
+| `trapezoid` | manual operations, transforms |
+| `rhombus` / `rhombus-2` | parallelograms — I/O steps (left/right slant) |
+| `arrow-right` / `arrow-left` / `arrow-up` / `arrow-down` | directional flow blocks, data movement |
+| `x-box` | failed / invalid / rejected states (box with ✕) |
+| `check-box` | passed / validated / done states (box with ✓) |
+| `heart` | accents (rarely needed for technical diagrams) |
+
+All 20 `geo` values are valid; the above are the useful subset for technical diagrams.
 
 ### Color Palette
 
@@ -202,7 +222,12 @@ After self-check, show the exported image and ask the user for feedback.
 | `yellow` | decisions, caches |
 | `grey` | neutral, background, legacy |
 | `light-blue` | secondary services, metadata |
+| `light-violet` | soft auth/security, secondary gateways |
+| `light-green` | soft success, secondary storage |
+| `white` | blank/empty nodes, placeholders (pair with `fill: solid`) |
 | `black` | titles, emphasis |
+
+Full palette (13): `black`, `grey`, `light-violet`, `violet`, `blue`, `light-blue`, `yellow`, `orange`, `green`, `light-green`, `light-red`, `red`, `white`.
 
 ### Style Options
 
@@ -270,6 +295,25 @@ After self-check, show the exported image and ask the user for feedback.
 - Add `"text": "label"` in arrow props for labeled connections.
 - Use `"bend": 20` (or `-20`) for slight curves to avoid overlap with other arrows.
 - For dashed/dotted arrows (e.g., async flows, optional links), set `"dash": "dashed"` or `"dotted"`.
+- Set `"spline": "cubic"` for a smooth curved arrow (default `"line"` is straight/elbow). Useful for skip connections and back-edges.
+
+### Arrowheads
+
+`arrowheadStart` and `arrowheadEnd` each accept any of these 9 values (all render in `@kitschpatrol/tldraw-cli`):
+
+| Value | Looks like | Use for |
+|-------|-----------|---------|
+| `none` | (no head) | start of a one-way arrow |
+| `arrow` | open V | default flow direction |
+| `triangle` | filled ▶ | UML inheritance / "is-a" |
+| `diamond` | filled ◆ | UML composition / aggregation (on the owner end) |
+| `dot` | ● | sequence-diagram message endpoints |
+| `square` | ■ | terminal / fixed endpoint |
+| `bar` | \| | "stop" / boundary marker |
+| `pipe` | \|\| | alternative boundary marker |
+| `inverted` | hollow V | de-emphasized direction |
+
+Default arrows use `"arrowheadStart": "none"`, `"arrowheadEnd": "arrow"`. For bidirectional links set both ends to `"arrow"`.
 
 ### Distributing Arrows on a Shape
 
@@ -285,6 +329,59 @@ When multiple arrows connect to the same shape, assign different `normalizedAnch
 | Left center | 0 | 0.5 | connecting to node on left |
 
 **Rule:** if a shape has N connections on one side, space them evenly (e.g., 3 connections on bottom → x = 0.25, 0.5, 0.75).
+
+### Multiple Arrows Between the Same Two Nodes
+
+The anchor-distribution rule above spreads arrows going to *different* nodes. When **N arrows connect the same pair** (e.g., bidirectional request/response, or several relationships A↔B), anchors can't separate them — instead spread the `bend` values symmetrically so the arrows fan out into distinct arcs:
+
+- Pick a max bend `amount` (≈ 30–60; larger for nodes that are far apart).
+- Assign the N arrows bends evenly spaced from `−amount` to `+amount`:
+  - **2 arrows** → `bend: -amount`, `bend: +amount`
+  - **3 arrows** → `bend: -amount`, `0`, `+amount`
+  - General: `bend[i] = -amount + i * (2*amount / (N-1))` for `i = 0..N-1`
+- A straight arrow plus a single curved one (`bend: 0` and `bend: 40`) reads cleanly for a request/response pair.
+
+---
+
+## Container & Annotation Shapes
+
+Beyond `geo` and `arrow`, two more shape types are useful for technical diagrams.
+
+### Frame (labeled container — tiers, subsystems, swimlanes)
+
+A `frame` is a native rectangular container with a title. Use it to group a tier or subsystem with a visible boundary; stack several frames to approximate swimlanes.
+
+```json
+{
+  "id": "shape:frame1", "typeName": "shape", "type": "frame",
+  "parentId": "page:page1", "index": "a1",
+  "x": 60, "y": 60, "rotation": 0, "isLocked": false, "opacity": 1, "meta": {},
+  "props": { "w": 360, "h": 220, "name": "Backend Tier", "color": "black" }
+}
+```
+
+- `props.name` is the title shown at the frame's top-left.
+- **Child shapes set `"parentId": "shape:frame1"`** (not `page:page1`), and their `x`/`y` are **relative to the frame's top-left corner**, not the page. A child at `x: 40, y: 60` sits 40px in and 60px down from the frame's origin.
+- Frames render as a clean (non-hand-drawn) rectangle — good for structural grouping. Arrows can still bind across frames normally.
+
+### Note (sticky-note annotation / callout)
+
+A `note` is a sticky note — ideal for TODOs, callouts, and comments layered onto a diagram.
+
+```json
+{
+  "id": "shape:n1", "typeName": "shape", "type": "note",
+  "parentId": "page:page1", "index": "a4",
+  "x": 480, "y": 80, "rotation": 0, "isLocked": false, "opacity": 1, "meta": {},
+  "props": { "color": "yellow", "size": "m", "text": "TODO: add retry\nlogic here",
+    "font": "draw", "align": "middle", "verticalAlign": "middle",
+    "growY": 0, "fontSizeAdjustment": 0, "url": "", "scale": 1, "labelColor": "black" }
+}
+```
+
+- A note has **no `w`/`h`** — it's a fixed square (~200px) that auto-grows for longer text. Don't add `w`/`h`.
+- `yellow` is the classic sticky color; any palette color works.
+- Use notes sparingly — for annotations *about* the diagram, not as primary nodes (use `geo` for those).
 
 ---
 
@@ -312,6 +409,21 @@ aa, ab, ac, ... az          ← continue here past aZ; never "a10"
 | Simple | ≤5 | 200px | 150px |
 | Medium | 6–10 | 280px | 200px |
 | Complex | >10 | 350px | 250px |
+
+**Sizing boxes to fit labels (do this up front, not in self-check):** the `draw` font is wide. Compute `w`/`h` from the label so text never clips. Approximate per-character width and line height for the default `draw` font:
+
+| `size` | char width (px) | line height (px) |
+|--------|-----------------|------------------|
+| `s` | 11 | 18 |
+| `m` (default) | 15 | 28 |
+| `l` | 22 | 40 |
+| `xl` | 32 | 56 |
+
+With `padding = 16` on each side:
+- `w = ceil(longest_line_chars * char_width + 2*padding)`, then round up to the next multiple of 10.
+- `h = ceil(num_lines * line_height + 2*padding)`, rounded up to a multiple of 10.
+
+Example: a size-`m` box labeled `"API Gateway"` (11 chars, 1 line) → `w ≈ 11*15 + 32 = 197 → 200`, `h ≈ 28 + 32 = 60`. Multi-line labels (with `\n`) count the **longest** line for `w` and the line count for `h`. Err slightly large — extra padding looks fine, a too-narrow box hard-wraps a word mid-letters.
 
 **Routing corridors:** between shape rows/columns, leave an extra ~80px empty corridor where arrows can route without crossing other shapes. Never place a shape in a gap that arrows need to traverse.
 
@@ -420,11 +532,12 @@ Label the arrow with cardinality (e.g., `1..*`, `0..1`) via `props.text`.
 | Element | `geo` | `color` | Notes |
 |---------|-------|---------|-------|
 | Class | `rectangle` (`fill: solid`, `color: light-blue`) | `light-blue` | Title + attributes + methods as one multi-line `text` |
-| Inheritance | arrow with `arrowheadEnd: triangle` (open) | `black` | Use a single arrow shape; tldraw doesn't natively render hollow triangles, so suggest user open in editor for true UML notation if needed |
-| Composition | arrow with `bend: 0`, label `◆` in `text` | `black` | Add diamond glyph in arrow text as a workaround |
+| Inheritance | arrow with `arrowheadEnd: triangle` | `black` | tldraw renders a filled `triangle` arrowhead — point it at the parent class |
+| Composition | arrow with `arrowheadStart: diamond`, `arrowheadEnd: none` | `black` | tldraw renders a filled `diamond` head — put it on the owner (whole) end |
+| Aggregation | arrow with `arrowheadStart: diamond` | `black` | Same diamond head; distinguish from composition via a label or note |
 | Association | arrow with `arrowheadEnd: arrow` | `black` | Standard arrow |
 
-**Note:** tldraw's arrowheads are limited compared to UML — for strict UML class diagrams, drawio-skill (separate skill) is a better fit. Use this preset for sketches and high-level explainers.
+**Note:** tldraw's `triangle`/`diamond` arrowheads are **filled**, whereas strict UML uses *hollow* triangles (inheritance) and either filled/hollow diamonds (composition/aggregation). The shapes read correctly for sketches and explainers; for publication-grade UML with hollow heads, drawio-skill (separate skill) is a better fit.
 
 **Layout:** TB, classes ~250px apart, interfaces above implementations.
 
@@ -473,6 +586,7 @@ Or upload to https://tldraw.com (drag-and-drop the `.tldr` file) for browser edi
 | Mistake | Fix |
 |---------|-----|
 | `tldraw` command not found | Run `npm install -g @kitschpatrol/tldraw-cli` |
+| `Could not find Chrome (ver. X)` on export | Install the pinned build: `npx puppeteer browsers install chrome@X` (use the exact version from the error) |
 | `invalidRecords` on export | Use single-character `a` keys (`a1`…`a9`, `aA`…`aZ`, `aa`…`az`); `a10`, `b1`, `c1` are malformed fractional-index keys |
 | Blank/empty export | Verify `document:document` and `page:page1` records are present |
 | Output file not found | `-o` is a directory; file name matches input: `tldraw export foo.tldr -o ./` → `./foo.png` |

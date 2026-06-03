@@ -51,7 +51,7 @@
             "name": "tldraw",
             "source": "./plugins/tldraw",
             "description": "Tldraw whiteboard-style diagrams — infinite canvas, hand-drawn feel, exported to PNG/SVG",
-            "version": "1.1.0",
+            "version": "1.2.0",
             "author": { "name": "Agents365-ai" },
             "repository": "https://github.com/Agents365-ai/tldraw-skill",
             "license": "MIT",
