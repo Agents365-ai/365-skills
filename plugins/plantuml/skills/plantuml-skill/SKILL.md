@@ -32,6 +32,11 @@ Generate `.puml` PlantUML diagram files and export to PNG/SVG using **Kroki** �
 - Showing class hierarchies, database schemas, or ER models
 - Illustrating state machines or lifecycle flows
 
+**When NOT to use it — route elsewhere:**
+- General, non-UML quick diagrams embedded in Markdown → **mermaid**.
+- Freeform, heavily-styled, or branded diagrams needing pixel control → **drawio**.
+- A hand-drawn / sketchy look → **excalidraw** or **tldraw**.
+
 ## Prerequisites
 
 **Option A: Kroki API (recommended — no install)**
