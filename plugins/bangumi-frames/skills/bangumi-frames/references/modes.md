@@ -59,3 +59,25 @@ So **`--ref-eps 0.04` for purity**, up to ~`0.06` if you need more recall. Alway
 `matched_montage.png` and the high-distance tail of `matched/`. Build the reference densely
 (~200 crops across all of the character's forms) — far better than a handful of seed images;
 for multi-form characters, include every form in the reference folder.
+
+### Several characters in one pass
+
+`--ref` auto-detects its layout:
+
+- **a folder of `*.jpg`** → ONE character → `matched/` (the single-character case above).
+- **a folder of per-character SUBFOLDERS** → each subfolder is one character, matched
+  independently and written to `matched/<subfolder-name>/` (each with its own
+  `0.0xx_<crop>.jpg` files, `_montage.png`, and `index.json`):
+
+  ```
+  ~/refs/凡人/          # pass this as --ref
+  ├── 韩立/    *.jpg     # -> matched/韩立/
+  ├── 紫灵/    *.jpg     # -> matched/紫灵/
+  └── 南宫婉/  *.jpg     # -> matched/南宫婉/
+  ```
+
+  Empty subfolders (no `*.jpg`) are skipped. Each character still runs as its own one-vs-rest
+  (same `--ref-eps`, no cross-character competition), so the purity rules above hold per
+  character — they share the crop features, so adding characters only costs one extra distance
+  pass each, not a re-extract. The envelope `data` carries a `characters[]` array (one entry
+  per name) instead of the flat single-character fields; `data.matched` is the total across all.

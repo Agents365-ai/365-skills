@@ -5,8 +5,10 @@ models.
 
 ONE pass, TWO modes:
     no  --ref : unsupervised — cluster every crop by CCIP identity into char_NN
-    with --ref: one-vs-rest — pull every crop matching ONE character's reference
-                folder into matched/ (filenames distance-prefixed, closest first)
+    with --ref: one-vs-rest — pull every crop matching a reference into matched/
+                (filenames distance-prefixed, closest first). A ref folder of
+                *.jpg = ONE character -> matched/; a ref folder of per-character
+                subfolders = each character -> matched/<name>/
 
 Agent-native contract (see agent-native-design):
     stdout : a single JSON envelope — {"ok": true, "data": {...}, "meta": {...}}
@@ -35,7 +37,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 HOME = Path.home()
 DEFAULT_COOKIES = HOME / "bb_up" / "bb_cookies" / "www.bilibili.com_cookies.txt"
-SCHEMA_VERSION = "0.4.0"
+SCHEMA_VERSION = "0.5.0"
 # stable exit codes (agent-native-design: documented, distinct per failure class)
 EXIT_OK, EXIT_RUNTIME, EXIT_AUTH, EXIT_VALIDATION = 0, 1, 2, 3
 
@@ -442,28 +444,25 @@ def mode_cluster(wd, frames, records, eps, min_samples):
 
 
 # -------------------------------------------- mode 2: one-vs-rest ref match
-def mode_match(wd, frames, records, ref_imgs, ref_eps):
-    os.environ.pop("ONNX_MODE", None)  # CCIP crashes under CoreML — force CPU
+BANDS = [0.04, 0.06, 0.08, 0.10, 0.12, 0.16, 0.20]
+
+
+def _match_one(ref_imgs, ref_eps, crops, crop2frame, crops_dir, feats, frames,
+               out, montage_path):
+    """Pull every crop within ref_eps of the ref prototype set into `out`,
+    distance-prefixed. Returns the per-ref result dict (no 'mode' key)."""
     import numpy as np
     from imgutils.metrics import (ccip_batch_extract_features,
                                   ccip_batch_differences)
-    crops_dir = wd / "crops"
-    crop2frame = {e["crop"]: f for f, ents in records.items() for e in ents}
-    crops = sorted(crop2frame)
-    out = wd / "matched"
     shutil.rmtree(out, ignore_errors=True)
-    out.mkdir()
-    bands = [0.04, 0.06, 0.08, 0.10, 0.12, 0.16, 0.20]
+    out.mkdir(parents=True)
     if not crops:
-        log("[match] no character crops found")
         json.dump([], open(out / "index.json", "w"))
-        return {"mode": "match", "ref_eps": ref_eps, "prototypes": len(ref_imgs),
-                "crops_total": 0, "matched": 0, "bands": {f"{b:.2f}": 0 for b in bands},
+        return {"prototypes": len(ref_imgs), "matched": 0,
+                "bands": {f"{b:.2f}": 0 for b in BANDS},
                 "matched_dir": str(out), "montage": None, "index": str(out / "index.json")}
     pfeats = [np.asarray(f) for f in
               ccip_batch_extract_features([str(p) for p in ref_imgs])]
-    log(f"[match] {len(pfeats)} ref prototypes")
-    feats = load_features(wd, crops_dir, crops)
 
     # per-crop MIN distance to the prototype set (no margin test — one class)
     N = len(crops)
@@ -474,10 +473,7 @@ def mode_match(wd, frames, records, ref_imgs, ref_eps):
         cross = ccip_batch_differences(list(feats[s:e]) + pfeats)[:e - s, e - s:]
         mind[s:e] = cross.min(axis=1)
 
-    band_counts = {f"{b:.2f}": int((mind < b).sum()) for b in bands}
-    log("[match] distance bands (cumulative crops): "
-        + " ".join(f"<{k}:{v}" for k, v in band_counts.items()))
-
+    band_counts = {f"{b:.2f}": int((mind < b).sum()) for b in BANDS}
     order = list(np.argsort(mind))
     sel = [i for i in order if mind[i] < ref_eps]
     index = []
@@ -489,16 +485,57 @@ def mode_match(wd, frames, records, ref_imgs, ref_eps):
         index.append({"dist": round(float(mind[i]), 4), "crop": n,
                       "frame": src, "time": frames.get(src)})
     json.dump(index, open(out / "index.json", "w"), ensure_ascii=False, indent=1)
-    montage_path = None
+    mp = None
     if sel:
         samp = sel[::max(1, len(sel) // 48)][:48]
-        montage_path = wd / "matched_montage.png"
-        montage([("matched", [crops[i] for i in samp])], crops_dir, montage_path)
-    log(f"[match] {len(sel)} crops < {ref_eps} -> {out} (distance-prefixed, closest first)")
-    return {"mode": "match", "ref_eps": ref_eps, "prototypes": len(pfeats),
-            "crops_total": N, "matched": len(sel), "bands": band_counts,
-            "matched_dir": str(out), "montage": str(montage_path) if montage_path else None,
+        mp = montage_path
+        montage([("matched", [crops[i] for i in samp])], crops_dir, mp)
+    return {"prototypes": len(pfeats), "matched": len(sel), "bands": band_counts,
+            "matched_dir": str(out), "montage": str(mp) if mp else None,
             "index": str(out / "index.json")}
+
+
+def _load_crops_feats(wd, records):
+    """crops_dir, crop2frame map, sorted crop names, and their cached features."""
+    crops_dir = wd / "crops"
+    crop2frame = {e["crop"]: f for f, ents in records.items() for e in ents}
+    crops = sorted(crop2frame)
+    feats = load_features(wd, crops_dir, crops) if crops else []
+    return crops_dir, crop2frame, crops, feats
+
+
+def mode_match(wd, frames, records, ref_imgs, ref_eps):
+    os.environ.pop("ONNX_MODE", None)  # CCIP crashes under CoreML — force CPU
+    crops_dir, crop2frame, crops, feats = _load_crops_feats(wd, records)
+    log(f"[match] {len(ref_imgs)} ref prototypes vs {len(crops)} crops")
+    out = wd / "matched"
+    r = _match_one(ref_imgs, ref_eps, crops, crop2frame, crops_dir, feats, frames,
+                   out, wd / "matched_montage.png")
+    log("[match] distance bands (cumulative crops): "
+        + " ".join(f"<{k}:{v}" for k, v in r["bands"].items()))
+    log(f"[match] {r['matched']} crops < {ref_eps} -> {out} (distance-prefixed, closest first)")
+    return {"mode": "match", "ref_eps": ref_eps, "crops_total": len(crops), **r}
+
+
+def mode_match_multi(wd, frames, records, refs, ref_eps):
+    """refs: {name: [ref jpgs]}. One matched/<name>/ per character, sharing the
+    same crop features. Returns a match dict carrying a 'characters' list."""
+    os.environ.pop("ONNX_MODE", None)  # CCIP crashes under CoreML — force CPU
+    crops_dir, crop2frame, crops, feats = _load_crops_feats(wd, records)
+    base = wd / "matched"
+    shutil.rmtree(base, ignore_errors=True)
+    base.mkdir(parents=True)
+    chars = []
+    for name in sorted(refs):
+        out = base / name
+        log(f"[match] {name}: {len(refs[name])} ref prototypes vs {len(crops)} crops")
+        r = _match_one(refs[name], ref_eps, crops, crop2frame, crops_dir, feats, frames,
+                       out, out / "_montage.png")
+        log(f"[match] {name}: {r['matched']} crops < {ref_eps} -> {out}")
+        chars.append({"name": name, **r})
+    return {"mode": "match", "ref_eps": ref_eps, "crops_total": len(crops),
+            "matched": sum(c["matched"] for c in chars),
+            "matched_dir": str(base), "characters": chars}
 
 
 # -------------------------------------------------------------- orchestration
@@ -507,6 +544,13 @@ def _next_hints(data):
         if not data["characters"]:
             return ["no groups formed — lower --scene (more frames) or --min-samples"]
         return [f"review montage: {data['montage']}"] if data["montage"] else []
+    if "characters" in data:                         # multi-character match
+        hints = [f"review montages under {data['matched_dir']}/"]
+        empty = [c["name"] for c in data["characters"] if not c["matched"]]
+        if empty:
+            hints.append(f"0 matches for {', '.join(empty)} — "
+                         "raise --ref-eps (e.g. 0.06) or check those ref folders")
+        return hints
     if not data["matched"]:
         return ["0 matches — raise --ref-eps (e.g. 0.06) or check the ref folder"]
     return [f"review montage: {data['montage']}"] if data["montage"] else []
@@ -522,14 +566,22 @@ def run(args):
     else:
         wd = out / ep_id(val)
 
-    ref_imgs = None
+    ref_imgs = None      # single-character: [ref jpgs]
+    refs = None          # multi-character: {name: [ref jpgs]}
     if args.ref:                                     # boundary: ref has crops
         rd = Path(args.ref).expanduser()
-        ref_imgs = sorted(rd.glob("*.jpg"))
-        if not ref_imgs:
-            raise CliError("validation_error",
-                           f"--ref {rd}: no .jpg reference crops found",
-                           EXIT_VALIDATION)
+        # subfolders present -> one character per subfolder; else whole dir = one
+        subrefs = ({d.name: sorted(d.glob("*.jpg")) for d in sorted(rd.iterdir())
+                    if d.is_dir()} if rd.is_dir() else {})
+        subrefs = {n: v for n, v in subrefs.items() if v}
+        if subrefs:
+            refs = subrefs
+        else:
+            ref_imgs = sorted(rd.glob("*.jpg"))
+            if not ref_imgs:
+                raise CliError("validation_error",
+                               f"--ref {rd}: no .jpg crops (directly or in subfolders)",
+                               EXIT_VALIDATION)
     if args.ref_eps <= 0 or args.eps <= 0:           # boundary: sane thresholds
         raise CliError("validation_error", "--eps and --ref-eps must be > 0",
                        EXIT_VALIDATION)
@@ -542,6 +594,7 @@ def run(args):
             "download": kind != "file",
             "cookies": str(args.cookies) if kind != "file" else None,
             "ref": str(args.ref) if args.ref else None,
+            "ref_characters": sorted(refs) if refs else None,
             "ref_eps": args.ref_eps if args.ref else None,
             "eps": None if args.ref else args.eps,
             "min_samples": None if args.ref else args.min_samples,
@@ -574,7 +627,9 @@ def run(args):
             (wd / "features.npy").unlink(missing_ok=True)
     records = stage_classify(wd, frames, args.conf, args.min_area)
 
-    if args.ref:
+    if refs is not None:
+        mode_data = mode_match_multi(wd, frames, records, refs, args.ref_eps)
+    elif ref_imgs is not None:
         mode_data = mode_match(wd, frames, records, ref_imgs, args.ref_eps)
     else:
         mode_data = mode_cluster(wd, frames, records, args.eps, args.min_samples)
@@ -602,6 +657,9 @@ SCHEMA = {
     "data.match": {"ref_eps": "float", "prototypes": "int", "crops_total": "int",
                    "matched": "int", "bands": "{<dist>: cumulative_count}",
                    "matched_dir": "str", "montage": "str|null", "index": "str"},
+    "data.match.multi": {"ref_eps": "float", "crops_total": "int", "matched": "int (total)",
+                         "matched_dir": "str (parent of per-character dirs)",
+                         "characters": "[{name, prototypes, matched, bands, matched_dir, montage, index}]"},
     "exit_codes": {"0": "ok", "1": "runtime", "2": "auth", "3": "validation"},
 }
 
@@ -621,6 +679,11 @@ def _render_human(env):
     if d["mode"] == "cluster":
         chars = ", ".join(f"{c['name']}({c['crops']})" for c in d["characters"]) or "—"
         body = f"  characters: {chars} | unsorted={d['unsorted']}\n  -> {d['characters_dir']}"
+    elif "characters" in d:                          # multi-character match
+        lines = "\n".join(f"  {c['name']}: matched={c['matched']} -> {c['matched_dir']}"
+                          for c in d["characters"])
+        body = (f"  {len(d['characters'])} characters | total matched="
+                f"{d['matched']}/{d['crops_total']} (< {d['ref_eps']})\n{lines}")
     else:
         bands = " ".join(f"<{k}:{v}" for k, v in d["bands"].items())
         body = (f"  matched={d['matched']}/{d['crops_total']} (< {d['ref_eps']})\n"
@@ -641,8 +704,9 @@ def main():
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("input", nargs="?",
                     help="bilibili URL / BVxxxx / epNNN, or a local video file")
-    ap.add_argument("--ref", help="folder of reference *.jpg crops of ONE character; "
-                    "switches to one-vs-rest mode (pull matches into matched/)")
+    ap.add_argument("--ref", help="reference folder -> one-vs-rest mode. A folder of "
+                    "*.jpg crops of ONE character pulls matches into matched/; a folder "
+                    "of per-character SUBFOLDERS pulls each into matched/<name>/")
     ap.add_argument("--ref-eps", type=float, default=0.04,
                     help="mode-2 max distance to a reference prototype "
                          "(tight = pure; 0.04 pristine, ~0.06 recall ceiling)")
