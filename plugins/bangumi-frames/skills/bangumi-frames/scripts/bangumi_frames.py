@@ -35,7 +35,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 HOME = Path.home()
 DEFAULT_COOKIES = HOME / "bb_up" / "bb_cookies" / "www.bilibili.com_cookies.txt"
-SCHEMA_VERSION = "0.3.0"
+SCHEMA_VERSION = "0.3.1"
 # stable exit codes (agent-native-design: documented, distinct per failure class)
 EXIT_OK, EXIT_RUNTIME, EXIT_AUTH, EXIT_VALIDATION = 0, 1, 2, 3
 
@@ -97,10 +97,12 @@ def stage_download(url, wd, cookies, height, prefer="size"):
     # enough at 4K for crops); 'bitrate' picks the largest (AVC, marginally
     # sharper). default 'size' to match the disk-saving 4K-HEVC strategy.
     sort = "+size" if prefer == "size" else "br"
+    # route yt-dlp's stdout to OUR stderr so it stays in the human channel and
+    # never pollutes the stdout JSON envelope (agent-native: stdout = JSON only)
     r = subprocess.run(["yt-dlp", "--cookies", cookies, "--no-playlist",
                         "-f", "bv*/b", "-S", f"res:{height},hdr:SDR,{sort}",
                         "-o", str(wd / "video.%(ext)s"), url],
-                       env={**os.environ, "LC_ALL": "C"})
+                       stdout=sys.stderr, env={**os.environ, "LC_ALL": "C"})
     if r.returncode != 0:
         raise CliError("download_error",
                        f"yt-dlp failed (exit {r.returncode}); check cookies / access",
