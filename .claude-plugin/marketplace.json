@@ -136,6 +136,16 @@
             "repository": "https://github.com/Agents365-ai/video-podcast-maker",
             "license": "MIT",
             "keywords": ["video", "podcast", "remotion", "tts", "bilibili", "youtube", "xiaohongshu", "douyin", "wechat-channels", "4k", "knowledge-video", "subtitles", "azure-speech", "edge-tts", "elevenlabs"]
+        },
+        {
+            "name": "bangumi-frames",
+            "source": "./plugins/bangumi-frames",
+            "description": "Bilibili anime frame & character organizer — download a bangumi/UP video (or local file), extract scene-change keyframes, split scenery vs character crops (anime person detection), then either cluster everyone by CCIP identity or pull ONE character out via a reference folder (one-vs-rest, distance-prefixed matches). Agent-native JSON envelope CLI with --dry-run, --schema, stable exit codes; optional OCR+LaMa subtitle/watermark removal.",
+            "version": "0.2.0",
+            "author": { "name": "Agents365-ai" },
+            "repository": "https://github.com/Agents365-ai/bangumi-frames",
+            "license": "MIT",
+            "keywords": ["bilibili", "anime", "bangumi", "frames", "screenshot", "character", "ccip", "video", "donghua"]
         }
     ]
 }
