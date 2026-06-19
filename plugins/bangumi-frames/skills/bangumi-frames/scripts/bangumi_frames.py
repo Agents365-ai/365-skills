@@ -35,7 +35,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 HOME = Path.home()
 DEFAULT_COOKIES = HOME / "bb_up" / "bb_cookies" / "www.bilibili.com_cookies.txt"
-SCHEMA_VERSION = "0.3.1"
+SCHEMA_VERSION = "0.4.0"
 # stable exit codes (agent-native-design: documented, distinct per failure class)
 EXIT_OK, EXIT_RUNTIME, EXIT_AUTH, EXIT_VALIDATION = 0, 1, 2, 3
 
@@ -403,13 +403,17 @@ def mode_cluster(wd, frames, records, eps, min_samples):
     for ci, idx in enumerate(big, 1):
         names = [crops[i] for i in idx]
         cname = f"char_{ci:02d}"
-        cdir = char_root / cname
-        cdir.mkdir()
+        # crops and their source frames go to SEPARATE sibling folders
+        # (char_NN_crop / char_NN_full) so each kind can be browsed on its own
+        cropdir = char_root / f"{cname}_crop"
+        fulldir = char_root / f"{cname}_full"
+        cropdir.mkdir()
+        fulldir.mkdir()
         items = []
         for n in names:
-            shutil.copy2(crops_dir / n, cdir / n)
+            shutil.copy2(crops_dir / n, cropdir / n)
             src = crop2frame[n]
-            full = cdir / f"full_{src}"
+            full = fulldir / src           # full frame keeps its own name (deduped)
             if not full.exists():
                 shutil.copy2(wd / "frames" / src, full)
             items.append({"crop": n, "frame": src, "time": frames.get(src)})

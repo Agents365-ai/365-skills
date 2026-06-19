@@ -1,12 +1,12 @@
 ---
 name: bangumi-frames
-version: 0.3.1
+version: 0.4.0
 description: Extract and organize frames from a Bilibili video (bangumi episode, UP upload, or a local file) into scenery shots and per-character image groups, using anime-specific person detection + CCIP character-identity embeddings. Two modes — cluster everyone, or pull out ONE character via a reference folder. Use when the user wants to collect, extract, or organize anime frames/screenshots by character or by scenery from a Bilibili video. Read-only download for personal viewing/analysis; uploads nothing.
 license: MIT
 homepage: https://github.com/Agents365-ai/bangumi-frames
 compatibility: Requires ffmpeg and (for downloads) yt-dlp on PATH; Python 3.9+ with dghs-imgutils (anime person detection + CCIP). The CCIP step runs on CPU — do NOT set ONNX_MODE=CoreML (CCIP crashes there); person detection is fine on CoreML. Anime / 2.5D-render art only — not for live-action. Optional --clean (subtitle/watermark removal) needs rapidocr-onnxruntime + simple-lama-inpainting.
 platforms: [macos, linux]
-metadata: {"openclaw":{"requires":{"anyBins":["ffmpeg"]},"emoji":"🎬","os":["darwin","linux"],"install":[{"id":"brew-ffmpeg","kind":"brew","formula":"ffmpeg","bins":["ffmpeg"],"label":"Install ffmpeg via Homebrew","os":["darwin"]},{"id":"pip-yt-dlp","kind":"pip","package":"yt-dlp","bins":["yt-dlp"],"label":"Install yt-dlp (download Bilibili streams)"},{"id":"pip-imgutils","kind":"pip","package":"dghs-imgutils","label":"Install anime person detection + CCIP models"}]},"hermes":{"tags":["bilibili","anime","bangumi","frames","character","ccip","screenshot","video"],"category":"media","requires_tools":["ffmpeg","yt-dlp"],"related_skills":[]},"author":"Agents365-ai","version":"0.3.1"}
+metadata: {"openclaw":{"requires":{"anyBins":["ffmpeg"]},"emoji":"🎬","os":["darwin","linux"],"install":[{"id":"brew-ffmpeg","kind":"brew","formula":"ffmpeg","bins":["ffmpeg"],"label":"Install ffmpeg via Homebrew","os":["darwin"]},{"id":"pip-yt-dlp","kind":"pip","package":"yt-dlp","bins":["yt-dlp"],"label":"Install yt-dlp (download Bilibili streams)"},{"id":"pip-imgutils","kind":"pip","package":"dghs-imgutils","label":"Install anime person detection + CCIP models"}]},"hermes":{"tags":["bilibili","anime","bangumi","frames","character","ccip","screenshot","video"],"category":"media","requires_tools":["ffmpeg","yt-dlp"],"related_skills":[]},"author":"Agents365-ai","version":"0.4.0"}
 ---
 
 # bangumi-frames — Bilibili Anime Frame & Character Organizer
@@ -91,7 +91,7 @@ without downloading, `--schema` to print the output contract. Details in `refere
 ├── scenery/                    # frames with no detected character
 ├── crops/  features.npy        # character crops + cached CCIP features
 ├── detect.json                 # frame -> person boxes / crops
-├── characters/                 # MODE 1: char_NN/ (+ full_* frames), _unsorted/, _montage.png
+├── characters/                 # MODE 1: char_NN_crop/ + char_NN_full/ (paired), _unsorted/, _montage.png
 ├── matched/                    # MODE 2: 0.012_<crop>.jpg (distance-prefixed) + index.json
 ├── matched_montage.png         # MODE 2 sample montage
 └── index.json                  # MODE 1: char group -> {crop, frame, time}

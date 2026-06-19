@@ -8,10 +8,12 @@ chosen by whether `--ref` is given.
 Embeds every crop with CCIP and groups them with average-linkage agglomerative clustering
 on the pairwise distance matrix.
 
-- Output: `characters/char_NN/` (one folder per group, largest first; each holds the crops
-  plus `full_*` original frames), `_unsorted/` for groups smaller than `--min-samples`,
-  `_montage.png` (first 10 of each group — look here first to identify who is who), and
-  `index.json` (`char_NN` → `[{crop, frame, time}]`).
+- Output: per group (largest first) two sibling folders — `characters/char_NN_crop/` (the
+  cropped person images) and `characters/char_NN_full/` (their source full frames, deduped
+  by frame; paired by frame number, e.g. crop `00029_p0.jpg` ↔ full `00029.jpg`). Plus
+  `_unsorted/` (crops only) for groups smaller than `--min-samples`, `_montage.png` (first 10
+  of each group — look here first to identify who is who), and `index.json`
+  (`char_NN` → `[{crop, frame, time}]`).
 - Flags: `--eps 0.10` (distance threshold; larger merges more) and `--min-samples 5`.
 - **Why average-linkage at eps 0.10:** on this compressed 3D-render embedding, DBSCAN
   chain-merges distinct look-alikes and OPTICS under-recalls; average-linkage at 0.10 keeps
