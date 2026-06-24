@@ -5,7 +5,7 @@ license: MIT
 homepage: https://github.com/Agents365-ai/asta-skill
 compatibility: Requires an MCP-capable host (Claude Code, Codex, Cursor, Windsurf, Hermes, OpenClaw/ClawHub) with the Asta MCP server registered at https://asta-tools.allen.ai/mcp/v1 using an x-api-key header. The skill does not make HTTP calls itself.
 platforms: [macos, linux, windows]
-metadata: {"openclaw":{"requires":{"env":["ASTA_API_KEY"]},"emoji":"🔭","mcp":{"name":"asta","type":"http","url":"https://asta-tools.allen.ai/mcp/v1","headers":{"x-api-key":"${ASTA_API_KEY}"}}},"hermes":{"tags":["asta","semantic-scholar","academic","paper-search","citation","mcp"],"category":"research","requires_tools":["mcp"],"related_skills":["semanticscholar-skill","literature-review"]},"pimo":{"category":"research","tags":["asta","semantic-scholar","academic","paper-search","citation","mcp"]},"author":"Agents365-ai","version":"0.3.0"}
+metadata: {"openclaw":{"requires":{"env":["ASTA_API_KEY"]},"emoji":"🔭","mcp":{"name":"asta","type":"http","url":"https://asta-tools.allen.ai/mcp/v1","headers":{"x-api-key":"${ASTA_API_KEY}"}}},"hermes":{"tags":["asta","semantic-scholar","academic","paper-search","citation","mcp"],"category":"research","requires_tools":["mcp"],"related_skills":["semanticscholar-skill","literature-review"]},"pimo":{"category":"research","tags":["asta","semantic-scholar","academic","paper-search","citation","mcp"]},"author":"Agents365-ai","version":"0.3.1"}
 ---
 
 # Asta MCP — Academic Paper Search
@@ -28,16 +28,23 @@ Before invoking any tool, verify the Asta MCP server is registered in the host a
 | Known paper title | `search_paper_by_title` | Optional venue restriction |
 | Known DOI / arXiv / PMID / CorpusId / MAG / ACL / SHA / URL | `get_paper` | Single-paper lookup |
 | Multiple known IDs at once | `get_paper_batch` | Batch lookup — prefer over N sequential `get_paper` calls |
-| Who cited paper X | `get_citations` | Citation traversal with filters, paginated |
+| Who cited paper X | `get_citations` | Forward citations, paginated; accepts `publication_date_range` but **not** `venues`; `limit` defaults to 100 |
 | Find author by name | `search_authors_by_name` | Returns profile info |
-| An author's publications | `get_author_papers` | Pass author id from previous call |
-| Find passages mentioning X | `snippet_search` | ~500-word excerpts from paper bodies |
+| An author's publications | `get_author_papers` | Pass author id; field param is **`paper_fields`** (not `fields`); `limit` defaults to **1000** — set it explicitly |
+| Find passages mentioning X | `snippet_search` | ~500-word excerpts (title/abstract/body, excludes captions & bibliography); see snippet-specific params below |
 
-Search/citation tools accept **`publication_date_range`** (format `YYYY-MM-DD:YYYY-MM-DD`; year shorthand like `"2021:"`, `":2015-01"`, `"2015:2020"` is also accepted) and **`venues`** (comma-separated) filters, plus **`fields`** for field selection — pass them whenever the user's intent constrains scope (e.g., "recent", "since 2022", "at NeurIPS").
+Most search/citation tools accept **`publication_date_range`** (format `YYYY-MM-DD:YYYY-MM-DD`; year shorthand like `"2021:"`, `":2015-01"`, `"2015:2020"` is also accepted), **`venues`** (comma-separated), and **`fields`** for field selection — pass them whenever the user's intent constrains scope (e.g., "recent", "since 2022", "at NeurIPS").
+
+**Per-tool parameter exceptions** (verified against the live server — getting these wrong yields a malformed or silently-ignored argument):
+- `get_author_papers` names its field-selection param **`paper_fields`**, not `fields`. Passing `fields=` is silently ignored and you get titles only.
+- `get_citations` accepts `publication_date_range` but **not** `venues`.
+- `snippet_search` accepts **neither** `fields` nor `publication_date_range`. Instead it has: **`inserted_before`** (date filter, `YYYY-MM-DD`/`YYYY-MM`/`YYYY`), **`paper_ids`** (comma-separated list of ≤100 IDs to restrict snippets to specific papers), and `venues`.
 
 ### ⚠️ `fields` parameter — avoid context blowups
 
 `get_paper` / `get_paper_batch` accept a `fields` string. **Never request `citations` or `references`** via `fields` — a single highly-cited paper (e.g. *Attention Is All You Need*) returns 200k+ characters and will overflow the agent's context window. Use the dedicated `get_citations` tool for forward citations (it paginates). Asta does not provide a dedicated `get_references` tool — to retrieve a paper's reference list, use `get_paper` with `fields=references` only for papers you know have a small reference list (typically < 100).
+
+**Watch row counts too**, not just per-row size: default `limit`s are large — `get_author_papers` returns up to **1000** papers and `get_citations` up to **100**. For prolific authors or highly-cited papers, pass an explicit small `limit` (e.g. 20–50) unless the user asked for the full list.
 
 Safe default `fields` for `get_paper`:
 ```
@@ -47,7 +54,7 @@ Add `journal`, `publicationDate`, `fieldsOfStudy`, `isOpenAccess` only when need
 
 ### Retrieving DOI / external IDs (undocumented but supported)
 
-Asta's official `fields` list does **not** include `externalIds`, but the field is transparently passed through to the underlying Semantic Scholar API and works in practice. Add `externalIds` to `fields` to retrieve `DOI`, `PubMed`, `PubMedCentral`, `ArXiv`, `MAG`, `DBLP`, `CorpusId`. Caveats:
+Asta's official `fields` list does **not** include `externalIds`, but the field is transparently passed through to the underlying Semantic Scholar API and works in practice. Add `externalIds` to `fields` to retrieve `DOI`, `PubMed`, `PubMedCentral`, `ArXiv`, `MAG`, `DBLP`, `CorpusId`. The same pass-through applies to **`citationCount`** and **`influentialCitationCount`** (also absent from the official list but verified to return) — request them when ranking results by citations. Caveats:
 - Not all papers have a DOI — pure arXiv preprints often only return `ArXiv` + `CorpusId`.
 - `get_paper("DOI:...")` lookup is not 100% reliable; some valid DOIs return `not found`. Prefer searching by title first, then reading `externalIds` off the result.
 - Since this is undocumented, treat it as best-effort and degrade gracefully if a future Asta release drops it.
@@ -72,7 +79,8 @@ Asta's official `fields` list does **not** include `externalIds`, but the field 
 
 ### Pattern 4 — Evidence Retrieval
 1. `snippet_search(claim_query)` → find passages making/supporting a claim
-2. For each hit, optionally `get_paper(id)` for full metadata
+2. To ground a claim **within specific papers**, pass `paper_ids="<id1>,<id2>,…"` (≤100) so snippets are drawn only from that set
+3. For each hit, optionally `get_paper(id)` for full metadata
 
 ## Output & Interaction Rules
 
