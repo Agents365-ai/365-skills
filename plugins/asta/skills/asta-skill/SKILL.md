@@ -5,7 +5,7 @@ license: MIT
 homepage: https://github.com/Agents365-ai/asta-skill
 compatibility: Requires an MCP-capable host (Claude Code, Codex, Cursor, Windsurf, Hermes, OpenClaw/ClawHub) with the Asta MCP server registered at https://asta-tools.allen.ai/mcp/v1 using an x-api-key header. The skill does not make HTTP calls itself.
 platforms: [macos, linux, windows]
-metadata: {"openclaw":{"requires":{"env":["ASTA_API_KEY"]},"emoji":"🔭","mcp":{"name":"asta","type":"http","url":"https://asta-tools.allen.ai/mcp/v1","headers":{"x-api-key":"${ASTA_API_KEY}"}}},"hermes":{"tags":["asta","semantic-scholar","academic","paper-search","citation","mcp"],"category":"research","requires_tools":["mcp"],"related_skills":["semanticscholar-skill","literature-review"]},"pimo":{"category":"research","tags":["asta","semantic-scholar","academic","paper-search","citation","mcp"]},"author":"Agents365-ai","version":"0.3.1"}
+metadata: {"openclaw":{"requires":{"env":["ASTA_API_KEY"]},"emoji":"🔭","mcp":{"name":"asta","type":"http","url":"https://asta-tools.allen.ai/mcp/v1","headers":{"x-api-key":"${ASTA_API_KEY}"}}},"hermes":{"tags":["asta","semantic-scholar","academic","paper-search","citation","mcp"],"category":"research","requires_tools":["mcp"],"related_skills":["semanticscholar-skill","literature-review"]},"pimo":{"category":"research","tags":["asta","semantic-scholar","academic","paper-search","citation","mcp"]},"author":"Agents365-ai","version":"0.3.2"}
 ---
 
 # Asta MCP — Academic Paper Search
@@ -27,7 +27,7 @@ Before invoking any tool, verify the Asta MCP server is registered in the host a
 | Broad topic search | `search_papers_by_relevance` | Supports venue + date filters |
 | Known paper title | `search_paper_by_title` | Optional venue restriction |
 | Known DOI / arXiv / PMID / CorpusId / MAG / ACL / SHA / URL | `get_paper` | Single-paper lookup |
-| Multiple known IDs at once | `get_paper_batch` | Batch lookup — prefer over N sequential `get_paper` calls |
+| Multiple known IDs at once | `get_paper_batch` | Batch lookup — prefer over N sequential `get_paper` calls; unresolvable IDs are silently dropped (no null/error), so reconcile returned `paperId`s against your input |
 | Who cited paper X | `get_citations` | Forward citations, paginated; accepts `publication_date_range` but **not** `venues`; `limit` defaults to 100 |
 | Find author by name | `search_authors_by_name` | Returns profile info |
 | An author's publications | `get_author_papers` | Pass author id; field param is **`paper_fields`** (not `fields`); `limit` defaults to **1000** — set it explicitly |
@@ -73,7 +73,7 @@ Asta's official `fields` list does **not** include `externalIds`, but the field 
 4. Deduplicate by paperId before presenting
 
 ### Pattern 3 — Author Deep-Dive
-1. `search_authors_by_name(name)` → pick correct profile (disambiguate by affiliation)
+1. `search_authors_by_name(name)` → pick correct profile (`affiliations` is often returned empty in practice — disambiguate primarily by `paperCount`/`citationCount`/`hIndex`, using affiliation only when present)
 2. `get_author_papers(authorId)` → full publication list
 3. Filter client-side by topic keywords or date
 
@@ -101,6 +101,6 @@ Asta's official `fields` list does **not** include `externalIds`, but the field 
 | Situation | What to do |
 |---|---|
 | Empty `abstract` | Not all corpus papers have full text — use `snippet_search`, or fall back to title + TLDR |
-| Author disambiguation uncertain | Inspect affiliations in `search_authors_by_name` results before calling `get_author_papers` |
+| Author disambiguation uncertain | Inspect `search_authors_by_name` results before calling `get_author_papers`; `affiliations` is frequently empty, so rank candidates by `paperCount`/`citationCount`/`hIndex` and use affiliation only when present |
 | `429 Too Many Requests` | Back off; batch with `get_paper_batch` instead of sequential `get_paper` calls |
 | Need DOI / PubMed ID / arXiv ID | Add `externalIds` to `fields` (see "Retrieving DOI" above); fall back to `ArXiv` ID when `DOI` is absent |
