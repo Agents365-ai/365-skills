@@ -2,7 +2,7 @@
 name: paper-fetch
 description: Use whenever the user wants to obtain, download, or fetch a paper's PDF — given a DOI, an arXiv id, a paper title, a citation, or a list of DOIs. Trigger on phrases like "download this paper", "find the PDF for [DOI]", "grab me the [Nature/bioRxiv/arXiv] paper on X", "get the open-access version", "I need this article", or any bulk/batch paper download request, even when the user doesn't explicitly say "PDF" or "DOI". Resolves via Unpaywall → Semantic Scholar → arXiv → PubMed Central → bioRxiv/medRxiv → publisher direct (institutional opt-in) → Sci-Hub mirrors as last-resort fallback.
 homepage: https://github.com/Agents365-ai/paper-fetch
-metadata: {"openclaw":{"requires":{"bins":["python3"]},"emoji":"📄"},"pimo":{"category":"research","tags":["paper","pdf","doi","open-access","download"]},"author":"Agents365-ai","version":"0.14.1"}
+metadata: {"openclaw":{"requires":{"bins":["python3"]},"emoji":"📄"},"pimo":{"category":"research","tags":["paper","pdf","doi","open-access","download"]},"author":"Agents365-ai","version":"0.15.0"}
 ---
 
 # paper-fetch
@@ -177,7 +177,7 @@ When `--format json`, stderr emits one JSON object per line for liveness:
 {"event": "download_ok", "request_id": "req_...", "elapsed_ms": 4120, "doi": "...", "file": "..."}
 ```
 
-Event types: `session`, `start`, `source_try`, `source_hit`, `source_miss`, `source_skip`, `source_enrich`, `source_enrich_failed`, `download_ok`, `download_error`, `download_skip`, `dry_run`, `not_found`. All events share `request_id` and `elapsed_ms`, letting an orchestrator correlate progress across stderr and the final stdout envelope. The `session` event fires once per invocation, before any DOI work or network I/O, and carries `cli_version` / `schema_version` so agents can detect schema drift against a cached copy without waiting for the final envelope.
+Event types: `session`, `start`, `source_try`, `source_hit`, `source_miss`, `source_skip`, `source_enrich`, `source_enrich_failed`, `download_ok`, `download_error`, `download_skip`, `dry_run`, `not_found`, `resolve_error`. All events share `request_id` and `elapsed_ms`, letting an orchestrator correlate progress across stderr and the final stdout envelope. The `session` event fires once per invocation, before any DOI work or network I/O, and carries `cli_version` / `schema_version` so agents can detect schema drift against a cached copy without waiting for the final envelope.
 
 `source_enrich` fires when Semantic Scholar is called purely to backfill missing `author` / `title` after another source already provided the PDF URL; its `fields` array lists exactly which fields were filled in. `source_enrich_failed` fires when that enrichment call fails — the Unpaywall PDF URL is still used and the filename falls back to `unknown_<year>_…`.
 
@@ -204,9 +204,10 @@ Every retryable error carries a `retry_after_hours` hint in the error object, so
 | `validation_error` | Bad arguments or empty input | No | — |
 | `title_resolve_failed` | Crossref returned no items for the given `--title` query (try a longer / cleaner title, or pass the DOI directly) | No | — |
 | `not_found` | No open-access PDF found | Yes | `168` (one week — OA lands on embargo / preprint timescale) |
+| `resolve_network_error` | Metadata resolvers failed with transport errors (timeout / 5xx / 403); OA availability is unknown — retry rather than treating as `not_found`. Maps to exit `4`. | Yes | `1` |
 | `download_network_error` | Network failure during download | Yes | `1` |
 | `download_not_a_pdf` | Response was not a PDF (HTML landing page) | No | — |
-| `download_host_not_allowed` | PDF URL failed SSRF safety check (private IP / non-http(s) / non-80,443 / blocked metadata host) | No | — |
+| `download_host_not_allowed` | PDF URL failed SSRF safety check (private IP / non-http(s) / non-80,443 / blocked metadata host / hostname resolving into private space / unsafe redirect hop) | No | — |
 | `download_size_exceeded` | Response exceeded 50 MB limit | Yes | `24` |
 | `download_io_error` | Local filesystem write failed | Yes | `1` |
 | `internal_error` | Unexpected error | No | — |

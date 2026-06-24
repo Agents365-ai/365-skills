@@ -23,18 +23,52 @@ Environment:
 """
 
 import base64
+import ipaddress
 import os
+import socket
 import sys
 import time
 from urllib.parse import urlparse
 
+# Match fetch.py's cap so an oversized response is rejected before the browser
+# buffers it all into JS memory and we base64 it back to the parent.
+MAX_PDF_SIZE = 50 * 1024 * 1024  # 50 MB
+
+# Loopback aliases + cloud metadata hostnames, mirroring fetch.py's list.
+_BLOCKED_HOSTS = {
+    "localhost",
+    "localhost.localdomain",
+    "ip6-localhost",
+    "ip6-loopback",
+    "metadata.google.internal",
+    "metadata.aws.internal",
+    "metadata",
+}
+
 # JS run inside the cleared page to fetch the PDF through the browser's own
 # network stack (full TLS/fingerprint + cookie jar). This passes Cloudflare
-# where an out-of-page APIRequestContext request is re-challenged. Returns the
-# body base64-encoded so binary survives the JS string boundary.
-_FETCH_JS = """async (u) => {
+# where an out-of-page APIRequestContext request is re-challenged. The body is
+# streamed and aborted past `cap` bytes so a hostile/huge response can't exhaust
+# memory, then returned base64-encoded so binary survives the JS string boundary.
+_FETCH_JS = """async ([u, cap]) => {
     const r = await fetch(u, {credentials: 'include'});
-    const bytes = new Uint8Array(await r.arrayBuffer());
+    if (r.status !== 200 || !r.body) return {status: r.status, b64: ''};
+    const reader = r.body.getReader();
+    const chunks = [];
+    let total = 0;
+    while (true) {
+        const {done, value} = await reader.read();
+        if (done) break;
+        total += value.length;
+        if (total > cap) {
+            try { await reader.cancel(); } catch (e) {}
+            return {status: r.status, oversized: true, b64: ''};
+        }
+        chunks.push(value);
+    }
+    const bytes = new Uint8Array(total);
+    let off = 0;
+    for (const c of chunks) { bytes.set(c, off); off += c.length; }
     let bin = '';
     for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
     return {status: r.status, b64: btoa(bin)};
@@ -45,12 +79,58 @@ def _err(msg: str) -> None:
     print(f"[cloak] {msg}", file=sys.stderr)
 
 
+def _url_is_safe(url: str) -> "tuple[bool, str]":
+    """SSRF gate mirroring fetch.py's check.
+
+    cloak_pdf runs as its own process and is never imported by fetch.py, so the
+    guard is duplicated here to keep this companion independently safe when
+    invoked directly: block non-http(s) schemes, non-80/443 ports, private /
+    loopback / metadata hosts, and hostnames that resolve into private space.
+    """
+    try:
+        p = urlparse(url)
+    except Exception:
+        return False, "malformed_url"
+    if p.scheme not in ("http", "https"):
+        return False, "scheme_not_allowed"
+    if p.port is not None and p.port not in (80, 443):
+        return False, "port_not_allowed"
+    host = (p.hostname or "").lower()
+    if not host:
+        return False, "empty_host"
+    if host in _BLOCKED_HOSTS:
+        return False, "blocked_host"
+    try:
+        ip = ipaddress.ip_address(host)
+        if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved or ip.is_multicast:
+            return False, "private_ip"
+        return True, ""
+    except ValueError:
+        pass  # hostname is a name, not a literal — resolve it below
+    try:
+        infos = socket.getaddrinfo(host, None)
+    except OSError:
+        return False, "dns_error"
+    for info in infos:
+        try:
+            ip = ipaddress.ip_address(info[4][0])
+        except ValueError:
+            continue
+        if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved or ip.is_multicast or ip.is_unspecified:
+            return False, "private_ip"
+    return True, ""
+
+
 def main() -> int:
     if not (2 <= len(sys.argv) <= 3):
         _err("usage: cloak_pdf.py <url> [timeout_seconds]")
         return 1
 
     url = sys.argv[1]
+    ok, reason = _url_is_safe(url)
+    if not ok:
+        _err(f"refusing unsafe url ({reason}): {url}")
+        return 1
     timeout_s = int(sys.argv[2]) if len(sys.argv) == 3 else 60
     timeout_ms = timeout_s * 1000
     headless = not os.environ.get("PAPER_FETCH_CLOAK_HEADED")
@@ -103,12 +183,15 @@ def main() -> int:
         res = None
         for attempt in range(2):
             try:
-                res = page.evaluate(_FETCH_JS, url)
+                res = page.evaluate(_FETCH_JS, [url, MAX_PDF_SIZE])
                 break
             except Exception as e:
                 _err(f"evaluate attempt {attempt + 1} failed: {e}")
                 time.sleep(2)
         if not res:
+            return 1
+        if res.get("oversized"):
+            _err(f"response exceeds {MAX_PDF_SIZE} byte cap")
             return 1
         status = res.get("status")
         if status != 200 or not res.get("b64"):

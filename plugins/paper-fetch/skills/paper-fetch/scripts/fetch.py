@@ -25,6 +25,7 @@ agents that cache schema should compare against it to detect drift.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import html.parser
 import ipaddress
 import json
@@ -32,9 +33,11 @@ import os
 import re
 import shlex
 import shutil
+import socket
 import subprocess
 import sys
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 import uuid
@@ -45,8 +48,8 @@ from pathlib import Path
 # Versioning
 # ---------------------------------------------------------------------------
 
-CLI_VERSION = "0.14.1"
-SCHEMA_VERSION = "1.10.1"
+CLI_VERSION = "0.15.0"
+SCHEMA_VERSION = "1.11.0"
 
 # ---------------------------------------------------------------------------
 # Config
@@ -84,6 +87,7 @@ EXIT_TRANSPORT = 4
 # ignores them and retries sooner will at worst re-hit the same failure.
 RETRY_AFTER_HOURS = {
     "not_found": 168,              # OA availability changes on embargo / preprint timescale
+    "resolve_network_error": 1,    # resolver APIs unreachable; availability unknown
     "download_network_error": 1,   # transient network / upstream hiccup
     "download_size_exceeded": 24,  # publisher posted a >50 MB PDF; revisit in a day
     "download_io_error": 1,        # local disk full / permission blip
@@ -279,6 +283,58 @@ def _is_safe_url(url: str) -> tuple[bool, str]:
     if host in _BLOCKED_HOSTS:
         return False, "blocked_host"
     return True, ""
+
+
+def _host_addrs_safe(host: str) -> tuple[bool, str]:
+    """Resolve `host` and reject if any address is in private space.
+
+    `_is_safe_url` only inspects the literal host, so a public-looking
+    hostname that resolves to a loopback / private / link-local / reserved
+    address (the classic DNS-based SSRF vector) slips through. This closes
+    that gap by checking every address the name resolves to. Fails closed:
+    a name we cannot resolve is treated as not allowed.
+    """
+    try:
+        infos = socket.getaddrinfo(host, None)
+    except OSError:
+        return False, "dns_error"
+    for info in infos:
+        try:
+            ip = ipaddress.ip_address(info[4][0])
+        except ValueError:
+            continue
+        if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved or ip.is_multicast or ip.is_unspecified:
+            return False, "private_ip"
+    return True, ""
+
+
+def _url_fetch_allowed(url: str) -> tuple[bool, str]:
+    """Full pre-fetch gate: syntactic SSRF check + DNS-resolution check."""
+    ok, reason = _is_safe_url(url)
+    if not ok:
+        return False, reason
+    return _host_addrs_safe(urllib.parse.urlparse(url).hostname or "")
+
+
+class _SafeRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """Re-run the SSRF gate on every redirect target.
+
+    urllib follows 3xx redirects transparently, so a download URL that passes
+    the initial check can still be bounced to loopback / a private host / cloud
+    metadata. Validate each hop and refuse to follow an unsafe one.
+    """
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        ok, reason = _url_fetch_allowed(newurl)
+        if not ok:
+            raise urllib.error.HTTPError(newurl, code, f"unsafe_redirect:{reason}", headers, fp)
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+# Install process-wide so every urllib.request.urlopen() — PDF downloads and
+# API calls alike — validates redirect hops. Tests patch urlopen directly, so
+# this opener is bypassed there and stays inert in hermetic runs.
+urllib.request.install_opener(urllib.request.build_opener(_SafeRedirectHandler()))
 
 
 # Simple per-process token bucket. Single-threaded, so no locking needed.
@@ -491,8 +547,9 @@ def _is_allowed_host(url: str) -> bool:
 
 def _download(url: str, dest: Path, *, timeout: int) -> str | None:
     """Download a PDF. Returns None on success, or an error slug on failure."""
-    if not _is_allowed_host(url):
-        _progress("download_error", reason="host_not_allowed", url=url)
+    allowed, deny_reason = _url_fetch_allowed(url)
+    if not allowed:
+        _progress("download_error", reason="host_not_allowed", url=url, detail=deny_reason)
         return "host_not_allowed"
 
     def _finalize(data: bytes) -> str | None:
@@ -550,23 +607,14 @@ def _download(url: str, dest: Path, *, timeout: int) -> str | None:
             fields["http_status"] = http_status
         _progress("download_error", **fields)
         return "network_error"
-    if len(data) > MAX_PDF_SIZE:
-        _progress("download_error", reason="size_exceeded", bytes=len(data), limit=MAX_PDF_SIZE)
-        return "size_exceeded"
     # A 200 whose body is not a PDF is often a Cloudflare "Just a moment..."
-    # interstitial served in place of the file — worth a CloakBrowser retry.
-    if not data[:5].startswith(b"%PDF"):
-        if _try_cloak():
-            return None
-        _progress("download_error", reason="not_a_pdf")
-        return "not_a_pdf"
-    try:
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        dest.write_bytes(data)
-    except OSError as e:
-        _progress("download_error", reason="io_error", error=str(e))
-        return "io_error"
-    return None
+    # interstitial served in place of the file — give the CloakBrowser fallback
+    # first crack before recording a hard failure. Then validate + write through
+    # the shared path so the size/%PDF/IO checks stay identical to the cloak
+    # fallback (no divergent second copy to drift).
+    if not data[:5].startswith(b"%PDF") and _try_cloak():
+        return None
+    return _finalize(data)
 
 
 # ---------------------------------------------------------------------------
@@ -611,12 +659,29 @@ def _filename(meta: dict) -> str:
 # ---------------------------------------------------------------------------
 
 
-def try_unpaywall(doi: str, *, timeout: int) -> tuple[str | None, dict]:
+def _is_transport_exc(exc: Exception) -> bool:
+    """True if `exc` is a retryable transport failure rather than a genuine miss.
+
+    A 404/410 from a resolver means the paper isn't indexed at that source — a
+    real miss a retry won't fix. Anything else (timeout, connection reset, 5xx,
+    403, malformed JSON) is a transport-class failure: the source might well
+    have the paper, we just couldn't reach it, so it should not be reported as a
+    permanent ``not_found``.
+    """
+    code = getattr(exc, "code", None)
+    if isinstance(code, int) and code in (404, 410):
+        return False
+    return True
+
+
+def try_unpaywall(doi: str, *, timeout: int, errors: list | None = None) -> tuple[str | None, dict]:
     url = f"https://api.unpaywall.org/v2/{urllib.parse.quote(doi)}?email={EMAIL}"
     try:
         d = _get_json(url, timeout=timeout)
     except Exception as e:
         _progress("source_miss", source="unpaywall", reason=str(e))
+        if errors is not None and _is_transport_exc(e):
+            errors.append({"source": "unpaywall", "detail": str(e)})
         return None, {}
     meta = {
         "title": d.get("title"),
@@ -628,7 +693,7 @@ def try_unpaywall(doi: str, *, timeout: int) -> tuple[str | None, dict]:
     return loc.get("url_for_pdf"), meta
 
 
-def try_semantic_scholar(doi: str, *, timeout: int) -> tuple[str | None, dict, dict]:
+def try_semantic_scholar(doi: str, *, timeout: int, errors: list | None = None) -> tuple[str | None, dict, dict]:
     url = (
         f"https://api.semanticscholar.org/graph/v1/paper/DOI:{urllib.parse.quote(doi)}"
         "?fields=title,year,authors,openAccessPdf,externalIds,venue"
@@ -637,6 +702,8 @@ def try_semantic_scholar(doi: str, *, timeout: int) -> tuple[str | None, dict, d
         d = _get_json(url, timeout=timeout)
     except Exception as e:
         _progress("source_miss", source="semantic_scholar", reason=str(e))
+        if errors is not None and _is_transport_exc(e):
+            errors.append({"source": "semantic_scholar", "detail": str(e)})
         return None, {}, {}
     meta = {
         "title": d.get("title"),
@@ -977,7 +1044,7 @@ def _try_publisher_direct(doi: str, *, timeout: int) -> list[tuple[str, str]]:
     if doi.startswith("10.1016/"):
         # Elsevier: resolve DOI -> PII via Crossref, then build sciencedirect URL.
         try:
-            data = _get_json(f"https://api.crossref.org/works/{doi}", timeout=timeout)
+            data = _get_json(f"https://api.crossref.org/works/{urllib.parse.quote(doi)}", timeout=timeout)
         except Exception:
             return []
         ids = (data.get("message") or {}).get("alternative-id") or []
@@ -1345,6 +1412,11 @@ def fetch(
     sources_tried: list[str] = []
     meta: dict = {}
     download_errors: list[dict] = []
+    # Transport-class failures from the metadata resolvers (timeout / 5xx / 403),
+    # as opposed to genuine 404 misses. Used so that an outage during resolution
+    # is reported as a retryable transport error rather than a permanent
+    # not_found when no candidates could be built.
+    resolver_errors: list[dict] = []
 
     # Fatal download errors that abort the fallback loop. Only host-independent
     # local failures qualify (e.g., disk write failed). ``size_exceeded`` is per-URL,
@@ -1372,7 +1444,7 @@ def fetch(
         if "semantic_scholar" not in sources_tried:
             sources_tried.append("semantic_scholar")
         _progress("source_try", doi=doi, source="semantic_scholar")
-        pdf, s2_meta, ext = try_semantic_scholar(doi, timeout=timeout)
+        pdf, s2_meta, ext = try_semantic_scholar(doi, timeout=timeout, errors=resolver_errors)
         _s2_cache = {"pdf": pdf, "meta": s2_meta, "ext": ext}
         return pdf, s2_meta, ext
 
@@ -1381,7 +1453,7 @@ def fetch(
     if EMAIL:
         _progress("source_try", doi=doi, source="unpaywall")
         sources_tried.append("unpaywall")
-        up_url, up_meta = try_unpaywall(doi, timeout=timeout)
+        up_url, up_meta = try_unpaywall(doi, timeout=timeout, errors=resolver_errors)
         _merge_meta(up_meta)
         if up_url:
             _progress("source_hit", doi=doi, source="unpaywall", pdf_url=up_url)
@@ -1570,8 +1642,31 @@ def fetch(
         if sh_url:
             _add("scihub", sh_url)
 
-    # --- Exhausted all sources with no candidates and no prior attempts → not_found ---
+    # --- Exhausted all sources with no candidates and no prior attempts ---
     if not candidates and not download_errors:
+        # If every resolver that ran failed with a transport error (timeout /
+        # 5xx / 403), we don't actually know whether an OA copy exists — report
+        # a retryable transport error instead of a permanent not_found so the
+        # caller retries rather than treating the paper as unavailable.
+        if resolver_errors:
+            _progress("resolve_error", doi=doi, sources=[e["source"] for e in resolver_errors])
+            return {
+                "doi": doi,
+                "success": False,
+                "source": None,
+                "pdf_url": None,
+                "file": None,
+                "meta": meta or {},
+                "sources_tried": sources_tried,
+                "resolver_errors": resolver_errors,
+                "error": {
+                    "code": "resolve_network_error",
+                    "message": "Metadata resolvers failed with transport errors; OA availability is unknown",
+                    "retryable": True,
+                    "retry_after_hours": RETRY_AFTER_HOURS["resolve_network_error"],
+                    "reason": "resolver API unreachable (timeout / 5xx / 403), not a confirmed absence of OA",
+                },
+            }
         _progress("not_found", doi=doi)
         err = {
             "code": "not_found",
@@ -1648,7 +1743,9 @@ def fetch(
 
 
 def _idem_path(out_dir: Path, key: str) -> Path:
-    safe = _slug(key, 80) or "default"
+    # Hash the raw key so distinct long keys that share an 80-char prefix don't
+    # collide onto the same sidecar and replay each other's envelope.
+    safe = hashlib.sha256(key.encode("utf-8")).hexdigest()
     return out_dir / ".paper-fetch-idem" / f"{safe}.json"
 
 
@@ -1763,6 +1860,7 @@ def build_schema() -> dict:
         "error_codes": {
             "validation_error": {"retryable": False, "message": "Bad arguments or empty input"},
             "not_found": {"retryable": True, "retry_after_hours": RETRY_AFTER_HOURS["not_found"], "message": "No OA PDF found anywhere; OA availability changes over time"},
+            "resolve_network_error": {"retryable": True, "retry_after_hours": RETRY_AFTER_HOURS["resolve_network_error"], "message": "Metadata resolvers failed with transport errors (timeout / 5xx / 403); OA availability is unknown, retry rather than treating as not_found"},
             "title_resolve_failed": {"retryable": False, "message": "Crossref returned no items for the given title; provide a DOI directly or refine the title"},
             "download_network_error": {"retryable": True, "retry_after_hours": RETRY_AFTER_HOURS["download_network_error"], "message": "Network failure during download"},
             "download_not_a_pdf": {"retryable": False, "message": "Response was not a PDF (HTML landing page)"},
@@ -1779,6 +1877,7 @@ def build_schema() -> dict:
         "result_fields": {
             "source_detail": "Optional per-source diagnostics (e.g. {'mirror': 'sci-hub.ru'} when source='scihub'). Present only when the resolving source has additional context worth surfacing for orchestrator routing.",
             "via": "Optional. Set to 'cloak' when the PDF was fetched through the CloakBrowser fallback (a Cloudflare-blocked URL retried via stealth Chromium). Absent for ordinary downloads. Requires PAPER_FETCH_CLOAK.",
+            "resolver_errors": "Optional. Present on a resolve_network_error result; lists the metadata resolvers that failed with a transport error (timeout / 5xx / 403) rather than a genuine 404 miss, as [{source, detail}].",
         },
         "deprecations": [],
         "meta_fields": {
@@ -2018,15 +2117,16 @@ def _decide_exit(results: list[dict]) -> int:
             any_validation = True
         elif code == "not_found":
             any_unresolved = True
-        elif code.startswith("download_"):
+        elif code.startswith("download_") or code == "resolve_network_error":
             any_transport = True
         else:
             any_unresolved = True
     if not any_failure:
         return EXIT_SUCCESS
-    # Validation errors win over transport/unresolved: a malformed DOI is a
-    # caller bug, not a transient network issue.
-    if any_validation and not (any_transport or any_unresolved):
+    # Validation errors win: a malformed DOI is a caller bug that won't fix
+    # itself on retry, so surface it even when the batch also has transient
+    # network or not-found failures the caller might otherwise blindly retry.
+    if any_validation:
         return EXIT_VALIDATION
     if any_transport:
         return EXIT_TRANSPORT
