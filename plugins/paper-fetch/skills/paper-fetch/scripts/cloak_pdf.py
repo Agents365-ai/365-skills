@@ -34,7 +34,9 @@ from urllib.parse import urlparse
 # buffers it all into JS memory and we base64 it back to the parent.
 MAX_PDF_SIZE = 50 * 1024 * 1024  # 50 MB
 
-# Loopback aliases + cloud metadata hostnames, mirroring fetch.py's list.
+# Loopback aliases + cloud metadata hostnames.
+# KEEP IN SYNC with the identical _BLOCKED_HOSTS set in fetch.py — this companion
+# runs as its own process and re-implements the SSRF gate rather than importing it.
 _BLOCKED_HOSTS = {
     "localhost",
     "localhost.localdomain",
@@ -102,7 +104,7 @@ def _url_is_safe(url: str) -> "tuple[bool, str]":
         return False, "blocked_host"
     try:
         ip = ipaddress.ip_address(host)
-        if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved or ip.is_multicast:
+        if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved or ip.is_multicast or ip.is_unspecified:
             return False, "private_ip"
         return True, ""
     except ValueError:

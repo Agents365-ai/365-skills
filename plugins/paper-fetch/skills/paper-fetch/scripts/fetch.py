@@ -48,7 +48,7 @@ from pathlib import Path
 # Versioning
 # ---------------------------------------------------------------------------
 
-CLI_VERSION = "0.15.0"
+CLI_VERSION = "0.15.1"
 SCHEMA_VERSION = "1.11.0"
 
 # ---------------------------------------------------------------------------
@@ -141,10 +141,14 @@ _last_scihub_request_monotonic: float = 0.0
 #     check (the ip literal check only fires when the URL host IS an IP)
 #   - cloud metadata endpoints that can leak IAM credentials if an SSRF
 #     target pivoted into fetching from them
-# This does not defend against DNS rebinding — a hostname pointing at a
-# public IP at validation time but a private IP at connection time slips
-# through. Mitigating that requires pin-after-resolve and is out of scope
-# for v0.8.0.
+# A hostname that resolves into private space (whether by intent or DNS
+# rebinding) is caught separately by _host_addrs_safe(), which getaddrinfo()s
+# every fetch target and rejects private/loopback/link-local/reserved/
+# unspecified answers. This set only short-circuits the well-known aliases.
+#
+# KEEP IN SYNC with the identical _BLOCKED_HOSTS set in cloak_pdf.py — the cloak
+# companion runs as its own process and re-implements the SSRF gate rather than
+# importing it, so a host added here must be added there too.
 _BLOCKED_HOSTS = {
     # Loopback aliases
     "localhost",
@@ -260,7 +264,8 @@ def _is_safe_url(url: str) -> tuple[bool, str]:
     hostname would pass the allowlist check:
       - non-http(s) schemes (file://, ftp://, gopher://, etc.)
       - non-80/443 ports
-      - IP literals in private / loopback / link-local / reserved space
+      - IP literals in private / loopback / link-local / reserved /
+        unspecified space
       - known cloud metadata hostnames
     """
     try:
@@ -276,7 +281,9 @@ def _is_safe_url(url: str) -> tuple[bool, str]:
         return False, "empty_host"
     try:
         ip = ipaddress.ip_address(host)
-        if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved or ip.is_multicast:
+        # Keep this address-class set in sync with _host_addrs_safe(); is_unspecified
+        # blocks the 0.0.0.0 / :: literals, which route to localhost on many stacks.
+        if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved or ip.is_multicast or ip.is_unspecified:
             return False, "private_ip"
     except ValueError:
         pass  # hostname is a name, not a literal — fine

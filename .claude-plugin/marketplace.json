@@ -71,7 +71,7 @@
             "name": "paper-fetch",
             "source": "./plugins/paper-fetch",
             "description": "Download scientific paper PDFs by DOI (or title) — 7-source fallback chain (Unpaywall, Semantic Scholar, arXiv, PubMed Central, bioRxiv/medRxiv, publisher direct, Sci-Hub), batch mode, idempotent retries, structured JSON envelope, and SSRF-safe downloads",
-            "version": "0.15.0",
+            "version": "0.15.1",
             "author": { "name": "Agents365-ai" },
             "repository": "https://github.com/Agents365-ai/paper-fetch",
             "license": "MIT",

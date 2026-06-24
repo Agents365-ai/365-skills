@@ -2,7 +2,7 @@
 name: paper-fetch
 description: Use whenever the user wants to obtain, download, or fetch a paper's PDF — given a DOI, an arXiv id, a paper title, a citation, or a list of DOIs. Trigger on phrases like "download this paper", "find the PDF for [DOI]", "grab me the [Nature/bioRxiv/arXiv] paper on X", "get the open-access version", "I need this article", or any bulk/batch paper download request, even when the user doesn't explicitly say "PDF" or "DOI". Resolves via Unpaywall → Semantic Scholar → arXiv → PubMed Central → bioRxiv/medRxiv → publisher direct (institutional opt-in) → Sci-Hub mirrors as last-resort fallback.
 homepage: https://github.com/Agents365-ai/paper-fetch
-metadata: {"openclaw":{"requires":{"bins":["python3"]},"emoji":"📄"},"pimo":{"category":"research","tags":["paper","pdf","doi","open-access","download"]},"author":"Agents365-ai","version":"0.15.0"}
+metadata: {"openclaw":{"requires":{"bins":["python3"]},"emoji":"📄"},"pimo":{"category":"research","tags":["paper","pdf","doi","open-access","download"]},"author":"Agents365-ai","version":"0.15.1"}
 ---
 
 # paper-fetch
