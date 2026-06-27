@@ -2,10 +2,7 @@
 name: asta-skill
 description: Domain expertise for Ai2 Asta MCP tools (Semantic Scholar corpus). Intent-to-tool routing, safe defaults, workflow patterns, and pitfall warnings for academic paper search, citation traversal, and author discovery.
 license: MIT
-homepage: https://github.com/Agents365-ai/asta-skill
-compatibility: Requires an MCP-capable host (Claude Code, Codex, Cursor, Windsurf, Hermes, OpenClaw/ClawHub) with the Asta MCP server registered at https://asta-tools.allen.ai/mcp/v1 using an x-api-key header. The skill does not make HTTP calls itself.
-platforms: [macos, linux, windows]
-metadata: {"openclaw":{"requires":{"env":["ASTA_API_KEY"]},"emoji":"🔭","mcp":{"name":"asta","type":"http","url":"https://asta-tools.allen.ai/mcp/v1","headers":{"x-api-key":"${ASTA_API_KEY}"}}},"hermes":{"tags":["asta","semantic-scholar","academic","paper-search","citation","mcp"],"category":"research","requires_tools":["mcp"],"related_skills":["semanticscholar-skill","literature-review"]},"pimo":{"category":"research","tags":["asta","semantic-scholar","academic","paper-search","citation","mcp"]},"author":"Agents365-ai","version":"0.3.3"}
+metadata: {"homepage":"https://github.com/Agents365-ai/asta-skill","compatibility":"Requires an MCP-capable host (Claude Code, Codex, Cursor, Windsurf, Hermes, OpenClaw/ClawHub) with the Asta MCP server registered at https://asta-tools.allen.ai/mcp/v1 using an x-api-key header. The skill does not make HTTP calls itself.","platforms":["macos","linux","windows"],"openclaw":{"requires":{"env":["ASTA_API_KEY"]},"emoji":"🔭","mcp":{"name":"asta","type":"http","url":"https://asta-tools.allen.ai/mcp/v1","headers":{"x-api-key":"${ASTA_API_KEY}"}}},"hermes":{"tags":["asta","semantic-scholar","academic","paper-search","citation","mcp"],"category":"research","requires_tools":["mcp"],"related_skills":["semanticscholar-skill","literature-review"]},"pimo":{"category":"research","tags":["asta","semantic-scholar","academic","paper-search","citation","mcp"]},"author":"Agents365-ai","version":"0.3.3"}
 ---
 
 # Asta MCP — Academic Paper Search
@@ -18,7 +15,12 @@ Asta is Ai2's Scientific Corpus Tool, exposing the Semantic Scholar academic gra
 
 ## Prerequisite Check
 
-Before invoking any tool, verify the Asta MCP server is registered in the host agent. Tool names will be prefixed by the MCP server name chosen at install time (commonly `asta__<tool>` or `mcp__asta__<tool>`). If no Asta tools are visible, direct the user to the **Installation** section below.
+Before invoking any tool, verify the Asta MCP server is registered in the host agent. Tool names will be prefixed by the MCP server name chosen at install time (commonly `asta__<tool>` or `mcp__asta__<tool>`).
+
+If no Asta tools are visible, do **not** make raw HTTP calls or invent results. Tell the user to register `https://asta-tools.allen.ai/mcp/v1` as a streamable HTTP MCP server with an `x-api-key` header, then restart/reload the host. Minimal setup hints:
+- Codex CLI: add `[mcp_servers.asta] url = "https://asta-tools.allen.ai/mcp/v1"` and `env_http_headers = { "x-api-key" = "ASTA_API_KEY" }` to `~/.codex/config.toml`.
+- Claude Code: run `claude mcp add -t http -s user asta https://asta-tools.allen.ai/mcp/v1 -H "x-api-key: $ASTA_API_KEY"`.
+- Generic MCP clients: configure server URL `https://asta-tools.allen.ai/mcp/v1` with header `{ "x-api-key": "<YOUR_API_KEY>" }`.
 
 ## Tool Map — Intent → Asta Tool
 
@@ -46,11 +48,24 @@ Most search/citation tools accept **`publication_date_range`** (format `YYYY-MM-
 
 **Watch row counts too**, not just per-row size: default `limit`s are large — `get_author_papers` returns up to **1000**, `get_citations` **100**, `search_papers_by_relevance` **50**, and `snippet_search` **20** (each snippet is ~500 words, making it the heaviest tool per row). Pass an explicit small `limit` — e.g. 20–50 for paper/citation lists, ~5–10 for snippets — unless the user asked for the full list.
 
-Safe default `fields` for `get_paper`:
+Use task-specific field presets:
+
+Metadata lookup:
 ```
 title,year,authors,venue,tldr,url,abstract
 ```
-Add `journal`, `publicationDate`, `fieldsOfStudy`, `isOpenAccess` only when needed.
+
+Search/ranking/results tables:
+```
+title,year,authors,venue,tldr,url,abstract,citationCount,influentialCitationCount
+```
+
+DOI/export handoff:
+```
+title,year,authors,venue,tldr,url,externalIds
+```
+
+Add `journal`, `publicationDate`, `fieldsOfStudy`, `isOpenAccess` only when needed. If pass-through fields such as `citationCount` are absent in a future response, degrade gracefully: sort by relevance/recency and omit citation-based claims.
 
 **Example call** (topic search, ranked by citations, DOI exposed for downstream fetch):
 ```
@@ -72,7 +87,7 @@ Asta's official `fields` list does **not** include `externalIds`, but the field 
 ## Workflow Patterns
 
 ### Pattern 1 — Topic Discovery
-1. `search_papers_by_relevance(keyword, publication_date_range="<current_year-5>:", venues=?)` → initial hits (compute the lower bound from today's date — e.g., in 2026 pass `publication_date_range="2021:"`; adjust or drop the filter if the user asks for older work)
+1. `search_papers_by_relevance(keyword, publication_date_range="<current_year-5>:", venues=?, fields="title,year,authors,venue,tldr,url,abstract,citationCount,influentialCitationCount", limit=20)` → initial hits (compute the lower bound from today's date — e.g., in 2026 pass `publication_date_range="2021:"`; adjust or drop the filter if the user asks for older work)
 2. Rank/present top N by citationCount + recency
 3. Offer follow-ups: `get_citations` on the most influential, or `snippet_search` for specific claims
 
@@ -84,7 +99,7 @@ Asta's official `fields` list does **not** include `externalIds`, but the field 
 
 ### Pattern 3 — Author Deep-Dive
 1. `search_authors_by_name(name, fields="name,affiliations,paperCount,citationCount,hIndex,externalIds")` → pick correct profile. **You must request these fields** — the default `fields="name"` returns only `name` + `authorId`, leaving nothing to rank on. Disambiguate by `externalIds.ORCID` when present (strongest signal), then `paperCount`/`citationCount`/`hIndex`; `affiliations` is often empty even when requested, so use it only as a tiebreaker
-2. `get_author_papers(authorId)` → full publication list
+2. `get_author_papers(authorId, limit=50, paper_fields="title,year,authors,venue,tldr,url,abstract,citationCount")` → a bounded first page; expand only if the user asks for the full list
 3. Filter client-side by topic keywords or date
 
 ### Pattern 4 — Evidence Retrieval
@@ -94,8 +109,8 @@ Asta's official `fields` list does **not** include `externalIds`, but the field 
 
 ## Output & Interaction Rules
 
-- Always report **total count** and **which tool was used**.
-- Present top 10 as a table (title, year, venue, citations), then details for the most relevant.
+- Always report **which tool was used**. Report total count only when the tool exposes a total; otherwise report returned count/page size and do not imply a corpus-wide total.
+- Present up to 10 results as a table (title, year, venue, citations if fetched), then details for the most relevant.
 - If the user writes in Chinese, present summaries in Chinese; keep titles in original language.
 - After results, offer: **Details / Refine / Citations / Snippet / Export / Done**.
 
