@@ -91,7 +91,7 @@
             "name": "asta",
             "source": "./plugins/asta",
             "description": "Ai2 Asta MCP — Semantic Scholar academic graph over MCP (no Python). Intent-to-tool routing, safe fields defaults to avoid context blowups, citation traversal, author lookup, snippet evidence retrieval, and DOI/arXiv/PMID via externalIds.",
-            "version": "0.3.3",
+            "version": "0.3.4",
             "author": { "name": "Agents365-ai" },
             "repository": "https://github.com/Agents365-ai/asta-skill",
             "license": "MIT",
