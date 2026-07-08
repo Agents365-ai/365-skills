@@ -407,3 +407,73 @@ python ~/.claude/skills/ttsCN/scripts/tts.py \
   --platform baidu --voice 3 \
   "今天真是令人兴奋的一天！" emotion.wav
 ```
+
+## Agent-Native CLI Reference
+
+ttsCN follows the [agent-native-design](https://github.com/Agents365-ai/agent-native-design) contract.
+It serves **humans** (readable terminal output), **AI agents** (structured JSON on stdout), and
+**orchestrators** (distinct exit codes + idempotency) simultaneously.
+
+### JSON Mode
+
+```bash
+# Explicit JSON mode
+tts.py --format json "你好" out.wav
+
+# Auto-detect: pipe to jq → JSON automatically
+tts.py --list | jq .data.backends[0].name
+
+# Error envelope always structured
+tts.py --format json --platform doubao "test" out.wav
+# → {"ok":false, "error":{"code":"auth_missing_env","message":"...","retryable":false,...}}
+```
+
+### Output Envelope
+
+```json
+// Success
+{"ok":true, "data":{...}, "meta":{"version":"...","schema_version":"1.1.0","timestamp":"...","ms":123}}
+
+// Error
+{"ok":false, "error":{"code":"auth_missing_env","message":"VOLCENGINE_APPID not set","retryable":false,"field":"VOLCENGINE_APPID","backend":"doubao"}, "meta":{...}}
+```
+
+### Exit Codes
+
+| Code | Meaning | Agent action |
+|------|---------|-------------|
+| **0** | Success | Parse `data`, proceed |
+| **1** | Internal / runtime error | Report to user, do not retry |
+| **2** | Validation / input error | Fix input, retry allowed |
+| **3** | Auth / missing credentials | Ask user for API key, do not retry |
+| **4** | Backend API error | Retry with backoff |
+
+### Schema Introspection
+
+```bash
+tts.py schema backends              # All 8 backends (compact by default)
+tts.py schema backends --full       # All fields (22 per backend)
+tts.py schema backends.doubao       # Single backend full detail
+tts.py schema voices                # All voice presets per backend
+tts.py schema tags                  # Tag definitions
+tts.py schema version               # Version + providers data freshness
+
+# Field filtering for low-token-cost queries
+tts.py schema backends --fields name,cost,supports_clone,supports_ssml
+```
+
+### Idempotency
+
+```bash
+# Orchestrators: retried calls return cached result — no double-billing
+tts.py --idempotency-key "daily-podcast-2026-07-08" --input script.txt out.wav
+
+# Cache at ~/.ttscn_idem/, 7-day TTL, SHA-256 keyed
+```
+
+### Agent Compatibility Flags
+
+```bash
+# No-ops accepted for agent runtime compatibility (ttsCN never prompts)
+tts.py --yes --no-input "text" out.wav
+```
