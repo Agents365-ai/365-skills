@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """
-ttsCN — Multi-Platform Chinese TTS Script (agent-native)
+ttsCN — Multi-Platform Chinese TTS Script (agent-native v1.1.0)
 
 Generate speech audio from text using 8 China-friendly TTS backends.
 
 Usage:
     tts.py "你好世界" output.wav
+    tts.py --idempotency-key my-job-42 "你好" out.wav
     tts.py --format json --list
+    tts.py --list --fields name,cost,supports_clone
     tts.py schema backends
     tts.py schema backends.doubao
 """
@@ -19,7 +21,6 @@ import time
 from pathlib import Path
 from datetime import datetime
 
-# Ensure modules are importable from any working directory
 sys.path.insert(0, str(Path(__file__).parent.resolve()))
 
 from backends import (
@@ -32,16 +33,21 @@ from backends import (
 from output import (
     use_json, envelope, success, error, emit_success, emit_error,
     EXIT_OK, EXIT_INTERNAL, EXIT_VALIDATION, EXIT_AUTH, EXIT_BACKEND,
-    exit_for_error_code,
+    exit_for_error_code, SCHEMA_VERSION,
 )
+import idempotency
 
 DEFAULT_BACKEND = "edge"
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 
+# Compact fields for default JSON list (keep agent token cost low)
+_COMPACT_FIELDS = [
+    "id", "name", "provider", "cost", "cost_per_10k",
+    "voices_count", "max_chars", "max_duration_display",
+    "supports_ssml", "supports_clone", "tags",
+]
 
-# ═══════════════════════════════════════════════════════════════════════════
-# Text chunking
-# ═══════════════════════════════════════════════════════════════════════════
+# ── Text chunking ─────────────────────────────────────────────────────────
 
 _SOFT_PUNCT = "，,;：:、 "
 _END_PUNCT = ("。", ".", "!", "?", "！", "？")
@@ -99,24 +105,17 @@ def chunk_text(text, max_chars):
     return chunks
 
 
-# ═══════════════════════════════════════════════════════════════════════════
-# Formatting helpers
-# ═══════════════════════════════════════════════════════════════════════════
-
-def _bool_icon(val):
-    return "yes" if val else "no"
-
+# ── Formatting ────────────────────────────────────────────────────────────
 
 def _resolve_voice_name(backend, voice_id):
-    """Get a human-friendly label for a voice."""
     desc = VOICE_DESCRIPTIONS.get(voice_id, voice_id)
     return desc
 
 
-def _backend_json(name):
+def _backend_json(name, compact=False):
     """Build JSON-safe backend summary."""
     info = BACKENDS[name]
-    return {
+    full = {
         "id": name,
         "name": info.get("name", name),
         "provider": info.get("provider", ""),
@@ -143,17 +142,25 @@ def _backend_json(name):
             for v in VOICES.get(name, [])
         ],
     }
+    if compact:
+        return {k: v for k, v in full.items() if k in _COMPACT_FIELDS}
+    return full
 
 
-def _list_json(args_fields=None):
-    """Build list output as a dict (for JSON envelope)."""
+def _list_json(args_fields=None, full=False):
+    """Build list output dict (for JSON envelope)."""
+    compact = not full  # compact by default
     all_backends = []
     for name in BACKENDS:
-        bj = _backend_json(name)
+        bj = _backend_json(name, compact=compact)
         if args_fields:
-            bj = {k: v for k, v in bj.items() if k in args_fields}
+            fset = set(args_fields.split(","))
+            bj = {k: v for k, v in bj.items() if k in fset}
         all_backends.append(bj)
-    return {"backends": all_backends, "tags": TAGS}
+    result = {"backends": all_backends, "tags": TAGS}
+    if not full:
+        result["note"] = "Compact mode — use --full for all fields"
+    return result
 
 
 def _list_text(args_fields=None):
@@ -189,23 +196,20 @@ def _list_text(args_fields=None):
     print("Config files:")
     print("  Project: ./.ttsCN.json")
     print("  User:    ~/.ttsCN.json")
-    print("  Format:  {\"backend\": \"edge\", \"voice\": \"zh-CN-XiaoxiaoNeural\", \"rate\": \"+5%\"}")
     print()
     print("Env vars (precedence over config files):")
     print("  TTS_BACKEND, TTS_VOICE, TTS_RATE")
 
 
-# ═══════════════════════════════════════════════════════════════════════════
-# Schema subcommand
-# ═══════════════════════════════════════════════════════════════════════════
+# ── Schema subcommand ─────────────────────────────────────────────────────
 
 def _handle_schema(args):
-    """Handle `tts schema <resource[.action]>`."""
     path = args.path
+    full = getattr(args, "full", False)
 
     if not path or path == "backends":
-        data = _list_json()
-        if args.fields:
+        data = _list_json(full=full)
+        if hasattr(args, "fields") and args.fields:
             fset = set(args.fields.split(","))
             data["backends"] = [
                 {k: v for k, v in b.items() if k in fset}
@@ -218,8 +222,8 @@ def _handle_schema(args):
         if bid not in BACKENDS:
             emit_error("validation_failed", f"Unknown backend: {bid}",
                        field="path", retryable=False, exit_code=EXIT_VALIDATION)
-        data = _backend_json(bid)
-        if args.fields:
+        data = _backend_json(bid, compact=not full)
+        if hasattr(args, "fields") and args.fields:
             fset = set(args.fields.split(","))
             data = {k: v for k, v in data.items() if k in fset}
         emit_success(data)
@@ -237,16 +241,26 @@ def _handle_schema(args):
         emit_success({"tags": TAGS})
 
     if path == "version":
-        emit_success({"version": VERSION})
+        emit_success({"version": VERSION, "schema_version": SCHEMA_VERSION,
+                       "providers_updated": _get_providers_updated()})
 
     emit_error("validation_failed",
-               f"Unknown schema path: {path}. Use: backends, backends.<id>, voices, tags, version",
+               "Unknown schema path: {}. Use: backends, backends.<id>, voices, tags, version".format(path),
                field="path", retryable=False, exit_code=EXIT_VALIDATION)
 
 
-# ═══════════════════════════════════════════════════════════════════════════
-# Main CLI
-# ═══════════════════════════════════════════════════════════════════════════
+def _get_providers_updated():
+    try:
+        import json
+        _ROOT = os.path.dirname(os.path.abspath(__file__))
+        _path = os.path.join(_ROOT, "data", "providers.json")
+        with open(_path) as f:
+            return json.load(f).get("updated", "unknown")
+    except Exception:
+        return "unknown"
+
+
+# ── CLI ───────────────────────────────────────────────────────────────────
 
 def build_parser():
     parser = argparse.ArgumentParser(
@@ -255,19 +269,17 @@ def build_parser():
         epilog="""
 Examples:
   %(prog)s "你好世界" output.wav
-  %(prog)s --platform doubao "你好世界" weather.wav
-  %(prog)s --voice zh-CN-YunxiNeural --rate +10% "text" output.wav
+  %(prog)s --idempotency-key job-42 "你好" out.wav
+  %(prog)s --platform doubao "你好" weather.wav
+  %(prog)s --voice zh-CN-YunxiNeural --rate +10% "text" out.wav
   %(prog)s --input script.txt output.wav
   %(prog)s --format json --list
-  %(prog)s --dry-run "测试文本"
+  %(prog)s --list --full --fields name,cost,supports_clone
+  %(prog)s --dry-run "预览文本"
   %(prog)s schema backends
-  %(prog)s schema backends.doubao --fields name,cost,supports_clone
+  %(prog)s schema backends.doubao
         """,
     )
-
-    # Subcommands
-    # No subparsers — "schema" is detected in main() before arg parsing
-    # to avoid conflicts with positional text arg
 
     # Input
     input_group = parser.add_mutually_exclusive_group()
@@ -286,9 +298,19 @@ Examples:
     parser.add_argument("--format", "-f", choices=["wav", "mp3", "json"], default=None,
                         help="Output format: wav, mp3 (audio), or json (envelope)")
 
+    # Idempotency
+    parser.add_argument("--idempotency-key",
+                        help="Idempotency key — retried calls with same key return cached result")
+
+    # Agent compatibility (no-ops — ttsCN never prompts interactively)
+    parser.add_argument("--yes", "--no-input", action="store_true", dest="no_input",
+                        help="Skip confirmation prompts (no-op, accepted for agent compatibility)")
+
     # Info / preview
     parser.add_argument("--list", action="store_true", help="List backends and voices")
     parser.add_argument("--fields", help="Filter --list output: comma-separated field names (json only)")
+    parser.add_argument("--full", action="store_true",
+                        help="Show all fields in --list/schema JSON (default: compact)")
     parser.add_argument("--dry-run", action="store_true",
                         help="Preview synthesis without API call")
 
@@ -296,53 +318,49 @@ Examples:
 
 
 def _resolve_format(args):
-    """Resolve output format: CLI > env > TTY auto-detect for JSON mode."""
     if args.format:
         return args.format
     if os.environ.get("TTS_FORMAT"):
         return os.environ["TTS_FORMAT"]
     if not hasattr(sys.stdout, "isatty") or not sys.stdout.isatty():
         return "json"
-    return None  # default to human-readable
+    return None
 
 
 def _resolve_backend_config(args):
-    """Resolve backend, voice, rate from CLI / config / env / defaults."""
     if args.platform:
         backend, backend_src = args.platform, "cli"
     else:
         backend, backend_src = resolve_backend()
-
     if args.voice:
         voice, voice_src = args.voice, "cli"
     else:
         voice, voice_src = resolve_voice(backend)
-
     if args.rate:
         rate, rate_src = args.rate, "cli"
     else:
         rate, rate_src = resolve_speech_rate()
-
     return backend, backend_src, voice, voice_src, rate, rate_src
 
 
 def _resolve_output(args, backend, fmt):
-    """Determine output file path."""
     if args.output:
         return args.output
     if fmt in ("wav", "mp3"):
         ts = datetime.now().strftime("%Y%m%d-%H%M%S")
-        return f"ttsCN-{backend}-{ts}.{fmt}"
+        return "ttsCN-{}-{}.{}".format(backend, ts, fmt)
     return None
 
 
+# ── Main ──────────────────────────────────────────────────────────────────
+
 def main():
-    # "schema" subcommand — parsed before argparse to avoid conflict with positional text
     if len(sys.argv) > 1 and sys.argv[1] == "schema":
         sp = argparse.ArgumentParser(description="Query provider registry as JSON")
         sp.add_argument("path", nargs="?", default="backends",
                         help="Resource: backends, backends.<id>, voices, tags, version")
         sp.add_argument("--fields", help="Comma-separated field filter")
+        sp.add_argument("--full", action="store_true", help="Show all fields (default: compact)")
         _handle_schema(sp.parse_args(sys.argv[2:]))
         return
 
@@ -350,10 +368,7 @@ def main():
     args = parser.parse_args()
     started_at = time.time()
 
-    # ── Determine output mode ─────────────────────────────────────────────
-    output_fmt = _resolve_format(args)
-    json_mode = (output_fmt == "json")
-
+    json_mode = (output_fmt == "json") if (output_fmt := _resolve_format(args)) else False
     try:
         return _run(args, started_at, json_mode)
     finally:
@@ -364,13 +379,12 @@ def _run(args, started_at, json_mode=False):
     output_fmt = _resolve_format(args)
     if json_mode is False:
         json_mode = (output_fmt == "json")
-    # In JSON mode, all human diagnostics go to stderr; stdout is pure JSON
     _diag = sys.stderr if json_mode else sys.stdout
 
     # ── --list ────────────────────────────────────────────────────────────
     if args.list:
         if json_mode:
-            data = _list_json(args.fields)
+            data = _list_json(args.fields, full=args.full)
             emit_success(data, started_at=started_at)
         else:
             _list_text(args.fields)
@@ -380,7 +394,7 @@ def _run(args, started_at, json_mode=False):
     if args.input:
         if not os.path.exists(args.input):
             emit_error("input_not_found",
-                       f"Input file not found: {args.input}",
+                       "Input file not found: {}".format(args.input),
                        field="input", retryable=False,
                        exit_code=EXIT_VALIDATION, started_at=started_at)
         with open(args.input, "r", encoding="utf-8") as f:
@@ -393,8 +407,7 @@ def _run(args, started_at, json_mode=False):
                        field="text", retryable=False,
                        exit_code=EXIT_VALIDATION, started_at=started_at)
         else:
-            parser = build_parser()
-            parser.print_help()
+            build_parser().print_help()
             sys.exit(EXIT_VALIDATION)
 
     if not text:
@@ -402,11 +415,26 @@ def _run(args, started_at, json_mode=False):
                    field="text", retryable=False,
                    exit_code=EXIT_VALIDATION, started_at=started_at)
 
+    # ── Idempotency check ────────────────────────────────────────────────
+    idem_key = getattr(args, "idempotency_key", None)
+    if idem_key:
+        hit, cached = idempotency.lookup(idem_key)
+        if hit and cached:
+            print("idempotency hit: {} — returning cached result".format(idem_key[:20]),
+                  file=_diag)
+            if json_mode:
+                emit_success(cached, started_at=started_at)
+            else:
+                r = cached
+                print("\nDone! (cached)")
+                print("  Output:   {}".format(r.get("output_file", "")))
+                print("  Duration: {:.1f}s".format(r.get("duration_seconds", 0)))
+            return
+
     # ── Resolve backend/voice/rate ────────────────────────────────────────
     backend, backend_src, voice, voice_src, rate, rate_src = \
         _resolve_backend_config(args)
 
-    # Auto-output format for audio files
     if output_fmt is None:
         output_fmt = "wav"
     if output_fmt not in ("wav", "mp3"):
@@ -414,23 +442,24 @@ def _run(args, started_at, json_mode=False):
 
     output_file = _resolve_output(args, backend, output_fmt)
 
-    # Ensure correct extension
     if output_file:
         if output_fmt == "mp3" and not output_file.endswith(".mp3"):
             output_file = output_file.rsplit(".", 1)[0] + ".mp3" if "." in output_file else output_file + ".mp3"
         elif output_fmt == "wav" and not output_file.endswith(".wav"):
             output_file = output_file.rsplit(".", 1)[0] + ".wav" if "." in output_file else output_file + ".wav"
 
-    # ── Display config (to stderr in json mode) ──────────────────────────
-    print(f"Backend:  {backend} [from {backend_src}]", file=_diag)
-    print(f"Voice:    {voice} [from {voice_src}]", file=_diag)
+    # ── Display config ────────────────────────────────────────────────────
+    print("Backend:  {} [from {}]".format(backend, backend_src), file=_diag)
+    print("Voice:    {} [from {}]".format(voice, voice_src), file=_diag)
     desc = _resolve_voice_name(backend, voice)
     if desc and desc != voice:
-        print(f"          {desc}", file=_diag)
-    print(f"Rate:     {rate} [from {rate_src}]", file=_diag)
-    print(f"Format:   {output_fmt}", file=_diag)
-    print(f"Output:   {output_file}", file=_diag)
-    print(f"Text:     {len(text)} characters", file=_diag)
+        print("          {}".format(desc), file=_diag)
+    print("Rate:     {} [from {}]".format(rate, rate_src), file=_diag)
+    print("Format:   {}".format(output_fmt), file=_diag)
+    print("Output:   {}".format(output_file), file=_diag)
+    print("Text:     {} characters".format(len(text)), file=_diag)
+    if idem_key:
+        print("Idem key: {}...".format(idem_key[:30]), file=_diag)
     print(file=_diag)
 
     max_chars = get_max_chars(backend)
@@ -464,13 +493,13 @@ def _run(args, started_at, json_mode=False):
             emit_success(dry_run_data, started_at=started_at)
         else:
             print("--- Dry Run ---", file=_diag)
-            print(f"  Chinese chars:  {cn}", file=_diag)
-            print(f"  English words:  {en}", file=_diag)
-            print(f"  Total chars:    {len(text)}", file=_diag)
-            print(f"  Chunks:         {len(chunks)} (max {max_chars} chars/chunk)", file=_diag)
-            print(f"  Est. duration:  {est_duration:.0f}s ({est_duration / 60:.1f} min)", file=_diag)
-            print(f"  SSML:           {'yes' if BACKENDS[backend]['supports_ssml'] else 'no'}", file=_diag)
-            print(f"  API call:       not made", file=_diag)
+            print("  Chinese chars:  {}".format(cn), file=_diag)
+            print("  English words:  {}".format(en), file=_diag)
+            print("  Total chars:    {}".format(len(text)), file=_diag)
+            print("  Chunks:         {} (max {} chars/chunk)".format(len(chunks), max_chars), file=_diag)
+            print("  Est. duration:  {:.0f}s ({:.1f} min)".format(est_duration, est_duration / 60), file=_diag)
+            print("  SSML:           {}".format("yes" if BACKENDS[backend]["supports_ssml"] else "no"), file=_diag)
+            print("  API call:       not made", file=_diag)
         return
 
     # ── Init backend ──────────────────────────────────────────────────────
@@ -495,13 +524,14 @@ def _run(args, started_at, json_mode=False):
 
     # ── Synthesize ────────────────────────────────────────────────────────
     chunks = chunk_text(text, max_chars)
-    print(f"Split into {len(chunks)} chunk(s) (max {max_chars} chars/chunk)\n", file=_diag)
+    print("Split into {} chunk(s) (max {} chars/chunk)\n".format(len(chunks), max_chars),
+          file=_diag)
 
     synthesize = get_synthesize_func(backend)
     try:
         duration = synthesize(chunks, config, output_file, output_format=output_fmt)
     except Exception as e:
-        emit_error("backend_error", f"Synthesis failed: {e}",
+        emit_error("backend_error", "Synthesis failed: {}".format(e),
                    retryable=True, backend=backend,
                    exit_code=EXIT_BACKEND, started_at=started_at)
 
@@ -522,14 +552,18 @@ def _run(args, started_at, json_mode=False):
         "total_chars": len(text),
     }
 
+    # Store result under idempotency key for future retries
+    if idem_key:
+        idempotency.store(idem_key, result)
+
     if json_mode:
         emit_success(result, started_at=started_at)
     else:
-        size_str = f"{file_size / 1024:.1f} KB" if file_size < 1024 * 1024 else f"{file_size / 1024 / 1024:.1f} MB"
-        print(f"\nDone!")
-        print(f"  Output:   {output_file} ({size_str})")
-        print(f"  Duration: {duration:.1f}s ({duration / 60:.1f} min)")
-        print(f"  Time:     {elapsed:.1f}s wall clock")
+        size_str = "{:.1f} KB".format(file_size / 1024) if file_size < 1024 * 1024 else "{:.1f} MB".format(file_size / 1024 / 1024)
+        print("\nDone!")
+        print("  Output:   {} ({})".format(output_file, size_str))
+        print("  Duration: {:.1f}s ({:.1f} min)".format(duration, duration / 60))
+        print("  Time:     {:.1f}s wall clock".format(elapsed))
 
 
 if __name__ == "__main__":
