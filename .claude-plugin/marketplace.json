@@ -171,7 +171,7 @@
             "name": "agent-native-design",
             "source": "./plugins/agent-native-design",
             "description": "CLI design for AI agents — evaluate, design, and refactor CLIs so they reliably serve humans, AI agents, and orchestration systems simultaneously. Structured output, self-description, delegated auth, safety tiers, and a complete 8-phase interaction loop.",
-            "version": "1.3.4",
+            "version": "1.3.5",
             "author": { "name": "Agents365-ai" },
             "repository": "https://github.com/Agents365-ai/agent-native-design",
             "license": "MIT",

@@ -101,7 +101,7 @@ count=$(tool _internal alert-rows-for-key "$key")
 
 ```bash
 # Stdin not a TTY: must not block.
-out=$(echo | timeout 5 tool danger purge --id abc 2>&1)
+out=$(echo | timeout 5 tool danger purge --id abc)
 got=$?
 [[ "$got" != "124" ]] || { echo "FAIL: command hung (timed out)"; exit 1; }
 echo "$out" | jq -e '.error.code == "confirmation_required"' > /dev/null \
@@ -156,7 +156,7 @@ diff -u tests/snapshots/schema.sleep.list.json /tmp/schema.new.json \
 before=$(tool _internal store-fingerprint)
 
 for cmd in $(tool _internal list-mutating-commands); do
-  out=$(eval "$cmd --dry-run" 2>&1)
+  out=$(eval "$cmd --dry-run")
   echo "$out" | jq -e '.dry_run == true and .would_request' > /dev/null \
     || { echo "FAIL: $cmd --dry-run is missing dry_run/would_request"; exit 1; }
 done
@@ -177,7 +177,10 @@ after=$(tool _internal store-fingerprint)
 
 ```bash
 forbidden='auth login|auth token|auth refresh'
-hits=$(grep -RInE "$forbidden" skills/ docs/ agents/ 2>/dev/null | grep -v '^//' || true)
+# Grep generated agent-facing artifacts only (skill manifests, MCP tool defs, codex sidecars).
+# Human-facing docs and examples that document the human bootstrap path
+# (e.g. examples.md showing `healthkit auth login`) are expected and excluded here.
+hits=$(grep -RInE "$forbidden" agents/ 2>/dev/null | grep -v '^//' || true)
 [[ -z "$hits" ]] || { echo "FAIL: agent surface references auth lifecycle:"; echo "$hits"; exit 1; }
 ```
 

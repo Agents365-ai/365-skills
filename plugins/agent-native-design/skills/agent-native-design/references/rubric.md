@@ -5,7 +5,7 @@
 | Criterion | Principle | 0 — Fail | 1 — Partial | 2 — Pass |
 |-----------|-----------|----------|-------------|----------|
 | **Three-audience support** | P0 | Designed for only one audience (human-only, or agent-only) | Serves two audiences well; the third is an afterthought or broken | Deliberately designed for human + agent + system with documented trade-offs |
-| **Stdout contract** | P1 | Prose or mixed output | JSON sometimes, not always | Always parseable JSON with stable envelope |
+| **Stdout contract** | P1 | Prose or mixed output | JSON sometimes, not always | Always parseable JSON with stable envelope when stdout is not a TTY (agent context); human-readable by default only under TTY or explicit `--format table` |
 | **Stderr separation** | P1 | Diagnostics mixed into stdout | Some separation | Diagnostics always on stderr |
 | **Exit code semantics** | P1/P2 | All errors map to same code | Some codes defined | Documented, stable, distinct codes per failure class |
 | **Self-description (help)** | P3 | No `--help` or single flat page | Layered help exists but incomplete | Full progressive help: top → resource → action → schema |

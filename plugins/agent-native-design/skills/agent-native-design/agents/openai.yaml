@@ -1,5 +1,5 @@
 interface:
-  display_name: "Agent Native CLI"
+  display_name: "Agent Native Design"
   short_description: "Design, review, and refactor CLIs to serve humans, AI agents, and orchestration systems simultaneously — structured output, schema introspection, dry-run, safety tiers, and delegated authentication"
   brand_color: "#1A3A5C"
 

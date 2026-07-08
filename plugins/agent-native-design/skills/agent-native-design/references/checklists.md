@@ -4,7 +4,7 @@ Use this when evaluating a CLI for agent readiness, or when sanity-checking a ne
 
 ## Output
 
-- [ ] `stdout` is always valid JSON (success and failure)
+- [ ] `stdout` is valid JSON when stdout is not a TTY or when `--format json` is passed (success and failure)
 - [ ] `stderr` carries human-readable diagnostics only
 - [ ] JSON envelope is stable: `{ "ok": bool, "data": ... }` or `{ "ok": false, "error": ... }`
 - [ ] Error object includes: `code`, `message`, `retryable`

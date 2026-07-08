@@ -1,11 +1,11 @@
 ---
 name: agent-native-design
 description: Use when designing, reviewing, or refactoring a CLI that must serve AI agents alongside humans, or when converting an API or SDK into an agent-usable CLI interface.
-license: MIT
+license: CC-BY-NC-4.0
 homepage: https://github.com/Agents365-ai/agent-native-design
 compatibility: Includes sidecar metadata for OpenClaw, Hermes, pi-mono, and OpenAI Codex; the core SKILL.md is portable to any agent runtime that supports Agent Skills-style instructions.
 platforms: [macos, linux, windows]
-metadata: {"openclaw":{"requires":{},"emoji":"⌨️","os":["darwin","linux","win32"]},"hermes":{"tags":["cli","agent-native","interface-design","structured-output","schema-driven"],"category":"engineering","requires_tools":[],"related_skills":[]},"pimo":{"category":"engineering","tags":["cli","agent-native","interface-design","structured-output","schema-driven"]},"author":"Agents365-ai","version":"1.3.4"}
+metadata: {"openclaw":{"requires":{},"emoji":"⌨️","os":["darwin","linux","win32"]},"hermes":{"tags":["cli","agent-native","interface-design","structured-output","schema-driven"],"category":"engineering","requires_tools":[],"related_skills":[]},"pimo":{"category":"engineering","tags":["cli","agent-native","interface-design","structured-output","schema-driven"]},"author":"Agents365-ai","version":"1.3.5"}
 ---
 
 # agent-native-design
@@ -124,7 +124,7 @@ CLI arguments are not inherently trusted — they may come from a hallucinating 
 
 ### Principle 3. The CLI Must Describe Itself
 
-The CLI must be self-describing enough that an agent can use it without reading external README files. Self-description must be **progressive**, not eager: top-level `--help` lists resources; resource help lists actions; action help lists flags; a separate `schema <resource.action>` returns the full typed schema. A CLI with hundreds of commands that dumps everything into the first `--help` pays that token cost on every agent invocation. See `references/design-patterns.md#help-design` and `examples.md` Examples 2 and 5.
+The CLI must be self-describing enough that an agent can use it without reading external README files. Self-description must be **progressive**, not eager: top-level `--help` lists resources; resource help lists actions; action help lists flags; a separate `schema <resource.action>` returns the full typed schema. A CLI with hundreds of commands that dumps everything into the first `--help` pays that token cost on every agent invocation. See `references/design-patterns.md#help-design` and `references/examples.md` Examples 2 and 5.
 
 ### Principle 4. Safety Through Graduated Visibility
 
@@ -140,7 +140,7 @@ If a schema exists, everything derives from it: CLI command structure, validatio
 
 ### Principle 7. Authentication Must Be Delegatable
 
-Authentication is obtained and refreshed by human/system-managed flows. The agent uses credentials; it never owns the auth lifecycle. Preferred mechanisms: environment variables, config files, OS keychain integration, externally refreshed tokens. Canonical pattern: `examples.md` Example 3.
+Authentication is obtained and refreshed by human/system-managed flows. The agent uses credentials; it never owns the auth lifecycle. Preferred mechanisms: environment variables, config files, OS keychain integration, externally refreshed tokens. Canonical pattern: `references/examples.md` Example 3.
 
 ---
 

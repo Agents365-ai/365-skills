@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-root_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+root_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 cd "$root_dir"
 
 assert_contains() {
@@ -15,18 +15,18 @@ assert_contains() {
   fi
 }
 
-assert_contains docs/install.md '~/.codex/skills/agent-native-design'
-assert_contains docs/install.md '.codex/skills/agent-native-design'
-assert_contains docs/install_CN.md '~/.codex/skills/agent-native-design'
-assert_contains docs/install_CN.md '.codex/skills/agent-native-design'
+assert_contains docs/install.md 'skills/agent-native-design ~/.codex/skills/'
+assert_contains docs/install.md 'skills/agent-native-design .codex/skills/'
+assert_contains docs/install_CN.md 'skills/agent-native-design ~/.codex/skills/'
+assert_contains docs/install_CN.md 'skills/agent-native-design .codex/skills/'
 
-assert_contains SKILL.md 'Includes sidecar metadata for OpenClaw, Hermes, pi-mono, and OpenAI Codex'
+assert_contains skills/agent-native-design/SKILL.md 'Includes sidecar metadata for OpenClaw, Hermes, pi-mono, and OpenAI Codex'
 assert_contains README.md 'includes metadata for the platforms listed below'
 assert_contains README_CN.md '并为下列平台提供元数据'
 
-assert_contains SKILL.md 'Use the 14-criterion rubric to score the CLI.'
-assert_contains SKILL.md 'Report the 14-criterion rubric score first'
-assert_contains agents/openai.yaml 'Score a CLI on the 14-criterion rubric and summarize the seven design principles'
+assert_contains skills/agent-native-design/SKILL.md 'Use the 14-criterion rubric to score the CLI.'
+assert_contains skills/agent-native-design/SKILL.md 'Report the 14-criterion rubric score first'
+assert_contains skills/agent-native-design/agents/openai.yaml 'Score a CLI on the 14-criterion rubric and summarize the seven design principles'
 
 test -f LICENSE || {
   echo 'LICENSE file is missing' >&2
@@ -38,7 +38,7 @@ test -f LICENSE || {
 # `version` field in the SKILL.md frontmatter metadata block.
 verify_frontmatter_version_against_tag() {
   local fm_version
-  fm_version=$(rg -oN '"version":"([0-9]+\.[0-9]+\.[0-9]+)"' SKILL.md -r '$1' | head -1 || true)
+  fm_version=$(rg -oN '"version":"([0-9]+\.[0-9]+\.[0-9]+)"' skills/agent-native-design/SKILL.md -r '$1' | head -1 || true)
   if [ -z "$fm_version" ]; then
     echo 'SKILL.md frontmatter is missing a "version":"X.Y.Z" field' >&2
     exit 1
