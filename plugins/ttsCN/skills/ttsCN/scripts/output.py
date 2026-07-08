@@ -17,7 +17,12 @@ import os
 import sys
 import time
 
-# Auto-detect output mode
+SCHEMA_VERSION = "1.1.0"  # semver — bump on envelope/contract changes
+
+# Fields deprecated in current version. Agents should migrate before removed_in.
+# {"old_field": {"replaced_by":"new_field", "removed_in":"1.2.0"}}
+DEPRECATED_FIELDS = {}
+
 _PREFERENCES_KEY = "TTS_FORMAT"
 
 
@@ -26,14 +31,6 @@ def _stdout_is_tty():
 
 
 def use_json(args):
-    """Determine whether to emit JSON on stdout.
-
-    Precedence:
-      1. --format json  (explicit CLI flag)
-      2. TTS_FORMAT=json env var
-      3. stdout is NOT a TTY → default to JSON
-      4. stdout IS a TTY → default to human text
-    """
     if hasattr(args, "format") and args.format == "json":
         return True
     if os.environ.get(_PREFERENCES_KEY) == "json":
@@ -45,7 +42,6 @@ def _now_iso():
     return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
 
-# Imported lazily to avoid circular dependency
 _VERSION = None
 
 
@@ -53,7 +49,6 @@ def _get_version():
     global _VERSION
     if _VERSION is None:
         try:
-            # Read from providers.json
             _ROOT = os.path.dirname(os.path.dirname(
                 os.path.abspath(__file__)))
             _path = os.path.join(_ROOT, "data", "providers.json")
@@ -65,17 +60,20 @@ def _get_version():
 
 
 def envelope(ok, data=None, error=None, meta=None, started_at=None):
-    """Build the standard JSON envelope.
+    """Build standard JSON envelope.
 
-    Success: {"ok":true, "data":{...}, "meta":{"version":"...","ms":123}}
+    Success: {"ok":true, "data":{...}, "meta":{"version":"...","schema_version":"1.1.0","timestamp":"...","ms":123}}
     Error:   {"ok":false, "error":{"code":"...","message":"...","retryable":bool,...}, "meta":{...}}
     """
     if meta is None:
         meta = {}
     meta.setdefault("version", _get_version())
+    meta.setdefault("schema_version", SCHEMA_VERSION)
     meta.setdefault("timestamp", _now_iso())
     if started_at is not None:
         meta["ms"] = round((time.time() - started_at) * 1000)
+    if DEPRECATED_FIELDS:
+        meta["deprecated_fields"] = DEPRECATED_FIELDS
 
     payload = {"ok": ok, "meta": meta}
     if ok:
@@ -86,22 +84,11 @@ def envelope(ok, data=None, error=None, meta=None, started_at=None):
 
 
 def success(data=None, started_at=None, **extra_meta):
-    """Build success envelope."""
     return envelope(True, data=data, started_at=started_at, meta=extra_meta)
 
 
 def error(code, message, retryable=False, field=None, backend=None,
           started_at=None, **extra):
-    """Build error envelope.
-
-    Args:
-        code: Stable machine-readable code, e.g. "auth_missing_env"
-        message: Human-readable description
-        retryable: Whether the agent should retry
-        field: Which input field/parameter caused the error (optional)
-        backend: Which backend was in use (optional)
-        extra: Additional context fields
-    """
     err = {"code": code, "message": message, "retryable": retryable}
     if field:
         err["field"] = field
@@ -112,24 +99,18 @@ def error(code, message, retryable=False, field=None, backend=None,
 
 
 def emit_success(data=None, started_at=None, **extra):
-    """Print success envelope to stdout and exit 0."""
     print(success(data, started_at=started_at, **extra))
     sys.exit(0)
 
 
 def emit_error(code, message, retryable=False, field=None, backend=None,
                started_at=None, exit_code=1, **extra):
-    """Print error to stderr for humans AND error envelope to stdout for agents.
-
-    Also exits with the appropriate distinct exit code.
-    """
     # Human-readable on stderr
     print(f"Error [{code}]: {message}", file=sys.stderr)
     if field:
         print(f"  Field: {field}", file=sys.stderr)
     if backend:
         print(f"  Backend: {backend}", file=sys.stderr)
-
     # Machine-readable on stdout
     err = {"code": code, "message": message, "retryable": retryable}
     if field:
@@ -141,7 +122,6 @@ def emit_error(code, message, retryable=False, field=None, backend=None,
     sys.exit(exit_code)
 
 
-# Exit code mapping
 EXIT_OK = 0
 EXIT_INTERNAL = 1
 EXIT_VALIDATION = 2
@@ -150,7 +130,6 @@ EXIT_BACKEND = 4
 
 
 def exit_for_error_code(code):
-    """Map error code string to exit code integer."""
     if code in ("auth_missing_env", "auth_invalid"):
         return EXIT_AUTH
     if code in ("validation_failed", "input_not_found", "input_empty"):
