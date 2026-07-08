@@ -1,0 +1,22 @@
+name: Validate metadata
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # fetch-depth: 0 makes all tags available so the validator's
+          # frontmatter-version-vs-tag check can run `git describe --tags`.
+          fetch-depth: 0
+      - name: Install ripgrep
+        run: sudo apt-get install -y ripgrep
+      - name: Run metadata validation
+        run: bash scripts/validate-metadata.sh
