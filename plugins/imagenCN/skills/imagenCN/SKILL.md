@@ -14,10 +14,12 @@ metadata: {"openclaw":{"requires":{"bins":["python3"],"env":["DASHSCOPE_API_KEY"
 
 Generate images using Alibaba Cloud Bailian API. **Default endpoint is China region**.
 
-Supports three platforms across seven model families:
+Supports five platforms across nine model families:
 - **Alibaba Cloud Bailian** (DashScope): Qwen-Image 2.0, Qwen-Image Edit, Qwen-Image legacy, Wan Series, Z-Image
 - **ByteDance Volcano Ark**: Doubao-Seedream series (OpenAI-compatible REST)
 - **Tencent Hunyuan**: Hunyuan Image 3.0 (OpenAI-compatible REST)
+- **Zhipu / BigModel**: CogView-4 and GLM-Image (OpenAI-compatible REST)
+- **StepFun / 阶跃星辰**: Step-2X and Step-Image-Edit (OpenAI-compatible REST)
 
 **Cross-platform support**: Windows, macOS, Linux
 
@@ -32,22 +34,42 @@ Automatically activate this skill when:
 
 ## Workflow
 
-1. **Refine the prompt** (critical — never skip).  Users often give short, casual
-   descriptions.  Expand them into a detailed, high-quality prompt before calling the
-   API.  Add, as appropriate:
-   - Subject details (shape, colour, material, expression, pose)
-   - Lighting (golden hour, studio, rim light, soft diffused, neon, cinematic)
-   - Composition (rule of thirds, shallow depth of field, wide shot, close-up)
-   - Style / medium (photorealistic, oil painting, watercolour, 3D render, vector)
-   - Mood / atmosphere (serene, dramatic, whimsical, dystopian, elegant)
-   - Quality keywords (8K, hyperdetailed, award-winning, professional photography)
-   - For Chinese text on images: describe the text content, placement, font style
-     (e.g. calligraphy, sans-serif, bold), colour, and size
+### Step 1 — Refine the prompt (interactive, never skip)
 
-2. Pick a model based on the request (see Model Selection Guide below). Default to `qwen-image-2.0-pro` if unsure.
-3. Pick a size: native 2K for the Qwen-Image 2.0 family, `1K`/`2K`/`4K` for Wan2.7, or an aspect-ratio preset (`16:9`, `1:1`, etc.).
-4. Run `scripts/generate_image.py` with the refined prompt and output path.
-5. If the output path was implicit, save into the user's current working directory.
+Users often give short, casual descriptions ("生成一只猫").  Before calling the
+API, **present 3 refined prompt options** with different style directions.
+Add, as appropriate:
+
+- Subject details (shape, colour, material, expression, pose)
+- Lighting (golden hour, studio, rim light, soft diffused, neon, cinematic)
+- Composition (rule of thirds, shallow depth of field, wide shot, close-up)
+- Style / medium (photorealistic, oil painting, watercolour, 3D render, vector)
+- Mood / atmosphere (serene, dramatic, whimsical, dystopian, elegant)
+- Quality keywords (8K, hyperdetailed, award-winning, professional photography)
+- For Chinese text on images: text content, placement, font style, colour, size
+
+Label the options clearly (e.g. A / B / C) with a one-line summary of each
+direction.  Let the user pick one, combine elements from multiple, or request
+a new direction.  Iterate until they confirm ("go", "generate", "ok", etc.),
+then proceed to generation.
+
+### Step 2 — Pick a model
+
+Choose based on the request (see Model Selection Guide below). Default to
+`qwen-image-2.0-pro` if unsure.  Mention your choice to the user.
+
+### Step 3 — Pick a size
+
+Native 2K for Qwen-Image 2.0, `1K`/`2K`/`4K` for Wan2.7, or an aspect-ratio
+preset (`16:9`, `1:1`, etc.).
+
+### Step 4 — Generate
+
+Run `scripts/generate_image.py` with the confirmed prompt and output path.
+
+### Step 5 — Save
+
+If the output path was implicit, save into the user's current working directory.
 
 ## Models
 
@@ -112,6 +134,21 @@ Editing models require an input image via `--image` (local path or URL). Omit `-
 | Model | Description |
 |-------|-------------|
 | `hy-image-v3.0` | **Hunyuan default**. Flagship 3.0, strong composition awareness, handles complex Chinese prompts up to 8K chars |
+
+### Zhipu / BigModel - CogView-4 & GLM-Image (OpenAI-compatible API)
+
+| Model | Description |
+|-------|-------------|
+| `cogview-4` | **Zhipu default**. Stable alias for latest CogView-4, native Chinese text rendering |
+| `cogview-4-250304` | CogView-4 fixed snapshot (Mar 2025), reproducible results |
+| `glm-image` | GLM-Image flagship, up to 2048x2048, hybrid autoregressive/diffusion |
+
+### StepFun / 阶跃星辰 - Step-2X (OpenAI-compatible API)
+
+| Model | Description |
+|-------|-------------|
+| `step-2x-large` | **StepFun default**. High quality (0.1 RMB/image), up to 1024x1024 |
+| `step-image-edit-2` | Fast & cheap (0.02 RMB/image), supports negative prompts, 8 inference steps |
 
 ## Usage
 
@@ -190,6 +227,21 @@ python ~/.claude/skills/imagenCN/scripts/generate_image.py --size 1280*720 "Cust
 - `4:3` -> 1600:1200
 - `3:4` -> 1200:1600
 
+**Zhipu (CogView-4 / GLM-Image):**
+- `1:1` -> 1024x1024 (default)
+- `16:9` -> 1344x768
+- `9:16` -> 768x1344
+- `4:3` -> 1152x864
+- `3:4` -> 864x1152
+- `2:1` -> 1440x720
+- `1:2` -> 720x1440
+
+**StepFun (Step-2X):**
+- `1:1` -> 1024x1024 (default)
+- `1:1-small` -> 512x512
+- `16:9` -> 1280x800
+- `9:16` -> 800x1280
+
 ### Advanced Options
 
 ```bash
@@ -224,12 +276,22 @@ export ARK_MODEL="doubao-seedream-5-0-260128"   # Optional default model
 # Tencent Hunyuan (TokenHub)
 export HUNYUAN_API_KEY="your_api_key"           # Required for Hunyuan
 export HUNYUAN_MODEL="hy-image-v3.0"            # Optional default model
+
+# Zhipu / BigModel
+export ZHIPUAI_API_KEY="your_api_key"           # Required for Zhipu
+export ZHIPUAI_MODEL="cogview-4"                # Optional default model
+
+# StepFun / 阶跃星辰
+export STEP_API_KEY="your_api_key"              # Required for StepFun
+export STEP_MODEL="step-2x-large"               # Optional default model
 ```
 
 Get API Keys:
 - DashScope: https://bailian.console.aliyun.com/
 - Volcano Ark: https://console.volcengine.com/ark/region:ark+cn-beijing/apikey
 - Tencent Hunyuan: https://console.cloud.tencent.com/tokenhub/apikey
+- Zhipu: https://bigmodel.cn
+- StepFun: https://platform.stepfun.com/interface-key
 
 ## Config File (Optional)
 
@@ -270,18 +332,20 @@ export DASHSCOPE_API_BASE="https://dashscope-intl.aliyuncs.com/api/v1"
 
 ## Model Selection Guide
 
-### Quick Pick — You Only Need Six
+### Quick Pick — You Only Need Eight
 
 | What you want | Model | Platform |
 |---------------|-------|----------|
-| **Default / general** (posters, text, daily use) | `qwen-image-2.0-pro` | DashScope |
-| **Photorealistic** (portraits, landscapes, products) | `wan2.7-image-pro` | DashScope |
-| **Edit an image** (swap backgrounds, restyle) | `qwen-image-edit-max` | DashScope |
-| **Cheap & fast** (quick drafts, high volume) | `z-image-turbo` | DashScope |
-| **Best text + photography combo** | `doubao-seedream-5-0-260128` | Volcano Ark |
+| **Default / general** (posters, text) | `qwen-image-2.0-pro` | DashScope |
+| **Photorealistic** (portraits, landscapes) | `wan2.7-image-pro` | DashScope |
+| **Edit an image** | `qwen-image-edit-max` | DashScope |
+| **Cheap & fast** | `z-image-turbo` | DashScope |
+| **Photo + text combo** | `doubao-seedream-5-0-260128` | Volcano Ark |
 | **Complex Chinese composition** | `hy-image-v3.0` | Tencent Hunyuan |
+| **Chinese text in images** | `cogview-4` | Zhipu |
+| **Ultra-cheap volume gen** | `step-image-edit-2` | StepFun |
 
-All other models are legacy/snapshot variants. You don't need them unless you have a specific reason.
+All other models are legacy/snapshot variants.
 
 ### Full Reference
 
@@ -306,13 +370,13 @@ All other models are legacy/snapshot variants. You don't need them unless you ha
 
 ## Platform Quick Comparison
 
-| Feature | DashScope (Bailian) | Volcano Ark | Tencent Hunyuan |
-|---------|---------------------|-------------|-----------------|
-| Best for | Text rendering, model variety | Photo + text combo | Complex Chinese composition |
-| Max resolution | 4K (Wan2.7) | 4K (Seedream 4.0/4.5) | 2K |
-| SDK required | `dashscope` | None (REST) | None (REST) |
-| Pricing | Varies per model | ~0.22 RMB/image | ~0.20 RMB/image |
-| Env var | `DASHSCOPE_API_KEY` | `ARK_API_KEY` | `HUNYUAN_API_KEY` |
+| Feature | DashScope | Ark | Hunyuan | Zhipu | StepFun |
+|---------|-----------|-----|---------|-------|--------|
+| Best for | Text, variety | Photo+text | Complex CN | CN text in image | Ultra-cheap |
+| Max res | 4K | 4K | 2K | 2K | 1K |
+| SDK | `dashscope` | None | None | None | None |
+| Price | Varies | ~0.22 | ~0.20 | ~0.06 | ~0.02 |
+| Env var | `DASHSCOPE_API_KEY` | `ARK_API_KEY` | `HUNYUAN_API_KEY` | `ZHIPUAI_API_KEY` | `STEP_API_KEY` |
 
 ## Comparison with Imagen (Gemini)
 

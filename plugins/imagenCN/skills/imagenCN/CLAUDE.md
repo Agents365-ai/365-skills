@@ -12,10 +12,12 @@ Do NOT add "Co-Authored-By: Claude" to commit messages.
 
 ## What This Is
 
-A Claude Code skill for AI image generation using three Chinese T2I platforms:
+A Claude Code skill for AI image generation using five Chinese T2I platforms:
 - Alibaba Cloud Bailian (阿里云百炼) — DashScope API
 - ByteDance Volcano Ark (火山方舟) — Seedream models
 - Tencent Hunyuan (腾讯混元) — Hunyuan Image 3.0
+- Zhipu / BigModel (智谱) — CogView-4, GLM-Image
+- StepFun (阶跃星辰) — Step-2X, Step-Image-Edit-2
 
 ## Models
 
@@ -56,6 +58,12 @@ export ARK_MODEL="doubao-seedream-5-0-260128"  # Optional default model (Ark)
 
 export HUNYUAN_API_KEY="your_api_key"     # Required (Tencent Hunyuan)
 export HUNYUAN_MODEL="hy-image-v3.0"      # Optional default model (Hunyuan)
+
+export ZHIPUAI_API_KEY="your_api_key"     # Required (Zhipu)
+export ZHIPUAI_MODEL="cogview-4"          # Optional default model (Zhipu)
+
+export STEP_API_KEY="your_api_key"        # Required (StepFun)
+export STEP_MODEL="step-2x-large"         # Optional default model (StepFun)
 ```
 
 ## Project Structure
