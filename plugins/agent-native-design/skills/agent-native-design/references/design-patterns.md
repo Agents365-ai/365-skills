@@ -96,7 +96,7 @@ This gives agents:
 
 API stability is a contract you owe the agent: a CLI that renames flags between point releases forces every dependent agent to re-discover and re-plan. Treat the schema as a versioned, append-mostly surface.
 
-See `examples.md` Example 8 for the full request/response pair.
+See `references/examples.md` Example 8 for the full request/response pair.
 
 ---
 
@@ -147,7 +147,7 @@ Rules:
 
 A command that takes minutes to finish is a hazard for an agent: the agent does not know whether the CLI is making progress, stuck, or dead, and it cannot afford to wait blind on a single JSON envelope at the end. Two patterns work:
 
-**Structured progress on stderr, final JSON on stdout.** The agent reads stderr for liveness and stdout for the result. Progress events are themselves structured (one JSON object per line) so the orchestrator can parse them, but they never pollute the stdout JSON envelope. See `examples.md` Example 7 for a full transcript.
+**Structured progress on stderr, final JSON on stdout.** The agent reads stderr for liveness and stdout for the result. Progress events are themselves structured (one JSON object per line) so the orchestrator can parse them, but they never pollute the stdout JSON envelope. See `references/examples.md` Example 7 for a full transcript.
 
 **NDJSON streaming for long lists.** When a list command might return thousands of items, offer a `--stream` (or `--ndjson`) mode that emits one JSON object per line on stdout, with a final summary line. Agents can process the stream incrementally and stop when they have enough:
 
@@ -205,7 +205,7 @@ Tiers are necessary but not sufficient. Graduated visibility is a prompt-side de
 
 ## Auth design
 
-Human/system-managed token acquisition. Environment/config-based delegation. No agent involvement in browser auth flows. Separation between auth bootstrap and agent execution. See `examples.md` Example 3 for the canonical pattern.
+Human/system-managed token acquisition. Environment/config-based delegation. No agent involvement in browser auth flows. Separation between auth bootstrap and agent execution. See `references/examples.md` Example 3 for the canonical pattern.
 
 ---
 
