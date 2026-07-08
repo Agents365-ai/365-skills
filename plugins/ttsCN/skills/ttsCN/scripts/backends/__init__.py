@@ -85,12 +85,16 @@ TAGS = _PROVIDERS.get("tags", {})
 # ── Error classes ──────────────────────────────────────────────────────────
 class BackendError(Exception):
     code = "internal_error"
+    exit_code = 1
+    retryable = False
 
 class UnknownBackendError(BackendError):
     code = "validation_failed"
+    exit_code = 2
 
 class MissingPackageError(BackendError):
     code = "tool_missing"
+    exit_code = 1
     def __init__(self, message, package=None, install_cmd=None):
         super().__init__(message)
         self.package = package
@@ -98,6 +102,8 @@ class MissingPackageError(BackendError):
 
 class MissingEnvVarError(BackendError):
     code = "auth_missing_env"
+    exit_code = 3
+    retryable = False
     def __init__(self, message, var=None):
         super().__init__(message)
         self.var = var

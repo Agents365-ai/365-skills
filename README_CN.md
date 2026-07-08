@@ -16,6 +16,12 @@ npx skills add Agents365-ai/365-skills -g
 
 ## 可用插件
 
+### 开发与 CLI 设计
+
+| 插件 | 说明 |
+|---|---|
+| `agent-native-design` | AI 智能体 CLI 设计 —— 评估、设计和重构 CLI，使其能同时服务人类、AI 智能体和编排系统 |
+
 ### 绘图与图表
 
 | 插件 | 说明 |
@@ -51,9 +57,9 @@ cp -r ../drawio-skill/skills/drawio-skill/* plugins/drawio/skills/drawio-skill/
 git add plugins/drawio && git commit -m "chore: sync drawio-skill"
 ```
 
-### 自动同步（semanticscholar、paper-fetch、scholar-deep-research、asta）
+### 自动同步（agent-native-design、semanticscholar、paper-fetch、scholar-deep-research、asta）
 
-`semanticscholar-skill`、`paper-fetch`、`scholar-deep-research` 与 `asta-skill` 各自仓库中带有 GitHub Actions workflow（`.github/workflows/sync-365-skills.yml`），任何对各自 `skills/<name>/**` 的改动会自动推送到本仓库，并更新 `marketplace.json` 中的版本号。需要每个源仓库配置 `SYNC_365_SKILLS_TOKEN` secret，并对本仓库具有 `Contents: write` 权限。
+`agent-native-design`、`semanticscholar-skill`、`paper-fetch`、`scholar-deep-research` 与 `asta-skill` 各自仓库中带有 GitHub Actions workflow（`.github/workflows/sync-365-skills.yml`），任何对各自 `skills/<name>/**` 的改动会自动推送到本仓库，并更新 `marketplace.json` 中的版本号。需要每个源仓库配置 `SYNC_365_SKILLS_TOKEN` secret，并对本仓库具有 `Contents: write` 权限。
 
 ## 源仓库
 
@@ -61,6 +67,7 @@ git add plugins/drawio && git commit -m "chore: sync drawio-skill"
 
 | 插件 | 源仓库 |
 |---|---|
+| `agent-native-design` | [Agents365-ai/agent-native-design](https://github.com/Agents365-ai/agent-native-design) |
 | `drawio` | [Agents365-ai/drawio-skill](https://github.com/Agents365-ai/drawio-skill) |
 | `mermaid` | [Agents365-ai/mermaid-skill](https://github.com/Agents365-ai/mermaid-skill) |
 | `excalidraw` | [Agents365-ai/excalidraw-skill](https://github.com/Agents365-ai/excalidraw-skill) |
