@@ -1,0 +1,21 @@
+interface:
+  display_name: "Agent Native CLI"
+  short_description: "Design, review, and refactor CLIs to serve humans, AI agents, and orchestration systems simultaneously — structured output, schema introspection, dry-run, safety tiers, and delegated authentication"
+  brand_color: "#1A3A5C"
+
+policy:
+  allow_implicit_invocation: true
+
+capabilities:
+  - Evaluate whether a CLI is agent-native across 7 design principles
+  - Design stdout JSON contracts with stable error envelopes
+  - Define exit code semantics per failure class (success, runtime, auth, validation)
+  - Design layered --help, schema introspection, and dry-run previews
+  - Define safety tiers: open (read), warned (write), hidden (destructive)
+  - Design delegated authentication — human owns auth lifecycle, agent receives token
+  - Apply directional trust model — env vars trusted, CLI args untrusted
+  - Convert a REST API or SDK into an agent-native CLI command tree
+  - Score a CLI on the 14-criterion rubric and summarize the seven design principles
+  - Produce a prioritized P0/P1/P2 refactor plan with concrete examples
+
+prerequisites: []

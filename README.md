@@ -16,6 +16,12 @@ npx skills add Agents365-ai/365-skills -g
 
 ## Available plugins
 
+### Development & CLI design
+
+| Plugin | Description |
+|---|---|
+| `agent-native-design` | CLI design for AI agents — evaluate, design, and refactor CLIs to serve humans, agents, and orchestration systems simultaneously |
+
 ### Drawing & diagrams
 
 | Plugin | Description |
@@ -51,9 +57,9 @@ cp -r ../drawio-skill/skills/drawio-skill/* plugins/drawio/skills/drawio-skill/
 git add plugins/drawio && git commit -m "chore: sync drawio-skill"
 ```
 
-### Auto-sync (semanticscholar, paper-fetch, scholar-deep-research, asta)
+### Auto-sync (agent-native-design, semanticscholar, paper-fetch, scholar-deep-research, asta)
 
-`semanticscholar-skill`, `paper-fetch`, `scholar-deep-research`, and `asta-skill` each ship a GitHub Actions workflow (`.github/workflows/sync-365-skills.yml`) that automatically pushes any change under their respective `skills/<name>/**` here, and bumps the version field in `marketplace.json`. Requires each source repo to have a `SYNC_365_SKILLS_TOKEN` secret with `Contents: write` on this repo.
+`agent-native-design`, `semanticscholar-skill`, `paper-fetch`, `scholar-deep-research`, and `asta-skill` each ship a GitHub Actions workflow (`.github/workflows/sync-365-skills.yml`) that automatically pushes any change under their respective `skills/<name>/**` here, and bumps the version field in `marketplace.json`. Requires each source repo to have a `SYNC_365_SKILLS_TOKEN` secret with `Contents: write` on this repo.
 
 ## Source repos
 
@@ -61,6 +67,7 @@ Each plugin mirrors a standalone skill repo — file issues there for plugin-spe
 
 | Plugin | Source |
 |---|---|
+| `agent-native-design` | [Agents365-ai/agent-native-design](https://github.com/Agents365-ai/agent-native-design) |
 | `drawio` | [Agents365-ai/drawio-skill](https://github.com/Agents365-ai/drawio-skill) |
 | `mermaid` | [Agents365-ai/mermaid-skill](https://github.com/Agents365-ai/mermaid-skill) |
 | `excalidraw` | [Agents365-ai/excalidraw-skill](https://github.com/Agents365-ai/excalidraw-skill) |
