@@ -42,6 +42,12 @@ npx skills add Agents365-ai/365-skills -g
 | `asta` | Ai2 Asta MCP —— Semantic Scholar 学术图谱以 MCP 暴露（无需 Python）。意图到工具的路由、安全 `fields` 默认值（避免上下文炸开）、引文遍历、片段证据检索，并通过 `externalIds` 获取 DOI / arXiv / PMID |
 | `journal-abbrev` | 期刊名称缩写查询 —— 支持 ISO 4 与 MEDLINE 两种标准，多源级联（JabRef → AbbrevISO → NLM）、BibTeX 字段批量重写并支持 `--idempotency-key` 幂等重试、原子缓存重建，agent-native JSON 信封带稳定错误码与 dry-run |
 
+### 知识与笔记
+
+| 插件 | 说明 |
+|---|---|
+| `obsidian-organizer` | 让庞大的 Obsidian 仓库保持整洁 —— 把新笔记归入最合适的文件夹，并按需审计/重组已有结构，以仓库内的唯一权威地图笔记（`00_Index/Folder_Map.md`）为准。设计上保证链接安全（移动/重命名都走 `obsidian` CLI，wikilink 自动修复，禁止裸 shell），批量重组先出方案再确认 |
+
 ## 安装插件
 
 ```
@@ -78,6 +84,7 @@ git add plugins/drawio && git commit -m "chore: sync drawio-skill"
 | `scholar-deep-research` | [Agents365-ai/scholar-deep-research](https://github.com/Agents365-ai/scholar-deep-research) |
 | `asta` | [Agents365-ai/asta-skill](https://github.com/Agents365-ai/asta-skill) |
 | `journal-abbrev` | [Agents365-ai/journal-abbrev](https://github.com/Agents365-ai/journal-abbrev) |
+| `obsidian-organizer` | [Agents365-ai/obsidian-organizer](https://github.com/Agents365-ai/obsidian-organizer) |
 
 ## Discord
 

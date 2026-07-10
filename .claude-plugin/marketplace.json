@@ -176,6 +176,16 @@
             "repository": "https://github.com/Agents365-ai/agent-native-design",
             "license": "MIT",
             "keywords": ["cli", "agent-native", "interface-design", "structured-output", "schema-driven", "design-review", "cli-design"]
+        },
+        {
+            "name": "obsidian-organizer",
+            "source": "./plugins/obsidian-organizer",
+            "description": "Keep a large Obsidian vault tidy — file new notes into the best-fit folder and audit/reorganize existing structure, driven by a single source-of-truth map note (00_Index/Folder_Map.md) that lives inside the vault. Link-safe by design: all moves/renames go through the obsidian CLI so wikilinks auto-repair, never raw shell. Propose-then-confirm for bulk reorganizations.",
+            "version": "1.0.0",
+            "author": { "name": "Agents365-ai" },
+            "repository": "https://github.com/Agents365-ai/obsidian-organizer",
+            "license": "CC-BY-NC-4.0",
+            "keywords": ["obsidian", "notes", "knowledge-management", "pkm", "vault", "organize", "file-notes", "reorganize", "para", "wikilinks"]
         }
     ]
 }
