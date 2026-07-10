@@ -42,6 +42,12 @@ npx skills add Agents365-ai/365-skills -g
 | `asta` | Ai2 Asta MCP — Semantic Scholar academic graph over MCP (no Python). Intent-to-tool routing, safe `fields` defaults, citation traversal, snippet evidence retrieval, and DOI/arXiv/PMID via `externalIds` |
 | `journal-abbrev` | Journal name abbreviation lookup — ISO 4 + MEDLINE, multi-source cascade (JabRef → AbbrevISO → NLM), BibTeX rewrite with `--idempotency-key`, atomic cache rebuild, agent-native JSON envelope with stable error codes and dry-run |
 
+### Knowledge & notes
+
+| Plugin | Description |
+|---|---|
+| `obsidian-organizer` | Keep a large Obsidian vault tidy — file new notes into the best-fit folder and audit/reorganize existing structure, driven by a single source-of-truth map note (`00_Index/Folder_Map.md`) inside the vault. Link-safe by design (moves go through the `obsidian` CLI so wikilinks auto-repair), propose-then-confirm for bulk changes |
+
 ## Install plugins
 
 ```
@@ -78,6 +84,7 @@ Each plugin mirrors a standalone skill repo — file issues there for plugin-spe
 | `scholar-deep-research` | [Agents365-ai/scholar-deep-research](https://github.com/Agents365-ai/scholar-deep-research) |
 | `asta` | [Agents365-ai/asta-skill](https://github.com/Agents365-ai/asta-skill) |
 | `journal-abbrev` | [Agents365-ai/journal-abbrev](https://github.com/Agents365-ai/journal-abbrev) |
+| `obsidian-organizer` | [Agents365-ai/obsidian-organizer](https://github.com/Agents365-ai/obsidian-organizer) |
 
 ## Discord
 
