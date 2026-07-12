@@ -141,7 +141,7 @@
             "name": "video-podcast-maker",
             "source": "./plugins/video-podcast-maker",
             "description": "Automated topic-driven video podcast creation — research → script → TTS (7 backends: Edge / Azure / Doubao / CosyVoice / ElevenLabs / Google / OpenAI) → 4K Remotion render → BGM mix → Remotion-native subtitles. Multi-platform: Bilibili / YouTube / Xiaohongshu / Douyin / WeChat Channels. Outputs horizontal long-form (16:9 3840x2160) and vertical shorts (9:16 2160x3840). 15-step workflow with mandatory Studio preview, agent-native JSON envelope CLI, and per-video isolation via --public-dir.",
-            "version": "2.4.1",
+            "version": "2.5.0",
             "author": { "name": "Agents365-ai" },
             "repository": "https://github.com/Agents365-ai/video-podcast-maker",
             "license": "MIT",

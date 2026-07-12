@@ -123,6 +123,8 @@ Assign each section a density tier:
 
 ## Step 4: Write Narration Script
 
+> **MUST load before writing the first section:** [references/natural-narration.md](natural-narration.md) — anti-slop rules for spoken scripts (kill list, structural tells, pre-delivery checklist). A narration script that reads like AI prose survives into the audio and sounds like a machine reading a press release. Apply its checklist to every `podcast.txt` before running the dry-run.
+
 **Preference application:** Adjust script style from `user_prefs.content`:
 - `tone: professional` → formal language
 - `tone: casual` → conversational, interjections ok
@@ -152,6 +154,8 @@ Create `videos/{name}/podcast.txt` with section markers:
 [SECTION:outro]
 {outroClosing}
 ```
+
+**Natural narration (anti-slop) — condensed:** Full rules in [natural-narration.md](natural-narration.md). The five that matter most: (1) cut opener filler ("接下来我们来看看" / "总的来说" / "here's what"); (2) break rule-of-three and "不是X而是Y" negative parallelism; (3) drop rhetorical teasers / clickbait hooks — just say the next fact; (4) replace vague attribution ("业内认为") with a named source or delete it; (5) vary sentence length and end sections on a concrete fact, not "未来可期". Run the pre-delivery checklist before the dry-run.
 
 **Number formatting for TTS**
 

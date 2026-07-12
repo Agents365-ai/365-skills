@@ -5,9 +5,9 @@ argument-hint: "[topic]"
 effort: high
 author: Agents365-ai
 category: Content Creation
-version: 2.4.1
+version: 2.5.0
 created: 2025-01-27
-updated: 2026-06-28
+updated: 2026-07-05
 bilibili: https://space.bilibili.com/441831884
 github: https://github.com/Agents365-ai/video-podcast-maker
 dependencies:
@@ -280,6 +280,7 @@ Load on demand — **do NOT load all at once**:
 | File | Load when |
 |------|-----------|
 | [references/workflow-script.md](references/workflow-script.md) | Steps 1-4 (topic → script) |
+| [references/natural-narration.md](references/natural-narration.md) | **Load before Step 4 script writing** — anti-slop rules for spoken narration (kill list, structural tells, checklist) |
 | [references/workflow-production.md](references/workflow-production.md) | Steps 5-11 (media → TTS → Remotion → render → BGM) |
 | [references/workflow-publish.md](references/workflow-publish.md) | Steps 12-15 (subtitles, publish, cleanup, shorts) |
 | [references/design-guide.md](references/design-guide.md) | **MUST load before Step 9** — visual minimums, typography, animation safety |
