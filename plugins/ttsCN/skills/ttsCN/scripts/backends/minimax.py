@@ -72,16 +72,26 @@ def synthesize(chunks, config, output_file, output_format="wav"):
                 f"MiniMax API error {resp.status_code}: {resp.text[:300]}"
             )
 
-        # Check if response is JSON (error) or binary (audio)
+        # t2a_v2 returns JSON with hex-encoded audio in data.audio;
+        # binary body is only kept as a fallback for non-JSON responses.
         content_type = resp.headers.get("Content-Type", "")
         if "application/json" in content_type:
-            err_data = resp.json()
-            raise RuntimeError(
-                f"MiniMax API error: {err_data.get('base_resp', {}).get('status_msg', 'unknown')}"
-            )
+            body = resp.json()
+            base_resp = body.get("base_resp") or {}
+            if base_resp.get("status_code", -1) != 0:
+                raise RuntimeError(
+                    f"MiniMax API error {base_resp.get('status_code')}: "
+                    f"{base_resp.get('status_msg', 'unknown')}"
+                )
+            audio_hex = (body.get("data") or {}).get("audio")
+            if not audio_hex:
+                raise RuntimeError("MiniMax API returned no audio data")
+            audio_bytes = bytes.fromhex(audio_hex)
+        else:
+            audio_bytes = resp.content
 
         with open(part_file, "wb") as f:
-            f.write(resp.content)
+            f.write(audio_bytes)
 
         # Convert to 48kHz mono WAV
         wav_file = part_file.replace(".mp3", ".wav")

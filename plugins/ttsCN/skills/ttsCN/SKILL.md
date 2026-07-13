@@ -2,7 +2,7 @@
 name: ttsCN
 description: Multi-platform Chinese TTS text-to-speech via Edge/Doubao/CosyVoice/Azure/Tencent/Baidu/MiniMax/Xunfei — 8 backends, all work in China
 author: Agents365-ai
-version: 1.3.1
+version: 1.3.2
 created: 2026-07-08
 updated: 2026-07-13
 homepage: https://github.com/Agents365-ai/ttsCN
