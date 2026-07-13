@@ -27,7 +27,10 @@ def synthesize(chunks, config, output_file, output_format="wav"):
         pct = int(rate_match.group(1))
         speed = max(0.5, min(2.0, 1.0 + pct / 100.0))
 
-    url = "https://api.minimax.io/v1/t2a_v2"
+    # Global site by default; China-site users set MINIMAX_API_BASE
+    # (e.g. https://api.minimaxi.com/v1) — same env var clone.py honors.
+    api_base = os.environ.get("MINIMAX_API_BASE", "https://api.minimax.io/v1")
+    url = f"{api_base.rstrip('/')}/t2a_v2"
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",

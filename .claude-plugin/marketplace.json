@@ -61,7 +61,7 @@
             "name": "ttsCN",
             "source": "./plugins/ttsCN",
             "description": "Multi-platform Chinese TTS text-to-speech — 8 China-friendly backends (Edge/Doubao/CosyVoice/Azure/Tencent/Baidu/MiniMax/Xunfei), agent-native CLI with JSON envelope, schema introspection, auto-detect TTY, distinct exit codes (0/1/2/3/4), structured errors (code/message/retryable/field/backend), --fields filtering, dry-run, JSON provider registry, filterable HTML comparison page, voice cloning, SSML, emotion, dialects.",
-            "version": "1.2.0",
+            "version": "1.3.1",
             "author": { "name": "Agents365-ai" },
             "repository": "https://github.com/Agents365-ai/ttsCN",
             "license": "CC-BY-NC-4.0",

@@ -103,7 +103,7 @@ tr:hover { background:rgba(56,189,248,0.04); }
 
   <header class="header">
     <h1>🎤 ttsCN — 中文 <span>TTS</span> 服务商对比</h1>
-    <p>8 个国内可用的语音合成后端 · 点击行查看详情 · 数据更新于 2026-07-08</p>
+    <p>8 个国内可用的语音合成后端 · 点击行查看详情 · 数据更新于 2026-07-13</p>
     <p class="updated">💡 编辑 <code>data/providers.json</code> 即可更新此页面</p>
   </header>
 
@@ -184,7 +184,7 @@ tr:hover { background:rgba(56,189,248,0.04); }
           <td class="col-chars">400<small> 字/次</small></td>
           <td class="col-duration">~2 分钟<small> /次</small></td>
           <td class="col-ssml"><span class="no">❌</span></td>
-          <td class="col-clone"><span class="no">❌</span></td>
+          <td class="col-clone"><span class="yes">✅</span></td>
           <td class="col-emoji">Via voice style</td>
           <td class="col-lang">中文</td>
           <td class="col-streaming">SDK 流式</td>
@@ -419,7 +419,7 @@ tr:hover { background:rgba(56,189,248,0.04); }
           <div class="detail-item"><label>单次最大字数</label><span>400 字</span></div>
           <div class="detail-item"><label>单次最大时长</label><span>~2 分钟</span></div>
           <div class="detail-item"><label>SSML</label><span class="no">❌</span></div>
-          <div class="detail-item"><label>声音克隆</label><span class="no">❌</span></div>
+          <div class="detail-item"><label>声音克隆</label><span class="yes">✅</span></div>
           <div class="detail-item"><label>情感合成</label><span>Via voice style</span></div>
           <div class="detail-item"><label>方言支持</label><span>—</span></div>
           <div class="detail-item"><label>语言</label><span>中文</span></div>
@@ -429,7 +429,7 @@ tr:hover { background:rgba(56,189,248,0.04); }
           <div class="detail-item"><label>API 地址</label><code>https://dashscope.aliyuncs.com/api/v1</code></div>
           <div class="detail-item full-width"><label>环境变量</label><code>DASHSCOPE_API_KEY</code></div>
         </div>
-        
+        <div class="clone-box"><strong>🔊 声音克隆:</strong> 音色复刻免费(合成正常计费): 10-20s公网URL音频, 1000音色/账户, 1年不用过期; tts.py clone create --platform cosyvoice</div>
         <div class="key-box"><strong>🔑 获取 API Key:</strong> <a href="https://bailian.console.aliyun.com/" target="_blank">https://bailian.console.aliyun.com/</a></div>
         <div class="voice-list">
           <h3>推荐音色</h3>
@@ -617,7 +617,7 @@ tr:hover { background:rgba(56,189,248,0.04); }
           <div class="detail-item"><label>语言</label><span>中文、英文、日文</span></div>
           <div class="detail-item"><label>流式合成</label><span>WebSocket</span></div>
           <div class="detail-item"><label>配置难度</label><span>🟢 简单</span></div>
-          <div class="detail-item"><label>安装</label><code>pip install baidu-aip</code></div>
+          <div class="detail-item"><label>安装</label><code>pip install baidu-aip chardet</code></div>
           <div class="detail-item"><label>API 地址</label><code>https://tsn.baidu.com/text2audio</code></div>
           <div class="detail-item full-width"><label>环境变量</label><code>BAIDU_APP_ID BAIDU_API_KEY BAIDU_SECRET_KEY</code></div>
         </div>
@@ -687,7 +687,7 @@ tr:hover { background:rgba(56,189,248,0.04); }
           <div class="detail-item"><label>API 地址</label><code>https://api.minimax.io/v1/t2a_v2</code></div>
           <div class="detail-item full-width"><label>环境变量</label><code>MINIMAX_API_KEY</code></div>
         </div>
-        <div class="clone-box"><strong>🔊 声音克隆:</strong> 零样本克隆: 5-20s音频 → 99%相似度, $0.50/次, 支持Voice Design文字造声</div>
+        <div class="clone-box"><strong>🔊 声音克隆:</strong> 快速复刻: 10s-5min音频, 全球站$1.5/音色(国内站首次使用¥9.9); 新音色为临时音色, 创建后全球站7天/国内站48小时内需正式合成一次(试听不算)否则删除, 用过即永久保留; tts.py clone create --platform minimax</div>
         <div class="key-box"><strong>🔑 获取 API Key:</strong> <a href="https://platform.minimaxi.com/" target="_blank">https://platform.minimaxi.com/</a></div>
         <div class="voice-list">
           <h3>推荐音色</h3>

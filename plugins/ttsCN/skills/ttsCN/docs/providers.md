@@ -1,6 +1,6 @@
 # ttsCN — Chinese TTS Provider Comparison
 
-> Auto-generated from `data/providers.json` · Updated: 2026-07-08
+> Auto-generated from `data/providers.json` · Updated: 2026-07-13
 
 ## Quick Comparison (8 backends)
 
@@ -8,7 +8,7 @@
 |----------|---------------|--------|-----------|-------------|------|-------|---------|-----------|-----------|-------|
 | **Edge TTS**<br><small>Microsoft</small> | 免费 | 20+ | 2000 | ~10 分钟 | ✅ | ❌ | Via SSML | 100+ | WebSocket | 零配置 |
 | **豆包 TTS**<br><small>ByteDance (火山引擎)</small> | ~1 元/万字 | 8 + 声音复刻 | 280 | ~1 分钟 | ❌ | ✅ | 情感预测版 (+1元/万字) | 中文、英文、中英混读 | WebSocket | 中等 |
-| **CosyVoice**<br><small>Alibaba (阿里云百炼)</small> | ~2 元/万字 | 7 | 400 | ~2 分钟 | ❌ | ❌ | Via voice style | 中文 | SDK 流式 | 简单 |
+| **CosyVoice**<br><small>Alibaba (阿里云百炼)</small> | ~2 元/万字 | 7 | 400 | ~2 分钟 | ❌ | ✅ | Via voice style | 中文 | SDK 流式 | 简单 |
 | **Azure TTS**<br><small>Microsoft</small> | ~$1/百万字符 | 20+ + 自定义 | 2000 | ~10 分钟 | ✅ | ✅ | Via SSML (mstts:express-as) | 100+ | SDK 流式 | 中等 |
 | **腾讯云 TTS**<br><small>Tencent</small> | 0.75 元/万字 | 380+ + 声音复刻 | 150 | ~30 秒 | ✅ | ✅ | Via SSML (精品音色) | 中文、英文、粤语 | WebSocket | 中等 |
 | **百度 AI TTS**<br><small>Baidu</small> | 灵活计费 | 30+ + 声音复刻 | 500 | ~2 分钟 | ✅ | ✅ | Native 情感合成 (喜悦/悲伤/中性) | 中文、英文、日文 | WebSocket | 简单 |
@@ -87,7 +87,8 @@
 | Max chars / chunk | 400 |
 | Max duration / chunk | ~2 分钟 |
 | SSML | False |
-| Voice cloning | False |
+| Voice cloning | True |
+| Clone detail | 音色复刻免费(合成正常计费): 10-20s公网URL音频, 1000音色/账户, 1年不用过期; tts.py clone create --platform cosyvoice |
 | Emotion | Via voice style |
 | Dialects | — |
 | Languages | 中文 |
@@ -188,7 +189,7 @@
 | Languages | 中文、英文、日文 |
 | Streaming | WebSocket |
 | Setup | 简单 |
-| Install | `pip install baidu-aip` |
+| Install | `pip install baidu-aip chardet` |
 | API Key | https://console.bce.baidu.com/ai/#/ai/speech/overview |
 | Env vars | `BAIDU_APP_ID BAIDU_API_KEY BAIDU_SECRET_KEY` |
 
@@ -214,7 +215,7 @@
 | Max duration / chunk | ~5 分钟 |
 | SSML | False |
 | Voice cloning | True |
-| Clone detail | 零样本克隆: 5-20s音频 → 99%相似度, $0.50/次, 支持Voice Design文字造声 |
+| Clone detail | 快速复刻: 10s-5min音频, 全球站$1.5/音色(国内站首次使用¥9.9); 新音色为临时音色, 创建后全球站7天/国内站48小时内需正式合成一次(试听不算)否则删除, 用过即永久保留; tts.py clone create --platform minimax |
 | Emotion | Native 8种情感 (happy/sad/angry/fearful/calm/whisper...) |
 | Dialects | — |
 | Languages | 40+ (中/英/日/韩/法/德/西/阿...) |

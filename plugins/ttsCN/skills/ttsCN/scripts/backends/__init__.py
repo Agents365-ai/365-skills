@@ -35,7 +35,7 @@ def _build_backends():
         backends[bid] = {
             "module": "." + bid,
             "env": p["env_vars"],
-            "import": (p["pip_package"], p["pip_package"], p["pip_install"]),
+            "import": (p["import_module"], p["pip_package"], p["pip_install"]),
             "max_chars": p["max_chars"],
             "max_duration_sec": p["max_duration_sec"],
             "voices_count": p["voices_count"],
@@ -94,7 +94,7 @@ class UnknownBackendError(BackendError):
 
 class MissingPackageError(BackendError):
     code = "tool_missing"
-    exit_code = 1
+    exit_code = 2  # fixable by the caller (install the package), not internal
     def __init__(self, message, package=None, install_cmd=None):
         super().__init__(message)
         self.package = package
@@ -221,7 +221,7 @@ def _build_config(name):
 
 def get_synthesize_func(name):
     from importlib import import_module
-    mod = import_module(BACKENDS[name]["module"], package="ttsCN.scripts.backends")
+    mod = import_module(BACKENDS[name]["module"], package=__package__)
     return mod.synthesize
 
 

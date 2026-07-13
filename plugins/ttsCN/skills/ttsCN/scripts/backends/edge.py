@@ -42,11 +42,15 @@ def synthesize(chunks, config, output_file, output_format="wav"):
 
                     with open(mp3_file, "wb") as f:
                         f.write(bytes(audio_data))
-                    subprocess.run(
+                    conv = subprocess.run(
                         ["ffmpeg", "-y", "-i", mp3_file,
                          "-ar", "48000", "-ac", "1", part_file],
-                        capture_output=True,
+                        capture_output=True, text=True,
                     )
+                    if conv.returncode != 0:
+                        raise RuntimeError(
+                            f"ffmpeg convert failed: {conv.stderr[-200:]}"
+                        )
                     if os.path.exists(mp3_file):
                         os.remove(mp3_file)
 

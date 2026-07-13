@@ -42,21 +42,11 @@ def _now_iso():
     return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
 
-_VERSION = None
+VERSION = "1.3.1"  # tool version — single source of truth, imported by tts.py
 
 
 def _get_version():
-    global _VERSION
-    if _VERSION is None:
-        try:
-            _ROOT = os.path.dirname(os.path.dirname(
-                os.path.abspath(__file__)))
-            _path = os.path.join(_ROOT, "data", "providers.json")
-            with open(_path) as f:
-                _VERSION = json.load(f).get("updated", "0.0.0")
-        except Exception:
-            _VERSION = "0.0.0"
-    return _VERSION
+    return VERSION
 
 
 def envelope(ok, data=None, error=None, meta=None, started_at=None):
@@ -132,7 +122,8 @@ EXIT_BACKEND = 4
 def exit_for_error_code(code):
     if code in ("auth_missing_env", "auth_invalid"):
         return EXIT_AUTH
-    if code in ("validation_failed", "input_not_found", "input_empty"):
+    if code in ("validation_failed", "input_not_found", "input_empty",
+                "tool_missing"):
         return EXIT_VALIDATION
     if code in ("backend_error", "backend_timeout", "backend_rate_limited"):
         return EXIT_BACKEND

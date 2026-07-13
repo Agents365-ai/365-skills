@@ -33,12 +33,11 @@ from backends import (
 from output import (
     use_json, envelope, success, error, emit_success, emit_error,
     EXIT_OK, EXIT_INTERNAL, EXIT_VALIDATION, EXIT_AUTH, EXIT_BACKEND,
-    exit_for_error_code, SCHEMA_VERSION,
+    exit_for_error_code, SCHEMA_VERSION, VERSION,
 )
 import idempotency
 
 DEFAULT_BACKEND = "edge"
-VERSION = "1.1.0"
 
 # Compact fields for default JSON list (keep agent token cost low)
 _COMPACT_FIELDS = [
@@ -249,10 +248,35 @@ def _handle_schema(args):
                field="path", retryable=False, exit_code=EXIT_VALIDATION)
 
 
+def _ensure_mp3(output_file, started_at):
+    """Transcode output_file to MP3 in place if it isn't MP3 already."""
+    import subprocess
+    probe = subprocess.run(
+        ["ffprobe", "-v", "quiet", "-show_entries", "format=format_name",
+         "-of", "csv=p=0", output_file],
+        capture_output=True, text=True,
+    )
+    if "mp3" in probe.stdout:
+        return
+    tmp_file = output_file + ".transcode.mp3"
+    conv = subprocess.run(
+        ["ffmpeg", "-y", "-i", output_file,
+         "-codec:a", "libmp3lame", "-qscale:a", "2", tmp_file],
+        capture_output=True, text=True,
+    )
+    if conv.returncode != 0:
+        emit_error("backend_error",
+                   "MP3 transcode failed: {}".format(conv.stderr[-200:]),
+                   retryable=False, exit_code=EXIT_BACKEND,
+                   started_at=started_at)
+    os.replace(tmp_file, output_file)
+
+
 def _get_providers_updated():
     try:
         import json
-        _ROOT = os.path.dirname(os.path.abspath(__file__))
+        # data/ sits at the skill root, one level above scripts/
+        _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         _path = os.path.join(_ROOT, "data", "providers.json")
         with open(_path) as f:
             return json.load(f).get("updated", "unknown")
@@ -271,13 +295,15 @@ Examples:
   %(prog)s "你好世界" output.wav
   %(prog)s --idempotency-key job-42 "你好" out.wav
   %(prog)s --platform doubao "你好" weather.wav
-  %(prog)s --voice zh-CN-YunxiNeural --rate +10% "text" out.wav
+  %(prog)s --voice zh-CN-YunxiNeural --rate +10%% "text" out.wav
   %(prog)s --input script.txt output.wav
   %(prog)s --format json --list
   %(prog)s --list --full --fields name,cost,supports_clone
   %(prog)s --dry-run "预览文本"
   %(prog)s schema backends
   %(prog)s schema backends.doubao
+  %(prog)s clone create --platform minimax --audio my.wav --name myvoice --yes
+  %(prog)s "正文" out.wav --platform minimax --voice myvoice
         """,
     )
 
@@ -292,7 +318,7 @@ Examples:
     parser.add_argument("--platform", "-p", choices=list(BACKENDS.keys()),
                         help="TTS backend (default: edge)")
     parser.add_argument("--voice", "-v", help="Voice name")
-    parser.add_argument("--rate", "-r", help="Speech rate, e.g. '+5%', '-10%'")
+    parser.add_argument("--rate", "-r", help="Speech rate, e.g. '+5%%', '-10%%'")
 
     # Output format
     parser.add_argument("--format", "-f", choices=["wav", "mp3", "json"], default=None,
@@ -340,6 +366,15 @@ def _resolve_backend_config(args):
         rate, rate_src = args.rate, "cli"
     else:
         rate, rate_src = resolve_speech_rate()
+
+    # Named cloned voice? Substitute the platform voice_id (see clone.py).
+    from clone import resolve_cloned_voice
+    cloned = resolve_cloned_voice(backend, voice)
+    if cloned:
+        voice, voice_src = cloned["voice_id"], "cloned:" + voice
+        if backend == "cosyvoice" and cloned.get("target_model"):
+            # Synthesis model must match the enrollment target_model.
+            os.environ["COSYVOICE_MODEL"] = cloned["target_model"]
     return backend, backend_src, voice, voice_src, rate, rate_src
 
 
@@ -355,6 +390,11 @@ def _resolve_output(args, backend, fmt):
 # ── Main ──────────────────────────────────────────────────────────────────
 
 def main():
+    if len(sys.argv) > 1 and sys.argv[1] == "clone":
+        from clone import handle_clone
+        handle_clone(sys.argv[2:])
+        return
+
     if len(sys.argv) > 1 and sys.argv[1] == "schema":
         sp = argparse.ArgumentParser(description="Query provider registry as JSON")
         sp.add_argument("path", nargs="?", default="backends",
@@ -509,7 +549,7 @@ def _run(args, started_at, json_mode=False):
         emit_error("tool_missing", str(e),
                    retryable=False, backend=backend,
                    extra={"install_cmd": e.install_cmd},
-                   exit_code=EXIT_INTERNAL, started_at=started_at)
+                   exit_code=EXIT_VALIDATION, started_at=started_at)
     except MissingEnvVarError as e:
         emit_error("auth_missing_env", str(e),
                    retryable=False, field=e.var, backend=backend,
@@ -534,6 +574,10 @@ def _run(args, started_at, json_mode=False):
         emit_error("backend_error", "Synthesis failed: {}".format(e),
                    retryable=True, backend=backend,
                    exit_code=EXIT_BACKEND, started_at=started_at)
+
+    # Most backends emit WAV regardless of output_fmt — transcode centrally
+    if output_fmt == "mp3":
+        _ensure_mp3(output_file, started_at)
 
     file_size = Path(output_file).stat().st_size
     elapsed = time.time() - started_at

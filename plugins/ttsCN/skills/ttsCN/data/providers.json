@@ -1,5 +1,5 @@
 {
-  "updated": "2026-07-08",
+  "updated": "2026-07-13",
   "description": "ttsCN provider registry — single source of truth for all TTS backends. Edit this file to update --list output, docs/providers.html, and docs/providers.md.",
   "backends": [
     {
@@ -25,17 +25,52 @@
       "setup_label": "零配置",
       "env_vars": [],
       "pip_package": "edge-tts",
+      "import_module": "edge_tts",
       "pip_install": "pip install edge-tts",
       "api_url": "N/A (免费，无需注册)",
       "get_key_url": "",
-      "tags": ["free", "zero-setup", "ssml"],
+      "tags": [
+        "free",
+        "zero-setup",
+        "ssml"
+      ],
       "voices": [
-        {"id": "zh-CN-XiaoxiaoNeural", "label": "晓晓", "style": "Female, 温暖标准", "best_for": "默认通用场景"},
-        {"id": "zh-CN-YunxiNeural", "label": "云希", "style": "Male, 活力年轻", "best_for": "旁白、Vlog"},
-        {"id": "zh-CN-YunjianNeural", "label": "云健", "style": "Male, 成熟权威", "best_for": "体育、新闻"},
-        {"id": "zh-CN-XiaoyiNeural", "label": "晓伊", "style": "Female, 活泼开朗", "best_for": "短视频、抖音"},
-        {"id": "zh-CN-YunyangNeural", "label": "云扬", "style": "Male, 深沉专业", "best_for": "纪录片、配音"},
-        {"id": "zh-CN-YunfengNeural", "label": "云峰", "style": "Male, 浑厚深沉", "best_for": "电影预告片"}
+        {
+          "id": "zh-CN-XiaoxiaoNeural",
+          "label": "晓晓",
+          "style": "Female, 温暖标准",
+          "best_for": "默认通用场景"
+        },
+        {
+          "id": "zh-CN-YunxiNeural",
+          "label": "云希",
+          "style": "Male, 活力年轻",
+          "best_for": "旁白、Vlog"
+        },
+        {
+          "id": "zh-CN-YunjianNeural",
+          "label": "云健",
+          "style": "Male, 成熟权威",
+          "best_for": "体育、新闻"
+        },
+        {
+          "id": "zh-CN-XiaoyiNeural",
+          "label": "晓伊",
+          "style": "Female, 活泼开朗",
+          "best_for": "短视频、抖音"
+        },
+        {
+          "id": "zh-CN-YunyangNeural",
+          "label": "云扬",
+          "style": "Male, 深沉专业",
+          "best_for": "纪录片、配音"
+        },
+        {
+          "id": "zh-CN-YunfengNeural",
+          "label": "云峰",
+          "style": "Male, 浑厚深沉",
+          "best_for": "电影预告片"
+        }
       ]
     },
     {
@@ -59,17 +94,45 @@
       "streaming": "WebSocket",
       "setup_difficulty": "medium",
       "setup_label": "中等",
-      "env_vars": ["VOLCENGINE_APPID", "VOLCENGINE_ACCESS_TOKEN"],
+      "env_vars": [
+        "VOLCENGINE_APPID",
+        "VOLCENGINE_ACCESS_TOKEN"
+      ],
       "pip_package": "requests",
+      "import_module": "requests",
       "pip_install": "pip install requests",
       "api_url": "https://openspeech.bytedance.com/api/v1/tts",
       "get_key_url": "https://console.volcengine.com/ark/region:ark+cn-beijing/apikey",
-      "tags": ["short-video", "douyin", "clone"],
+      "tags": [
+        "short-video",
+        "douyin",
+        "clone"
+      ],
       "voices": [
-        {"id": "BV001_streaming", "label": "标准女声", "style": "Female, 标准普通话", "best_for": "通用场景"},
-        {"id": "BV002_streaming", "label": "标准男声", "style": "Male, 标准普通话", "best_for": "通用场景"},
-        {"id": "BV003_streaming", "label": "甜美女生", "style": "Female, 甜美亲切", "best_for": "客服、导购"},
-        {"id": "BV004_streaming", "label": "深沉男声", "style": "Male, 专业深沉", "best_for": "纪录片、旁白"}
+        {
+          "id": "BV001_streaming",
+          "label": "标准女声",
+          "style": "Female, 标准普通话",
+          "best_for": "通用场景"
+        },
+        {
+          "id": "BV002_streaming",
+          "label": "标准男声",
+          "style": "Male, 标准普通话",
+          "best_for": "通用场景"
+        },
+        {
+          "id": "BV003_streaming",
+          "label": "甜美女生",
+          "style": "Female, 甜美亲切",
+          "best_for": "客服、导购"
+        },
+        {
+          "id": "BV004_streaming",
+          "label": "深沉男声",
+          "style": "Male, 专业深沉",
+          "best_for": "纪录片、旁白"
+        }
       ]
     },
     {
@@ -85,28 +148,69 @@
       "max_duration_display": "~2 分钟",
       "voices_count": "7",
       "supports_ssml": false,
-      "supports_clone": false,
-      "clone_detail": "",
+      "supports_clone": true,
+      "clone_detail": "音色复刻免费(合成正常计费): 10-20s公网URL音频, 1000音色/账户, 1年不用过期; tts.py clone create --platform cosyvoice",
       "supports_emotion": "Via voice style",
       "supports_dialects": "",
       "languages": "中文",
       "streaming": "SDK 流式",
       "setup_difficulty": "easy",
       "setup_label": "简单",
-      "env_vars": ["DASHSCOPE_API_KEY"],
+      "env_vars": [
+        "DASHSCOPE_API_KEY"
+      ],
       "pip_package": "dashscope",
+      "import_module": "dashscope",
       "pip_install": "pip install dashscope",
       "api_url": "https://dashscope.aliyuncs.com/api/v1",
       "get_key_url": "https://bailian.console.aliyun.com/",
-      "tags": ["streaming", "fast"],
+      "tags": [
+        "streaming",
+        "fast"
+      ],
       "voices": [
-        {"id": "longxiaochun_v3", "label": "小春", "style": "Female, 活泼", "best_for": "短视频、社交媒体"},
-        {"id": "longxiaoxia_v3", "label": "小夏", "style": "Female, 温柔", "best_for": "有声书、讲故事"},
-        {"id": "longxiaobai_v3", "label": "小白", "style": "Female, 可爱", "best_for": "儿童、动画"},
-        {"id": "longlaotie_v3", "label": "老铁", "style": "Male, 幽默", "best_for": "搞笑、休闲内容"},
-        {"id": "longchen_v3", "label": "小陈", "style": "Male, 沉稳", "best_for": "商务、专业"},
-        {"id": "longyuhan_v3", "label": "雨涵", "style": "Female, 知性", "best_for": "知识、教育"},
-        {"id": "longyue_v3", "label": "小悦", "style": "Female, 甜美", "best_for": "客服、导航"}
+        {
+          "id": "longxiaochun_v3",
+          "label": "小春",
+          "style": "Female, 活泼",
+          "best_for": "短视频、社交媒体"
+        },
+        {
+          "id": "longxiaoxia_v3",
+          "label": "小夏",
+          "style": "Female, 温柔",
+          "best_for": "有声书、讲故事"
+        },
+        {
+          "id": "longxiaobai_v3",
+          "label": "小白",
+          "style": "Female, 可爱",
+          "best_for": "儿童、动画"
+        },
+        {
+          "id": "longlaotie_v3",
+          "label": "老铁",
+          "style": "Male, 幽默",
+          "best_for": "搞笑、休闲内容"
+        },
+        {
+          "id": "longchen_v3",
+          "label": "小陈",
+          "style": "Male, 沉稳",
+          "best_for": "商务、专业"
+        },
+        {
+          "id": "longyuhan_v3",
+          "label": "雨涵",
+          "style": "Female, 知性",
+          "best_for": "知识、教育"
+        },
+        {
+          "id": "longyue_v3",
+          "label": "小悦",
+          "style": "Female, 甜美",
+          "best_for": "客服、导航"
+        }
       ]
     },
     {
@@ -130,19 +234,56 @@
       "streaming": "SDK 流式",
       "setup_difficulty": "medium",
       "setup_label": "中等",
-      "env_vars": ["AZURE_SPEECH_KEY"],
+      "env_vars": [
+        "AZURE_SPEECH_KEY"
+      ],
       "pip_package": "azure-cognitiveservices-speech",
+      "import_module": "azure.cognitiveservices.speech",
       "pip_install": "pip install azure-cognitiveservices-speech",
       "api_url": "https://eastasia.tts.speech.microsoft.com/",
       "get_key_url": "https://portal.azure.com/",
-      "tags": ["enterprise", "ssml", "clone"],
+      "tags": [
+        "enterprise",
+        "ssml",
+        "clone"
+      ],
       "voices": [
-        {"id": "zh-CN-XiaoxiaoNeural", "label": "晓晓", "style": "Female, 温暖标准", "best_for": "默认通用场景"},
-        {"id": "zh-CN-YunxiNeural", "label": "云希", "style": "Male, 活力年轻", "best_for": "旁白、Vlog"},
-        {"id": "zh-CN-YunjianNeural", "label": "云健", "style": "Male, 成熟权威", "best_for": "体育、新闻"},
-        {"id": "zh-CN-YunyangNeural", "label": "云扬", "style": "Male, 深沉专业", "best_for": "纪录片、配音"},
-        {"id": "zh-CN-XiaochenNeural", "label": "晓辰", "style": "Female, 平静温柔", "best_for": "冥想、放松"},
-        {"id": "zh-CN-XiaohanNeural", "label": "晓涵", "style": "Female, 柔软亲切", "best_for": "讲故事、情感"}
+        {
+          "id": "zh-CN-XiaoxiaoNeural",
+          "label": "晓晓",
+          "style": "Female, 温暖标准",
+          "best_for": "默认通用场景"
+        },
+        {
+          "id": "zh-CN-YunxiNeural",
+          "label": "云希",
+          "style": "Male, 活力年轻",
+          "best_for": "旁白、Vlog"
+        },
+        {
+          "id": "zh-CN-YunjianNeural",
+          "label": "云健",
+          "style": "Male, 成熟权威",
+          "best_for": "体育、新闻"
+        },
+        {
+          "id": "zh-CN-YunyangNeural",
+          "label": "云扬",
+          "style": "Male, 深沉专业",
+          "best_for": "纪录片、配音"
+        },
+        {
+          "id": "zh-CN-XiaochenNeural",
+          "label": "晓辰",
+          "style": "Female, 平静温柔",
+          "best_for": "冥想、放松"
+        },
+        {
+          "id": "zh-CN-XiaohanNeural",
+          "label": "晓涵",
+          "style": "Female, 柔软亲切",
+          "best_for": "讲故事、情感"
+        }
       ]
     },
     {
@@ -166,17 +307,45 @@
       "streaming": "WebSocket",
       "setup_difficulty": "medium",
       "setup_label": "中等",
-      "env_vars": ["TENCENT_SECRET_ID", "TENCENT_SECRET_KEY"],
+      "env_vars": [
+        "TENCENT_SECRET_ID",
+        "TENCENT_SECRET_KEY"
+      ],
       "pip_package": "tencentcloud-sdk-python-tts",
+      "import_module": "tencentcloud",
       "pip_install": "pip install tencentcloud-sdk-python-tts",
       "api_url": "https://tts.tencentcloudapi.com/",
       "get_key_url": "https://console.cloud.tencent.com/tts",
-      "tags": ["cheapest", "bulk", "clone"],
+      "tags": [
+        "cheapest",
+        "bulk",
+        "clone"
+      ],
       "voices": [
-        {"id": "101001", "label": "标准女声", "style": "Female, 温暖亲切", "best_for": "通用场景"},
-        {"id": "101002", "label": "标准男声", "style": "Male, 沉稳大气", "best_for": "通用场景"},
-        {"id": "101004", "label": "可爱童声", "style": "Female, 可爱活泼", "best_for": "儿童、故事"},
-        {"id": "101005", "label": "新闻男声", "style": "Male, 成熟稳重", "best_for": "新闻、播报"}
+        {
+          "id": "101001",
+          "label": "标准女声",
+          "style": "Female, 温暖亲切",
+          "best_for": "通用场景"
+        },
+        {
+          "id": "101002",
+          "label": "标准男声",
+          "style": "Male, 沉稳大气",
+          "best_for": "通用场景"
+        },
+        {
+          "id": "101004",
+          "label": "可爱童声",
+          "style": "Female, 可爱活泼",
+          "best_for": "儿童、故事"
+        },
+        {
+          "id": "101005",
+          "label": "新闻男声",
+          "style": "Male, 成熟稳重",
+          "best_for": "新闻、播报"
+        }
       ]
     },
     {
@@ -200,19 +369,58 @@
       "streaming": "WebSocket",
       "setup_difficulty": "easy",
       "setup_label": "简单",
-      "env_vars": ["BAIDU_APP_ID", "BAIDU_API_KEY", "BAIDU_SECRET_KEY"],
+      "env_vars": [
+        "BAIDU_APP_ID",
+        "BAIDU_API_KEY",
+        "BAIDU_SECRET_KEY"
+      ],
       "pip_package": "baidu-aip",
-      "pip_install": "pip install baidu-aip",
+      "import_module": "aip",
+      "pip_install": "pip install baidu-aip chardet",
       "api_url": "https://tsn.baidu.com/text2audio",
       "get_key_url": "https://console.bce.baidu.com/ai/#/ai/speech/overview",
-      "tags": ["emotion", "dialects", "clone"],
+      "tags": [
+        "emotion",
+        "dialects",
+        "clone"
+      ],
       "voices": [
-        {"id": "0", "label": "标准女声", "style": "Female, 标准清晰", "best_for": "通用场景"},
-        {"id": "1", "label": "标准男声", "style": "Male, 标准清晰", "best_for": "通用场景"},
-        {"id": "3", "label": "度逍遥", "style": "Male, 情感丰富", "best_for": "故事、情感内容"},
-        {"id": "4", "label": "度丫丫", "style": "Female, 情感丰富", "best_for": "故事、情感内容"},
-        {"id": "5003", "label": "度琪琪", "style": "Female, 甜美亲切", "best_for": "客服、助手"},
-        {"id": "5118", "label": "自然男声", "style": "Male, 温和自然", "best_for": "对话、播讲"}
+        {
+          "id": "0",
+          "label": "标准女声",
+          "style": "Female, 标准清晰",
+          "best_for": "通用场景"
+        },
+        {
+          "id": "1",
+          "label": "标准男声",
+          "style": "Male, 标准清晰",
+          "best_for": "通用场景"
+        },
+        {
+          "id": "3",
+          "label": "度逍遥",
+          "style": "Male, 情感丰富",
+          "best_for": "故事、情感内容"
+        },
+        {
+          "id": "4",
+          "label": "度丫丫",
+          "style": "Female, 情感丰富",
+          "best_for": "故事、情感内容"
+        },
+        {
+          "id": "5003",
+          "label": "度琪琪",
+          "style": "Female, 甜美亲切",
+          "best_for": "客服、助手"
+        },
+        {
+          "id": "5118",
+          "label": "自然男声",
+          "style": "Male, 温和自然",
+          "best_for": "对话、播讲"
+        }
       ]
     },
     {
@@ -229,26 +437,64 @@
       "voices_count": "300+ + 复刻 + Voice Design",
       "supports_ssml": false,
       "supports_clone": true,
-      "clone_detail": "零样本克隆: 5-20s音频 → 99%相似度, $0.50/次, 支持Voice Design文字造声",
+      "clone_detail": "快速复刻: 10s-5min音频, 全球站$1.5/音色(国内站首次使用¥9.9); 新音色为临时音色, 创建后全球站7天/国内站48小时内需正式合成一次(试听不算)否则删除, 用过即永久保留; tts.py clone create --platform minimax",
       "supports_emotion": "Native 8种情感 (happy/sad/angry/fearful/calm/whisper...)",
       "supports_dialects": "",
       "languages": "40+ (中/英/日/韩/法/德/西/阿...)",
       "streaming": "REST only",
       "setup_difficulty": "easy",
       "setup_label": "简单",
-      "env_vars": ["MINIMAX_API_KEY"],
+      "env_vars": [
+        "MINIMAX_API_KEY"
+      ],
       "pip_package": "requests",
+      "import_module": "requests",
       "pip_install": "pip install requests",
       "api_url": "https://api.minimax.io/v1/t2a_v2",
       "get_key_url": "https://platform.minimaxi.com/",
-      "tags": ["best-quality", "clone", "voice-design", "multilingual"],
+      "tags": [
+        "best-quality",
+        "clone",
+        "voice-design",
+        "multilingual"
+      ],
       "voices": [
-        {"id": "female-shaonv", "label": "少女", "style": "Female, 青春活力", "best_for": "通用、社交媒体"},
-        {"id": "male-qn-qingse", "label": "青涩青年", "style": "Male, 清澈自然", "best_for": "Vlog、旁白"},
-        {"id": "female-yujie", "label": "御姐", "style": "Female, 成熟优雅", "best_for": "专业配音"},
-        {"id": "presenter_male", "label": "播音男", "style": "Male, 专业播音", "best_for": "新闻、纪录片"},
-        {"id": "presenter_female", "label": "播音女", "style": "Female, 专业播音", "best_for": "新闻、纪录片"},
-        {"id": "female-tianmei", "label": "甜妹", "style": "Female, 甜美可爱", "best_for": "客服、二次元"}
+        {
+          "id": "female-shaonv",
+          "label": "少女",
+          "style": "Female, 青春活力",
+          "best_for": "通用、社交媒体"
+        },
+        {
+          "id": "male-qn-qingse",
+          "label": "青涩青年",
+          "style": "Male, 清澈自然",
+          "best_for": "Vlog、旁白"
+        },
+        {
+          "id": "female-yujie",
+          "label": "御姐",
+          "style": "Female, 成熟优雅",
+          "best_for": "专业配音"
+        },
+        {
+          "id": "presenter_male",
+          "label": "播音男",
+          "style": "Male, 专业播音",
+          "best_for": "新闻、纪录片"
+        },
+        {
+          "id": "presenter_female",
+          "label": "播音女",
+          "style": "Female, 专业播音",
+          "best_for": "新闻、纪录片"
+        },
+        {
+          "id": "female-tianmei",
+          "label": "甜妹",
+          "style": "Female, 甜美可爱",
+          "best_for": "客服、二次元"
+        }
       ]
     },
     {
@@ -272,40 +518,152 @@
       "streaming": "WebSocket",
       "setup_difficulty": "medium",
       "setup_label": "中等",
-      "env_vars": ["XUNFEI_APP_ID", "XUNFEI_API_KEY", "XUNFEI_API_SECRET"],
+      "env_vars": [
+        "XUNFEI_APP_ID",
+        "XUNFEI_API_KEY",
+        "XUNFEI_API_SECRET"
+      ],
       "pip_package": "websocket-client",
+      "import_module": "websocket",
       "pip_install": "pip install websocket-client",
       "api_url": "wss://tts-api.xfyun.cn/v2/tts",
       "get_key_url": "https://www.xfyun.cn/",
-      "tags": ["most-voices", "professional", "clone", "multilingual"],
+      "tags": [
+        "most-voices",
+        "professional",
+        "clone",
+        "multilingual"
+      ],
       "voices": [
-        {"id": "xiaoyan", "label": "小燕", "style": "Female, 甜美标准", "best_for": "默认通用"},
-        {"id": "xiaoyu", "label": "小宇", "style": "Female, 温柔自然", "best_for": "有声书、冥想"},
-        {"id": "xiaofeng", "label": "小峰", "style": "Male, 成熟稳重", "best_for": "新闻、纪录片"},
-        {"id": "xiaomei", "label": "小梅", "style": "Female, 活泼开朗", "best_for": "短视频、直播"},
-        {"id": "xiaoqian", "label": "小倩", "style": "Female, 亲切温柔", "best_for": "客服、助手"},
-        {"id": "xiaomeng", "label": "小萌", "style": "Female, 萌系可爱", "best_for": "儿童、二次元"}
+        {
+          "id": "xiaoyan",
+          "label": "小燕",
+          "style": "Female, 甜美标准",
+          "best_for": "默认通用"
+        },
+        {
+          "id": "xiaoyu",
+          "label": "小宇",
+          "style": "Female, 温柔自然",
+          "best_for": "有声书、冥想"
+        },
+        {
+          "id": "xiaofeng",
+          "label": "小峰",
+          "style": "Male, 成熟稳重",
+          "best_for": "新闻、纪录片"
+        },
+        {
+          "id": "xiaomei",
+          "label": "小梅",
+          "style": "Female, 活泼开朗",
+          "best_for": "短视频、直播"
+        },
+        {
+          "id": "xiaoqian",
+          "label": "小倩",
+          "style": "Female, 亲切温柔",
+          "best_for": "客服、助手"
+        },
+        {
+          "id": "xiaomeng",
+          "label": "小萌",
+          "style": "Female, 萌系可爱",
+          "best_for": "儿童、二次元"
+        }
       ]
     }
   ],
   "tags": {
-    "free": {"label": "免费", "icon": "🆓", "color": "#22c55e"},
-    "zero-setup": {"label": "零配置", "icon": "⚡", "color": "#3b82f6"},
-    "ssml": {"label": "SSML", "icon": "📝", "color": "#8b5cf6"},
-    "short-video": {"label": "短视频", "icon": "🎬", "color": "#f43f5e"},
-    "douyin": {"label": "抖音", "icon": "🎵", "color": "#ec4899"},
-    "clone": {"label": "声音克隆", "icon": "🎭", "color": "#f59e0b"},
-    "streaming": {"label": "流式", "icon": "🌊", "color": "#06b6d4"},
-    "fast": {"label": "快速", "icon": "🚀", "color": "#10b981"},
-    "enterprise": {"label": "企业级", "icon": "🏢", "color": "#6366f1"},
-    "cheapest": {"label": "最低价", "icon": "💰", "color": "#f59e0b"},
-    "bulk": {"label": "批量", "icon": "📦", "color": "#78716c"},
-    "emotion": {"label": "情感合成", "icon": "😊", "color": "#ef4444"},
-    "dialects": {"label": "方言", "icon": "🗣️", "color": "#84cc16"},
-    "best-quality": {"label": "最佳质量", "icon": "⭐", "color": "#fbbf24"},
-    "voice-design": {"label": "声音设计", "icon": "🎨", "color": "#ec4899"},
-    "multilingual": {"label": "多语言", "icon": "🌍", "color": "#0ea5e9"},
-    "most-voices": {"label": "最多音色", "icon": "🎤", "color": "#a855f7"},
-    "professional": {"label": "专业级", "icon": "🎓", "color": "#475569"}
+    "free": {
+      "label": "免费",
+      "icon": "🆓",
+      "color": "#22c55e"
+    },
+    "zero-setup": {
+      "label": "零配置",
+      "icon": "⚡",
+      "color": "#3b82f6"
+    },
+    "ssml": {
+      "label": "SSML",
+      "icon": "📝",
+      "color": "#8b5cf6"
+    },
+    "short-video": {
+      "label": "短视频",
+      "icon": "🎬",
+      "color": "#f43f5e"
+    },
+    "douyin": {
+      "label": "抖音",
+      "icon": "🎵",
+      "color": "#ec4899"
+    },
+    "clone": {
+      "label": "声音克隆",
+      "icon": "🎭",
+      "color": "#f59e0b"
+    },
+    "streaming": {
+      "label": "流式",
+      "icon": "🌊",
+      "color": "#06b6d4"
+    },
+    "fast": {
+      "label": "快速",
+      "icon": "🚀",
+      "color": "#10b981"
+    },
+    "enterprise": {
+      "label": "企业级",
+      "icon": "🏢",
+      "color": "#6366f1"
+    },
+    "cheapest": {
+      "label": "最低价",
+      "icon": "💰",
+      "color": "#f59e0b"
+    },
+    "bulk": {
+      "label": "批量",
+      "icon": "📦",
+      "color": "#78716c"
+    },
+    "emotion": {
+      "label": "情感合成",
+      "icon": "😊",
+      "color": "#ef4444"
+    },
+    "dialects": {
+      "label": "方言",
+      "icon": "🗣️",
+      "color": "#84cc16"
+    },
+    "best-quality": {
+      "label": "最佳质量",
+      "icon": "⭐",
+      "color": "#fbbf24"
+    },
+    "voice-design": {
+      "label": "声音设计",
+      "icon": "🎨",
+      "color": "#ec4899"
+    },
+    "multilingual": {
+      "label": "多语言",
+      "icon": "🌍",
+      "color": "#0ea5e9"
+    },
+    "most-voices": {
+      "label": "最多音色",
+      "icon": "🎤",
+      "color": "#a855f7"
+    },
+    "professional": {
+      "label": "专业级",
+      "icon": "🎓",
+      "color": "#475569"
+    }
   }
 }
