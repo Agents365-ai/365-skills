@@ -1,0 +1,9 @@
+# Local dev notes — never pushed
+CLAUDE.md
+
+# Python
+__pycache__/
+*.pyc
+
+# Cache (downloaded at runtime)
+cache/

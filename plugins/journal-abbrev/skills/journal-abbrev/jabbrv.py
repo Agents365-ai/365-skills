@@ -34,8 +34,8 @@ from urllib.request import Request, urlopen
 # Constants
 # ---------------------------------------------------------------------------
 
-CLI_VERSION = "1.3.0"
-SCHEMA_VERSION = "1.3.0"
+CLI_VERSION = "1.3.1"
+SCHEMA_VERSION = "1.3.1"
 
 # Idempotency keys are used to namespace replay envelopes on disk; restrict to
 # filesystem-safe characters so the key cannot escape the output directory.
@@ -392,7 +392,7 @@ def lookup_nlm(query: str, direction: str = "abbreviate") -> dict | None:
         fetch_url = f"{base}/efetch.fcgi?db=nlmcatalog&id={ids[0]}&retmode=xml"
         xml_text = _fetch(fetch_url)
         root = ET.fromstring(xml_text)
-    except (HTTPError, URLError, TimeoutError, ET.ParseError) as e:
+    except (HTTPError, URLError, TimeoutError, ET.ParseError, json.JSONDecodeError) as e:
         raise UpstreamUnavailable([{"source": "NLM Catalog", "error": str(e)}]) from e
 
     title_el = root.find(".//TitleMain/Title")
@@ -445,7 +445,7 @@ def expand(abbrev_: str) -> dict | None:
     Same transient-vs-miss contract as `abbreviate`.
     """
     result = lookup_local(abbrev_)
-    if result:
+    if result and result["direction"] == "expand":
         return result
 
     transient: list[dict] = []
@@ -842,6 +842,12 @@ SCHEMA: dict[str, Any] = {
                                 "distinguish 'agent explicitly opted in' from 'agent stumbled "
                                 "into a destructive command name'.",
                  "since": "1.3.0"},
+                {"name": "--idempotency-key", "type": "string", "default": None,
+                 "description": "Opaque token ([A-Za-z0-9._-]{1,64}). For 'rebuild': the success "
+                                "envelope is cached as <cache-dir>.rebuild.<key>.envelope.json; "
+                                "a retried call with the same key returns the cached envelope "
+                                "(meta.idempotent_replay: true) instead of re-downloading.",
+                 "since": "1.3.1"},
             ],
         },
         "schema": {
@@ -1274,6 +1280,31 @@ def handle_cache(args) -> dict:
 
     if action == "rebuild":
         confirmed = bool(getattr(args, "yes", False))
+
+        # Idempotency key: validate and check for replay before doing work
+        key = getattr(args, "idempotency_key", None)
+        if key is not None and not _IDEMPOTENCY_KEY_RE.match(key):
+            return envelope_error(
+                "validation_error",
+                "--idempotency-key must match [A-Za-z0-9._-]{1,64}",
+                retryable=False,
+                idempotency_key=key,
+            )
+
+        replay_path: Path | None = None
+        if key and not dry_run:
+            replay_path = CACHE_DIR.parent / f"{CACHE_DIR.name}.rebuild.{key}.envelope.json"
+            if replay_path.exists():
+                try:
+                    cached = json.loads(replay_path.read_text(encoding="utf-8"))
+                except (OSError, json.JSONDecodeError):
+                    cached = None
+                if isinstance(cached, dict) and cached.get("ok") is True:
+                    meta = cached.setdefault("meta", {})
+                    meta["idempotent_replay"] = True
+                    meta["idempotency_key"] = key
+                    return cached
+
         existing_csvs = (
             sorted(f.name for f in CACHE_DIR.iterdir() if f.suffix == ".csv")
             if CACHE_DIR.exists() else []
@@ -1298,9 +1329,9 @@ def handle_cache(args) -> dict:
         staging = CACHE_DIR.parent / f"{CACHE_DIR.name}.new"
         backup = CACHE_DIR.parent / f"{CACHE_DIR.name}.old"
         if staging.exists():
-            shutil.rmtree(staging, ignore_errors=True)
+            shutil.rmtree(staging)
         if backup.exists():
-            shutil.rmtree(backup, ignore_errors=True)
+            shutil.rmtree(backup)
 
         ensure_cache(target_dir=staging)
         failed = list(_cache_stats["files_failed"])
@@ -1327,7 +1358,7 @@ def handle_cache(args) -> dict:
         _cache = None
         fta, ata = load_cache()
         _cache = (fta, ata)
-        return envelope_ok(
+        env = envelope_ok(
             {
                 "action": "rebuild",
                 "fetched_this_run": _cache_stats["fetched_this_run"],
@@ -1337,6 +1368,19 @@ def handle_cache(args) -> dict:
             },
             meta={"confirmed": confirmed},
         )
+
+        # Best-effort cache of success envelope for idempotent replay
+        if replay_path is not None:
+            try:
+                replay_path.write_text(
+                    json.dumps(env, ensure_ascii=False, indent=2),
+                    encoding="utf-8",
+                )
+                env["meta"]["idempotency_key"] = key
+            except OSError:
+                pass
+
+        return env
 
     return envelope_error(
         "validation_error",

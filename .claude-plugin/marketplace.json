@@ -111,7 +111,7 @@
             "name": "journal-abbrev",
             "source": "./plugins/journal-abbrev",
             "description": "Journal name abbreviation lookup — ISO 4 + MEDLINE, multi-source cascade (JabRef ~25K journals → AbbrevISO → NLM Catalog), BibTeX field rewrite, batch and NDJSON streaming, agent-native JSON envelope with stable error codes, dry-run on every mutating command, --idempotency-key for replay-safe bib rewrites, and atomic cache rebuild that preserves the old cache on failure",
-            "version": "1.3.0",
+            "version": "1.3.1",
             "author": { "name": "Agents365-ai" },
             "repository": "https://github.com/Agents365-ai/journal-abbrev",
             "license": "MIT",

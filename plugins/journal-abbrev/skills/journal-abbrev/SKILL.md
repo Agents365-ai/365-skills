@@ -5,12 +5,13 @@ allowed-tools: Bash, Read, Write, Edit, Glob, Grep
 # --- Claude Code fields above, OpenClaw/SkillsMP fields below ---
 author: Agents365-ai
 category: Academic Research
-version: 1.3.0
+version: 1.3.1
 created: 2026-03-29
-updated: 2026-05-19
+updated: 2026-07-14
 github: https://github.com/Agents365-ai/journal-abbrev
 homepage: https://github.com/Agents365-ai/journal-abbrev
 metadata:
+  version: 1.3.1
   openclaw:
     requires:
       bins:
@@ -28,27 +29,27 @@ Look up journal/magazine name abbreviations using a multi-source cascade: JabRef
 
 ## Quick Reference
 
-| User wants... | Command |
-|---------------|---------|
-| Abbreviate a journal name | `python3 jabbrv.py abbrev "Nature Medicine"` |
-| Expand an abbreviation | `python3 jabbrv.py expand "Nat. Med."` |
-| Auto-detect direction | `python3 jabbrv.py lookup "J. Am. Chem. Soc."` |
-| Fuzzy search (paginated) | `python3 jabbrv.py search "biolog chem" --limit 10 --offset 0` |
-| Process a .bib file | `python3 jabbrv.py bib refs.bib` |
-| Preview .bib changes (no write) | `python3 jabbrv.py bib refs.bib --dry-run` |
-| Explicit .bib output path | `python3 jabbrv.py bib refs.bib --output out.bib` |
-| Expand .bib abbreviations | `python3 jabbrv.py bib refs.bib --expand` |
-| Replay-safe .bib (retry returns cached envelope) | `python3 jabbrv.py bib refs.bib --idempotency-key run-001` |
-| Batch text list | `python3 jabbrv.py batch journals.txt` |
-| Batch as NDJSON stream | `python3 jabbrv.py batch journals.txt --stream` |
-| Inspect cache state | `python3 jabbrv.py cache status` |
-| Download missing cache files | `python3 jabbrv.py cache update` |
-| Preview what update would fetch | `python3 jabbrv.py cache update --dry-run` |
-| Atomic rebuild (destructive, with audit marker) | `python3 jabbrv.py cache rebuild --yes` |
-| Preview rebuild (no delete) | `python3 jabbrv.py cache rebuild --dry-run` |
-| Suppress stderr progress | `python3 jabbrv.py --quiet cache update` |
-| Machine-readable CLI contract | `python3 jabbrv.py schema` |
-| Schema for one subcommand | `python3 jabbrv.py schema lookup` |
+| User wants... | Tier | Command |
+|---------------|------|---------|
+| Abbreviate a journal name | read | `python3 jabbrv.py abbrev "Nature Medicine"` |
+| Expand an abbreviation | read | `python3 jabbrv.py expand "Nat. Med."` |
+| Auto-detect direction | read | `python3 jabbrv.py lookup "J. Am. Chem. Soc."` |
+| Fuzzy search (paginated) | read | `python3 jabbrv.py search "biolog chem" --limit 10 --offset 0` |
+| Process a .bib file | write | `python3 jabbrv.py bib refs.bib` |
+| Preview .bib changes (no write) | read | `python3 jabbrv.py bib refs.bib --dry-run` |
+| Explicit .bib output path | write | `python3 jabbrv.py bib refs.bib --output out.bib` |
+| Expand .bib abbreviations | write | `python3 jabbrv.py bib refs.bib --expand` |
+| Replay-safe .bib (retry returns cached envelope) | write | `python3 jabbrv.py bib refs.bib --idempotency-key run-001` |
+| Batch text list | read | `python3 jabbrv.py batch journals.txt` |
+| Batch as NDJSON stream | read | `python3 jabbrv.py batch journals.txt --stream` |
+| Inspect cache state | read | `python3 jabbrv.py cache status` |
+| Download missing cache files | write | `python3 jabbrv.py cache update` |
+| Preview what update would fetch | read | `python3 jabbrv.py cache update --dry-run` |
+| Atomic rebuild | ⚠️ destructive | `python3 jabbrv.py cache rebuild --yes` |
+| Preview rebuild (no delete) | read | `python3 jabbrv.py cache rebuild --dry-run` |
+| Suppress stderr progress | read | `python3 jabbrv.py --quiet cache update` |
+| Machine-readable CLI contract | read | `python3 jabbrv.py schema` |
+| Schema for one subcommand | read | `python3 jabbrv.py schema lookup` |
 
 ### Output format
 
