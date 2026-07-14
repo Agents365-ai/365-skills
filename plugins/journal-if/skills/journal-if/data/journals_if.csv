@@ -1,0 +1,250 @@
+name,impact_factor,year,category,issn
+"Nature",64.8,2023,"Multidisciplinary Sciences",0028-0836
+"Science",56.9,2023,"Multidisciplinary Sciences",0036-8075
+"Cell",64.5,2023,"Cell Biology; Biochemistry & Molecular Biology",0092-8674
+"Nature Medicine",58.7,2023,"Medicine, Research & Experimental",1078-8956
+"Nature Reviews Cancer",78.5,2023,"Oncology",1474-175X
+"Nature Reviews Immunology",67.7,2023,"Immunology",1474-1733
+"Nature Reviews Molecular Cell Biology",81.3,2023,"Cell Biology",1471-0072
+"Nature Reviews Drug Discovery",122.7,2023,"Pharmacology & Pharmacy; Biotechnology & Applied Microbiology",1474-1776
+"Nature Genetics",31.7,2023,"Genetics & Heredity",1061-4036
+"Nature Biotechnology",46.9,2023,"Biotechnology & Applied Microbiology",1087-0156
+"Nature Immunology",30.5,2023,"Immunology",1529-2908
+"Nature Neuroscience",25.0,2023,"Neuroscience",1097-6256
+"Nature Methods",36.1,2023,"Biochemical Research Methods",1548-7091
+"Nature Materials",37.2,2023,"Materials Science, Multidisciplinary",1476-1122
+"Nature Nanotechnology",38.1,2023,"Nanoscience & Nanotechnology; Materials Science, Multidisciplinary",1748-3387
+"Nature Communications",16.6,2023,"Multidisciplinary Sciences",2041-1723
+"Nature Cell Biology",17.3,2023,"Cell Biology",1465-7392
+"Nature Chemical Biology",14.8,2023,"Biochemistry & Molecular Biology",1552-4450
+"Nature Microbiology",20.5,2023,"Microbiology",2058-5276
+"Nature Metabolism",18.9,2023,"Endocrinology & Metabolism",2522-5812
+"The Lancet",98.4,2023,"Medicine, General & Internal",0140-6736
+"The Lancet Oncology",41.6,2023,"Oncology",1470-2045
+"The Lancet Neurology",46.5,2023,"Clinical Neurology",1474-4422
+"The Lancet Infectious Diseases",36.4,2023,"Infectious Diseases",1473-3099
+"The Lancet Respiratory Medicine",38.7,2023,"Respiratory System; Critical Care Medicine",2213-2600
+"The Lancet Gastroenterology & Hepatology",30.9,2023,"Gastroenterology & Hepatology",2468-1253
+"The Lancet Psychiatry",30.8,2023,"Psychiatry",2215-0366
+"The Lancet Global Health",19.9,2023,"Public, Environmental & Occupational Health",2214-109X
+"The Lancet Public Health",25.4,2023,"Public, Environmental & Occupational Health",2468-2667
+"The Lancet Digital Health",23.8,2023,"Medical Informatics; Health Care Sciences & Services",2589-7500
+"The Lancet Microbe",20.9,2023,"Microbiology; Infectious Diseases",2666-5247
+"JAMA",63.1,2023,"Medicine, General & Internal",0098-7484
+"JAMA Oncology",22.5,2023,"Oncology",2374-2437
+"JAMA Neurology",20.4,2023,"Clinical Neurology",2168-6149
+"JAMA Internal Medicine",22.5,2023,"Medicine, General & Internal",2168-6106
+"JAMA Pediatrics",12.3,2023,"Pediatrics",2168-6203
+"JAMA Surgery",15.5,2023,"Surgery",2168-6254
+"JAMA Psychiatry",22.5,2023,"Psychiatry",2168-622X
+"JAMA Cardiology",14.0,2023,"Cardiac & Cardiovascular Systems",2380-6583
+"JAMA Dermatology",9.9,2023,"Dermatology",2168-6068
+"JAMA Network Open",10.5,2023,"Medicine, General & Internal",2574-3805
+"New England Journal of Medicine",96.2,2023,"Medicine, General & Internal",0028-4793
+"BMJ",93.6,2023,"Medicine, General & Internal",0959-8138
+"Annals of Internal Medicine",19.6,2023,"Medicine, General & Internal",0003-4819
+"Nature Reviews Clinical Oncology",81.1,2023,"Oncology",1759-4774
+"Nature Reviews Gastroenterology & Hepatology",46.5,2023,"Gastroenterology & Hepatology",1759-5045
+"Nature Reviews Cardiology",40.8,2023,"Cardiac & Cardiovascular Systems",1759-5002
+"Nature Reviews Endocrinology",31.0,2023,"Endocrinology & Metabolism",1759-5029
+"Nature Reviews Nephrology",28.6,2023,"Urology & Nephrology",1759-5061
+"Nature Reviews Neurology",28.2,2023,"Clinical Neurology",1759-4758
+"Nature Reviews Rheumatology",24.0,2023,"Rheumatology",1759-4790
+"Nature Reviews Disease Primers",76.9,2023,"Medicine, General & Internal",2056-676X
+"Cancer Cell",50.3,2023,"Oncology; Cell Biology",1535-6108
+"Immunity",32.4,2023,"Immunology",1074-7613
+"Cell Metabolism",27.7,2023,"Endocrinology & Metabolism; Cell Biology",1550-4131
+"Cell Stem Cell",19.8,2023,"Cell & Tissue Engineering; Cell Biology",1934-5909
+"Molecular Cell",14.5,2023,"Biochemistry & Molecular Biology; Cell Biology",1097-2765
+"Developmental Cell",10.7,2023,"Developmental Biology; Cell Biology",1534-5807
+"Cancer Discovery",29.7,2023,"Oncology",2159-8274
+"Cancer Research",11.2,2023,"Oncology",0008-5472
+"Clinical Cancer Research",11.5,2023,"Oncology",1078-0432
+"Blood",21.0,2023,"Hematology",0006-4971
+"Circulation",35.5,2023,"Cardiac & Cardiovascular Systems; Peripheral Vascular Disease",0009-7322
+"Circulation Research",16.5,2023,"Cardiac & Cardiovascular Systems; Hematology; Peripheral Vascular Disease",0009-7330
+"European Heart Journal",37.6,2023,"Cardiac & Cardiovascular Systems",0195-668X
+"Gastroenterology",25.7,2023,"Gastroenterology & Hepatology",0016-5085
+"Gut",23.0,2023,"Gastroenterology & Hepatology",0017-5749
+"Hepatology",12.9,2023,"Gastroenterology & Hepatology",0270-9139
+"Journal of Hepatology",26.8,2023,"Gastroenterology & Hepatology",0168-8278
+"Kidney International",14.8,2023,"Urology & Nephrology",0085-2538
+"American Journal of Respiratory and Critical Care Medicine",19.3,2023,"Respiratory System; Critical Care Medicine",1073-449X
+"European Respiratory Journal",16.6,2023,"Respiratory System",0903-1936
+"Thorax",10.0,2023,"Respiratory System",0040-6376
+"Diabetes Care",14.8,2023,"Endocrinology & Metabolism",0149-5992
+"Diabetes",6.2,2023,"Endocrinology & Metabolism",0012-1797
+"Diabetologia",8.4,2023,"Endocrinology & Metabolism",0012-186X
+"Annals of the Rheumatic Diseases",20.3,2023,"Rheumatology",0003-4967
+"Arthritis & Rheumatology",11.4,2023,"Rheumatology",2326-5191
+"Brain",13.8,2023,"Clinical Neurology; Neuroscience",0006-8950
+"Annals of Neurology",8.1,2023,"Clinical Neurology; Neuroscience",0364-5134
+"Neurology",7.7,2023,"Clinical Neurology",0028-3878
+"Neuron",14.7,2023,"Neuroscience",0896-6273
+"Science Translational Medicine",15.8,2023,"Medicine, Research & Experimental; Cell Biology",1946-6234
+"Science Immunology",17.6,2023,"Immunology",2470-9468
+"Science Advances",13.6,2023,"Multidisciplinary Sciences",2375-2548
+"Science Signaling",6.7,2023,"Biochemistry & Molecular Biology; Cell Biology",1945-0877
+"Proceedings of the National Academy of Sciences",9.4,2023,"Multidisciplinary Sciences",0027-8424
+"PNAS",9.4,2023,"Multidisciplinary Sciences",0027-8424
+"eLife",7.7,2023,"Biology",2050-084X
+"Cell Reports",8.8,2023,"Cell Biology",2211-1247
+"Cell Reports Medicine",11.7,2023,"Medicine, Research & Experimental; Cell Biology",2666-3791
+"EMBO Journal",9.4,2023,"Biochemistry & Molecular Biology; Cell Biology",0261-4189
+"EMBO Reports",6.5,2023,"Biochemistry & Molecular Biology; Cell Biology",1469-221X
+"Molecular Systems Biology",8.5,2023,"Biochemistry & Molecular Biology",1744-4292
+"Genome Biology",10.1,2023,"Biotechnology & Applied Microbiology; Genetics & Heredity",1474-760X
+"Genome Research",6.2,2023,"Biochemistry & Molecular Biology; Biotechnology & Applied Microbiology; Genetics & Heredity",1088-9051
+"Nucleic Acids Research",16.6,2023,"Biochemistry & Molecular Biology",0305-1048
+"PLOS Biology",7.8,2023,"Biology",1545-7885
+"PLOS Medicine",10.4,2023,"Medicine, General & Internal",1549-1676
+"PLOS ONE",3.7,2023,"Multidisciplinary Sciences",1932-6203
+"Scientific Reports",4.6,2023,"Multidisciplinary Sciences",2045-2322
+"BMC Biology",4.4,2023,"Biology",1741-7007
+"BMC Medicine",7.0,2023,"Medicine, General & Internal",1741-7015
+"eBioMedicine",9.7,2023,"Medicine, Research & Experimental; Medicine, General & Internal",2352-3964
+"Journal of Clinical Investigation",13.3,2023,"Medicine, Research & Experimental",0021-9738
+"Journal of Experimental Medicine",12.6,2023,"Immunology; Medicine, Research & Experimental",0022-1007
+"Science China Life Sciences",8.0,2023,"Biology",1674-7305
+"Protein & Cell",13.6,2023,"Biochemistry & Molecular Biology; Cell Biology",1674-800X
+"Cell Research",44.1,2023,"Cell Biology",1001-0602
+"Cell Discovery",13.0,2023,"Cell Biology",2056-5968
+"Signal Transduction and Targeted Therapy",40.8,2023,"Biochemistry & Molecular Biology; Cell Biology; Medicine, Research & Experimental",2095-9907
+"Molecular Cancer",27.7,2023,"Oncology; Biochemistry & Molecular Biology",1476-4598
+"Journal of Hematology & Oncology",29.5,2023,"Oncology; Hematology",1756-8722
+"Experimental and Molecular Medicine",9.5,2023,"Biochemistry & Molecular Biology; Medicine, Research & Experimental",1226-3613
+"Cellular & Molecular Immunology",21.8,2023,"Immunology",1672-7681
+"Trends in Immunology",13.1,2023,"Immunology",1471-4906
+"Trends in Cell Biology",13.0,2023,"Cell Biology",0962-8924
+"Trends in Biochemical Sciences",12.3,2023,"Biochemistry & Molecular Biology",0968-0004
+"Trends in Genetics",13.6,2023,"Genetics & Heredity",0168-9525
+"Trends in Molecular Medicine",12.8,2023,"Biochemistry & Molecular Biology; Cell Biology; Medicine, Research & Experimental",1471-4914
+"Trends in Pharmacological Sciences",13.0,2023,"Pharmacology & Pharmacy",0165-6147
+"Trends in Biotechnology",14.3,2023,"Biotechnology & Applied Microbiology",0167-7799
+"Trends in Microbiology",15.9,2023,"Microbiology; Biochemistry & Molecular Biology",0966-842X
+"Trends in Neurosciences",14.6,2023,"Neuroscience",0166-2236
+"Trends in Cancer",14.3,2023,"Oncology",2405-8033
+"Trends in Plant Science",17.3,2023,"Plant Sciences",1360-1385
+"Trends in Ecology & Evolution",16.7,2023,"Ecology; Evolutionary Biology; Genetics & Heredity",0169-5347
+"Annual Review of Immunology",26.9,2023,"Immunology",0732-0582
+"Annual Review of Biochemistry",12.1,2023,"Biochemistry & Molecular Biology",0066-4154
+"Annual Review of Pathology-Mechanisms of Disease",28.4,2023,"Pathology",1553-4006
+"Annual Review of Cancer Biology",7.7,2023,"Oncology; Cell Biology",2472-3428
+"Annual Review of Pharmacology and Toxicology",11.2,2023,"Pharmacology & Pharmacy; Toxicology",0362-1642
+"Annual Review of Physiology",15.7,2023,"Physiology",0066-4278
+"Annual Review of Neuroscience",12.1,2023,"Neuroscience",0147-006X
+"Annual Review of Cell and Developmental Biology",11.4,2023,"Cell Biology; Developmental Biology",1081-0706
+"Annual Review of Microbiology",8.5,2023,"Microbiology",0066-4227
+"Annual Review of Genetics",8.3,2023,"Genetics & Heredity",0066-4197
+"Annual Review of Medicine",15.4,2023,"Medicine, Research & Experimental",0066-4219
+"Genome Medicine",10.4,2023,"Genetics & Heredity",1756-994X
+"Molecular Therapy",12.1,2023,"Biotechnology & Applied Microbiology; Genetics & Heredity; Medicine, Research & Experimental",1525-0016
+"Molecular Therapy - Nucleic Acids",6.5,2023,"Medicine, Research & Experimental",2162-2531
+"Nano Today",13.2,2023,"Nanoscience & Nanotechnology; Materials Science, Multidisciplinary; Chemistry, Multidisciplinary",1748-0132
+"ACS Nano",15.8,2023,"Nanoscience & Nanotechnology; Chemistry, Multidisciplinary; Chemistry, Physical; Materials Science, Multidisciplinary",1936-0851
+"Nano Letters",9.6,2023,"Nanoscience & Nanotechnology; Chemistry, Multidisciplinary; Chemistry, Physical; Materials Science, Multidisciplinary; Physics, Applied; Physics, Condensed Matter",1530-6984
+"Advanced Materials",27.4,2023,"Nanoscience & Nanotechnology; Chemistry, Multidisciplinary; Chemistry, Physical; Materials Science, Multidisciplinary; Physics, Applied; Physics, Condensed Matter",0935-9648
+"Advanced Functional Materials",18.5,2023,"Nanoscience & Nanotechnology; Chemistry, Multidisciplinary; Chemistry, Physical; Materials Science, Multidisciplinary; Physics, Applied; Physics, Condensed Matter",1616-301X
+"Advanced Science",14.3,2023,"Nanoscience & Nanotechnology; Chemistry, Multidisciplinary; Materials Science, Multidisciplinary",2198-3844
+"Angewandte Chemie International Edition",16.1,2023,"Chemistry, Multidisciplinary",1433-7851
+"Journal of the American Chemical Society",14.4,2023,"Chemistry, Multidisciplinary",0002-7863
+"Chemical Reviews",51.4,2023,"Chemistry, Multidisciplinary",0009-2665
+"Chemical Society Reviews",40.4,2023,"Chemistry, Multidisciplinary",0306-0012
+"Accounts of Chemical Research",14.2,2023,"Chemistry, Multidisciplinary",0001-4842
+"Energy & Environmental Science",32.4,2023,"Chemistry, Multidisciplinary; Energy & Fuels; Engineering, Chemical; Environmental Sciences",1754-5692
+"Joule",38.6,2023,"Chemistry, Physical; Energy & Fuels; Materials Science, Multidisciplinary",2542-4351
+"Matter",17.3,2023,"Materials Science, Multidisciplinary",2590-2393
+"Chem",16.5,2023,"Chemistry, Multidisciplinary",2451-9294
+"Physical Review Letters",8.1,2023,"Physics, Multidisciplinary",0031-9007
+"Physical Review X",11.6,2023,"Physics, Multidisciplinary",2160-3308
+"Reviews of Modern Physics",45.5,2023,"Physics, Multidisciplinary",0034-6861
+"Physics Reports",23.9,2023,"Physics, Multidisciplinary",0370-1573
+"Nature Physics",17.6,2023,"Physics, Multidisciplinary",1745-2473
+"Nature Photonics",32.3,2023,"Optics; Physics, Applied",1749-4885
+"Nature Chemistry",19.2,2023,"Chemistry, Multidisciplinary",1755-4330
+"Nature Catalysis",37.8,2023,"Chemistry, Physical",2520-1158
+"Nature Energy",49.7,2023,"Energy & Fuels; Materials Science, Multidisciplinary",2058-7546
+"Nature Climate Change",29.6,2023,"Environmental Sciences; Environmental Studies; Meteorology & Atmospheric Sciences",1758-678X
+"Nature Geoscience",15.7,2023,"Geosciences, Multidisciplinary",1752-0894
+"Nature Ecology & Evolution",13.9,2023,"Ecology; Evolutionary Biology",2397-334X
+"The Innovation",33.2,2023,"Multidisciplinary Sciences",2666-6758
+"Science Bulletin",18.8,2023,"Multidisciplinary Sciences",2095-9273
+"National Science Review",16.3,2023,"Multidisciplinary Sciences",2095-5138
+"Research",8.5,2023,"Multidisciplinary Sciences",2096-5168
+"Journal of Clinical Oncology",42.1,2023,"Oncology",0732-183X
+"Lancet Oncology",41.6,2023,"Oncology",1470-2045
+"Annals of Oncology",14.0,2023,"Oncology",0923-7534
+"JAMA Oncology",22.5,2023,"Oncology",2374-2437
+"Neuro-Oncology",16.4,2023,"Oncology; Clinical Neurology",1522-8517
+"Hepatology",12.9,2023,"Gastroenterology & Hepatology",0270-9139
+"Allergy",12.6,2023,"Allergy; Immunology",0105-4538
+"Journal of Allergy and Clinical Immunology",11.4,2023,"Allergy; Immunology",0091-6749
+"Leukemia",12.8,2023,"Oncology; Hematology",0887-6924
+"Microbiome",13.8,2023,"Microbiology",2049-2618
+"ISME Journal",10.8,2023,"Ecology; Microbiology",1751-7362
+"Cell Host & Microbe",20.6,2023,"Microbiology; Parasitology; Virology",1931-3128
+"Nature Aging",17.0,2023,"Cell Biology; Geriatrics & Gerontology",2662-8465
+"Aging Cell",8.0,2023,"Cell Biology; Geriatrics & Gerontology",1474-9718
+"Biological Psychiatry",9.6,2023,"Neuroscience; Psychiatry",0006-3223
+"Molecular Psychiatry",9.6,2023,"Biochemistry & Molecular Biology; Neuroscience; Psychiatry",1359-4184
+"Neuropsychopharmacology",6.6,2023,"Neuroscience; Pharmacology & Pharmacy; Psychiatry",0893-133X
+"American Journal of Psychiatry",15.1,2023,"Psychiatry",0002-953X
+"World Psychiatry",40.2,2023,"Psychiatry",1723-8617
+"Lancet Psychiatry",30.8,2023,"Psychiatry",2215-0366
+"Briefings in Bioinformatics",6.8,2023,"Biochemical Research Methods; Biotechnology & Applied Microbiology; Mathematical & Computational Biology",1467-5463
+"Bioinformatics",4.4,2023,"Biochemical Research Methods; Biotechnology & Applied Microbiology; Mathematical & Computational Biology",1367-4803
+"Nature Computational Science",12.0,2023,"Computer Science, Interdisciplinary Applications; Multidisciplinary Sciences",2662-8457
+"Nano Research",9.5,2023,"Nanoscience & Nanotechnology; Chemistry, Physical; Materials Science, Multidisciplinary; Physics, Applied",1998-0124
+"Theranostics",12.4,2023,"Medicine, Research & Experimental",1838-7640
+"Acta Pharmaceutica Sinica B",14.2,2023,"Pharmacology & Pharmacy",2211-3835
+"Pharmacological Reviews",18.3,2023,"Pharmacology & Pharmacy",0031-6997
+"Advanced Drug Delivery Reviews",15.2,2023,"Pharmacology & Pharmacy",0169-409X
+"Journal of Controlled Release",10.5,2023,"Pharmacology & Pharmacy; Chemistry, Multidisciplinary",0168-3659
+"Biomaterials",12.8,2023,"Engineering, Biomedical; Materials Science, Biomaterials",0142-9612
+"Bioactive Materials",18.0,2023,"Engineering, Biomedical; Materials Science, Biomaterials",2452-199X
+"Acta Biomaterialia",9.4,2023,"Engineering, Biomedical; Materials Science, Biomaterials",1742-7061
+"Redox Biology",10.7,2023,"Biochemistry & Molecular Biology",2213-2317
+"Free Radical Biology and Medicine",10.3,2023,"Biochemistry & Molecular Biology; Endocrinology & Metabolism",0891-5849
+"Autophagy",14.6,2023,"Cell Biology",1554-8627
+"Seminars in Cancer Biology",12.1,2023,"Oncology",1044-579X
+"Seminars in Immunology",6.9,2023,"Immunology",1044-5323
+"Seminars in Cell & Developmental Biology",7.3,2023,"Cell Biology; Developmental Biology",1084-9521
+"Seminars in Immunopathology",8.1,2023,"Immunology; Pathology",1863-2297
+"Cell Death & Differentiation",13.7,2023,"Biochemistry & Molecular Biology; Cell Biology",1350-9047
+"Cell Death & Disease",8.1,2023,"Cell Biology",2041-4889
+"Oncogene",6.9,2023,"Oncology; Biochemistry & Molecular Biology; Cell Biology; Genetics & Heredity",0950-9232
+"EMBO Molecular Medicine",9.0,2023,"Medicine, Research & Experimental",1757-4676
+"Clinical Infectious Diseases",8.2,2023,"Infectious Diseases; Immunology; Microbiology",1058-4838
+"Emerging Infectious Diseases",7.2,2023,"Infectious Diseases; Immunology",1080-6040
+"Cell Systems",9.0,2023,"Biochemistry & Molecular Biology; Cell Biology",2405-4712
+"Cell Genomics",7.7,2023,"Genetics & Heredity; Cell Biology",2666-979X
+"Patterns",6.7,2023,"Computer Science, Interdisciplinary Applications",2666-3899
+"Med",10.3,2023,"Medicine, Research & Experimental; Cell Biology; Medicine, General & Internal",2666-6340
+"Chem Catalysis",9.6,2023,"Chemistry, Physical",2667-1093
+"One Earth",15.1,2023,"Environmental Sciences; Environmental Studies; Green & Sustainable Science & Technology",2590-3322
+"JACC",21.7,2023,"Cardiac & Cardiovascular Systems",0735-1097
+"European Journal of Heart Failure",14.1,2023,"Cardiac & Cardiovascular Systems",1388-9842
+"Cardiovascular Research",10.2,2023,"Cardiac & Cardiovascular Systems",0008-6363
+"Genes & Development",7.5,2023,"Cell Biology; Developmental Biology; Genetics & Heredity",0890-9369
+"Development",3.7,2023,"Developmental Biology",0950-1991
+"Plant Cell",10.0,2023,"Biochemistry & Molecular Biology; Cell Biology; Plant Sciences",1040-4651
+"New Phytologist",8.3,2023,"Plant Sciences",0028-646X
+"Molecular Plant",17.1,2023,"Biochemistry & Molecular Biology; Plant Sciences",1674-2052
+"Plant Biotechnology Journal",11.6,2023,"Biotechnology & Applied Microbiology; Plant Sciences",1467-7644
+"Journal of Integrative Plant Biology",9.3,2023,"Biochemistry & Molecular Biology; Plant Sciences",1672-9072
+"FEMS Microbiology Reviews",10.1,2023,"Microbiology",0168-6445
+"Clinical Microbiology Reviews",19.0,2023,"Microbiology",0893-8512
+"Lancet Microbe",20.9,2023,"Microbiology; Infectious Diseases",2666-5247
+"Cell Chemical Biology",6.6,2023,"Biochemistry & Molecular Biology",2451-9456
+"Current Biology",8.1,2023,"Biology; Biochemistry & Molecular Biology; Cell Biology; Neuroscience",0960-9822
+"eLife",7.7,2023,"Biology",2050-084X
+"Journal of Cell Biology",7.4,2023,"Cell Biology",0021-9525
+"Journal of Biological Chemistry",4.0,2023,"Biochemistry & Molecular Biology",0021-9258
+"FASEB Journal",4.4,2023,"Biochemistry & Molecular Biology; Biology; Cell Biology",0892-6638
+"FEBS Journal",5.3,2023,"Biochemistry & Molecular Biology",1742-464X
+"Biochemical Journal",4.0,2023,"Biochemistry & Molecular Biology",0264-6021
+"Biochemical and Biophysical Research Communications",2.5,2023,"Biochemistry & Molecular Biology; Biophysics",0006-291X
+"International Journal of Biological Macromolecules",7.7,2023,"Biochemistry & Molecular Biology; Chemistry, Applied; Polymer Science",0141-8130
+"International Journal of Molecular Sciences",4.9,2023,"Biochemistry & Molecular Biology; Chemistry, Multidisciplinary",1422-0067
+"Journal of Molecular Biology",4.7,2023,"Biochemistry & Molecular Biology",0022-2836
+"ELife",7.7,2023,"Biology",2050-084X
