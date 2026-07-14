@@ -38,6 +38,11 @@ exports it:
 | a `.drawio` | the same diagram in another language | `relabel` (extract → translate → apply) |
 | a `.drawio` | it re-themed (dark / corporate preset) | `restyle` |
 | a shape/icon need | the exact style string | `shapesearch` · `aiicons` (AI/LLM logos) |
+| a photo/screenshot of a diagram | an editable `.drawio` | `raster2drawio` (your vision → JSON → draw.io) |
+| ONE `.drawio` | it building itself, as a video/GIF | `buildup` (→ HTML player; `--gif`) |
+| a big/sprawling diagram | a boardroom exec summary + drill-down | `compress` |
+| a decision-tree flowchart | a click-through triage app | `runbook` (→ HTML, no CLI) |
+| a PR touching `.drawio` | rendered before/after/diff for reviewers | `prdiff` (+ GitHub Action) |
 
 ## 1. Author & place
 
@@ -45,6 +50,7 @@ exports it:
 - **`seqlayout.py`** — participants + messages JSON → sequence diagram with computed lifelines/activation bars (no Graphviz).
 - **`c4.py`** — levels JSON → one multi-page `.drawio` (Context→Container→Component) with click-to-drill-down links.
 - **`shapesearch.py`** — search 10k+ official shapes for their exact `style=` string. **`aiicons.py`** — draw.io `image` styles for AI/LLM brand logos.
+- **`raster2drawio.py`** — a vision-extracted image graph JSON (from a whiteboard photo / legacy PNG / Visio screenshot) → editable `.drawio` honouring the read coordinates; missing positions fall back to `autolayout.py`. See `references/derasterize.md`.
 
 ## 2. Code → diagram
 
@@ -75,6 +81,9 @@ The **actual** counterpart to §3 — see `references/live-infra.md`.
 - **`drawiodiff.py`** — diff two `.drawio` (or two live snapshots) → colour-coded graph (added=green, removed=red, changed=orange). Pairs with §4 for drift.
 - **`timelapse.py`** — re-run an extractor across git history → a self-contained HTML player of how the architecture grew.
 - **`heatmap.py`** — recolour any `.drawio` by a metrics file (CSV/JSON): each node shaded low→high on a gradient by its value (`--palette`, optional `--size`, auto legend). Turns a static architecture into a cost / latency / traffic / error-rate heat map.
+- **`buildup.py`** — reveal ONE diagram's cells in dependency order (topological over its edges) → self-contained HTML player (embedded PNG frames, play/pause/step/scrub); optional `--gif`. Needs the draw.io CLI.
+- **`compress.py`** — big `.drawio` → 2-page executive summary. Pure-Python label-propagation clustering (no networkx), one auto-named node per cluster with a drill-down link to the full original on page 2, aggregated cross-cluster edges. Needs Graphviz.
+- **`prdiff.py`** — for every `.drawio` changed between two git refs, render base/head/`drawiodiff`-diff PNGs + a Markdown report for a PR comment; ships a composite GitHub Action (`.github/actions/drawio-diff/`). See `references/pr-bot.md`.
 
 ## 6. Diagram → other formats (reverse / interop)
 
@@ -85,6 +94,7 @@ The skill runs both directions — these turn a `.drawio` back into something el
 - **`drawio2pptx.py`** — → a 16:9 **PowerPoint** deck, one page per slide (needs `python-pptx`).
 - **`svgflow.py`** — → an **animated SVG** (edges flow as marching ants); renders on GitHub.
 - **`drawio2mermaid.py`** — → **Mermaid** `flowchart` text (diagrams-as-code GitHub renders).
+- **`runbook.py`** — a flowchart/decision-tree → a self-contained **click-through HTML runbook** (current-step text, per-edge choice buttons, breadcrumb, Back/Restart). Reads the XML directly — no draw.io CLI needed.
 
 ## 7. Utilities & quality
 
