@@ -43,12 +43,14 @@ exports it:
 | a big/sprawling diagram | a boardroom exec summary + drill-down | `compress` |
 | a decision-tree flowchart | a click-through triage app | `runbook` (→ HTML, no CLI) |
 | a PR touching `.drawio` | rendered before/after/diff for reviewers | `prdiff` (+ GitHub Action) |
+| a pipeline / journey / subsystem map | it drawn as a metro / subway map | `tubemap` (coloured lines, octilinear, interchanges) |
 
 ## 1. Author & place
 
 - **`autolayout.py`** — graph JSON → placed `.drawio` (Graphviz `dot`; orthogonal routing, `--group` containers, `--tune` best direction). The hub every extractor feeds. See `references/autolayout.md`.
 - **`seqlayout.py`** — participants + messages JSON → sequence diagram with computed lifelines/activation bars (no Graphviz).
 - **`c4.py`** — levels JSON → one multi-page `.drawio` (Context→Container→Component) with click-to-drill-down links.
+- **`tubemap.py`** — metro JSON (coloured lines + grid-placed stations) → a London-Underground-style **tube map**: octilinear (H/V/45°) routing, white interchange circles, station stops. No Graphviz. See `references/tubemap.md`.
 - **`shapesearch.py`** — search 10k+ official shapes for their exact `style=` string. **`aiicons.py`** — draw.io `image` styles for AI/LLM brand logos.
 - **`raster2drawio.py`** — a vision-extracted image graph JSON (from a whiteboard photo / legacy PNG / Visio screenshot) → editable `.drawio` honouring the read coordinates; missing positions fall back to `autolayout.py`. See `references/derasterize.md`.
 

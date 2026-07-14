@@ -1,6 +1,6 @@
 ---
 name: drawio-skill
-version: 1.33.0
+version: 1.34.0
 description: Use when the user requests diagrams, flowcharts, architecture diagrams, ER diagrams, UML / sequence / class diagrams, SysML / MBSE diagrams (block definition, internal block, requirement, parametric), BPMN business process diagrams, swimlane / cross-functional flowcharts, network topology, cloud architecture from Terraform or Kubernetes manifests, ML/DL model figures (Transformer/CNN/LSTM), mind maps, or any visualization. Also use proactively when explaining systems with 3+ components, complex data flows, or relationships that benefit from visual representation. Best suited when the diagram needs custom styling, rich shape vocabulary, swimlanes, or exportable images (PNG/SVG/PDF/JPG). Generates .drawio XML and exports locally via the native draw.io desktop CLI.
 license: MIT
 homepage: https://github.com/Agents365-ai/drawio-skill
@@ -71,6 +71,7 @@ When the workflow references one of these, read it on demand — none of them ne
 | `scripts/compress.py` | The user wants an **executive / boardroom summary of a big diagram** — collapses clusters (pure-Python label propagation, no networkx) into one labeled node each with aggregated inter-cluster edges, emitting a 2-page `.drawio` (exec view + click-to-drill-down into the full original). Claude can rename clusters semantically afterward. Needs Graphviz `dot` |
 | `scripts/runbook.py` | The user wants a flowchart/decision-tree `.drawio` turned into a **click-through triage app** (on-call runbook) — `runbook.py flow.drawio` reads the XML (no draw.io CLI needed) and emits a self-contained HTML runbook: current-step text, per-edge choice buttons, breadcrumb trail, Back/Restart, end-state on terminal nodes |
 | `scripts/prdiff.py` | You're setting up **automated PR diagram review** in CI — for every `.drawio` changed between two git refs it renders base/head/diff PNGs and emits a Markdown report; ships with a composite GitHub Action (`.github/actions/drawio-diff/`) that posts a sticky PR comment. See `references/pr-bot.md` |
+| `scripts/tubemap.py` | The user wants a **metro / subway / tube map** — a system, pipeline, or journey drawn as coloured transit lines with octilinear (H/V/45°) routing, white interchange circles, and station stops. Compose a metro JSON (lines = ordered stations on an integer grid, shared stations = interchanges), then `tubemap.py metro.json -o metro.drawio`. Stdlib-only; schema + the one grid rule in `references/tubemap.md` |
 
 ## Prerequisites
 
