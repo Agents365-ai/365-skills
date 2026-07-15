@@ -1,10 +1,10 @@
 ---
 name: ttsCN
-description: Multi-platform Chinese TTS text-to-speech via Edge/Doubao/CosyVoice/Azure/Tencent/Baidu/MiniMax/Xunfei — 8 backends, all work in China
+description: Multi-platform Chinese & multilingual TTS text-to-speech via Edge/Doubao/CosyVoice/Azure/Tencent/Baidu/MiniMax/Xunfei plus ElevenLabs/OpenAI/Google — 11 backends, word-level timestamps, [PAUSE:x] pause markers, pinyin pronunciation overrides
 author: Agents365-ai
-version: 1.3.2
+version: 1.4.0
 created: 2026-07-08
-updated: 2026-07-13
+updated: 2026-07-15
 homepage: https://github.com/Agents365-ai/ttsCN
 metadata: {"openclaw":{"requires":{"bins":["python3","ffmpeg"]},"emoji":"🔊"}}
 ---
@@ -13,7 +13,7 @@ metadata: {"openclaw":{"requires":{"bins":["python3","ffmpeg"]},"emoji":"🔊"}}
 
 ## Overview
 
-Generate natural Chinese speech audio from text. **8 backends, all work in China**.
+Generate natural speech audio from text. **11 backends** — 8 China-friendly clouds plus 3 international (ElevenLabs / OpenAI / Google).
 
 | # | Backend | Cost | Key strength |
 |---|---------|------|-------------|
@@ -25,6 +25,11 @@ Generate natural Chinese speech audio from text. **8 backends, all work in China
 | 6 | **Baidu AI** | Flexible | 30+ voices, emotion + dialects |
 | 7 | **MiniMax** | ~$0.10/1K | Best quality, 300+ voices, cloning |
 | 8 | **iFlytek Xunfei** | ~2 RMB/10K | MOS 4.8, 500+ voices, pro grade |
+| 9 | **ElevenLabs** | Paid tiers (from $5/mo) | Top voice quality, instant cloning |
+| 10 | **OpenAI TTS** | ~$15-30/M chars | 6 voices, multilingual, simple REST |
+| 11 | **Google Cloud TTS** | ~$16/M chars (free tier) | 220+ voices, 40+ languages |
+
+New in 1.4: **word-level timestamps** (edge/azure), **[PAUSE:x] + sound-tag markers** (all platforms), **--phonemes pronunciation overrides** (azure/minimax).
 
 **Cross-platform**: Windows, macOS, Linux
 
@@ -36,7 +41,8 @@ Automatically activate this skill when:
 - Creating audiobook or podcast audio from text
 - User asks to compare TTS providers, choose a TTS backend, or see what voices are available
 - User asks about TTS pricing, features, or which provider supports cloning/SSML/dialects
-- User mentions any of: TTS, text-to-speech, 语音合成, 文字转语音, Edge TTS, Doubao TTS, CosyVoice, 火山引擎, 阿里云语音, Azure TTS, 腾讯云TTS, 百度语音, MiniMax, 讯飞语音
+- User mentions any of: TTS, text-to-speech, 语音合成, 文字转语音, Edge TTS, Doubao TTS, CosyVoice, 火山引擎, 阿里云语音, Azure TTS, 腾讯云TTS, 百度语音, MiniMax, 讯飞语音, ElevenLabs, OpenAI TTS, Google Cloud TTS
+- User needs word-level timestamps/subtitles, pause control, or fixing mispronounced Chinese characters (多音字)
 - Any task where Chinese text-to-speech would be helpful
 
 ## Provider Comparison Page
@@ -117,6 +123,9 @@ Confirm: output path, file size, audio duration.
 | **Documentary** | azure | zh-CN-YunyangNeural | Deep, professional male |
 | **Children's content** | edge | zh-CN-XiaomengNeural | Bright, youthful female |
 | **Cost-sensitive** | edge | zh-CN-XiaoxiaoNeural | Completely free |
+| **English, top quality** | elevenlabs | 21m00Tcm4TlvDq8ikWAM (Rachel) | Best-in-class English voices |
+| **English, simple/cheap** | openai | alloy | tts-1-hd, one env var |
+| **English, enterprise** | google | en-US-Neural2-F | 220+ voices, free tier |
 
 ### Full Capability Comparison
 
@@ -136,6 +145,18 @@ Confirm: output path, file size, audio duration.
 | **Streaming** | ✅ WebSocket | ✅ WebSocket | ✅ | ✅ SDK | ✅ WebSocket | ✅ WebSocket | ❌ (REST only) | ✅ WebSocket |
 | **Setup difficulty** | 零配置 | 中等 | 简单 | 中等 | 中等 | 简单 | 简单 | 中等 |
 | **API key** | None | VOLCENGINE_* | DASHSCOPE_KEY | AZURE_KEY | TENCENT_* | BAIDU_* | MINIMAX_KEY | XUNFEI_* |
+
+### International Backends (need international network access)
+
+| Capability | ElevenLabs | OpenAI TTS | Google Cloud TTS |
+|------------|-----------|-----------|------------------|
+| **Cost (approx.)** | Paid tiers, from $5/mo | ~$15-30/M chars | ~$16/M chars, 1M free/mo |
+| **Default voice** | `21m00Tcm4TlvDq8ikWAM` (Rachel) | `alloy` | `en-US-Neural2-F` |
+| **Voices** | 20+ preset + cloning | 6 | 220+ |
+| **Languages** | 32 (multilingual v2) | 50+ auto-detect | 40+ (incl. cmn-CN) |
+| **Voice cloning** | ✅ Instant (paid) | ❌ | ❌ |
+| **API key** | ELEVENLABS_API_KEY | OPENAI_API_KEY | GOOGLE_TTS_API_KEY |
+| **Model / language env** | ELEVENLABS_MODEL (default `eleven_multilingual_v2`) | OPENAI_TTS_MODEL (default `tts-1-hd`) | GOOGLE_TTS_LANGUAGE (default: derived from voice name, e.g. `en-US`) |
 
 ## Voice Cloning (`clone` command)
 
@@ -250,6 +271,16 @@ their consoles — the resulting voice id also works as a plain `--voice`.
 | `xiaomei` | Female, lively (活泼) | Short video |
 | `xiaoqian` | Female, gentle (亲切) | Customer service |
 
+### International Voices (ElevenLabs / OpenAI / Google, selected)
+
+| Backend | Voice ID | Style | Best for |
+|---------|----------|-------|----------|
+| elevenlabs | `21m00Tcm4TlvDq8ikWAM` (Rachel) | Female, calm | General English (default) |
+| openai | `alloy` | Neutral | General (default) |
+| openai | `nova` / `onyx` | Female bright / Male deep | Narration |
+| google | `en-US-Neural2-F` | Female, natural | General English (default) |
+| google | `cmn-CN-Wavenet-A` | Female, Mandarin | Chinese via Google |
+
 ## Usage
 
 ### Basic Usage
@@ -296,6 +327,48 @@ python3 scripts/tts.py --dry-run "这是一段测试文本"
 python3 scripts/tts.py --list
 ```
 
+## Expressiveness Markers
+
+Input text may contain markers on **any** platform — they are rendered natively
+where supported and stripped everywhere else (never read aloud). The chunker
+never splits inside a `[...]` marker.
+
+| Marker | Syntax | azure | minimax | all other platforms |
+|--------|--------|-------|---------|---------------------|
+| Pause | `[PAUSE:x]` — x = seconds, 0.01-99.99 | `<break time="xs"/>` (SSML) | `<#x#>` | stripped |
+| Sound tags | `(laughs)` `(chuckle)` `(sighs)` `(breath)` `(inhale)` `(exhale)` `(coughs)` | stripped | voiced **only if** `MINIMAX_MODEL` starts with `speech-2.8` (else stripped + stderr warning) | stripped |
+
+```bash
+python3 scripts/tts.py --platform azure \
+  "大家好。[PAUSE:0.8] 今天我们聊一个新话题。" out.wav
+
+MINIMAX_MODEL=speech-2.8-hd python3 scripts/tts.py --platform minimax \
+  "这也太好笑了 (laughs) 好，我们继续。" out.wav
+```
+
+## Pronunciation Overrides (`--phonemes`)
+
+Fix polyphonic Chinese characters (多音字) with a JSON dict mapping words to
+space-separated pinyin — tone-numbered (`hang2 zhang3`) or tone-marked
+(`háng zhǎng`). Keys starting with `_` are comments.
+
+```json
+{
+  "_comment": "pronunciation overrides for bank-themed script",
+  "行长": "hang2 zhang3",
+  "重庆": "chóng qìng"
+}
+```
+
+```bash
+python3 scripts/tts.py --platform azure --phonemes phonemes.json \
+  "行长在重庆开会。" out.wav
+```
+
+Per-platform: **azure** → SSML `<phoneme alphabet="sapi">` tags; **minimax** →
+inline pinyin annotations like `重(chong2)庆(qing4)`; all other platforms
+silently ignore the flag.
+
 ## Requirements
 
 ```bash
@@ -304,7 +377,7 @@ pip install edge-tts  # For Edge (default, free)
 
 # Optional backends — install only what you use
 pip install dashscope                              # CosyVoice
-pip install requests                               # Doubao, MiniMax
+pip install requests                               # Doubao, MiniMax, ElevenLabs, OpenAI, Google
 pip install azure-cognitiveservices-speech          # Azure
 pip install tencentcloud-sdk-python-tts             # Tencent Cloud
 pip install baidu-aip chardet                       # Baidu AI
@@ -331,6 +404,7 @@ export DASHSCOPE_API_KEY="your_api_key"
 # Microsoft Azure
 export AZURE_SPEECH_KEY="your_key"
 export AZURE_SPEECH_REGION="eastasia"
+export TTS_STYLE="gentle"              # optional: mstts:express-as style; unset = plain prosody
 
 # Tencent Cloud
 export TENCENT_SECRET_ID="your_secret_id"
@@ -348,6 +422,18 @@ export MINIMAX_API_KEY="your_api_key"
 export XUNFEI_APP_ID="your_app_id"
 export XUNFEI_API_KEY="your_api_key"
 export XUNFEI_API_SECRET="your_api_secret"
+
+# ElevenLabs (international)
+export ELEVENLABS_API_KEY="your_api_key"
+export ELEVENLABS_MODEL="eleven_multilingual_v2"   # optional, this is the default
+
+# OpenAI TTS (international)
+export OPENAI_API_KEY="your_api_key"
+export OPENAI_TTS_MODEL="tts-1-hd"                 # optional, this is the default
+
+# Google Cloud TTS (international)
+export GOOGLE_TTS_API_KEY="your_api_key"
+export GOOGLE_TTS_LANGUAGE="en-US"                 # optional, auto-derived from voice name
 ```
 
 Get API Keys:
@@ -358,6 +444,9 @@ Get API Keys:
 - Baidu AI: https://console.bce.baidu.com/ai/#/ai/speech/overview
 - MiniMax: https://platform.minimaxi.com
 - Xunfei: https://www.xfyun.cn
+- ElevenLabs: https://elevenlabs.io/app/settings/api-keys
+- OpenAI: https://platform.openai.com/api-keys
+- Google Cloud: https://console.cloud.google.com/apis/credentials
 
 ## Config File (Optional)
 
@@ -474,11 +563,30 @@ tts.py --format json --platform doubao "test" out.wav
 
 ```json
 // Success
-{"ok":true, "data":{...}, "meta":{"version":"...","schema_version":"1.1.0","timestamp":"...","ms":123}}
+{"ok":true, "data":{...}, "meta":{"version":"...","schema_version":"1.2.0","timestamp":"...","ms":123}}
 
 // Error
 {"ok":false, "error":{"code":"auth_missing_env","message":"VOLCENGINE_APPID not set","retryable":false,"field":"VOLCENGINE_APPID","backend":"doubao"}, "meta":{...}}
 ```
+
+### Word Boundaries (edge / azure only)
+
+For **edge** and **azure**, the success envelope includes native word-level
+timestamps under `data.word_boundaries` — absolute seconds within the output
+file, ascending, 3-decimal rounding. The key is absent for other platforms.
+
+```json
+{"ok":true, "data":{
+  "output_file": "out.wav",
+  "word_boundaries": [
+    {"text": "你好", "offset_sec": 0.1,   "duration_sec": 0.45},
+    {"text": "世界", "offset_sec": 0.562, "duration_sec": 0.5}
+  ]
+}}
+```
+
+Use these for subtitle/SRT generation or beat-synced animation without a
+separate forced-alignment pass.
 
 ### Exit Codes
 
@@ -493,7 +601,7 @@ tts.py --format json --platform doubao "test" out.wav
 ### Schema Introspection
 
 ```bash
-tts.py schema backends              # All 8 backends (compact by default)
+tts.py schema backends              # All 11 backends (compact by default)
 tts.py schema backends --full       # All fields (22 per backend)
 tts.py schema backends.doubao       # Single backend full detail
 tts.py schema voices                # All voice presets per backend

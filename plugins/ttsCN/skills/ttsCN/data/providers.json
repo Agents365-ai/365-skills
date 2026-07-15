@@ -1,5 +1,5 @@
 {
-  "updated": "2026-07-13",
+  "updated": "2026-07-15",
   "description": "ttsCN provider registry — single source of truth for all TTS backends. Edit this file to update --list output, docs/providers.html, and docs/providers.md.",
   "backends": [
     {
@@ -572,6 +572,225 @@
           "best_for": "儿童、二次元"
         }
       ]
+    },
+    {
+      "id": "elevenlabs",
+      "name": "ElevenLabs",
+      "provider": "ElevenLabs (国际)",
+      "provider_logo": "elevenlabs",
+      "cost_tier": "paid",
+      "cost": "订阅制 $5/月起",
+      "cost_per_10k": "≈¥12 (Starter 档折算)",
+      "max_chars": 400,
+      "max_duration_sec": 120,
+      "max_duration_display": "~2 分钟",
+      "voices_count": "20+ 预置 + 复刻",
+      "supports_ssml": false,
+      "supports_clone": true,
+      "clone_detail": "Instant Voice Cloning: 1分钟音频即可复刻 (付费订阅); Professional 版需 30 分钟以上语料",
+      "supports_emotion": "Via voice settings (stability/style)",
+      "supports_dialects": "",
+      "languages": "32 (multilingual v2)",
+      "streaming": "REST / WebSocket",
+      "setup_difficulty": "easy",
+      "setup_label": "简单 (需国际网络)",
+      "env_vars": [
+        "ELEVENLABS_API_KEY"
+      ],
+      "pip_package": "requests",
+      "import_module": "requests",
+      "pip_install": "pip install requests",
+      "api_url": "https://api.elevenlabs.io/v1/text-to-speech/{voice_id}",
+      "get_key_url": "https://elevenlabs.io/app/settings/api-keys",
+      "tags": [
+        "intl",
+        "best-quality",
+        "clone",
+        "multilingual"
+      ],
+      "voices": [
+        {
+          "id": "21m00Tcm4TlvDq8ikWAM",
+          "label": "Rachel",
+          "style": "Female, 平静美式",
+          "best_for": "默认旁白"
+        },
+        {
+          "id": "pNInz6obpgDQGcFmaJgB",
+          "label": "Adam",
+          "style": "Male, 深沉叙事",
+          "best_for": "纪录片、旁白"
+        },
+        {
+          "id": "ErXwobaYiN019PkySvjV",
+          "label": "Antoni",
+          "style": "Male, 圆润自然",
+          "best_for": "通用场景"
+        },
+        {
+          "id": "EXAVITQu4vr4xnSDxMaL",
+          "label": "Bella",
+          "style": "Female, 柔和亲切",
+          "best_for": "有声书"
+        },
+        {
+          "id": "AZnzlk1XvdvUeBnXmlld",
+          "label": "Domi",
+          "style": "Female, 自信有力",
+          "best_for": "宣传、广告"
+        },
+        {
+          "id": "TxGEqnHWrfWFTfGW9XjX",
+          "label": "Josh",
+          "style": "Male, 低沉磁性",
+          "best_for": "预告片"
+        }
+      ]
+    },
+    {
+      "id": "openai",
+      "name": "OpenAI TTS",
+      "provider": "OpenAI (国际)",
+      "provider_logo": "openai",
+      "cost_tier": "paid",
+      "cost": "$15-30/百万字符",
+      "cost_per_10k": "≈¥1-2 (tts-1 / tts-1-hd)",
+      "max_chars": 400,
+      "max_duration_sec": 120,
+      "max_duration_display": "~2 分钟",
+      "voices_count": "6",
+      "supports_ssml": false,
+      "supports_clone": false,
+      "clone_detail": "",
+      "supports_emotion": "",
+      "supports_dialects": "",
+      "languages": "50+ (多语言自动识别)",
+      "streaming": "REST",
+      "setup_difficulty": "easy",
+      "setup_label": "简单 (需国际网络)",
+      "env_vars": [
+        "OPENAI_API_KEY"
+      ],
+      "pip_package": "requests",
+      "import_module": "requests",
+      "pip_install": "pip install requests",
+      "api_url": "https://api.openai.com/v1/audio/speech",
+      "get_key_url": "https://platform.openai.com/api-keys",
+      "tags": [
+        "intl",
+        "multilingual"
+      ],
+      "voices": [
+        {
+          "id": "alloy",
+          "label": "Alloy",
+          "style": "Neutral, 中性均衡",
+          "best_for": "默认通用"
+        },
+        {
+          "id": "echo",
+          "label": "Echo",
+          "style": "Male, 沉稳",
+          "best_for": "旁白"
+        },
+        {
+          "id": "fable",
+          "label": "Fable",
+          "style": "Male, 英伦叙事",
+          "best_for": "讲故事"
+        },
+        {
+          "id": "onyx",
+          "label": "Onyx",
+          "style": "Male, 低沉浑厚",
+          "best_for": "纪录片"
+        },
+        {
+          "id": "nova",
+          "label": "Nova",
+          "style": "Female, 活力清晰",
+          "best_for": "短视频"
+        },
+        {
+          "id": "shimmer",
+          "label": "Shimmer",
+          "style": "Female, 温暖柔和",
+          "best_for": "有声书"
+        }
+      ]
+    },
+    {
+      "id": "google",
+      "name": "Google Cloud TTS",
+      "provider": "Google (国际)",
+      "provider_logo": "google",
+      "cost_tier": "paid",
+      "cost": "$16/百万字符 (每月前100万字免费)",
+      "cost_per_10k": "≈¥1.2 (Neural2)",
+      "max_chars": 400,
+      "max_duration_sec": 120,
+      "max_duration_display": "~2 分钟",
+      "voices_count": "220+",
+      "supports_ssml": false,
+      "supports_clone": false,
+      "clone_detail": "",
+      "supports_emotion": "",
+      "supports_dialects": "",
+      "languages": "40+ (含中文 cmn-CN)",
+      "streaming": "REST",
+      "setup_difficulty": "easy",
+      "setup_label": "简单 (需国际网络)",
+      "env_vars": [
+        "GOOGLE_TTS_API_KEY"
+      ],
+      "pip_package": "requests",
+      "import_module": "requests",
+      "pip_install": "pip install requests",
+      "api_url": "https://texttospeech.googleapis.com/v1/text:synthesize",
+      "get_key_url": "https://console.cloud.google.com/apis/credentials",
+      "tags": [
+        "intl",
+        "multilingual",
+        "enterprise"
+      ],
+      "voices": [
+        {
+          "id": "en-US-Neural2-F",
+          "label": "Neural2-F",
+          "style": "Female, 自然美式",
+          "best_for": "默认英文"
+        },
+        {
+          "id": "en-US-Neural2-D",
+          "label": "Neural2-D",
+          "style": "Male, 沉稳美式",
+          "best_for": "英文旁白"
+        },
+        {
+          "id": "en-US-Neural2-J",
+          "label": "Neural2-J",
+          "style": "Male, 清晰美式",
+          "best_for": "英文播报"
+        },
+        {
+          "id": "cmn-CN-Wavenet-A",
+          "label": "Wavenet-A",
+          "style": "Female, 标准普通话",
+          "best_for": "中文通用"
+        },
+        {
+          "id": "cmn-CN-Wavenet-B",
+          "label": "Wavenet-B",
+          "style": "Male, 标准普通话",
+          "best_for": "中文通用"
+        },
+        {
+          "id": "cmn-CN-Wavenet-C",
+          "label": "Wavenet-C",
+          "style": "Male, 标准普通话",
+          "best_for": "中文旁白"
+        }
+      ]
     }
   ],
   "tags": {
@@ -664,6 +883,11 @@
       "label": "专业级",
       "icon": "🎓",
       "color": "#475569"
+    },
+    "intl": {
+      "label": "国际服务",
+      "icon": "🌐",
+      "color": "#0284c7"
     }
   }
 }

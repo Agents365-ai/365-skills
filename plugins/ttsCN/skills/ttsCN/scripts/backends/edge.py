@@ -9,7 +9,8 @@ def synthesize(chunks, config, output_file, output_format="wav"):
     """Synthesize using Edge TTS, concat chunks into a single output file.
 
     config keys: voice, speech_rate
-    Returns: total_duration_seconds (float)
+    Returns: (total_duration_seconds, word_boundaries) where each boundary
+    is {"text", "offset", "duration"} in seconds, absolute in the final file.
     """
     import asyncio
     import edge_tts
@@ -18,6 +19,7 @@ def synthesize(chunks, config, output_file, output_format="wav"):
     speech_rate = config.get("speech_rate", "+5%")
     out_dir = os.path.dirname(output_file) or "."
     part_files = []
+    word_boundaries = []
     accumulated_duration = 0.0
 
     async def run():
@@ -30,12 +32,33 @@ def synthesize(chunks, config, output_file, output_format="wav"):
             for attempt in range(1, 4):
                 try:
                     audio_data = bytearray()
-                    communicate = edge_tts.Communicate(
-                        chunk, voice=voice, rate=speech_rate
-                    )
+                    # Collected per attempt; merged only on success so a
+                    # failed attempt can't leave duplicate boundaries behind.
+                    chunk_words = []
+                    try:
+                        # edge-tts >= 7 defaults to SentenceBoundary and
+                        # needs the boundary kwarg for per-word events.
+                        communicate = edge_tts.Communicate(
+                            chunk, voice=voice, rate=speech_rate,
+                            boundary="WordBoundary",
+                        )
+                    except TypeError:
+                        # edge-tts < 7 has no kwarg; WordBoundary is default.
+                        communicate = edge_tts.Communicate(
+                            chunk, voice=voice, rate=speech_rate
+                        )
                     async for event in communicate.stream():
                         if event["type"] == "audio":
                             audio_data.extend(event["data"])
+                        elif event["type"] == "WordBoundary":
+                            # offset/duration are 100-ns ticks, per chunk;
+                            # accumulated_duration makes offsets absolute.
+                            chunk_words.append({
+                                "text": event.get("text", ""),
+                                "offset": accumulated_duration
+                                          + event.get("offset", 0) / 10_000_000,
+                                "duration": event.get("duration", 0) / 10_000_000,
+                            })
 
                     if not audio_data:
                         raise RuntimeError("No audio data received")
@@ -60,6 +83,7 @@ def synthesize(chunks, config, output_file, output_format="wav"):
                         capture_output=True, text=True,
                     )
                     chunk_duration = float(probe.stdout.strip()) if probe.stdout.strip() else 0
+                    word_boundaries.extend(chunk_words)
                     accumulated_duration += chunk_duration
                     print(f"  Part {i + 1}/{len(chunks)} done "
                           f"({len(chunk)} chars, {chunk_duration:.1f}s)")
@@ -95,4 +119,4 @@ def synthesize(chunks, config, output_file, output_format="wav"):
             if os.path.exists(pf):
                 os.remove(pf)
 
-    return accumulated_duration
+    return accumulated_duration, word_boundaries

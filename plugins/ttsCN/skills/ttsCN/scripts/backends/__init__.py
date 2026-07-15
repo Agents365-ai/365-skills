@@ -132,6 +132,8 @@ def resolve_voice(backend):
         "cosyvoice": "longxiaochun_v3", "doubao": "BV001_streaming",
         "tencent": "101001", "baidu": "0",
         "minimax": "female-shaonv", "xunfei": "xiaoyan",
+        "elevenlabs": "21m00Tcm4TlvDq8ikWAM", "openai": "alloy",
+        "google": "en-US-Neural2-F",
     }
     return defaults.get(backend, "zh-CN-XiaoxiaoNeural"), "default"
 
@@ -216,6 +218,16 @@ def _build_config(name):
         config["app_id"] = os.environ["XUNFEI_APP_ID"]
         config["api_key"] = os.environ["XUNFEI_API_KEY"]
         config["api_secret"] = os.environ["XUNFEI_API_SECRET"]
+    elif name == "elevenlabs":
+        config["key"] = os.environ["ELEVENLABS_API_KEY"]
+        config["model"] = os.environ.get("ELEVENLABS_MODEL", "eleven_multilingual_v2")
+    elif name == "openai":
+        config["key"] = os.environ["OPENAI_API_KEY"]
+        config["model"] = os.environ.get("OPENAI_TTS_MODEL", "tts-1-hd")
+    elif name == "google":
+        config["key"] = os.environ["GOOGLE_TTS_API_KEY"]
+        # Empty default: the adapter derives languageCode from the voice name
+        config["language"] = os.environ.get("GOOGLE_TTS_LANGUAGE", "")
     return config
 
 

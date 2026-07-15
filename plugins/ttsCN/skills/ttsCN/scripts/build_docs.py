@@ -229,7 +229,7 @@ tr:hover {{ background:rgba(56,189,248,0.04); }}
 
   <header class="header">
     <h1>🎤 ttsCN — 中文 <span>TTS</span> 服务商对比</h1>
-    <p>8 个国内可用的语音合成后端 · 点击行查看详情 · 数据更新于 {updated}</p>
+    <p>{len(backends)} 个可用的语音合成后端 (国内 + 国际) · 点击行查看详情 · 数据更新于 {updated}</p>
     <p class="updated">💡 编辑 <code>data/providers.json</code> 即可更新此页面</p>
   </header>
 
@@ -292,7 +292,7 @@ tr:hover {{ background:rgba(56,189,248,0.04); }}
     </table>
 
     <h3 style="margin-top:24px;">Schema Introspection</h3>
-    <pre><code>tts.py schema backends           # All 8 backends (compact by default)
+    <pre><code>tts.py schema backends           # All {len(backends)} backends (compact by default)
 tts.py schema backends --full    # All 22 fields per backend
 tts.py schema backends.doubao    # Single backend full detail
 tts.py schema voices             # All voice presets

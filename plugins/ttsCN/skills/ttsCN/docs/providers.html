@@ -103,7 +103,7 @@ tr:hover { background:rgba(56,189,248,0.04); }
 
   <header class="header">
     <h1>🎤 ttsCN — 中文 <span>TTS</span> 服务商对比</h1>
-    <p>8 个国内可用的语音合成后端 · 点击行查看详情 · 数据更新于 2026-07-13</p>
+    <p>11 个可用的语音合成后端 (国内 + 国际) · 点击行查看详情 · 数据更新于 2026-07-15</p>
     <p class="updated">💡 编辑 <code>data/providers.json</code> 即可更新此页面</p>
   </header>
 
@@ -279,6 +279,60 @@ tr:hover { background:rgba(56,189,248,0.04); }
           <td class="col-lang">130+ (中/英/日/韩/俄/方言语种...)</td>
           <td class="col-streaming">WebSocket</td>
           <td class="col-setup">🟡 中等</td>
+        </tr>
+        <tr class="provider-row" id="row-elevenlabs">
+          <td class="col-name">
+            <a href="#detail-elevenlabs" class="provider-link">
+              <strong>ElevenLabs</strong>
+              <small>ElevenLabs (国际)</small>
+            </a>
+          </td>
+          <td class="col-cost ">订阅制 $5/月起</td>
+          <td class="col-voices">20+ 预置 + 复刻</td>
+          <td class="col-chars">400<small> 字/次</small></td>
+          <td class="col-duration">~2 分钟<small> /次</small></td>
+          <td class="col-ssml"><span class="no">❌</span></td>
+          <td class="col-clone"><span class="yes">✅</span></td>
+          <td class="col-emoji">Via voice settings (stability/style)</td>
+          <td class="col-lang">32 (multilingual v2)</td>
+          <td class="col-streaming">REST / WebSocket</td>
+          <td class="col-setup">🟢 简单 (需国际网络)</td>
+        </tr>
+        <tr class="provider-row" id="row-openai">
+          <td class="col-name">
+            <a href="#detail-openai" class="provider-link">
+              <strong>OpenAI TTS</strong>
+              <small>OpenAI (国际)</small>
+            </a>
+          </td>
+          <td class="col-cost ">$15-30/百万字符</td>
+          <td class="col-voices">6</td>
+          <td class="col-chars">400<small> 字/次</small></td>
+          <td class="col-duration">~2 分钟<small> /次</small></td>
+          <td class="col-ssml"><span class="no">❌</span></td>
+          <td class="col-clone"><span class="no">❌</span></td>
+          <td class="col-emoji"></td>
+          <td class="col-lang">50+ (多语言自动识别)</td>
+          <td class="col-streaming">REST</td>
+          <td class="col-setup">🟢 简单 (需国际网络)</td>
+        </tr>
+        <tr class="provider-row" id="row-google">
+          <td class="col-name">
+            <a href="#detail-google" class="provider-link">
+              <strong>Google Cloud TTS</strong>
+              <small>Google (国际)</small>
+            </a>
+          </td>
+          <td class="col-cost ">$16/百万字符 (每月前100万字免费)</td>
+          <td class="col-voices">220+</td>
+          <td class="col-chars">400<small> 字/次</small></td>
+          <td class="col-duration">~2 分钟<small> /次</small></td>
+          <td class="col-ssml"><span class="no">❌</span></td>
+          <td class="col-clone"><span class="no">❌</span></td>
+          <td class="col-emoji"></td>
+          <td class="col-lang">40+ (含中文 cmn-CN)</td>
+          <td class="col-streaming">REST</td>
+          <td class="col-setup">🟢 简单 (需国际网络)</td>
         </tr>
       </tbody>
     </table>
@@ -796,6 +850,204 @@ tr:hover { background:rgba(56,189,248,0.04); }
         </div>
         </div>
       </section>
+      <section class="detail-panel" id="detail-elevenlabs">
+        <div class="detail-header">
+          <h2>ElevenLabs</h2>
+          <span class="provider-name">ElevenLabs (国际)</span>
+          <div class="detail-tags"><span class="tag" style="--tag-color:#0284c7">🌐 国际服务</span> <span class="tag" style="--tag-color:#fbbf24">⭐ 最佳质量</span> <span class="tag" style="--tag-color:#f59e0b">🎭 声音克隆</span> <span class="tag" style="--tag-color:#0ea5e9">🌍 多语言</span></div>
+        </div>
+        <div class="detail-grid">
+          <div class="detail-item"><label>费用</label><span class="cost-badge ">订阅制 $5/月起</span></div>
+          <div class="detail-item"><label>万字成本</label><span>≈¥12 (Starter 档折算)</span></div>
+          <div class="detail-item"><label>内置音色</label><span>20+ 预置 + 复刻</span></div>
+          <div class="detail-item"><label>单次最大字数</label><span>400 字</span></div>
+          <div class="detail-item"><label>单次最大时长</label><span>~2 分钟</span></div>
+          <div class="detail-item"><label>SSML</label><span class="no">❌</span></div>
+          <div class="detail-item"><label>声音克隆</label><span class="yes">✅</span></div>
+          <div class="detail-item"><label>情感合成</label><span>Via voice settings (stability/style)</span></div>
+          <div class="detail-item"><label>方言支持</label><span>—</span></div>
+          <div class="detail-item"><label>语言</label><span>32 (multilingual v2)</span></div>
+          <div class="detail-item"><label>流式合成</label><span>REST / WebSocket</span></div>
+          <div class="detail-item"><label>配置难度</label><span>🟢 简单 (需国际网络)</span></div>
+          <div class="detail-item"><label>安装</label><code>pip install requests</code></div>
+          <div class="detail-item"><label>API 地址</label><code>https://api.elevenlabs.io/v1/text-to-speech/{voice_id}</code></div>
+          <div class="detail-item full-width"><label>环境变量</label><code>ELEVENLABS_API_KEY</code></div>
+        </div>
+        <div class="clone-box"><strong>🔊 声音克隆:</strong> Instant Voice Cloning: 1分钟音频即可复刻 (付费订阅); Professional 版需 30 分钟以上语料</div>
+        <div class="key-box"><strong>🔑 获取 API Key:</strong> <a href="https://elevenlabs.io/app/settings/api-keys" target="_blank">https://elevenlabs.io/app/settings/api-keys</a></div>
+        <div class="voice-list">
+          <h3>推荐音色</h3>
+          
+        <div class="voice-card">
+          <code class="voice-id">21m00Tcm4TlvDq8ikWAM</code>
+          <span class="voice-label">Rachel</span>
+          <span class="voice-style">Female, 平静美式</span>
+          <span class="voice-best">默认旁白</span>
+        </div>
+        <div class="voice-card">
+          <code class="voice-id">pNInz6obpgDQGcFmaJgB</code>
+          <span class="voice-label">Adam</span>
+          <span class="voice-style">Male, 深沉叙事</span>
+          <span class="voice-best">纪录片、旁白</span>
+        </div>
+        <div class="voice-card">
+          <code class="voice-id">ErXwobaYiN019PkySvjV</code>
+          <span class="voice-label">Antoni</span>
+          <span class="voice-style">Male, 圆润自然</span>
+          <span class="voice-best">通用场景</span>
+        </div>
+        <div class="voice-card">
+          <code class="voice-id">EXAVITQu4vr4xnSDxMaL</code>
+          <span class="voice-label">Bella</span>
+          <span class="voice-style">Female, 柔和亲切</span>
+          <span class="voice-best">有声书</span>
+        </div>
+        <div class="voice-card">
+          <code class="voice-id">AZnzlk1XvdvUeBnXmlld</code>
+          <span class="voice-label">Domi</span>
+          <span class="voice-style">Female, 自信有力</span>
+          <span class="voice-best">宣传、广告</span>
+        </div>
+        <div class="voice-card">
+          <code class="voice-id">TxGEqnHWrfWFTfGW9XjX</code>
+          <span class="voice-label">Josh</span>
+          <span class="voice-style">Male, 低沉磁性</span>
+          <span class="voice-best">预告片</span>
+        </div>
+        </div>
+      </section>
+      <section class="detail-panel" id="detail-openai">
+        <div class="detail-header">
+          <h2>OpenAI TTS</h2>
+          <span class="provider-name">OpenAI (国际)</span>
+          <div class="detail-tags"><span class="tag" style="--tag-color:#0284c7">🌐 国际服务</span> <span class="tag" style="--tag-color:#0ea5e9">🌍 多语言</span></div>
+        </div>
+        <div class="detail-grid">
+          <div class="detail-item"><label>费用</label><span class="cost-badge ">$15-30/百万字符</span></div>
+          <div class="detail-item"><label>万字成本</label><span>≈¥1-2 (tts-1 / tts-1-hd)</span></div>
+          <div class="detail-item"><label>内置音色</label><span>6</span></div>
+          <div class="detail-item"><label>单次最大字数</label><span>400 字</span></div>
+          <div class="detail-item"><label>单次最大时长</label><span>~2 分钟</span></div>
+          <div class="detail-item"><label>SSML</label><span class="no">❌</span></div>
+          <div class="detail-item"><label>声音克隆</label><span class="no">❌</span></div>
+          <div class="detail-item"><label>情感合成</label><span></span></div>
+          <div class="detail-item"><label>方言支持</label><span>—</span></div>
+          <div class="detail-item"><label>语言</label><span>50+ (多语言自动识别)</span></div>
+          <div class="detail-item"><label>流式合成</label><span>REST</span></div>
+          <div class="detail-item"><label>配置难度</label><span>🟢 简单 (需国际网络)</span></div>
+          <div class="detail-item"><label>安装</label><code>pip install requests</code></div>
+          <div class="detail-item"><label>API 地址</label><code>https://api.openai.com/v1/audio/speech</code></div>
+          <div class="detail-item full-width"><label>环境变量</label><code>OPENAI_API_KEY</code></div>
+        </div>
+        
+        <div class="key-box"><strong>🔑 获取 API Key:</strong> <a href="https://platform.openai.com/api-keys" target="_blank">https://platform.openai.com/api-keys</a></div>
+        <div class="voice-list">
+          <h3>推荐音色</h3>
+          
+        <div class="voice-card">
+          <code class="voice-id">alloy</code>
+          <span class="voice-label">Alloy</span>
+          <span class="voice-style">Neutral, 中性均衡</span>
+          <span class="voice-best">默认通用</span>
+        </div>
+        <div class="voice-card">
+          <code class="voice-id">echo</code>
+          <span class="voice-label">Echo</span>
+          <span class="voice-style">Male, 沉稳</span>
+          <span class="voice-best">旁白</span>
+        </div>
+        <div class="voice-card">
+          <code class="voice-id">fable</code>
+          <span class="voice-label">Fable</span>
+          <span class="voice-style">Male, 英伦叙事</span>
+          <span class="voice-best">讲故事</span>
+        </div>
+        <div class="voice-card">
+          <code class="voice-id">onyx</code>
+          <span class="voice-label">Onyx</span>
+          <span class="voice-style">Male, 低沉浑厚</span>
+          <span class="voice-best">纪录片</span>
+        </div>
+        <div class="voice-card">
+          <code class="voice-id">nova</code>
+          <span class="voice-label">Nova</span>
+          <span class="voice-style">Female, 活力清晰</span>
+          <span class="voice-best">短视频</span>
+        </div>
+        <div class="voice-card">
+          <code class="voice-id">shimmer</code>
+          <span class="voice-label">Shimmer</span>
+          <span class="voice-style">Female, 温暖柔和</span>
+          <span class="voice-best">有声书</span>
+        </div>
+        </div>
+      </section>
+      <section class="detail-panel" id="detail-google">
+        <div class="detail-header">
+          <h2>Google Cloud TTS</h2>
+          <span class="provider-name">Google (国际)</span>
+          <div class="detail-tags"><span class="tag" style="--tag-color:#0284c7">🌐 国际服务</span> <span class="tag" style="--tag-color:#0ea5e9">🌍 多语言</span> <span class="tag" style="--tag-color:#6366f1">🏢 企业级</span></div>
+        </div>
+        <div class="detail-grid">
+          <div class="detail-item"><label>费用</label><span class="cost-badge ">$16/百万字符 (每月前100万字免费)</span></div>
+          <div class="detail-item"><label>万字成本</label><span>≈¥1.2 (Neural2)</span></div>
+          <div class="detail-item"><label>内置音色</label><span>220+</span></div>
+          <div class="detail-item"><label>单次最大字数</label><span>400 字</span></div>
+          <div class="detail-item"><label>单次最大时长</label><span>~2 分钟</span></div>
+          <div class="detail-item"><label>SSML</label><span class="no">❌</span></div>
+          <div class="detail-item"><label>声音克隆</label><span class="no">❌</span></div>
+          <div class="detail-item"><label>情感合成</label><span></span></div>
+          <div class="detail-item"><label>方言支持</label><span>—</span></div>
+          <div class="detail-item"><label>语言</label><span>40+ (含中文 cmn-CN)</span></div>
+          <div class="detail-item"><label>流式合成</label><span>REST</span></div>
+          <div class="detail-item"><label>配置难度</label><span>🟢 简单 (需国际网络)</span></div>
+          <div class="detail-item"><label>安装</label><code>pip install requests</code></div>
+          <div class="detail-item"><label>API 地址</label><code>https://texttospeech.googleapis.com/v1/text:synthesize</code></div>
+          <div class="detail-item full-width"><label>环境变量</label><code>GOOGLE_TTS_API_KEY</code></div>
+        </div>
+        
+        <div class="key-box"><strong>🔑 获取 API Key:</strong> <a href="https://console.cloud.google.com/apis/credentials" target="_blank">https://console.cloud.google.com/apis/credentials</a></div>
+        <div class="voice-list">
+          <h3>推荐音色</h3>
+          
+        <div class="voice-card">
+          <code class="voice-id">en-US-Neural2-F</code>
+          <span class="voice-label">Neural2-F</span>
+          <span class="voice-style">Female, 自然美式</span>
+          <span class="voice-best">默认英文</span>
+        </div>
+        <div class="voice-card">
+          <code class="voice-id">en-US-Neural2-D</code>
+          <span class="voice-label">Neural2-D</span>
+          <span class="voice-style">Male, 沉稳美式</span>
+          <span class="voice-best">英文旁白</span>
+        </div>
+        <div class="voice-card">
+          <code class="voice-id">en-US-Neural2-J</code>
+          <span class="voice-label">Neural2-J</span>
+          <span class="voice-style">Male, 清晰美式</span>
+          <span class="voice-best">英文播报</span>
+        </div>
+        <div class="voice-card">
+          <code class="voice-id">cmn-CN-Wavenet-A</code>
+          <span class="voice-label">Wavenet-A</span>
+          <span class="voice-style">Female, 标准普通话</span>
+          <span class="voice-best">中文通用</span>
+        </div>
+        <div class="voice-card">
+          <code class="voice-id">cmn-CN-Wavenet-B</code>
+          <span class="voice-label">Wavenet-B</span>
+          <span class="voice-style">Male, 标准普通话</span>
+          <span class="voice-best">中文通用</span>
+        </div>
+        <div class="voice-card">
+          <code class="voice-id">cmn-CN-Wavenet-C</code>
+          <span class="voice-label">Wavenet-C</span>
+          <span class="voice-style">Male, 标准普通话</span>
+          <span class="voice-best">中文旁白</span>
+        </div>
+        </div>
+      </section>
 
   <h2 style="margin:48px 0 24px;">🔧 Developer Reference</h2>
 
@@ -820,7 +1072,7 @@ tr:hover { background:rgba(56,189,248,0.04); }
     </table>
 
     <h3 style="margin-top:24px;">Schema Introspection</h3>
-    <pre><code>tts.py schema backends           # All 8 backends (compact by default)
+    <pre><code>tts.py schema backends           # All 11 backends (compact by default)
 tts.py schema backends --full    # All 22 fields per backend
 tts.py schema backends.doubao    # Single backend full detail
 tts.py schema voices             # All voice presets

@@ -1,14 +1,53 @@
 """Azure Cognitive Services TTS backend."""
 
 import os
+import re
 import time
+from xml.sax.saxutils import escape
+
+from markers import render_markers
+from phonemes import apply_phonemes
+
+
+def build_ssml_fragment(chunk, phoneme_dict):
+    """Render phonemes and expressiveness markers into an SSML fragment.
+
+    apply_phonemes inserts <phoneme> tags, render_markers turns [PAUSE:x]
+    into <break/> (and strips sound tags), then the surrounding text is
+    XML-escaped while the generated tags are preserved via placeholders —
+    same ordering the video-podcast-maker azure path uses.
+    """
+    frag = apply_phonemes(chunk, phoneme_dict or {})
+    frag = render_markers(frag, "ssml")
+    tags = []
+
+    def _save(m):
+        tags.append(m.group(0))
+        return "\x00{}\x00".format(len(tags) - 1)
+
+    frag = escape(re.sub(r"<[^>]+>", _save, frag))
+    for i, tag in enumerate(tags):
+        frag = frag.replace("\x00{}\x00".format(i), tag)
+    return frag
+
+
+def _style_wrap(block):
+    """Wrap in mstts:express-as when env TTS_STYLE is set (e.g. "gentle").
+
+    Empty/unset keeps plain neural prosody — some voices (Multilingual
+    variants) produce vocoder artifacts under express-as.
+    """
+    style = os.environ.get("TTS_STYLE", "")
+    return (f'<mstts:express-as style="{style}">{block}</mstts:express-as>'
+            if style else block)
 
 
 def synthesize(chunks, config, output_file, output_format="wav"):
-    """Synthesize using Azure TTS with SSML.
+    """Synthesize using Azure TTS with SSML and word boundary tracking.
 
-    config keys: key, region, voice, speech_rate
-    Returns: total_duration_seconds (float)
+    config keys: key, region, voice, speech_rate, phoneme_dict
+    Returns: (total_duration_seconds, word_boundaries) where each boundary
+    is {"text", "offset", "duration"} in seconds, absolute in the final file.
     """
     import azure.cognitiveservices.speech as speechsdk
 
@@ -22,7 +61,9 @@ def synthesize(chunks, config, output_file, output_format="wav"):
 
     out_dir = os.path.dirname(output_file) or "."
     part_files = []
+    word_boundaries = []
     accumulated_duration = 0.0
+    phoneme_dict = config.get("phoneme_dict") or {}
 
     for i, chunk in enumerate(chunks):
         part_file = os.path.join(out_dir, f".tts_part_{i:04d}.wav")
@@ -35,13 +76,34 @@ def synthesize(chunks, config, output_file, output_format="wav"):
                     speech_config=speech_config, audio_config=audio,
                 )
 
+                # Collect per attempt; merged only on success so a failed
+                # attempt can't leave duplicate boundaries behind.
+                attempt_words = []
+                chunk_start = accumulated_duration  # snapshot for closure
+
+                def word_boundary_cb(evt, _start=chunk_start):
+                    # Punctuation boundaries carry no spoken text — skip them.
+                    if getattr(evt, "boundary_type", None) == \
+                            speechsdk.SpeechSynthesisBoundaryType.Punctuation:
+                        return
+                    attempt_words.append({
+                        "text": evt.text,
+                        # audio_offset is in 100-ns ticks
+                        "offset": _start + evt.audio_offset / 10_000_000,
+                        "duration": evt.duration.total_seconds(),
+                    })
+                synth.synthesis_word_boundary.connect(word_boundary_cb)
+
+                fragment = build_ssml_fragment(chunk, phoneme_dict)
+                inner = _style_wrap(
+                    f'<prosody rate="{speech_rate}">{fragment}</prosody>')
                 ssml = (
                     f'<speak version="1.0" '
                     f'xmlns="http://www.w3.org/2001/10/synthesis" '
                     f'xmlns:mstts="https://www.w3.org/2001/mstts" '
                     f'xml:lang="zh-CN">'
                     f'<voice name="{voice}">'
-                    f'<prosody rate="{speech_rate}">{chunk}</prosody>'
+                    f'{inner}'
                     f'</voice>'
                     f'</speak>'
                 )
@@ -50,6 +112,7 @@ def synthesize(chunks, config, output_file, output_format="wav"):
                 if result.reason == speechsdk.ResultReason.SynthesizingAudioCompleted:
                     chunk_duration = result.audio_duration.total_seconds()
                     accumulated_duration += chunk_duration
+                    word_boundaries.extend(attempt_words)
                     print(f"  Part {i + 1}/{len(chunks)} done "
                           f"({len(chunk)} chars, {chunk_duration:.1f}s)")
                     break
@@ -86,4 +149,4 @@ def synthesize(chunks, config, output_file, output_format="wav"):
             if os.path.exists(pf):
                 os.remove(pf)
 
-    return accumulated_duration
+    return accumulated_duration, word_boundaries

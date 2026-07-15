@@ -17,7 +17,7 @@ import os
 import sys
 import time
 
-SCHEMA_VERSION = "1.1.0"  # semver — bump on envelope/contract changes
+SCHEMA_VERSION = "1.2.0"  # semver — bump on envelope/contract changes
 
 # Fields deprecated in current version. Agents should migrate before removed_in.
 # {"old_field": {"replaced_by":"new_field", "removed_in":"1.2.0"}}
@@ -25,9 +25,14 @@ DEPRECATED_FIELDS = {}
 
 _PREFERENCES_KEY = "TTS_FORMAT"
 
+# Captured at import time, before tts.py's json-mode `sys.stdout = sys.stderr`
+# redirect — envelope writes always reach the real stdout so backend progress
+# prints can never corrupt the JSON payload.
+_REAL_STDOUT = sys.stdout
+
 
 def _stdout_is_tty():
-    return hasattr(sys.stdout, "isatty") and sys.stdout.isatty()
+    return hasattr(_REAL_STDOUT, "isatty") and _REAL_STDOUT.isatty()
 
 
 def use_json(args):
@@ -42,7 +47,7 @@ def _now_iso():
     return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
 
-VERSION = "1.3.2"  # tool version — single source of truth, imported by tts.py
+VERSION = "1.4.0"  # tool version — single source of truth, imported by tts.py
 
 
 def _get_version():
@@ -89,7 +94,7 @@ def error(code, message, retryable=False, field=None, backend=None,
 
 
 def emit_success(data=None, started_at=None, **extra):
-    print(success(data, started_at=started_at, **extra))
+    print(success(data, started_at=started_at, **extra), file=_REAL_STDOUT)
     sys.exit(0)
 
 
@@ -108,7 +113,7 @@ def emit_error(code, message, retryable=False, field=None, backend=None,
     if backend:
         err["backend"] = backend
     err.update(extra)
-    print(envelope(False, error=err, started_at=started_at))
+    print(envelope(False, error=err, started_at=started_at), file=_REAL_STDOUT)
     sys.exit(exit_code)
 
 

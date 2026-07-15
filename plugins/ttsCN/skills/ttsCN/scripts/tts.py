@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-ttsCN — Multi-Platform Chinese TTS Script (agent-native v1.1.0)
+ttsCN — Multi-Platform Chinese TTS Script (agent-native, schema v1.2.0)
 
 Generate speech audio from text using 8 China-friendly TTS backends.
 
@@ -35,6 +35,10 @@ from output import (
     EXIT_OK, EXIT_INTERNAL, EXIT_VALIDATION, EXIT_AUTH, EXIT_BACKEND,
     exit_for_error_code, SCHEMA_VERSION, VERSION,
 )
+from markers import (
+    SOUND_TAG_RE, protect_pauses, restore_pauses, render_markers, strip_markers,
+)
+from phonemes import load_phonemes, apply_phonemes_minimax
 import idempotency
 
 DEFAULT_BACKEND = "edge"
@@ -65,7 +69,10 @@ def _hard_split(sentence, max_chars):
         if len(buf) >= budget:
             cut = -1
             for j in range(len(buf) - 1, max(-1, len(buf) - lookback - 1), -1):
-                if buf[j] in _SOFT_PUNCT:
+                # Never cut inside an unclosed [...] token — [PAUSE:0p8]
+                # contains ':' which would otherwise be a soft-punct cut.
+                if buf[j] in _SOFT_PUNCT and \
+                        buf.rfind("[", 0, j + 1) <= buf.rfind("]", 0, j + 1):
                     cut = j
                     break
             if cut >= 0:
@@ -102,6 +109,35 @@ def chunk_text(text, max_chars):
     if current:
         chunks.append(current)
     return chunks
+
+
+def _prepare_chunks(backend, text, max_chars, phoneme_dict):
+    """Chunk text with per-platform expressiveness-marker rendering.
+
+    azure keeps [PAUSE:x] markers through chunking (protected so the '.'
+    inside them never splits a chunk); the azure backend renders them to
+    SSML <break/> tags. minimax chunks the same way, then renders <#x#>
+    pauses, phoneme annotations, and model-gated sound tags per chunk.
+    Every other platform strips markers *before* chunking so chunk-size
+    counting applies to the text actually sent.
+    """
+    if backend in ("azure", "minimax"):
+        chunks = [restore_pauses(c)
+                  for c in chunk_text(protect_pauses(text), max_chars)]
+        if backend == "minimax":
+            chunks = [apply_phonemes_minimax(render_markers(c, "minimax"),
+                                             phoneme_dict)
+                      for c in chunks]
+            # Sound tags are only understood by speech-2.8 models — on older
+            # models MiniMax reads "(chuckle)" aloud, so strip them instead.
+            if not os.environ.get("MINIMAX_MODEL", "").startswith("speech-2.8"):
+                if any(SOUND_TAG_RE.search(c) for c in chunks):
+                    print("warning: sound tags stripped — set "
+                          "MINIMAX_MODEL=speech-2.8-hd to voice them",
+                          file=sys.stderr)
+                chunks = [SOUND_TAG_RE.sub("", c) for c in chunks]
+        return chunks
+    return chunk_text(strip_markers(text), max_chars)
 
 
 # ── Formatting ────────────────────────────────────────────────────────────
@@ -319,6 +355,10 @@ Examples:
                         help="TTS backend (default: edge)")
     parser.add_argument("--voice", "-v", help="Voice name")
     parser.add_argument("--rate", "-r", help="Speech rate, e.g. '+5%%', '-10%%'")
+    parser.add_argument("--phonemes",
+                        help="JSON file mapping words to pinyin for polyphonic "
+                             "disambiguation, e.g. {\"行长\": \"hang2 zhang3\"} "
+                             "(azure/minimax only; ignored elsewhere)")
 
     # Output format
     parser.add_argument("--format", "-f", choices=["wav", "mp3", "json"], default=None,
@@ -409,10 +449,15 @@ def main():
     started_at = time.time()
 
     json_mode = (output_fmt == "json") if (output_fmt := _resolve_format(args)) else False
+    if json_mode:
+        # Backend synthesizers print progress to stdout; in JSON mode every
+        # such line must move to stderr so the envelope (written to the real
+        # stdout captured in output.py) is the only stdout payload.
+        sys.stdout = sys.stderr
     try:
         return _run(args, started_at, json_mode)
     finally:
-        pass
+        sys.stdout = sys.__stdout__
 
 
 def _run(args, started_at, json_mode=False):
@@ -504,9 +549,26 @@ def _run(args, started_at, json_mode=False):
 
     max_chars = get_max_chars(backend)
 
+    # ── Phonemes + expressiveness markers ─────────────────────────────────
+    phoneme_dict = {}
+    if args.phonemes:
+        if not os.path.exists(args.phonemes):
+            emit_error("input_not_found",
+                       "Phonemes file not found: {}".format(args.phonemes),
+                       field="phonemes", retryable=False,
+                       exit_code=EXIT_VALIDATION, started_at=started_at)
+        try:
+            phoneme_dict = load_phonemes(args.phonemes)
+        except ValueError as e:
+            emit_error("validation_failed",
+                       "Invalid phonemes file: {}".format(e),
+                       field="phonemes", retryable=False,
+                       exit_code=EXIT_VALIDATION, started_at=started_at)
+
+    chunks = _prepare_chunks(backend, text, max_chars, phoneme_dict)
+
     # ── Dry run ───────────────────────────────────────────────────────────
     if args.dry_run:
-        chunks = chunk_text(text, max_chars)
         cn = len(re.findall(r"[一-鿿]", text))
         en = len(re.findall(r"[A-Za-z]+", text))
         est_duration = cn / 4.0 + en / 3.0
@@ -561,19 +623,28 @@ def _run(args, started_at, json_mode=False):
 
     config["voice"] = voice
     config["speech_rate"] = rate
+    if backend == "azure":
+        # The azure adapter renders <phoneme> tags inside its SSML build.
+        config["phoneme_dict"] = phoneme_dict
 
     # ── Synthesize ────────────────────────────────────────────────────────
-    chunks = chunk_text(text, max_chars)
     print("Split into {} chunk(s) (max {} chars/chunk)\n".format(len(chunks), max_chars),
           file=_diag)
 
     synthesize = get_synthesize_func(backend)
     try:
-        duration = synthesize(chunks, config, output_file, output_format=output_fmt)
+        synth_result = synthesize(chunks, config, output_file, output_format=output_fmt)
     except Exception as e:
         emit_error("backend_error", "Synthesis failed: {}".format(e),
                    retryable=True, backend=backend,
                    exit_code=EXIT_BACKEND, started_at=started_at)
+
+    # Adapters MAY return (duration, word_boundaries) — edge/azure do —
+    # or a bare duration float like every other platform.
+    if isinstance(synth_result, tuple):
+        duration, word_boundaries = synth_result
+    else:
+        duration, word_boundaries = synth_result, None
 
     # Most backends emit WAV regardless of output_fmt — transcode centrally
     if output_fmt == "mp3":
@@ -595,6 +666,14 @@ def _run(args, started_at, json_mode=False):
         "chunks": len(chunks),
         "total_chars": len(text),
     }
+    if word_boundaries:
+        # Native per-word timings, absolute within the output file.
+        result["word_boundaries"] = [
+            {"text": w["text"],
+             "offset_sec": round(w["offset"], 3),
+             "duration_sec": round(w["duration"], 3)}
+            for w in word_boundaries
+        ]
 
     # Store result under idempotency key for future retries
     if idem_key:
