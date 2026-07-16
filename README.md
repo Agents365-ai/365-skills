@@ -25,7 +25,7 @@ npx skills add Agents365-ai/365-skills -g
 ### Drawing & diagrams
 
 | Plugin | Description |
-|---|---|
+| --- | --- |
 | `drawio` | Draw.io diagrams — PNG/SVG/PDF export with visual review loop |
 | `mermaid` | Mermaid diagrams — text-based, GitHub-native, auto-layout |
 | `excalidraw` | Excalidraw — hand-drawn whiteboard style |
@@ -35,7 +35,7 @@ npx skills add Agents365-ai/365-skills -g
 ### Scientific research
 
 | Plugin | Description |
-|---|---|
+| --- | --- |
 | `semanticscholar` | Semantic Scholar — academic paper search, citation graph, recommendations, BibTeX export |
 | `paper-fetch` | Paper PDF downloader by DOI / title — 7-source fallback (Unpaywall, S2, arXiv, PMC, bioRxiv, publisher, Sci-Hub) with batch mode and idempotent retries |
 | `scholar-deep-research` | End-to-end literature review pipeline — 8-phase script-driven workflow, 7 federated sources (OpenAlex, arXiv, Crossref, PubMed, DBLP, bioRxiv, Exa), cross-source dedup, dual-backend citation chasing, parallel deep-read fan-out, mandatory self-critique, cited reports across 5 archetypes |
@@ -72,7 +72,7 @@ git add plugins/drawio && git commit -m "chore: sync drawio-skill"
 Each plugin mirrors a standalone skill repo — file issues there for plugin-specific bugs:
 
 | Plugin | Source |
-|---|---|
+| --- | --- |
 | `agent-native-design` | [Agents365-ai/agent-native-design](https://github.com/Agents365-ai/agent-native-design) |
 | `drawio` | [Agents365-ai/drawio-skill](https://github.com/Agents365-ai/drawio-skill) |
 | `mermaid` | [Agents365-ai/mermaid-skill](https://github.com/Agents365-ai/mermaid-skill) |
@@ -85,18 +85,6 @@ Each plugin mirrors a standalone skill repo — file issues there for plugin-spe
 | `asta` | [Agents365-ai/asta-skill](https://github.com/Agents365-ai/asta-skill) |
 | `journal-abbrev` | [Agents365-ai/journal-abbrev](https://github.com/Agents365-ai/journal-abbrev) |
 | `obsidian-organizer` | [Agents365-ai/obsidian-organizer](https://github.com/Agents365-ai/obsidian-organizer) |
-
-## Discord
-
-Join the Discord community: [https://discord.gg/pCV3P9hNY](https://discord.gg/pCV3P9hNY)
-
-## WeChat Community
-
-Scan the QR code below to join the WeChat group for help, Q&A, and updates:
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/Agents365-ai/images_payment/main/qrcode/agents365ai_wechat_1.png" width="200" alt="WeChat Community Group">
-</p>
 
 ## Support
 
@@ -131,8 +119,8 @@ If this skill set is helpful, consider supporting the author:
 
 **Agents365-ai**
 
-- Bilibili: https://space.bilibili.com/441831884
-- GitHub: https://github.com/Agents365-ai
+- Bilibili: <https://space.bilibili.com/441831884>
+- GitHub: <https://github.com/Agents365-ai>
 
 ## Other resources
 
