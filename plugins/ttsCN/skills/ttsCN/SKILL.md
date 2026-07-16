@@ -2,9 +2,9 @@
 name: ttsCN
 description: Multi-platform Chinese & multilingual TTS text-to-speech via Edge/Doubao/CosyVoice/Azure/Tencent/Baidu/MiniMax/Xunfei plus ElevenLabs/OpenAI/Google — 11 backends, word-level timestamps, [PAUSE:x] pause markers, pinyin pronunciation overrides
 author: Agents365-ai
-version: 1.4.0
+version: 1.5.0
 created: 2026-07-08
-updated: 2026-07-15
+updated: 2026-07-16
 homepage: https://github.com/Agents365-ai/ttsCN
 metadata: {"openclaw":{"requires":{"bins":["python3","ffmpeg"]},"emoji":"🔊"}}
 ---
@@ -30,6 +30,7 @@ Generate natural speech audio from text. **11 backends** — 8 China-friendly cl
 | 11 | **Google Cloud TTS** | ~$16/M chars (free tier) | 220+ voices, 40+ languages |
 
 New in 1.4: **word-level timestamps** (edge/azure), **[PAUSE:x] + sound-tag markers** (all platforms), **--phonemes pronunciation overrides** (azure/minimax).
+New in 1.5: **word-level timestamps on doubao and minimax** (doubao `with_timestamp` frontend; minimax `subtitle_type: word` — best-effort, degrades to no boundaries).
 
 **Cross-platform**: Windows, macOS, Linux
 
@@ -569,11 +570,14 @@ tts.py --format json --platform doubao "test" out.wav
 {"ok":false, "error":{"code":"auth_missing_env","message":"VOLCENGINE_APPID not set","retryable":false,"field":"VOLCENGINE_APPID","backend":"doubao"}, "meta":{...}}
 ```
 
-### Word Boundaries (edge / azure only)
+### Word Boundaries (edge / azure / doubao / minimax)
 
-For **edge** and **azure**, the success envelope includes native word-level
-timestamps under `data.word_boundaries` — absolute seconds within the output
-file, ascending, 3-decimal rounding. The key is absent for other platforms.
+For **edge**, **azure**, **doubao**, and **minimax**, the success envelope
+includes native word-level timestamps under `data.word_boundaries` — absolute
+seconds within the output file, ascending, 3-decimal rounding. The key is
+absent for other platforms — and may be absent on doubao/minimax too when the
+provider returns no timing payload (minority-language doubao voices; minimax
+subtitle download failure) — so consumers must treat it as optional.
 
 ```json
 {"ok":true, "data":{

@@ -2,14 +2,45 @@
 
 import os
 import json
+import re
 import subprocess
+
+# Parenthesized ASCII runs in the sent text are engine syntax on minimax —
+# pinyin annotations 字(zi4) and sound tags (chuckle) — and come back as
+# their own timestamped_words entries (one per phonetic symbol). They are
+# not script text; drop them from the boundary stream.
+_ENGINE_TOKEN = re.compile(r"^\([0-9a-zü]+\)$")
+
+
+def _parse_subtitles(entries, base_offset):
+    """Extract word-level boundaries from subtitle-file entries (seconds).
+
+    The downloaded file is an array of sentence blocks; with
+    subtitle_type=word each block carries timestamped_words with
+    {"word", "time_begin", "time_end"} in milliseconds, relative to the
+    chunk (punctuation included, with real timings). base_offset makes
+    them absolute in the final file. Blocks without word data are skipped
+    — coarse ~50-char sentence blocks would be worse than the consumer's
+    per-char estimation fallback.
+    """
+    try:
+        return [{"text": w["word"],
+                 "offset": base_offset + float(w["time_begin"]) / 1000.0,
+                 "duration": (float(w["time_end"]) - float(w["time_begin"])) / 1000.0}
+                for s in entries
+                for w in (s.get("timestamped_words") or [])
+                if not _ENGINE_TOKEN.match(w["word"])]
+    except (KeyError, TypeError, ValueError, AttributeError):
+        return []
 
 
 def synthesize(chunks, config, output_file, output_format="wav"):
     """Synthesize via MiniMax T2A v2 API.
 
     config keys: api_key, model, voice, group_id, speech_rate
-    Returns: total_duration_seconds (float)
+    Returns: (total_duration_seconds, word_boundaries) — boundaries come from
+    the subtitle_file download (word granularity); empty list on any subtitle
+    failure so synthesis itself never breaks over timing metadata.
     """
     import requests
 
@@ -38,6 +69,7 @@ def synthesize(chunks, config, output_file, output_format="wav"):
 
     out_dir = os.path.dirname(output_file) or "."
     part_files = []
+    word_boundaries = []
     accumulated_duration = 0.0
 
     for i, text in enumerate(chunks):
@@ -60,6 +92,8 @@ def synthesize(chunks, config, output_file, output_format="wav"):
                 "channel": 1,
             },
             "language_boost": "Chinese",
+            "subtitle_enable": True,
+            "subtitle_type": "word",
         })
         if group_id:
             payload_dict = json.loads(payload)
@@ -74,6 +108,7 @@ def synthesize(chunks, config, output_file, output_format="wav"):
 
         # t2a_v2 returns JSON with hex-encoded audio in data.audio;
         # binary body is only kept as a fallback for non-JSON responses.
+        subtitle_url = None
         content_type = resp.headers.get("Content-Type", "")
         if "application/json" in content_type:
             body = resp.json()
@@ -87,6 +122,7 @@ def synthesize(chunks, config, output_file, output_format="wav"):
             if not audio_hex:
                 raise RuntimeError("MiniMax API returned no audio data")
             audio_bytes = bytes.fromhex(audio_hex)
+            subtitle_url = (body.get("data") or {}).get("subtitle_file")
         else:
             audio_bytes = resp.content
 
@@ -113,6 +149,15 @@ def synthesize(chunks, config, output_file, output_format="wav"):
             capture_output=True, text=True,
         )
         chunk_duration = float(probe.stdout.strip()) if probe.stdout.strip() else 0
+        if subtitle_url:
+            # Best-effort: the URL expires after 24h and word-level subtitle
+            # payloads are not guaranteed on every model — never fail the run.
+            try:
+                sub = requests.get(subtitle_url, timeout=30)
+                word_boundaries.extend(
+                    _parse_subtitles(sub.json(), accumulated_duration))
+            except Exception:
+                pass
         accumulated_duration += chunk_duration
         print(f"  Part {i + 1}/{len(chunks)} done "
               f"({len(text)} chars, {chunk_duration:.1f}s)")
@@ -138,4 +183,4 @@ def synthesize(chunks, config, output_file, output_format="wav"):
             if os.path.exists(pf):
                 os.remove(pf)
 
-    return accumulated_duration
+    return accumulated_duration, word_boundaries

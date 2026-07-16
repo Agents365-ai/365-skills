@@ -8,11 +8,31 @@ import base64
 import subprocess
 
 
+def _parse_frontend_words(frontend_json, base_offset):
+    """Parse addition.frontend (a JSON-encoded string) into boundary dicts.
+
+    The words array carries {"word", "start_time", "end_time"} in seconds,
+    relative to the chunk; base_offset makes them absolute in the final file.
+    Timestamps already reflect speed_ratio (applied server-side).
+    """
+    if not frontend_json:
+        return []
+    try:
+        words = json.loads(frontend_json).get("words") or []
+        return [{"text": w["word"],
+                 "offset": base_offset + float(w["start_time"]),
+                 "duration": float(w["end_time"]) - float(w["start_time"])}
+                for w in words]
+    except (ValueError, KeyError, TypeError):
+        return []
+
+
 def synthesize(chunks, config, output_file, output_format="wav"):
     """Synthesize using Volcengine Doubao TTS HTTP API.
 
     config keys: appid, token, cluster, voice, endpoint, speech_rate
-    Returns: total_duration_seconds (float)
+    Returns: (total_duration_seconds, word_boundaries) — boundaries from the
+    with_timestamp frontend payload; empty list if the voice returns none.
     """
     import requests
 
@@ -36,6 +56,7 @@ def synthesize(chunks, config, output_file, output_format="wav"):
 
     out_dir = os.path.dirname(output_file) or "."
     part_files = []
+    word_boundaries = []
     accumulated_duration = 0.0
 
     headers = {
@@ -66,6 +87,7 @@ def synthesize(chunks, config, output_file, output_format="wav"):
                         "text": chunk,
                         "text_type": "plain",
                         "operation": "query",
+                        "with_timestamp": 1,
                     },
                 }
 
@@ -106,6 +128,9 @@ def synthesize(chunks, config, output_file, output_format="wav"):
                     capture_output=True, text=True,
                 )
                 chunk_duration = float(probe.stdout.strip()) if probe.stdout.strip() else 0
+                word_boundaries.extend(_parse_frontend_words(
+                    (data.get("addition") or {}).get("frontend"),
+                    accumulated_duration))
                 accumulated_duration += chunk_duration
                 print(f"  Part {i + 1}/{len(chunks)} done "
                       f"({len(chunk)} chars, {chunk_duration:.1f}s)")
@@ -139,4 +164,4 @@ def synthesize(chunks, config, output_file, output_format="wav"):
             if os.path.exists(pf):
                 os.remove(pf)
 
-    return accumulated_duration
+    return accumulated_duration, word_boundaries
