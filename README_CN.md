@@ -25,7 +25,7 @@ npx skills add Agents365-ai/365-skills -g
 ### 绘图与图表
 
 | 插件 | 说明 |
-|---|---|
+| --- | --- |
 | `drawio` | Draw.io 流程图 —— 支持 PNG/SVG/PDF 导出与可视化审阅闭环 |
 | `mermaid` | Mermaid 图表 —— 文本驱动、GitHub 原生支持、自动布局 |
 | `excalidraw` | Excalidraw —— 手绘白板风格 |
@@ -35,7 +35,7 @@ npx skills add Agents365-ai/365-skills -g
 ### 科研
 
 | 插件 | 说明 |
-|---|---|
+| --- | --- |
 | `semanticscholar` | Semantic Scholar —— 学术论文检索、引文图谱、推荐、BibTeX 导出 |
 | `paper-fetch` | 按 DOI / 标题下载论文 PDF —— 7 源回退链（Unpaywall、S2、arXiv、PMC、bioRxiv、出版商直链、Sci-Hub），支持批量与幂等重试 |
 | `scholar-deep-research` | 端到端文献综述流水线 —— 8 阶段脚本驱动工作流，跨 7 个数据源（OpenAlex、arXiv、Crossref、PubMed、DBLP、bioRxiv、Exa）联邦检索、去重、双 backend 引用追溯、并行精读派发、强制自我批判，输出 5 种原型的带引用报告 |
@@ -72,7 +72,7 @@ git add plugins/drawio && git commit -m "chore: sync drawio-skill"
 每个插件都对应一个独立的 skill 仓库 —— 与具体插件相关的 bug 请到对应仓库提交 issue：
 
 | 插件 | 源仓库 |
-|---|---|
+| --- | --- |
 | `agent-native-design` | [Agents365-ai/agent-native-design](https://github.com/Agents365-ai/agent-native-design) |
 | `drawio` | [Agents365-ai/drawio-skill](https://github.com/Agents365-ai/drawio-skill) |
 | `mermaid` | [Agents365-ai/mermaid-skill](https://github.com/Agents365-ai/mermaid-skill) |
@@ -85,10 +85,6 @@ git add plugins/drawio && git commit -m "chore: sync drawio-skill"
 | `asta` | [Agents365-ai/asta-skill](https://github.com/Agents365-ai/asta-skill) |
 | `journal-abbrev` | [Agents365-ai/journal-abbrev](https://github.com/Agents365-ai/journal-abbrev) |
 | `obsidian-organizer` | [Agents365-ai/obsidian-organizer](https://github.com/Agents365-ai/obsidian-organizer) |
-
-## Discord
-
-加入 Discord 交流（面向海外用户）：[https://discord.gg/pCV3P9hNY](https://discord.gg/pCV3P9hNY)
 
 ## 微信交流群
 
@@ -131,8 +127,8 @@ git add plugins/drawio && git commit -m "chore: sync drawio-skill"
 
 **Agents365-ai**
 
-- Bilibili: https://space.bilibili.com/441831884
-- GitHub: https://github.com/Agents365-ai
+- Bilibili: <https://space.bilibili.com/441831884>
+- GitHub: <https://github.com/Agents365-ai>
 
 ## 其他资源
 
