@@ -1,14 +1,56 @@
 """Alibaba DashScope CosyVoice TTS backend."""
 
+import json
 import os
 import time
+
+
+def _extract_words(event, words_by_index):
+    """Fold a websocket event into {sentence_index: words}; last event wins.
+
+    With word_timestamp_enabled, result-generated events carry
+    payload.output.sentence.words — a progressively growing array, so the
+    final event per sentence index holds the complete word list.
+    """
+    try:
+        obj = json.loads(event) if isinstance(event, str) else event
+        sent = (obj.get("payload", {}).get("output") or {}).get("sentence") or {}
+        words = sent.get("words")
+        if words:
+            words_by_index[sent.get("index", 0)] = words
+    except (ValueError, TypeError, AttributeError):
+        pass
+
+
+def _to_boundaries(words_by_index, base_offset):
+    """Flatten per-sentence word arrays into boundary dicts (seconds).
+
+    Words carry {"text", "begin_time", "end_time"} in milliseconds,
+    absolute within the invocation's stream; base_offset makes them
+    absolute in the final file. Older models (cosyvoice-v1) ignore the
+    request flag and simply yield no words.
+    """
+    out = []
+    try:
+        for idx in sorted(words_by_index):
+            for w in words_by_index[idx]:
+                out.append({
+                    "text": w["text"],
+                    "offset": base_offset + float(w["begin_time"]) / 1000.0,
+                    "duration": (float(w["end_time"])
+                                 - float(w["begin_time"])) / 1000.0,
+                })
+    except (KeyError, TypeError, ValueError):
+        return []
+    return out
 
 
 def synthesize(chunks, config, output_file, output_format="wav"):
     """Synthesize using CosyVoice (DashScope) streaming TTS.
 
     config keys: model, voice, speech_rate
-    Returns: total_duration_seconds (float)
+    Returns: (total_duration_seconds, word_boundaries) — boundaries from
+    word_timestamp_enabled events; empty list on models without support.
     """
     import re as _re
     import struct
@@ -28,6 +70,7 @@ def synthesize(chunks, config, output_file, output_format="wav"):
 
     out_dir = os.path.dirname(output_file) or "."
     part_files = []
+    word_boundaries = []
     accumulated_duration = 0.0
 
     for i, chunk in enumerate(chunks):
@@ -37,10 +80,14 @@ def synthesize(chunks, config, output_file, output_format="wav"):
         for attempt in range(1, 4):
             try:
                 audio_buf = bytearray()
+                words_by_index = {}
 
                 class Callback(ResultCallback):
                     def on_data(self, data):
                         audio_buf.extend(data)
+
+                    def on_event(self, message):
+                        _extract_words(message, words_by_index)
 
                     def on_error(self, message):
                         raise RuntimeError(f"CosyVoice error: {message}")
@@ -51,6 +98,7 @@ def synthesize(chunks, config, output_file, output_format="wav"):
                     format=AudioFormat.PCM_48000HZ_MONO_16BIT,
                     speech_rate=cosy_rate,
                     callback=Callback(),
+                    additional_params={"word_timestamp_enabled": True},
                 )
                 synth.streaming_call(chunk)
                 synth.streaming_complete()
@@ -72,6 +120,8 @@ def synthesize(chunks, config, output_file, output_format="wav"):
                     f.write(wav_header + pcm_data)
 
                 chunk_duration = data_size / (sample_rate * 2)
+                word_boundaries.extend(
+                    _to_boundaries(words_by_index, accumulated_duration))
                 accumulated_duration += chunk_duration
                 print(f"  Part {i + 1}/{len(chunks)} done "
                       f"({len(chunk)} chars, {chunk_duration:.1f}s)")
@@ -106,4 +156,4 @@ def synthesize(chunks, config, output_file, output_format="wav"):
             if os.path.exists(pf):
                 os.remove(pf)
 
-    return accumulated_duration
+    return accumulated_duration, word_boundaries
