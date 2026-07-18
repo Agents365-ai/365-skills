@@ -36,6 +36,7 @@ with `assets add --path`.
 ## Step 6: Generate Publish Info (Part 1)
 
 Based on `podcast.txt`, generate `publish_info.md`:
+
 - Title (number + topic + hook)
 - Tags (10, including product names / domain terms / trending tags)
 - Description (100-200 chars)
@@ -50,6 +51,7 @@ Based on `podcast.txt`, generate `publish_info.md`:
 **MUST generate both aspect ratios**: 16:9 (playback page) and 4:3 (feed/activity), both required for horizontal video. (9:16 thumbnail is generated alongside the vertical render in Step 10/15 — not here.)
 
 **Thumbnail design rules** (see `references/design-guide.md` for full spec):
+
 - Centered layout, title ≥120px bold, icons ≥120px — as large as text length allows
 - Text + icons should fill most of the canvas, minimize empty space
 - Must be legible at 300px feed size — use text-stroke or contrast overlay
@@ -60,6 +62,7 @@ npx remotion still src/remotion/index.ts Thumbnail4x3 videos/{name}/thumbnail_re
 ```
 
 **xiaohongshu:** Generate 3:4 thumbnail (replaces 4:3):
+
 ```bash
 npx remotion still src/remotion/index.ts Thumbnail3x4 videos/{name}/thumbnail_remotion_3x4.png --public-dir videos/{name}/
 ```
@@ -143,11 +146,13 @@ Precedence: env var > `user_prefs.json` > ttsCN's per-platform default. The scri
 The merged dictionary is written to `videos/{name}/phonemes_resolved.json` and passed to ttsCN, which applies it where the platform supports it (azure → SSML `<phoneme>`, minimax → pinyin annotations; other platforms ignore it). Three tiers (highest to lowest priority):
 
 **1. Inline annotation** (highest) — in podcast.txt:
+
 ```text
 每个执行器[zhí xíng qì]都有自己的上下文窗口
 ```
 
 **2. Project dictionary** — in `videos/{name}/phonemes.json`:
+
 ```json
 { "执行器": "zhí xíng qì", "重做": "chóng zuò" }
 ```
@@ -176,6 +181,7 @@ If the drift is ≥ 0.5s, re-run TTS or run `python3 ${SKILL_DIR}/scripts/align_
 **The agent MUST read `references/design-guide.md` before this step.**
 
 **Preference application:** From `user_prefs.visual` override `defaultVideoProps`:
+
 - `typography.*` × `scalePreference` → apply font scaling
 - `theme: dark` → swap backgroundColor/textColor
 - `primaryColor`, `accentColor` → direct override
@@ -185,6 +191,7 @@ All Remotion commands use `--public-dir videos/{name}/` so assets are read direc
 ### Style Profile Integration
 
 Before choosing visual design, check in order:
+
 1. Session-specified style profile? → Load `user_prefs.json` style_profiles[name], apply props_override
 2. No profile? → Check design_references index for tag matches against detected topic
 3. Found matches? → Suggest: "Your reference library has N references matching '{topic}'. Apply style '{profile_name}'?"
@@ -197,27 +204,36 @@ Priority chain: Root.tsx defaults < global < topic_patterns[type] < style_profil
 Use `${SKILL_DIR}/templates/Video.tsx` as starting point.
 
 **Shared infrastructure** — copy only if not already present:
+
 ```bash
 [ ! -f src/remotion/Root.tsx ] && cp ${SKILL_DIR}/templates/Root.tsx src/remotion/
 [ ! -d src/remotion/components ] && cp -r ${SKILL_DIR}/templates/components src/remotion/components
 ```
 
 **Per-video composition** — NEVER overwrite `Video.tsx`. Create a unique file:
+
 ```bash
 cp ${SKILL_DIR}/templates/Video.tsx src/remotion/{PascalCaseName}Video.tsx
 ```
 
 Register in `Root.tsx`. Each video gets its own composition file.
 
-> **Localization required.** `templates/Video.tsx` is a zh-CN starter — every visible literal (titles, subtitles, "总结", "感谢观看", outro CTA "点赞 / 收藏 / 关注 / 下期再见！", placeholder bullets) is Chinese. When `user_prefs.global.language != "zh-CN"`, replace every literal in the copied composition file with the target-language equivalent before the Studio preview. Use the platform/language outro table from `workflow-script.md` Step 4 for the CTA text.
+> **Localization required.** `templates/Video.tsx` is a zh-CN starter — every visible literal (titles, subtitles, "总结", "感谢观看", outro CTA "点赞 / 收藏 / 关注 / 下期再见！", placeholder bullets) is Chinese. When `user_prefs.global.language != "zh-CN"`, you have two options:
+>
+> 1. **Copy `templates/Video.en.tsx`** instead — it is pre-localized to English. Use for `en-US` videos directly.
+> 2. **Copy `templates/Video.tsx`** and replace every literal with the target-language equivalent.
+>
+> Use the platform/language outro table from `workflow-script.md` Step 4 for the CTA text.
 
 **Naming convention:**
+
 | Video name | Composition file | Composition ID |
-|------------|-----------------|----------------|
+| ------------ | ----------------- | ---------------- |
 | `ai-agents` | `AiAgentsVideo.tsx` | `AiAgents` |
 | `reference-manager` | `ReferenceManagerVideo.tsx` | `ReferenceManager` |
 
 Components are modular:
+
 ```tsx
 import { ComparisonCard, CodeBlock, FeatureGrid, MediaSection } from "./components";
 ```
@@ -227,7 +243,7 @@ import { ComparisonCard, CodeBlock, FeatureGrid, MediaSection } from "./componen
 Choose components based on section content type:
 
 | Content Type | Recommended Component | Draw-On Effect |
-|---|---|---|
+| --- | --- | --- |
 | Process / pipeline steps | `FlowChart` | SVG arrow connectors draw progressively |
 | History / milestones | `Timeline` | SVG nodes + connectors animate in sequence |
 | Architecture / system diagram | `DiagramReveal` | Nodes + edges draw on with curve/elbow/straight |
@@ -240,13 +256,16 @@ Choose components based on section content type:
 | After Effects animation | `LottieAnimation` | Frame-accurate Lottie playback |
 
 **Audio visualization** — add `AudioWaveform` as a persistent overlay in the video:
+
 ```tsx
 // Inside Video component, after Scale4K but before Audio elements:
 <AudioWaveform props={props} position="bottom" mode="bars" barCount={32} height={40} opacity={0.25} />
 ```
+
 Three modes: `"bars"` (spectrum), `"wave"` (filled area), `"dots"` (pulsing circles).
 
 **Diagram architecture** — use `DiagramReveal` for system/architecture diagrams:
+
 ```tsx
 <DiagramReveal
   props={props}
@@ -264,6 +283,7 @@ Three modes: `"bars"` (spectrum), `"wave"` (filled area), `"dots"` (pulsing circ
 ```
 
 **Lottie animations** — place JSON files in `videos/{name}/animations/`:
+
 ```tsx
 <LottieAnimation src="animations/brain.json" width={200} height={200} loop />
 ```
@@ -278,6 +298,7 @@ Template uses `@remotion/transitions` `TransitionSeries`.
 | `transitionDuration` | `15` (0.5s) | Frames |
 
 Install dependencies:
+
 ```bash
 npm install @remotion/transitions @remotion/paths @remotion/shapes @remotion/media-utils @remotion/lottie lottie-web
 ```
@@ -285,7 +306,7 @@ npm install @remotion/transitions @remotion/paths @remotion/shapes @remotion/med
 ### Key Architecture
 
 | Point | Description |
-|-------|-------------|
+| ------- | ------------- |
 | **ChapterProgressBar** | Must be **outside** `scale(2)` container |
 | **Chapter width** | Use `flex: ch.duration_frames` for proportional width |
 | **Progress indicator** | White progress bar within current chapter |
@@ -346,9 +367,9 @@ If you intentionally run multiple Remotion projects in parallel, launch Studio o
 2. `Video.tsx` compensates `TransitionSeries` overlap by **scaling every section** proportionally. The template already does this; if you customized the compensation, verify it does not stuff all overlap frames into the first section.
 3. The `<Subtitles>` component reads `podcast_audio.srt` from the same TTS run.
 
-1. Launch `remotion studio` (real-time preview, hot reload)
-2. Ask user: "Studio is running at http://localhost:3000. Please review the video preview."
-3. **Review loop** — user reviews, requests changes, the agent applies them, Studio hot reloads:
+4. Launch `remotion studio` (real-time preview, hot reload)
+5. Ask user: "Studio is running at <http://localhost:3000>. Please review the video preview."
+6. **Review loop** — user reviews, requests changes, the agent applies them, Studio hot reloads:
    - Layout/animation tweaks → edit components, Studio auto-refreshes
    - Script/content changes → edit `podcast.txt`, may need re-TTS (Step 8)
    - Pronunciation fixes → re-run TTS (Step 8)
@@ -357,14 +378,14 @@ If you intentionally run multiple Remotion projects in parallel, launch Studio o
    implicit render request, even when phrased as "change X, the rest looks good" or
    when the user confirmed a render for an earlier version. After applying the
    changes, tell the user Studio has hot-reloaded and ask them to review again.
-4. **Exit condition**: User explicitly says "render 4K" / "render final version" / "looks good, render" **in a message that requests no further changes** → proceed to Step 10
-5. Do NOT proceed to Step 10 until the user confirms. Each round of adjustments invalidates any earlier confirmation — wait for a fresh one.
+7. **Exit condition**: User explicitly says "render 4K" / "render final version" / "looks good, render" **in a message that requests no further changes** → proceed to Step 10
+8. Do NOT proceed to Step 10 until the user confirms. Each round of adjustments invalidates any earlier confirmation — wait for a fresh one.
 
 ---
 
 ### Visual QA (Automated, part of Step 9)
 
-> **Planned feature.** Automated still rendering and multimodal inspection is not yet implemented. Currently, visual quality is verified manually via Remotion Studio preview. The agent may offer to render section stills for manual inspection if requested.
+Visual quality is verified via Remotion Studio preview. The agent may offer to render section stills for manual inspection if requested.
 
 ---
 
@@ -393,6 +414,7 @@ PY
 If the diff exceeds 0.5s, fix `timing.json` or the transition overlap compensation before mixing BGM or burning subtitles.
 
 **Verify 4K:**
+
 ```bash
 ffprobe -v quiet -show_entries stream=width,height -of csv=p=0 videos/{name}/output.mp4
 # Expected: 3840,2160 (or 2160,3840 vertical)
@@ -408,6 +430,7 @@ npx remotion still src/remotion/index.ts Thumbnail9x16 videos/{name}/thumbnail_r
 The vertical composition reuses Video.tsx with `orientation: "vertical"`. All components auto-adapt.
 
 **Platform-specific video format notes:**
+
 - **xiaohongshu**: Primarily short-form vertical content. Long-form horizontal video is optional.
 - **douyin**: Vertical shorts only (9:16). No horizontal long-form video generated. Uses existing `scripts/generate_shorts.py` pipeline.
 - **weixin-channels**: Vertical shorts only (9:16). No horizontal long-form video generated. Uses existing `scripts/generate_shorts.py` pipeline.
@@ -438,6 +461,7 @@ cp "$(python3 ${SKILL_DIR}/scripts/resolve_bgm_path.py)" videos/{name}/bgm.mp3
 ```
 
 **Override (custom BGM)**: skip the helper and copy any file:
+
 ```bash
 cp /path/to/user-bgm.mp3 videos/{name}/bgm.mp3
 ```
@@ -480,11 +504,13 @@ ffmpeg -y \
 ```
 
 **Why these specific values:**
+
 - `volume=1.5` (narration): Azure TTS WAV is typically -25 to -27 dB mean. ×1.5 lifts it to ~-22 dB while keeping ≥2 dB headroom (no clip on common Chinese phonemes).
 - `volume=${BGM_VOL}` (BGM): default `0.10` = -20 dB. With narration at 1.5×, this gives ~18 dB BGM-vs-narration headroom — clearly audible but never competing. (Previously `0.05` was too quiet relative to the boosted narration.)
 - `amix=...:normalize=0`: prevents amix from dividing each input by `inputs=2`. Without this, narration gets cut to 50% and the whole video sounds quiet.
 
 **Verify loudness after mix:**
+
 ```bash
 ffmpeg -i videos/{name}/video_with_bgm.mp4 -af volumedetect -f null - 2>&1 | grep -E "mean_volume|max_volume"
 # Target: mean -20 to -22 dB, max -1 to -3 dB

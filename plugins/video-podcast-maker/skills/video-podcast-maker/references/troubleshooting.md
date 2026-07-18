@@ -25,6 +25,8 @@ python3 scripts/cli.py schema <method>              # typed parameter schema for
 
 When a script fails with a structured envelope (most do — see `--format json`), the `code` field tells an agent how to recover: `input_not_found`, `input_invalid`, `auth_missing_env`, `tool_missing`, `validation_failed`, `confirmation_required`, `ffmpeg_failed`, `backend_failed`, `internal_error`. Direct invocations (`python3 scripts/<name>.py ...`) still work — the dispatcher is additive.
 
+Routes: `tts run|validate`, `verify`, `align`, `audit beats`, `shorts gen`, `design list|show|delete|add`, `assets init|add|list|validate`, `prereqs`, `capabilities`, `prefs get|migrate|backend|bgm-path`, `schema [<method>]`.
+
 ## Troubleshooting
 
 ### TTS: Azure API Key Error
@@ -32,6 +34,7 @@ When a script fails with a structured envelope (most do — see `--format json`)
 **Symptoms**: `Error: Authentication failed`, `HTTP 401 Unauthorized`
 
 **Solution**:
+
 ```bash
 echo $AZURE_SPEECH_KEY
 echo $AZURE_SPEECH_REGION
@@ -47,6 +50,7 @@ export AZURE_SPEECH_REGION="eastasia"
 **Symptoms**: BGM too loud over voice, BGM ends abruptly
 
 **Solution**:
+
 ```bash
 # Basic mix (voice primary, BGM lowered)
 ffmpeg -i voice.mp3 -i bgm.mp3 \
@@ -69,6 +73,7 @@ ffmpeg -i voice.mp3 -i bgm.mp3 \
 **Symptoms**: `FATAL ERROR: CALL_AND_RETRY_LAST Allocation failed`, render crashes at ~50%
 
 **Solution**:
+
 ```bash
 # Reduce parallelism
 npx remotion render ... --concurrency 1
@@ -84,6 +89,7 @@ NODE_OPTIONS="--max-old-space-size=8192" npx remotion render ...
 **Symptoms**: Output video is all black or all white, no visual elements
 
 **Solution**:
+
 1. Verify `timing.json` exists in `videos/{name}/` and has correct `start_frame`/`duration_frames`
 2. Check composition ID matches: `npx remotion render ... CompositionId` must match Root.tsx registration
 3. Ensure `--public-dir videos/{name}/` is passed to all Remotion commands
@@ -96,6 +102,7 @@ NODE_OPTIONS="--max-old-space-size=8192" npx remotion render ...
 **Symptoms**: `npx: command not found` or `remotion: not found`
 
 **Solution**:
+
 ```bash
 # Ensure you're in the Remotion project directory
 cd your-remotion-project
@@ -110,6 +117,7 @@ npx remotion --version  # verify
 **Symptoms**: `SyntaxError: Unexpected token`, sections missing or misaligned
 
 **Solution**:
+
 ```bash
 # Validate JSON
 python3 -c "import json; json.load(open('videos/{name}/timing.json'))"
@@ -126,6 +134,7 @@ Common cause: section name in `podcast.txt` doesn't match the composition code.
 **Symptoms**: Subtitles show `???` or mojibake
 
 **Solution**:
+
 ```bash
 # Check encoding
 file videos/{name}/podcast_audio.srt
@@ -151,11 +160,50 @@ mv videos/{name}/podcast_audio_utf8.srt videos/{name}/podcast_audio.srt
 **Symptoms**: Text renders in fallback font, Chinese characters show as boxes
 
 **Solution**:
+
 ```bash
 # Install Noto Sans SC
 sudo apt install fonts-noto-cjk
 # Or download PingFang SC manually
 ```
+
+---
+
+### Remotion: Chrome Headless Shell Re-Downloads Every Run
+
+**Symptoms**: `npx remotion still ...` or `npx remotion render` takes 30s+ before starting, downloads a 90 MB Chrome zip every invocation.
+
+**Cause**: The headless browser cache (`node_modules/.remotion/`) is missing the `VERSION` file, so Remotion thinks the browser isn't installed. This happens when the zip extraction was interrupted (e.g., by a session exit mid-download).
+
+**Solution**: Copy the working browser cache from an existing project:
+
+```bash
+cp -r ~/path/to/existing-project/node_modules/.remotion/mac-arm64 \
+     node_modules/.remotion/
+```
+
+Or delete the cache and let it download once cleanly:
+
+```bash
+rm -rf node_modules/.remotion
+npx remotion still src/remotion/index.ts MyVideo videos/test.png --public-dir videos/test/ --frame 0
+```
+
+---
+
+### TTS: Section Timing Mismatch (Word Boundaries)
+
+**Symptoms**: `timing.json` shows wrong durations for some sections (e.g., a short paragraph gets 52s, a long one gets 31s). Console shows `⚠ 估算, 未找到:` warnings.
+
+**Cause**: The section matcher tries to find each section's first text in the word-boundary stream. Some TTS backends return word boundaries in spoken form (e.g., MiniMax returns "三十七" for "37"), which won't match the written form in `podcast.txt`. The matcher falls back to estimation, which can be inaccurate.
+
+**Solution**: After TTS, always verify section timing alignment:
+
+```bash
+python3 -c "import json; t=json.load(open('videos/{name}/timing.json')); [print(f\"{s['name']:20s} {s['duration']:.1f}s\") for s in t['sections']]"
+```
+
+If durations don't match paragraph lengths, re-run with a different backend or accept estimation (the total duration is always correct). For the current run, the SRT and audio are still valid — only `timing.json` section boundaries may need manual adjustment in the composition.
 
 ---
 
@@ -170,6 +218,7 @@ sudo apt install fonts-noto-cjk
 ### Quick Checklists
 
 **Pre-render**:
+
 - [ ] All asset files exist
 - [ ] timing.json format correct
 - [ ] Audio duration matches timing
@@ -177,6 +226,7 @@ sudo apt install fonts-noto-cjk
 - [ ] Disk space sufficient (>20GB for 4K)
 
 **Post-render**:
+
 - [ ] Video duration correct
 - [ ] Audio-video sync
 - [ ] Subtitles display correctly
@@ -206,17 +256,17 @@ If user says "use my own BGM" or provides a file path, skip the default BGM copy
 ### Royalty-Free BGM Sources
 
 | Source | URL | License |
-|--------|-----|---------|
-| Pixabay Music | https://pixabay.com/music/ | Free, no attribution |
-| Free Music Archive | https://freemusicarchive.org/ | CC licenses |
-| Incompetech | https://incompetech.com/ | CC BY (attribution) |
-| Uppbeat | https://uppbeat.io/ | Free tier available |
-| Chosic | https://www.chosic.com/free-music/all/ | Various CC |
+| -------- | ----- | --------- |
+| Pixabay Music | <https://pixabay.com/music/> | Free, no attribution |
+| Free Music Archive | <https://freemusicarchive.org/> | CC licenses |
+| Incompetech | <https://incompetech.com/> | CC BY (attribution) |
+| Uppbeat | <https://uppbeat.io/> | Free tier available |
+| Chosic | <https://www.chosic.com/free-music/all/> | Various CC |
 
 ### BGM Selection Guide
 
 | Video Type | Recommended Mood | Volume |
-|------------|-----------------|--------|
+| ------------ | ----------------- | -------- |
 | Tech/coding | Lo-fi, ambient | 0.03-0.05 |
 | Product review | Upbeat, corporate | 0.05-0.08 |
 | News/analysis | Neutral, minimal | 0.03-0.05 |
@@ -261,7 +311,7 @@ The agent directly updates the corresponding field in `user_prefs.json`.
 ### Platform & Language Commands
 
 | User Says | Action |
-|-----------|--------|
+| ----------- | -------- |
 | "set platform youtube" | Update `global.platform` to `"youtube"` |
 | "set platform bilibili" | Update `global.platform` to `"bilibili"` |
 | "set platform xiaohongshu" | Update `global.platform` to `"xiaohongshu"` |
@@ -283,12 +333,7 @@ The agent directly updates the corresponding field in `user_prefs.json`.
 
 ## Preference Learning
 
-> **Planned feature (not yet implemented).** The schema supports `learning_history` records, but automatic detection of preference changes during Studio sessions is not yet coded. Currently, preferences are set manually via the commands above.
-
-Planned capabilities:
-- Detect repeated style modifications during Studio preview
-- Ask user whether to promote changes to global defaults
-- Track learning history in `user_prefs.json`
+Preferences are set manually via the commands above.
 
 ---
 
@@ -301,12 +346,14 @@ Install ffmpeg: `brew install ffmpeg` (macOS) or use image input instead.
 ### Playwright fails on Bilibili/YouTube
 
 URL extraction is experimental. Fallback options:
+
 1. Download the video and use: `learn ./video.mp4`
 2. Take screenshots manually and use: `learn ./screenshot1.png ./screenshot2.png`
 
 ### Vision analysis colors look wrong
 
 Color values from image analysis are approximate. After reviewing the report:
+
 - Adjust colors manually: edit report.json or override when creating the style profile
 - Use a color picker tool on the screenshots for precise hex values
 
@@ -345,6 +392,7 @@ Run `references list` — orphaned entries are auto-cleaned on list.
 **Symptoms**: `Doubao API error code=XXXX`
 
 **Common codes**:
+
 - `code != 3000`: Non-success response. Check VOLCENGINE_APPID and VOLCENGINE_ACCESS_TOKEN.
 - HTTP 401/403: Invalid or expired access token. Regenerate at [Volcengine Console](https://console.volcengine.com/speech/service/8).
 - Timeout: Increase via `VOLCENGINE_TIMEOUT_SEC` env var (default: 60s).
