@@ -181,7 +181,7 @@
             "name": "imagencn",
             "source": "./plugins/imagencn",
             "description": "AI image generation via Alibaba Bailian, ByteDance Volcano Ark & Tencent Hunyuan — 23 models, Chinese text excellence, rich terminal UI, smart config",
-            "version": "1.0.0",
+            "version": "1.1.1",
             "author": { "name": "Agents365-ai" },
             "repository": "https://github.com/Agents365-ai/imagencn",
             "license": "MIT",
