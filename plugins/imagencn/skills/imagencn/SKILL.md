@@ -1,25 +1,29 @@
 ---
-name: imagenCN
-description: Use when generating images with Alibaba Cloud Bailian API, especially for Chinese text rendering or photorealistic images
+name: imagencn
+description: Multi-platform AI image generation via DashScope/Ark/Hunyuan/Zhipu/StepFun plus Google Gemini (international), specializing in Chinese text rendering and photorealistic images
 author: Agents365-ai
+version: 1.1.1
 created: 2024-12-01
-updated: 2026-07-05
+updated: 2026-07-16
 homepage: https://github.com/Agents365-ai/imagenCN
 metadata: {"openclaw":{"requires":{"bins":["python3"],"env":["DASHSCOPE_API_KEY"]},"primaryEnv":"DASHSCOPE_API_KEY","emoji":"🎨"}}
 ---
 
-# ImagenCN - Alibaba Cloud Bailian Text-to-Image Skill
+# imagencn - Multi-Cloud Text-to-Image Skill
 
 ## Overview
 
+**imagencn — Image Generation, Cloud-Native: one CLI, every image cloud.** The project started with China-friendly clouds and now covers international providers as well.
+
 Generate images using Alibaba Cloud Bailian API. **Default endpoint is China region**.
 
-Supports five platforms across nine model families:
+Supports six platforms across ten model families:
 - **Alibaba Cloud Bailian** (DashScope): Qwen-Image 2.0, Qwen-Image Edit, Qwen-Image legacy, Wan Series, Z-Image
 - **ByteDance Volcano Ark**: Doubao-Seedream series (OpenAI-compatible REST)
 - **Tencent Hunyuan**: Hunyuan Image 3.0 (OpenAI-compatible REST)
 - **Zhipu / BigModel**: CogView-4 and GLM-Image (OpenAI-compatible REST)
 - **StepFun / 阶跃星辰**: Step-2X and Step-Image-Edit (OpenAI-compatible REST)
+- **Google Gemini** (international): Gemini 3 Pro Image (generateContent REST)
 
 **Cross-platform support**: Windows, macOS, Linux
 
@@ -29,8 +33,22 @@ Automatically activate this skill when:
 - User requests image generation with Chinese text or calligraphy
 - Need photorealistic images or photography-style visuals
 - Creating commercial posters, illustrations, or digital art
-- User mentions any of these: Alibaba Cloud / Bailian / Qwen / Wan / DashScope, ByteDance / Volcano Ark / Seedream / Doubao, Tencent / Hunyuan
+- User mentions any of these: Alibaba Cloud / Bailian / Qwen / Wan / DashScope, ByteDance / Volcano Ark / Seedream / Doubao, Tencent / Hunyuan, Google / Gemini / Nano Banana
+- User wants an international (non-China) image provider — use the Gemini platform
 - Any task where AI-generated image with strong Chinese support would be helpful
+
+## Model Reference
+
+When the user wants to compare models, check pricing, or browse options before
+choosing, open the local model reference page in their browser:
+
+```bash
+open ~/.claude/skills/imagencn/docs/models.html
+```
+
+This page shows all 31 models across 6 platforms with pricing, resolution,
+feature highlights, and a quick-reference guide.  On Linux use `xdg-open`;
+the file also works from `file://` with no server needed.
 
 ## Workflow
 
@@ -150,29 +168,35 @@ Editing models require an input image via `--image` (local path or URL). Omit `-
 | `step-2x-large` | **StepFun default**. High quality (0.1 RMB/image), up to 1024x1024 |
 | `step-image-edit-2` | Fast & cheap (0.02 RMB/image), supports negative prompts, 8 inference steps |
 
+### Google Gemini - International (generateContent API)
+
+| Model | Description |
+|-------|-------------|
+| `gemini-3-pro-image-preview` | **Gemini default**. Google flagship image model, 512/1K/2K named sizes plus aspect-ratio presets |
+
 ## Usage
 
 ### Basic Usage
 
 ```bash
 # Default model (qwen-image-2.0-pro, native 2K output)
-python ~/.claude/skills/imagenCN/scripts/generate_image.py "A cute cat" output.png
+python ~/.claude/skills/imagencn/scripts/generate_image.py "A cute cat" output.png
 
 # Photorealistic with Wan model (Wan2.7 supports 4K)
-python ~/.claude/skills/imagenCN/scripts/generate_image.py --model wan2.7-image-pro --size 4K "Realistic photo of mountains at sunset" photo.png
+python ~/.claude/skills/imagencn/scripts/generate_image.py --model wan2.7-image-pro --size 4K "Realistic photo of mountains at sunset" photo.png
 
 # Edit an existing image (requires --image; local path or URL)
-python ~/.claude/skills/imagenCN/scripts/generate_image.py --model qwen-image-edit-max --image input.png "Change the background to a beach at sunset" edited.png
+python ~/.claude/skills/imagencn/scripts/generate_image.py --model qwen-image-edit-max --image input.png "Change the background to a beach at sunset" edited.png
 ```
 
 ### Size Options
 
 ```bash
 # Use ratio preset
-python ~/.claude/skills/imagenCN/scripts/generate_image.py --size 16:9 "Wide landscape" landscape.png
+python ~/.claude/skills/imagencn/scripts/generate_image.py --size 16:9 "Wide landscape" landscape.png
 
 # Use exact dimensions
-python ~/.claude/skills/imagenCN/scripts/generate_image.py --size 1280*720 "Custom size" custom.png
+python ~/.claude/skills/imagencn/scripts/generate_image.py --size 1280*720 "Custom size" custom.png
 ```
 
 ### Size Presets
@@ -242,14 +266,39 @@ python ~/.claude/skills/imagenCN/scripts/generate_image.py --size 1280*720 "Cust
 - `16:9` -> 1280x800
 - `9:16` -> 800x1280
 
+**Google Gemini (named sizes + aspect ratios):**
+- `512` / `1K` (default) / `2K` -> named output size
+- `1:1`, `16:9`, `9:16`, `4:3`, `3:4` -> aspect ratio (no exact pixel sizes)
+
 ### Advanced Options
 
 ```bash
 # With negative prompt
-python ~/.claude/skills/imagenCN/scripts/generate_image.py --negative "blurry, low quality" "High quality portrait" portrait.png
+python ~/.claude/skills/imagencn/scripts/generate_image.py --negative "blurry, low quality" "High quality portrait" portrait.png
+
+# Disable automatic prompt extension (DashScope only)
+python ~/.claude/skills/imagencn/scripts/generate_image.py --no-extend "A photorealistic cat" cat.png
+
+# Set random seed for reproducibility
+python ~/.claude/skills/imagencn/scripts/generate_image.py --seed 42 "A cat" cat.png
+
+# Guidance scale (Volcano Ark only)
+python ~/.claude/skills/imagencn/scripts/generate_image.py --platform ark --guidance-scale 7.5 "Portrait" portrait.png
+
+# Disable watermark (Volcano Ark only)
+python ~/.claude/skills/imagencn/scripts/generate_image.py --platform ark --no-watermark "Artwork" art.png
+
+# Auto-enhance prompt on/off (Tencent Hunyuan only, --revise 0=off 1=on)
+python ~/.claude/skills/imagencn/scripts/generate_image.py --platform hunyuan --revise 0 "A cat" cat.png
+
+# Add AI logo (Tencent Hunyuan only, --logo 0=no 1=yes)
+python ~/.claude/skills/imagencn/scripts/generate_image.py --platform hunyuan --logo 1 "Poster" poster.png
+
+# Dry run (preview without making API call)
+python ~/.claude/skills/imagencn/scripts/generate_image.py --dry-run --platform ark "Test prompt"
 
 # List all models
-python ~/.claude/skills/imagenCN/scripts/generate_image.py --list-models
+python ~/.claude/skills/imagencn/scripts/generate_image.py --list-models
 ```
 
 ## Requirements
@@ -284,6 +333,10 @@ export ZHIPUAI_MODEL="cogview-4"                # Optional default model
 # StepFun / 阶跃星辰
 export STEP_API_KEY="your_api_key"              # Required for StepFun
 export STEP_MODEL="step-2x-large"               # Optional default model
+
+# Google Gemini (international)
+export GEMINI_API_KEY="your_api_key"            # Required for Gemini
+export GEMINI_MODEL="gemini-3-pro-image-preview" # Optional default model
 ```
 
 Get API Keys:
@@ -292,10 +345,11 @@ Get API Keys:
 - Tencent Hunyuan: https://console.cloud.tencent.com/tokenhub/apikey
 - Zhipu: https://bigmodel.cn
 - StepFun: https://platform.stepfun.com/interface-key
+- Google Gemini: https://aistudio.google.com/
 
 ## Config File (Optional)
 
-Create `~/.imagenCN.json` for personal defaults, or `.imagenCN.json` in a project
+Create `~/.imagencn.json` for personal defaults, or `.imagencn.json` in a project
 directory for per-project overrides.  API keys stay in environment variables for
 security.
 
@@ -309,9 +363,9 @@ security.
 
 All keys are optional.  Priority (highest first):
 1. CLI arguments (`--platform`, `--model`, `--size`)
-2. Project config (`.imagenCN.json` in current directory)
-3. User config (`~/.imagenCN.json`)
-4. Environment variables (`DASHSCOPE_MODEL`, `ARK_MODEL`, `HUNYUAN_MODEL`)
+2. Project config (`.imagencn.json` in current directory)
+3. User config (`~/.imagencn.json`)
+4. Environment variables (`DASHSCOPE_MODEL`, `ARK_MODEL`, `HUNYUAN_MODEL`, `ZHIPUAI_MODEL`, `STEP_MODEL`, `GEMINI_MODEL`)
 5. Built-in defaults
 
 ## API Endpoints
@@ -344,6 +398,7 @@ export DASHSCOPE_API_BASE="https://dashscope-intl.aliyuncs.com/api/v1"
 | **Complex Chinese composition** | `hy-image-v3.0` | Tencent Hunyuan |
 | **Chinese text in images** | `cogview-4` | Zhipu |
 | **Ultra-cheap volume gen** | `step-image-edit-2` | StepFun |
+| **International (non-China)** | `gemini-3-pro-image-preview` | Google Gemini |
 
 All other models are legacy/snapshot variants.
 
@@ -370,24 +425,13 @@ All other models are legacy/snapshot variants.
 
 ## Platform Quick Comparison
 
-| Feature | DashScope | Ark | Hunyuan | Zhipu | StepFun |
-|---------|-----------|-----|---------|-------|--------|
-| Best for | Text, variety | Photo+text | Complex CN | CN text in image | Ultra-cheap |
-| Max res | 4K | 4K | 2K | 2K | 1K |
-| SDK | `dashscope` | None | None | None | None |
-| Price | Varies | ~0.22 | ~0.20 | ~0.06 | ~0.02 |
-| Env var | `DASHSCOPE_API_KEY` | `ARK_API_KEY` | `HUNYUAN_API_KEY` | `ZHIPUAI_API_KEY` | `STEP_API_KEY` |
-
-## Comparison with Imagen (Gemini)
-
-| Feature | ImagenCN (Bailian) | Imagen (Gemini) |
-|---------|-------------------|-----------------|
-| Chinese text rendering | Excellent | Good |
-| English text rendering | Excellent | Good |
-| Photorealistic images | Excellent | Good |
-| Speed | Medium | Fast |
-| Model variety | 15+ models | 3 models |
-| Max resolution | 4K (Wan2.7-Pro) | 2K |
+| Feature | DashScope | Ark | Hunyuan | Zhipu | StepFun | Gemini |
+|---------|-----------|-----|---------|-------|--------|--------|
+| Best for | Text, variety | Photo+text | Complex CN | CN text in image | Ultra-cheap | International |
+| Max res | 4K | 4K | 2K | 2K | 1K | 2K |
+| SDK | `dashscope` | None | None | None | None | None |
+| Price | Varies | ~0.22 | ~0.20 | ~0.06 | ~0.02 | ~$0.13 |
+| Env var | `DASHSCOPE_API_KEY` | `ARK_API_KEY` | `HUNYUAN_API_KEY` | `ZHIPUAI_API_KEY` | `STEP_API_KEY` | `GEMINI_API_KEY` |
 
 ## Examples
 
@@ -421,16 +465,25 @@ HUNYUAN_API_KEY="xxx" python scripts/generate_image.py \
   cat.png
 ```
 
+### Google Gemini (international)
+```bash
+# Default Gemini model (Gemini 3 Pro Image)
+GEMINI_API_KEY="xxx" python scripts/generate_image.py \
+  --platform gemini --size 2K \
+  "A serene Japanese garden with koi pond, soft morning light" \
+  garden.png
+```
+
 ### Chinese New Year Poster (DashScope)
 ```bash
-python ~/.claude/skills/imagenCN/scripts/generate_image.py \
+python ~/.claude/skills/imagencn/scripts/generate_image.py \
   "A beautiful Chinese New Year poster with red background, golden text, fireworks and firecrackers" \
   new_year_poster.png
 ```
 
 ### Photorealistic Landscape (4K)
 ```bash
-python ~/.claude/skills/imagenCN/scripts/generate_image.py \
+python ~/.claude/skills/imagencn/scripts/generate_image.py \
   --model wan2.7-image-pro \
   --size 4K \
   "Breathtaking sunset over mountain range, golden hour, professional photography" \
@@ -439,7 +492,7 @@ python ~/.claude/skills/imagenCN/scripts/generate_image.py \
 
 ### Product Shot
 ```bash
-python ~/.claude/skills/imagenCN/scripts/generate_image.py \
+python ~/.claude/skills/imagencn/scripts/generate_image.py \
   --model wan2.7-image \
   --size 2K \
   "Professional product photography of a coffee cup on marble surface, studio lighting" \
