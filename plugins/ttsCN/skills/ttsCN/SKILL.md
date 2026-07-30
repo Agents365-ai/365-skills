@@ -2,9 +2,9 @@
 name: ttsCN
 description: Multi-platform Chinese & multilingual TTS text-to-speech via Edge/Doubao/CosyVoice/Azure/Tencent/Baidu/MiniMax/Xunfei plus ElevenLabs/OpenAI/Google — 11 backends, word-level timestamps, [PAUSE:x] pause markers, pinyin pronunciation overrides
 author: Agents365-ai
-version: 1.6.0
+version: 1.7.0
 created: 2026-07-08
-updated: 2026-07-16
+updated: 2026-07-30
 homepage: https://github.com/Agents365-ai/ttsCN
 metadata: {"openclaw":{"requires":{"bins":["python3","ffmpeg"]},"emoji":"🔊"}}
 ---
@@ -29,11 +29,17 @@ Generate natural speech audio from text. **11 backends** — 8 China-friendly cl
 | 10 | **OpenAI TTS** | ~$15-30/M chars | 6 voices, multilingual, simple REST |
 | 11 | **Google Cloud TTS** | ~$16/M chars (free tier) | 220+ voices, 40+ languages |
 
-New in 1.4: **word-level timestamps** (edge/azure), **[PAUSE:x] + sound-tag markers** (all platforms), **--phonemes pronunciation overrides** (azure/minimax).
-New in 1.5: **word-level timestamps on doubao and minimax** (doubao `with_timestamp` frontend; minimax `subtitle_type: word` — best-effort, degrades to no boundaries).
-New in 1.6: **word-level timestamps on cosyvoice** (`word_timestamp_enabled` — v2/v3 models; cosyvoice-v1 ignores the flag and yields no boundaries).
+New in 1.4–1.6: **word-level timestamps** (edge/azure/doubao/minimax/cosyvoice —
+best-effort, degrades to no boundaries), **[PAUSE:x] + sound-tag markers** (all
+platforms), **--phonemes pronunciation overrides** (azure/minimax).
+New in 1.7: **--json flag** (JSON envelope independent of `--format`), idempotency
+hits report `cached: true` and **re-synthesize if the cached audio was deleted**,
+`--input f out.wav` positional fixed, chunker never splits inside `[PAUSE:x]`.
 
 **Cross-platform**: Windows, macOS, Linux
+
+All paths in this document are relative to this skill's root directory (the
+directory containing this SKILL.md) — resolve them against it.
 
 ## When to Use This Skill
 
@@ -53,12 +59,11 @@ Automatically activate this skill when:
 local HTML comparison page in their browser FIRST** — it's a visual, filterable table
 that is much faster to scan than reading text output.
 
-All paths in this document are relative to this skill's root directory (the
-directory containing this SKILL.md) — resolve them against it.
-
 ```bash
-# Open the comparison page (path relative to this skill's directory)
-open docs/providers.html
+# Cross-platform (path relative to this skill's directory)
+python3 -m webbrowser docs/providers.html
+
+# …or the platform-native opener: open (macOS) / xdg-open (Linux) / start (Windows)
 ```
 
 The comparison page includes:
@@ -67,8 +72,10 @@ The comparison page includes:
 - **Voice cards** — recommended voices with style descriptions and best-use labels
 - **API key links** — direct links to each provider's console for key acquisition
 
-This page is auto-generated from `data/providers.json`. Run `python scripts/build_docs.py`
-to regenerate it after editing the JSON.
+This page is auto-generated from `data/providers.json` (the single source of truth
+for all provider/voice data). Run `python3 scripts/build_docs.py` to regenerate it
+after editing the JSON. The same data is queryable on the CLI via
+`python3 scripts/tts.py schema backends|voices` (see Schema Introspection).
 
 **After opening the page**, ask the user which backend and voice they'd like to use,
 then proceed to Step 2.
@@ -77,20 +84,15 @@ then proceed to Step 2.
 
 ### Step 0 — Show the comparison page (when comparing/choosing)
 
-If the user is browsing, comparing providers, or unsure which backend to use:
-
-```bash
-open docs/providers.html
-```
-
-This opens a filterable visual comparison in their browser. Let them explore,
-then ask which backend + voice they want.
+If the user is browsing, comparing providers, or unsure which backend to use, open
+`docs/providers.html` as shown above. Let them explore, then ask which backend +
+voice they want.
 
 ### Step 1 — Understand the request
 
 Clarify what the user needs:
 - **Text**: inline text or a file? Short or long-form?
-- **Voice style**: male/female, young/mature, warm/energetic? (see Voice Guide)
+- **Voice style**: male/female, young/mature, warm/energetic? (see voice guide below)
 - **Speed**: normal, faster (+10-20%), slower (-10-20%)?
 - **Format**: WAV (lossless) or MP3 (compressed)?
 
@@ -129,36 +131,18 @@ Confirm: output path, file size, audio duration.
 | **English, simple/cheap** | openai | alloy | tts-1-hd, one env var |
 | **English, enterprise** | google | en-US-Neural2-F | 220+ voices, free tier |
 
-### Full Capability Comparison
+### Full capability & voice data
 
-| Capability | Edge | Doubao | CosyVoice | Azure | Tencent | Baidu | MiniMax | Xunfei |
-|------------|------|--------|-----------|-------|---------|-------|---------|--------|
-| **Cost (per 10K chars)** | Free | ~1元 | ~2元 | ~$1/M chars | **0.75元** | 灵活 | ~$1 | ~2元 |
-| **Built-in voices** | 20+ | 8 | 7 | 20+ | 380+ | 30+ | 300+ | 500+ |
-| **Max chars / chunk** | 2000 | 280 | 400 | 2000 | 150 | 500 | **3000** | 200 |
-| **Max duration / chunk** | ~10 min | ~1 min | ~2 min | ~10 min | ~30 s | ~2 min | ~5 min | ~1 min |
-| **SSML** | ✅ | ❌ | ❌ | ✅ | ✅ | ✅ | ❌ | ✅ |
-| **Voice cloning** | ❌ | ✅ | ✅ **CLI built-in** | ✅ (gated) | ✅ | ✅ | ✅ **CLI built-in** | ✅ |
-| **Clone method** | — | seed-icl-2.0, 5s audio | 音色复刻, 10-20s URL 音频 | Custom Neural Voice, 300+句 | 一句话(5-15s) / 基础版(10-20min) | 大模型复刻, 任意音频 | 10s-5min音频, 零样本 | 一句话(≈3s), 500万+已创建 |
-| **Clone cost** | — | 150元/音色/年 | **免费**(合成正常计费) | 企业定制报价 | API调用费 | 按次预付费 | $1.5/音色(国内¥9.9首用) | 平台配额 |
-| **Emotion** | Via SSML | Limited | Via style | Via SSML | Via SSML | ✅ Native 8种 | ✅ Native 8种 | ✅ Native |
-| **Dialects** | ❌ | ❌ | ❌ | ❌ | Cantonese | 上海/河南/四川/湖南/贵州 | ❌ | ✅ 多方言 |
-| **Languages** | 100+ | CN/EN | CN | 100+ | CN/EN/Cantonese | CN/EN/JA | 40+ | **130+** |
-| **Streaming** | ✅ WebSocket | ✅ WebSocket | ✅ | ✅ SDK | ✅ WebSocket | ✅ WebSocket | ❌ (REST only) | ✅ WebSocket |
-| **Setup difficulty** | 零配置 | 中等 | 简单 | 中等 | 中等 | 简单 | 简单 | 中等 |
-| **API key** | None | VOLCENGINE_* | DASHSCOPE_KEY | AZURE_KEY | TENCENT_* | BAIDU_* | MINIMAX_KEY | XUNFEI_* |
+The complete capability matrix (cost, max chars/duration per chunk, SSML, cloning
+method + cost, emotion, dialects, languages, streaming, setup difficulty) and the
+per-backend voice lists live in **one place**: `data/providers.json`. View them via:
 
-### International Backends (need international network access)
+- The **comparison page** (`docs/providers.html`) — best for humans
+- `python3 scripts/tts.py schema backends --full` — full capability fields per backend
+- `python3 scripts/tts.py schema voices` — every voice preset with style descriptions
+- `python3 scripts/tts.py --list` — human-readable terminal summary
 
-| Capability | ElevenLabs | OpenAI TTS | Google Cloud TTS |
-|------------|-----------|-----------|------------------|
-| **Cost (approx.)** | Paid tiers, from $5/mo | ~$15-30/M chars | ~$16/M chars, 1M free/mo |
-| **Default voice** | `21m00Tcm4TlvDq8ikWAM` (Rachel) | `alloy` | `en-US-Neural2-F` |
-| **Voices** | 20+ preset + cloning | 6 | 220+ |
-| **Languages** | 32 (multilingual v2) | 50+ auto-detect | 40+ (incl. cmn-CN) |
-| **Voice cloning** | ✅ Instant (paid) | ❌ | ❌ |
-| **API key** | ELEVENLABS_API_KEY | OPENAI_API_KEY | GOOGLE_TTS_API_KEY |
-| **Model / language env** | ELEVENLABS_MODEL (default `eleven_multilingual_v2`) | OPENAI_TTS_MODEL (default `tts-1-hd`) | GOOGLE_TTS_LANGUAGE (default: derived from voice name, e.g. `en-US`) |
+Do not maintain copies of these tables elsewhere — regenerate from the JSON.
 
 ## Voice Cloning (`clone` command)
 
@@ -198,91 +182,6 @@ Rules the agent MUST follow:
 Other platforms (Doubao/Tencent/Baidu/Xunfei/Azure) support cloning via
 their consoles — the resulting voice id also works as a plain `--voice`.
 
-## Voice Guide
-
-### Edge / Azure Chinese Voices (20+)
-
-| Voice | Gender | Style | Best for |
-|-------|--------|-------|----------|
-| `zh-CN-XiaoxiaoNeural` | Female | Warm, standard | **Default** — general purpose |
-| `zh-CN-YunxiNeural` | Male | Energetic, youthful | Narration, vlog |
-| `zh-CN-YunjianNeural` | Male | Mature, authoritative | Sports, news |
-| `zh-CN-XiaoyiNeural` | Female | Lively, cheerful | Short video, Douyin |
-| `zh-CN-YunyangNeural` | Male | Deep, professional | Documentary, voiceover |
-| `zh-CN-XiaochenNeural` | Female | Calm, gentle | Meditation, relaxation |
-| `zh-CN-YunfengNeural` | Male | Resonant, deep | Movie trailer |
-| `zh-CN-YunxiaNeural` | Female | Cute, playful | Children's content |
-| `zh-CN-XiaohanNeural` | Female | Soft, tender | Storytelling, romance |
-| `zh-CN-YunyeNeural` | Male | Young, bright | Tech, startup |
-| `zh-CN-YunzeNeural` | Male | Refined, cultured | Education, science |
-
-### CosyVoice Voices (Alibaba)
-
-| Voice | Style | Best for |
-|-------|-------|----------|
-| `longxiaochun_v3` | Female, lively | Short video, social media |
-| `longxiaoxia_v3` | Female, gentle | Storytelling, audiobook |
-| `longxiaobai_v3` | Female, cute | Children, animation |
-| `longlaotie_v3` | Male, humorous | Comedy, casual content |
-| `longchen_v3` | Male, calm | Business, professional |
-
-### Doubao Voices (ByteDance)
-
-| Voice | Style | Best for |
-|-------|-------|----------|
-| `BV001_streaming` | Female, standard | General Mandarin |
-| `BV002_streaming` | Male, standard | General Mandarin |
-
-### Tencent Cloud Voices (380+, selected)
-
-| Voice ID | Style | Best for |
-|----------|-------|----------|
-| `101001` | Female, warm | General purpose |
-| `101002` | Male, standard | General purpose |
-| `101004` | Female, cute | Children, storytelling |
-| `101005` | Male, mature | News, broadcasting |
-
-### Baidu AI Voices (30+, selected)
-
-| Voice ID | Style | Best for |
-|----------|-------|----------|
-| `0` | Female, standard | General purpose |
-| `1` | Male, standard | General purpose |
-| `3` | Male, emotional (度逍遥) | Storytelling, emotion |
-| `4` | Female, emotional (度丫丫) | Narration, emotion |
-| `5003` | Female, sweet (度琪琪) | Customer service |
-| `5118` | Male, gentle | Natural conversation |
-
-### MiniMax Voices (300+, selected)
-
-| Voice ID | Style | Best for |
-|----------|-------|----------|
-| `female-shaonv` | Female, youthful (少女) | General |
-| `male-qn-qingse` | Male, clear (青涩青年) | Vlog, narration |
-| `female-yujie` | Female, mature (御姐) | Professional |
-| `presenter_male` | Male, broadcast (播音男) | News, documentary |
-| `presenter_female` | Female, broadcast (播音女) | News, documentary |
-
-### Xunfei Voices (500+, selected)
-
-| Voice ID | Style | Best for |
-|----------|-------|----------|
-| `xiaoyan` | Female, sweet (甜美) | General (default) |
-| `xiaoyu` | Female, natural (温柔) | Audiobook, meditation |
-| `xiaofeng` | Male, mature (稳重) | News, documentary |
-| `xiaomei` | Female, lively (活泼) | Short video |
-| `xiaoqian` | Female, gentle (亲切) | Customer service |
-
-### International Voices (ElevenLabs / OpenAI / Google, selected)
-
-| Backend | Voice ID | Style | Best for |
-|---------|----------|-------|----------|
-| elevenlabs | `21m00Tcm4TlvDq8ikWAM` (Rachel) | Female, calm | General English (default) |
-| openai | `alloy` | Neutral | General (default) |
-| openai | `nova` / `onyx` | Female bright / Male deep | Narration |
-| google | `en-US-Neural2-F` | Female, natural | General English (default) |
-| google | `cmn-CN-Wavenet-A` | Female, Mandarin | Chinese via Google |
-
 ## Usage
 
 ### Basic Usage
@@ -314,6 +213,9 @@ python3 scripts/tts.py --input script.txt output.wav
 ```bash
 # MP3 output (compressed, smaller file)
 python3 scripts/tts.py --format mp3 "你好" hello.mp3
+
+# JSON envelope + MP3 audio at the same time
+python3 scripts/tts.py --json --format mp3 "你好" hello.mp3
 ```
 
 ### Preview (Dry Run)
@@ -368,8 +270,9 @@ python3 scripts/tts.py --platform azure --phonemes phonemes.json \
 ```
 
 Per-platform: **azure** → SSML `<phoneme alphabet="sapi">` tags; **minimax** →
-inline pinyin annotations like `重(chong2)庆(qing4)`; all other platforms
-silently ignore the flag.
+inline pinyin annotations like `重(chong2)庆(qing4)` (applied before chunking so
+the annotation counts toward the chunk budget); all other platforms silently
+ignore the flag.
 
 ## Requirements
 
@@ -395,6 +298,12 @@ System requirement: `ffmpeg`
 export TTS_BACKEND="edge"
 export TTS_VOICE="zh-CN-XiaoxiaoNeural"
 export TTS_RATE="+5%"
+export TTS_FORMAT="wav"              # wav | mp3 | json (json = JSON envelope mode)
+
+# Backend tuning (optional)
+export MINIMAX_MODEL="speech-2.6-hd"       # use speech-2.8-* to voice sound tags
+export MINIMAX_GROUP_ID=""                 # required by some MiniMax accounts
+export COSYVOICE_MODEL="cosyvoice-v3-flash"
 
 # ByteDance Volcano Ark (Doubao)
 export VOLCENGINE_APPID="your_app_id"
@@ -464,9 +373,9 @@ Create `~/.ttsCN.json` for personal defaults, or `.ttsCN.json` in a project dire
 
 Priority (highest first):
 1. CLI arguments (`--platform`, `--voice`, `--rate`)
-2. Project config (`.ttsCN.json` in current directory)
-3. User config (`~/.ttsCN.json`)
-4. Environment variables (`TTS_BACKEND`, `TTS_VOICE`, `TTS_RATE`)
+2. Environment variables (`TTS_BACKEND`, `TTS_VOICE`, `TTS_RATE`)
+3. Project config (`.ttsCN.json` in current directory)
+4. User config (`~/.ttsCN.json`)
 5. Built-in defaults
 
 ## Examples
@@ -488,15 +397,6 @@ python3 scripts/tts.py \
   douyin_style.wav
 ```
 
-### Male Documentary Voice
-
-```bash
-python3 scripts/tts.py \
-  --voice zh-CN-YunyangNeural \
-  "在遥远的非洲大草原上，生命的故事每天都在上演。" \
-  documentary.wav
-```
-
 ### Audiobook from Script File (CosyVoice)
 
 ```bash
@@ -505,7 +405,7 @@ python3 scripts/tts.py \
   --input chapter1.txt chapter1.wav
 ```
 
-### Bulk Generation at Lowest Cost (Tencent)
+### Bulk Generation at Lowest Cost (Tencent, inline env vars)
 
 ```bash
 TENCENT_SECRET_ID="xxx" TENCENT_SECRET_KEY="xxx" \
@@ -523,24 +423,6 @@ python3 scripts/tts.py \
   "这是一段充满感情的语音合成演示。" premium.wav
 ```
 
-### Professional Education Voice (Xunfei)
-
-```bash
-XUNFEI_APP_ID="xxx" XUNFEI_API_KEY="xxx" XUNFEI_API_SECRET="xxx" \
-python3 scripts/tts.py \
-  --platform xunfei --voice xiaoyu \
-  "今天我们来讲一个有趣的故事..." education.wav
-```
-
-### Emotion Synthesis (Baidu)
-
-```bash
-BAIDU_APP_ID="xxx" BAIDU_API_KEY="xxx" BAIDU_SECRET_KEY="xxx" \
-python3 scripts/tts.py \
-  --platform baidu --voice 3 \
-  "今天真是令人兴奋的一天！" emotion.wav
-```
-
 ## Agent-Native CLI Reference
 
 ttsCN follows the [agent-native-design](https://github.com/Agents365-ai/agent-native-design) contract.
@@ -550,14 +432,17 @@ It serves **humans** (readable terminal output), **AI agents** (structured JSON 
 ### JSON Mode
 
 ```bash
-# Explicit JSON mode
-tts.py --format json "你好" out.wav
+# Explicit JSON envelope mode (independent of --format)
+python3 scripts/tts.py --json "你好" out.wav
+python3 scripts/tts.py --json --format mp3 "你好" out.mp3
+
+# --format json is a deprecated alias for --json (kept for compatibility)
 
 # Auto-detect: pipe to jq → JSON automatically
-tts.py --list | jq .data.backends[0].name
+python3 scripts/tts.py --list | jq .data.backends[0].name
 
 # Error envelope always structured
-tts.py --format json --platform doubao "test" out.wav
+python3 scripts/tts.py --json --platform doubao "test" out.wav
 # → {"ok":false, "error":{"code":"auth_missing_env","message":"...","retryable":false,...}}
 ```
 
@@ -608,29 +493,33 @@ separate forced-alignment pass.
 ### Schema Introspection
 
 ```bash
-tts.py schema backends              # All 11 backends (compact by default)
-tts.py schema backends --full       # All fields (22 per backend)
-tts.py schema backends.doubao       # Single backend full detail
-tts.py schema voices                # All voice presets per backend
-tts.py schema tags                  # Tag definitions
-tts.py schema version               # Version + providers data freshness
+python3 scripts/tts.py schema backends              # All 11 backends (compact by default)
+python3 scripts/tts.py schema backends --full       # All fields (22 per backend)
+python3 scripts/tts.py schema backends.doubao       # Single backend full detail
+python3 scripts/tts.py schema voices                # All voice presets per backend
+python3 scripts/tts.py schema tags                  # Tag definitions
+python3 scripts/tts.py schema version               # Version + providers data freshness
 
 # Field filtering for low-token-cost queries
-tts.py schema backends --fields name,cost,supports_clone,supports_ssml
+python3 scripts/tts.py schema backends --fields name,cost,supports_clone,supports_ssml
 ```
 
 ### Idempotency
 
 ```bash
 # Orchestrators: retried calls return cached result — no double-billing
-tts.py --idempotency-key "daily-podcast-2026-07-08" --input script.txt out.wav
+python3 scripts/tts.py --idempotency-key "daily-podcast-2026-07-08" --input script.txt out.wav
 
 # Cache at ~/.ttscn_idem/, 7-day TTL, SHA-256 keyed
 ```
+
+A cache hit returns the stored result with `data.cached: true`. If the cached
+`output_file` no longer exists on disk, the call **re-synthesizes** instead of
+returning a stale success.
 
 ### Agent Compatibility Flags
 
 ```bash
 # No-ops accepted for agent runtime compatibility (ttsCN never prompts)
-tts.py --yes --no-input "text" out.wav
+python3 scripts/tts.py --yes --no-input "text" out.wav
 ```

@@ -21,6 +21,7 @@ def synthesize(chunks, config, output_file, output_format="wav"):
     part_files = []
     word_boundaries = []
     accumulated_duration = 0.0
+    concat_list = os.path.join(out_dir, ".tts_concat.txt")
 
     async def run():
         nonlocal accumulated_duration
@@ -97,26 +98,41 @@ def synthesize(chunks, config, output_file, output_format="wav"):
                             f"Part {i + 1} synthesis failed after 3 attempts"
                         )
 
-    asyncio.run(run())
+    try:
+        asyncio.run(run())
 
-    # Write final output
-    if len(part_files) == 1:
-        os.replace(part_files[0], output_file)
-    else:
-        concat_list = os.path.join(out_dir, ".tts_concat.txt")
-        with open(concat_list, "w", encoding="utf-8") as f:
+        # Write final output
+        if len(part_files) == 1:
+            os.replace(part_files[0], output_file)
+        else:
+            with open(concat_list, "w", encoding="utf-8") as f:
+                for pf in part_files:
+                    f.write(f"file '{os.path.basename(pf)}'\n")
+            result = subprocess.run(
+                ["ffmpeg", "-y", "-f", "concat", "-safe", "0",
+                 "-i", concat_list, "-c", "copy", output_file],
+                capture_output=True, text=True, cwd=out_dir,
+            )
+            if result.returncode != 0:
+                raise RuntimeError(f"FFmpeg concat failed: {result.stderr[:200]}")
+            os.remove(concat_list)
             for pf in part_files:
-                f.write(f"file '{os.path.basename(pf)}'\n")
-        result = subprocess.run(
-            ["ffmpeg", "-y", "-f", "concat", "-safe", "0",
-             "-i", concat_list, "-c", "copy", output_file],
-            capture_output=True, text=True, cwd=out_dir,
-        )
-        if result.returncode != 0:
-            raise RuntimeError(f"FFmpeg concat failed: {result.stderr[:200]}")
-        os.remove(concat_list)
-        for pf in part_files:
-            if os.path.exists(pf):
-                os.remove(pf)
+                if os.path.exists(pf):
+                    os.remove(pf)
 
-    return accumulated_duration, word_boundaries
+        return accumulated_duration, word_boundaries
+    finally:
+        # Remove temp artifacts left behind on failure (no-op on success —
+        # part files are already consumed or removed by then).
+        for pf in part_files:
+            for tmp in (pf, pf.replace(".wav", ".mp3")):
+                if os.path.exists(tmp):
+                    try:
+                        os.remove(tmp)
+                    except OSError:
+                        pass
+        if os.path.exists(concat_list):
+            try:
+                os.remove(concat_list)
+            except OSError:
+                pass

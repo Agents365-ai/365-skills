@@ -96,9 +96,9 @@ def minimax_create(audio, name, voice_id=None):
 
     api_key = os.environ.get("MINIMAX_API_KEY")
     if not api_key:
-        raise SystemExit(emit_error(
+        emit_error(
             "auth_missing_env", "MINIMAX_API_KEY not set",
-            backend="minimax", exit_code=EXIT_AUTH))
+            backend="minimax", exit_code=EXIT_AUTH)
     headers = {"Authorization": f"Bearer {api_key}"}
 
     # Reference audio: local file preferred; URLs are downloaded first.
@@ -109,9 +109,9 @@ def minimax_create(audio, name, voice_id=None):
         filename = os.path.basename(audio.split("?")[0]) or "sample.wav"
     else:
         if not os.path.isfile(audio):
-            raise SystemExit(emit_error(
+            emit_error(
                 "input_not_found", f"Audio file not found: {audio}",
-                field="audio", exit_code=EXIT_VALIDATION))
+                field="audio", exit_code=EXIT_VALIDATION)
         with open(audio, "rb") as f:
             content = f.read()
         filename = os.path.basename(audio)
@@ -121,15 +121,15 @@ def minimax_create(audio, name, voice_id=None):
                       data={"purpose": "voice_clone"},
                       files={"file": (filename, content)}, timeout=300)
     if r.status_code != 200:
-        raise SystemExit(emit_error(
+        emit_error(
             "backend_error", f"MiniMax upload failed {r.status_code}: {r.text[:300]}",
-            backend="minimax", retryable=True, exit_code=EXIT_BACKEND))
+            backend="minimax", retryable=True, exit_code=EXIT_BACKEND)
     body = r.json()
     file_id = (body.get("file") or {}).get("file_id")
     if not file_id:
-        raise SystemExit(emit_error(
+        emit_error(
             "backend_error", f"MiniMax upload returned no file_id: {json.dumps(body)[:300]}",
-            backend="minimax", exit_code=EXIT_BACKEND))
+            backend="minimax", exit_code=EXIT_BACKEND)
 
     vid = voice_id or _minimax_voice_id(name)
     print(f"  Creating clone '{vid}' ...", file=sys.stderr)
@@ -137,17 +137,17 @@ def minimax_create(audio, name, voice_id=None):
                       headers={**headers, "Content-Type": "application/json"},
                       json={"file_id": file_id, "voice_id": vid}, timeout=300)
     if r.status_code != 200:
-        raise SystemExit(emit_error(
+        emit_error(
             "backend_error", f"MiniMax voice_clone failed {r.status_code}: {r.text[:300]}",
-            backend="minimax", retryable=True, exit_code=EXIT_BACKEND))
+            backend="minimax", retryable=True, exit_code=EXIT_BACKEND)
     body = r.json()
     status = (body.get("base_resp") or {}).get("status_code", 0)
     if status != 0:
-        raise SystemExit(emit_error(
+        emit_error(
             "backend_error",
             f"MiniMax voice_clone error {status}: "
             f"{(body.get('base_resp') or {}).get('status_msg', 'unknown')}",
-            backend="minimax", exit_code=EXIT_BACKEND))
+            backend="minimax", exit_code=EXIT_BACKEND)
 
     return {
         "platform": "minimax", "voice_id": vid,
@@ -168,22 +168,22 @@ def _cosyvoice_prefix(name):
 def cosyvoice_create(audio, name, target_model):
     """Enroll a CosyVoice clone from a public audio URL. Returns record."""
     if not os.environ.get("DASHSCOPE_API_KEY"):
-        raise SystemExit(emit_error(
+        emit_error(
             "auth_missing_env", "DASHSCOPE_API_KEY not set",
-            backend="cosyvoice", exit_code=EXIT_AUTH))
+            backend="cosyvoice", exit_code=EXIT_AUTH)
     if not re.match(r"https?://", audio):
-        raise SystemExit(emit_error(
+        emit_error(
             "validation_failed",
             "CosyVoice enrollment requires a PUBLIC http(s) URL for --audio "
             "(DashScope does not accept local files; host the sample, e.g. on "
             "OSS, and pass its URL). 10-20s WAV/MP3/M4A, >=16kHz, <=10MB.",
-            field="audio", exit_code=EXIT_VALIDATION))
+            field="audio", exit_code=EXIT_VALIDATION)
     try:
         from dashscope.audio.tts_v2 import VoiceEnrollmentService
     except ImportError:
-        raise SystemExit(emit_error(
+        emit_error(
             "tool_missing", "'dashscope' not installed. Run: pip install dashscope",
-            backend="cosyvoice", exit_code=EXIT_VALIDATION))
+            backend="cosyvoice", exit_code=EXIT_VALIDATION)
 
     print(f"  Enrolling voice (target_model={target_model}) ...", file=sys.stderr)
     service = VoiceEnrollmentService()
@@ -194,9 +194,9 @@ def cosyvoice_create(audio, name, target_model):
             url=audio,
         )
     except Exception as e:
-        raise SystemExit(emit_error(
+        emit_error(
             "backend_error", f"DashScope enrollment failed: {e}",
-            backend="cosyvoice", retryable=True, exit_code=EXIT_BACKEND))
+            backend="cosyvoice", retryable=True, exit_code=EXIT_BACKEND)
 
     return {
         "platform": "cosyvoice", "voice_id": voice_id,

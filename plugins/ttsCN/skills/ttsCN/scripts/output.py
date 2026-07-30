@@ -47,7 +47,7 @@ def _now_iso():
     return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
 
-VERSION = "1.4.0"  # tool version — single source of truth, imported by tts.py
+VERSION = "1.7.0"  # tool version — single source of truth, imported by tts.py
 
 
 def _get_version():

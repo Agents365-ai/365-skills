@@ -66,11 +66,12 @@ def _hard_split(sentence, max_chars):
     buf = ""
     for ch in sentence:
         buf += ch
-        if len(buf) >= budget:
+        # Don't cut while inside an unclosed [...] token — [PAUSE:0p8]
+        # contains ':' which would otherwise be a soft-punct cut, and even
+        # the forced no-punctuation cut must not land mid-marker.
+        if len(buf) >= budget and buf.rfind("[") <= buf.rfind("]"):
             cut = -1
             for j in range(len(buf) - 1, max(-1, len(buf) - lookback - 1), -1):
-                # Never cut inside an unclosed [...] token — [PAUSE:0p8]
-                # contains ':' which would otherwise be a soft-punct cut.
                 if buf[j] in _SOFT_PUNCT and \
                         buf.rfind("[", 0, j + 1) <= buf.rfind("]", 0, j + 1):
                     cut = j
@@ -122,12 +123,16 @@ def _prepare_chunks(backend, text, max_chars, phoneme_dict):
     counting applies to the text actually sent.
     """
     if backend in ("azure", "minimax"):
-        chunks = [restore_pauses(c)
-                  for c in chunk_text(protect_pauses(text), max_chars)]
+        prepared = protect_pauses(text)
         if backend == "minimax":
-            chunks = [apply_phonemes_minimax(render_markers(c, "minimax"),
-                                             phoneme_dict)
-                      for c in chunks]
+            # Annotate BEFORE chunking so the added 字(zi4) markup counts
+            # against max_chars — post-chunk annotation could push a chunk
+            # past MiniMax's limit.
+            prepared = apply_phonemes_minimax(prepared, phoneme_dict)
+        chunks = [restore_pauses(c)
+                  for c in chunk_text(prepared, max_chars)]
+        if backend == "minimax":
+            chunks = [render_markers(c, "minimax") for c in chunks]
             # Sound tags are only understood by speech-2.8 models — on older
             # models MiniMax reads "(chuckle)" aloud, so strip them instead.
             if not os.environ.get("MINIMAX_MODEL", "").startswith("speech-2.8"):
@@ -343,10 +348,11 @@ Examples:
         """,
     )
 
-    # Input
-    input_group = parser.add_mutually_exclusive_group()
-    input_group.add_argument("text", nargs="?", help="Text to synthesize (inline)")
-    input_group.add_argument("--input", "-i", help="Read text from file")
+    # Input — text and --input are validated manually (not via an argparse
+    # mutually-exclusive group) so that `--input f out.wav` works: the lone
+    # positional is then the OUTPUT path, not the text.
+    parser.add_argument("text", nargs="?", help="Text to synthesize (inline)")
+    parser.add_argument("--input", "-i", help="Read text from file")
 
     parser.add_argument("output", nargs="?", default=None, help="Output audio file path")
 
@@ -362,7 +368,11 @@ Examples:
 
     # Output format
     parser.add_argument("--format", "-f", choices=["wav", "mp3", "json"], default=None,
-                        help="Output format: wav, mp3 (audio), or json (envelope)")
+                        help="Audio format: wav or mp3. ('json' is a deprecated "
+                             "alias for --json; kept for compatibility)")
+    parser.add_argument("--json", action="store_true",
+                        help="Emit the machine-readable JSON envelope on stdout "
+                             "(works with any --format; default when piped)")
 
     # Idempotency
     parser.add_argument("--idempotency-key",
@@ -383,14 +393,27 @@ Examples:
     return parser
 
 
-def _resolve_format(args):
-    if args.format:
+def _resolve_json_mode(args):
+    """JSON envelope mode: --json, --format json (deprecated alias),
+    TTS_FORMAT=json, or stdout not a TTY (piped to another program)."""
+    if getattr(args, "json", False):
+        return True
+    if args.format == "json":
+        return True
+    if os.environ.get("TTS_FORMAT") == "json":
+        return True
+    return not hasattr(sys.stdout, "isatty") or not sys.stdout.isatty()
+
+
+def _resolve_audio_format(args):
+    """Audio container: --format wav|mp3, else TTS_FORMAT, else wav.
+    Independent of JSON envelope mode (--json works with either)."""
+    if args.format in ("wav", "mp3"):
         return args.format
-    if os.environ.get("TTS_FORMAT"):
-        return os.environ["TTS_FORMAT"]
-    if not hasattr(sys.stdout, "isatty") or not sys.stdout.isatty():
-        return "json"
-    return None
+    env_fmt = os.environ.get("TTS_FORMAT")
+    if env_fmt in ("wav", "mp3"):
+        return env_fmt
+    return "wav"
 
 
 def _resolve_backend_config(args):
@@ -427,6 +450,20 @@ def _resolve_output(args, backend, fmt):
     return None
 
 
+def _with_extension(output_file, ext):
+    """Force the audio extension, replacing only a filename suffix.
+
+    The dot check is done on the basename so a dot in a directory
+    component (e.g. "out.dir/audio") is never mistaken for an extension.
+    """
+    if output_file.endswith(ext):
+        return output_file
+    base = os.path.basename(output_file)
+    root, found = os.path.splitext(base)
+    stem = root if found else base
+    return os.path.join(os.path.dirname(output_file), stem + ext)
+
+
 # ── Main ──────────────────────────────────────────────────────────────────
 
 def main():
@@ -448,7 +485,7 @@ def main():
     args = parser.parse_args()
     started_at = time.time()
 
-    json_mode = (output_fmt == "json") if (output_fmt := _resolve_format(args)) else False
+    json_mode = _resolve_json_mode(args)
     if json_mode:
         # Backend synthesizers print progress to stdout; in JSON mode every
         # such line must move to stderr so the envelope (written to the real
@@ -461,9 +498,8 @@ def main():
 
 
 def _run(args, started_at, json_mode=False):
-    output_fmt = _resolve_format(args)
     if json_mode is False:
-        json_mode = (output_fmt == "json")
+        json_mode = _resolve_json_mode(args)
     _diag = sys.stderr if json_mode else sys.stdout
 
     # ── --list ────────────────────────────────────────────────────────────
@@ -476,6 +512,15 @@ def _run(args, started_at, json_mode=False):
         return
 
     # ── Resolve text input ────────────────────────────────────────────────
+    if args.input and args.text and args.output is None:
+        # `--input f out.wav`: the lone positional is the output path.
+        args.output, args.text = args.text, None
+    if args.input and args.text:
+        emit_error("validation_failed",
+                   "Provide either --input or inline text, not both",
+                   field="text", retryable=False,
+                   exit_code=EXIT_VALIDATION, started_at=started_at)
+
     if args.input:
         if not os.path.exists(args.input):
             emit_error("input_not_found",
@@ -505,33 +550,35 @@ def _run(args, started_at, json_mode=False):
     if idem_key:
         hit, cached = idempotency.lookup(idem_key)
         if hit and cached:
-            print("idempotency hit: {} — returning cached result".format(idem_key[:20]),
-                  file=_diag)
-            if json_mode:
-                emit_success(cached, started_at=started_at)
+            cached_file = cached.get("output_file", "")
+            if cached_file and not os.path.exists(cached_file):
+                # Cached metadata is worthless if the audio was deleted —
+                # fall through and synthesize again.
+                print("idempotency hit: {} — but {} no longer exists; "
+                      "re-synthesizing".format(idem_key[:20], cached_file),
+                      file=_diag)
             else:
-                r = cached
-                print("\nDone! (cached)")
-                print("  Output:   {}".format(r.get("output_file", "")))
-                print("  Duration: {:.1f}s".format(r.get("duration_seconds", 0)))
-            return
+                cached = dict(cached, cached=True)
+                print("idempotency hit: {} — returning cached result".format(idem_key[:20]),
+                      file=_diag)
+                if json_mode:
+                    emit_success(cached, started_at=started_at)
+                else:
+                    print("\nDone! (cached)")
+                    print("  Output:   {}".format(cached.get("output_file", "")))
+                    print("  Duration: {:.1f}s".format(cached.get("duration_seconds", 0)))
+                return
 
     # ── Resolve backend/voice/rate ────────────────────────────────────────
     backend, backend_src, voice, voice_src, rate, rate_src = \
         _resolve_backend_config(args)
 
-    if output_fmt is None:
-        output_fmt = "wav"
-    if output_fmt not in ("wav", "mp3"):
-        output_fmt = "wav"
+    output_fmt = _resolve_audio_format(args)
 
     output_file = _resolve_output(args, backend, output_fmt)
 
     if output_file:
-        if output_fmt == "mp3" and not output_file.endswith(".mp3"):
-            output_file = output_file.rsplit(".", 1)[0] + ".mp3" if "." in output_file else output_file + ".mp3"
-        elif output_fmt == "wav" and not output_file.endswith(".wav"):
-            output_file = output_file.rsplit(".", 1)[0] + ".wav" if "." in output_file else output_file + ".wav"
+        output_file = _with_extension(output_file, "." + output_fmt)
 
     # ── Display config ────────────────────────────────────────────────────
     print("Backend:  {} [from {}]".format(backend, backend_src), file=_diag)
@@ -581,6 +628,8 @@ def _run(args, started_at, json_mode=False):
             "voice": voice,
             "voice_description": _resolve_voice_name(backend, voice),
             "speech_rate": rate,
+            "format": output_fmt,
+            "output_file": output_file,
             "max_chars_per_chunk": max_chars,
             "total_chars": len(text),
             "cn_chars": cn,
