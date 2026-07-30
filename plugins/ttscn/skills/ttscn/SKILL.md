@@ -456,6 +456,13 @@ python3 scripts/tts.py --json --platform doubao "test" out.wav
 {"ok":false, "error":{"code":"auth_missing_env","message":"VOLCENGINE_APPID not set","retryable":false,"field":"VOLCENGINE_APPID","backend":"doubao"}, "meta":{...}}
 ```
 
+**Contract**: `meta.schema_version` is a semver string present on every
+envelope (success and error). The **major** version bumps only on breaking
+envelope changes — consumers should assert it matches the schema major they
+were written against (e.g. video-podcast-maker requires major `1`) and fail
+with a clear error otherwise. An absent `schema_version` means a pre-contract
+ttscn release.
+
 ### Word Boundaries (edge / azure / doubao / minimax / cosyvoice)
 
 For **edge**, **azure**, **doubao**, **minimax**, and **cosyvoice**, the
