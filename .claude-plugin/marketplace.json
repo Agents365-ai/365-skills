@@ -58,12 +58,12 @@
             "keywords": ["tldraw", "whiteboard", "canvas", "sketch", "diagram"]
         },
         {
-            "name": "ttsCN",
-            "source": "./plugins/ttsCN",
+            "name": "ttscn",
+            "source": "./plugins/ttscn",
             "description": "Multi-platform Chinese TTS text-to-speech — 8 China-friendly backends (Edge/Doubao/CosyVoice/Azure/Tencent/Baidu/MiniMax/Xunfei), agent-native CLI with JSON envelope, schema introspection, auto-detect TTY, distinct exit codes (0/1/2/3/4), structured errors (code/message/retryable/field/backend), --fields filtering, dry-run, JSON provider registry, filterable HTML comparison page, voice cloning, SSML, emotion, dialects.",
             "version": "1.7.0",
             "author": { "name": "Agents365-ai" },
-            "repository": "https://github.com/Agents365-ai/ttsCN",
+            "repository": "https://github.com/Agents365-ai/ttscn",
             "license": "CC-BY-NC-4.0",
             "keywords": ["tts", "text-to-speech", "chinese", "speech-synthesis", "edge-tts", "doubao", "cosyvoice", "azure-speech", "tencent-cloud", "baidu-ai", "minimax", "xunfei", "voice-cloning", "ssml", "国内可用"]
         },
@@ -158,12 +158,12 @@
             "keywords": ["bilibili", "anime", "bangumi", "frames", "screenshot", "character", "ccip", "video", "donghua"]
         },
         {
-            "name": "imagenCN",
-            "source": "./plugins/imagenCN",
+            "name": "imagencn",
+            "source": "./plugins/imagencn",
             "description": "AI image generation via Alibaba Bailian, ByteDance Volcano Ark & Tencent Hunyuan — 23 models, Chinese text excellence, rich terminal UI, smart config",
             "version": "1.0.0",
             "author": { "name": "Agents365-ai" },
-            "repository": "https://github.com/Agents365-ai/imagenCN",
+            "repository": "https://github.com/Agents365-ai/imagencn",
             "license": "MIT",
             "keywords": ["image-generation", "text-to-image", "dashscope", "doubao", "seedream", "hunyuan", "qwen-image", "wan-series", "chinese-text", "poster"]
         },
