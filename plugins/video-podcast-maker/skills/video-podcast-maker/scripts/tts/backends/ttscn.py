@@ -1,12 +1,12 @@
-"""Bridge to the ttsCN component skill — the single synthesis engine.
+"""Bridge to the ttscn component skill — the single synthesis engine.
 
 Every BACKENDS id routes here with config['platform'] set. Chunks are sent
-RAW (expressiveness markers intact): ttsCN owns per-platform rendering of
+RAW (expressiveness markers intact): ttscn owns per-platform rendering of
 [PAUSE:x] / sound tags and phoneme application (--phonemes). Each chunk is
-one `tts.py` invocation (ttsCN sub-chunks internally per provider limits),
+one `tts.py` invocation (ttscn sub-chunks internally per provider limits),
 then normalized to the suite's 48 kHz mono WAV.
 
-Word boundaries: when ttsCN returns data.word_boundaries (platforms with
+Word boundaries: when ttscn returns data.word_boundaries (platforms with
 native boundary events: edge, azure, doubao, minimax, cosyvoice), each
 offset_sec — absolute within that invocation's file — is shifted by the
 accumulated duration of prior chunks, and non-spoken script characters
@@ -37,10 +37,12 @@ def _merge_native_boundaries(chunk, native, base_offset):
     so walk the visible chunk text and re-emit the skipped characters as
     short entries anchored to the preceding word's end.
 
-    Some backends (MiniMax) return one entry per spoken syllable, each
-    labeled with the full source token — e.g. "37" spoken as "三十七"
-    produces 3 entries all with text "37". Merge consecutive identical
-    token entries into one before gap reconstruction.
+    Any platform may split one source token into multiple per-syllable
+    boundary entries, each labeled with the full source token — e.g. "37"
+    spoken as "三十七" produces 3 entries all with text "37" (MiniMax is
+    the known example). Merging consecutive identical token entries into
+    one is a generic normalization step of the bridge, applied uniformly
+    before gap reconstruction regardless of platform.
     """
     # --- Merge consecutive identical tokens (syllable splitting) ---
     deduped = []
@@ -90,7 +92,7 @@ def synthesize(chunks, config, output_dir, resume=False):
     voice = config.get('voice')
     speech_rate = config.get('speech_rate')
     phonemes_path = config.get('phonemes_path')
-    # ttsCN's azure adapter reads TTS_STYLE from env — inject the resolved
+    # ttscn's azure adapter reads TTS_STYLE from env — inject the resolved
     # style so vpm's pre-4.0 default ('gentle') carries over.
     sub_env = os.environ.copy()
     if config.get('style') is not None:
@@ -165,7 +167,7 @@ def synthesize(chunks, config, output_dir, resume=False):
                 else:
                     estimate_boundaries(chunk, chunk_duration, accumulated_duration)
                 accumulated_duration += chunk_duration
-                print(f"  ✓ Part {i + 1}/{len(chunks)} done via ttsCN/{platform} "
+                print(f"  ✓ Part {i + 1}/{len(chunks)} done via ttscn/{platform} "
                       f"({len(chunk)} chars, {chunk_duration:.1f}s)")
                 success = True
                 break
@@ -174,11 +176,11 @@ def synthesize(chunks, config, output_dir, resume=False):
             print(f"  ✗ Part {i + 1} failed (attempt {attempt}/2): {detail}")
             # Auth errors won't heal on retry — surface immediately
             if err.get('code') in ('auth', 'auth_missing_env') or proc.returncode == 3:
-                raise RuntimeError(f"ttsCN auth error: {detail}")
+                raise RuntimeError(f"ttscn auth error: {detail}")
             if attempt < 2:
                 time.sleep(attempt * 2)
 
         if not success:
-            raise RuntimeError(f"Part {i + 1} synthesis failed via ttsCN/{platform}")
+            raise RuntimeError(f"Part {i + 1} synthesis failed via ttscn/{platform}")
 
     return part_files, word_boundaries, accumulated_duration
