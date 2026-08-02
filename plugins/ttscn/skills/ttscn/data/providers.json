@@ -84,7 +84,7 @@
       "max_chars": 280,
       "max_duration_sec": 60,
       "max_duration_display": "~1 分钟",
-      "voices_count": "8 + 声音复刻",
+      "voices_count": "9 + 声音复刻",
       "supports_ssml": false,
       "supports_clone": true,
       "clone_detail": "seed-icl-2.0: 5秒音频即可复刻, 150元/音色/年",
@@ -97,6 +97,10 @@
       "env_vars": [
         "VOLCENGINE_APPID",
         "VOLCENGINE_ACCESS_TOKEN"
+      ],
+      "env_any": [
+        ["VOLCENGINE_APPID", "VOLCENGINE_ACCESS_TOKEN"],
+        ["VOLCENGINE_API_KEY"]
       ],
       "pip_package": "requests",
       "import_module": "requests",
@@ -132,6 +136,12 @@
           "label": "深沉男声",
           "style": "Male, 专业深沉",
           "best_for": "纪录片、旁白"
+        },
+        {
+          "id": "zh_female_vv_uranus_bigtts",
+          "label": "标准女声 (TTS 2.0)",
+          "style": "Female, 标准普通话",
+          "best_for": "通用场景（需 v3 接口）"
         }
       ]
     },

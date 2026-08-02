@@ -306,6 +306,10 @@ export MINIMAX_GROUP_ID=""                 # required by some MiniMax accounts
 export COSYVOICE_MODEL="cosyvoice-v3-flash"
 
 # ByteDance Volcano Ark (Doubao)
+# v3 (recommended, no appid): API key from the new console (Ark API Key page)
+export VOLCENGINE_API_KEY="your_api_key"
+export VOLCENGINE_RESOURCE_ID="seed-tts-2.0"   # optional; seed-tts-1.0 / seed-icl-2.0 also valid
+# v1 (legacy, appid + token): only when VOLCENGINE_API_KEY is unset
 export VOLCENGINE_APPID="your_app_id"
 export VOLCENGINE_ACCESS_TOKEN="your_token"
 
@@ -453,7 +457,7 @@ python3 scripts/tts.py --json --platform doubao "test" out.wav
 {"ok":true, "data":{...}, "meta":{"version":"...","schema_version":"1.2.0","timestamp":"...","ms":123}}
 
 // Error
-{"ok":false, "error":{"code":"auth_missing_env","message":"VOLCENGINE_APPID not set","retryable":false,"field":"VOLCENGINE_APPID","backend":"doubao"}, "meta":{...}}
+{"ok":false, "error":{"code":"auth_missing_env","message":"set one of: VOLCENGINE_APPID+VOLCENGINE_ACCESS_TOKEN / VOLCENGINE_API_KEY","retryable":false,"field":"VOLCENGINE_APPID","backend":"doubao"}, "meta":{...}}
 ```
 
 **Contract**: `meta.schema_version` is a semver string present on every

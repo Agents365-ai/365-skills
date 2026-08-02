@@ -35,6 +35,7 @@ def _build_backends():
         backends[bid] = {
             "module": "." + bid,
             "env": p["env_vars"],
+            "env_any": p.get("env_any", []),
             "import": (p["import_module"], p["pip_package"], p["pip_install"]),
             "max_chars": p["max_chars"],
             "max_duration_sec": p["max_duration_sec"],
@@ -179,9 +180,20 @@ def init_backend(name):
             f"'{pkg_name}' not installed. Run: {install_cmd}",
             package=pkg_name, install_cmd=install_cmd,
         ) from e
-    for var in info["env"]:
-        if not os.environ.get(var):
-            raise MissingEnvVarError(f"{var} not set", var=var)
+    if info.get("env_any"):
+        # Backends may offer alternative credential sets (e.g. v1 appid
+        # vs v3 API key) — any one complete group is enough.
+        if not any(all(os.environ.get(var) for var in group)
+                   for group in info["env_any"]):
+            raise MissingEnvVarError(
+                "set one of: "
+                + " / ".join("+".join(g) for g in info["env_any"]),
+                var=info["env_any"][0][0],
+            )
+    else:
+        for var in info["env"]:
+            if not os.environ.get(var):
+                raise MissingEnvVarError(f"{var} not set", var=var)
     return _build_config(name)
 
 
@@ -195,11 +207,21 @@ def _build_config(name):
         config["key"] = os.environ["AZURE_SPEECH_KEY"]
         config["region"] = os.environ.get("AZURE_SPEECH_REGION", "eastasia")
     elif name == "doubao":
-        config["appid"] = os.environ["VOLCENGINE_APPID"]
-        config["token"] = os.environ["VOLCENGINE_ACCESS_TOKEN"]
-        config["cluster"] = os.environ.get("VOLCENGINE_CLUSTER", "volcano_tts")
-        config["endpoint"] = os.environ.get(
-            "VOLCENGINE_TTS_ENDPOINT", "https://openspeech.bytedance.com/api/v1/tts")
+        if os.environ.get("VOLCENGINE_API_KEY"):
+            # v3 API-key auth: no appid required.
+            config["api_key"] = os.environ["VOLCENGINE_API_KEY"]
+            config["resource_id"] = os.environ.get(
+                "VOLCENGINE_RESOURCE_ID", "seed-tts-2.0")
+            config["endpoint"] = os.environ.get(
+                "VOLCENGINE_TTS_ENDPOINT",
+                "https://openspeech.bytedance.com/api/v3/tts/unidirectional")
+        else:
+            # v1 legacy auth: appid + access token.
+            config["appid"] = os.environ["VOLCENGINE_APPID"]
+            config["token"] = os.environ["VOLCENGINE_ACCESS_TOKEN"]
+            config["cluster"] = os.environ.get("VOLCENGINE_CLUSTER", "volcano_tts")
+            config["endpoint"] = os.environ.get(
+                "VOLCENGINE_TTS_ENDPOINT", "https://openspeech.bytedance.com/api/v1/tts")
     elif name == "cosyvoice":
         config["model"] = os.environ.get("COSYVOICE_MODEL", "cosyvoice-v3-flash")
     elif name == "tencent":
