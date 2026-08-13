@@ -1,10 +1,10 @@
 ---
 name: ttscn
-description: Multi-platform Chinese & multilingual TTS text-to-speech via Edge/Doubao/CosyVoice/Azure/Tencent/Baidu/MiniMax/Xunfei plus ElevenLabs/OpenAI/Google — 11 backends, word-level timestamps, [PAUSE:x] pause markers, pinyin pronunciation overrides
+description: Multi-platform Chinese & multilingual TTS text-to-speech via Edge/Doubao/CosyVoice/Azure/Tencent/Baidu/MiniMax/Xunfei plus ElevenLabs/OpenAI/Google/Atlas Cloud — 12 backends, word-level timestamps, [PAUSE:x] pause markers, pinyin pronunciation overrides
 author: Agents365-ai
-version: 1.7.0
+version: 1.8.0
 created: 2026-07-08
-updated: 2026-07-30
+updated: 2026-08-13
 homepage: https://github.com/Agents365-ai/ttsCN
 metadata: {"openclaw":{"requires":{"bins":["python3","ffmpeg"]},"emoji":"🔊"}}
 ---
@@ -13,7 +13,7 @@ metadata: {"openclaw":{"requires":{"bins":["python3","ffmpeg"]},"emoji":"🔊"}}
 
 ## Overview
 
-Generate natural speech audio from text. **11 backends** — 8 China-friendly clouds plus 3 international (ElevenLabs / OpenAI / Google).
+Generate natural speech audio from text. **12 backends** — 8 China-friendly clouds plus 4 international or unified APIs (ElevenLabs / OpenAI / Google / Atlas Cloud).
 
 | # | Backend | Cost | Key strength |
 |---|---------|------|-------------|
@@ -28,6 +28,7 @@ Generate natural speech audio from text. **11 backends** — 8 China-friendly cl
 | 9 | **ElevenLabs** | Paid tiers (from $5/mo) | Top voice quality, instant cloning |
 | 10 | **OpenAI TTS** | ~$15-30/M chars | 6 voices, multilingual, simple REST |
 | 11 | **Google Cloud TTS** | ~$16/M chars (free tier) | 220+ voices, 40+ languages |
+| 12 | **Atlas Cloud TTS** | Per-model pricing | Unified async API, multilingual voices |
 
 New in 1.4–1.6: **word-level timestamps** (edge/azure/doubao/minimax/cosyvoice —
 best-effort, degrades to no boundaries), **[PAUSE:x] + sound-tag markers** (all
@@ -35,6 +36,8 @@ platforms), **--phonemes pronunciation overrides** (azure/minimax).
 New in 1.7: **--json flag** (JSON envelope independent of `--format`), idempotency
 hits report `cached: true` and **re-synthesize if the cached audio was deleted**,
 `--input f out.wav` positional fixed, chunker never splits inside `[PAUSE:x]`.
+New in 1.8: **Atlas Cloud TTS** with asynchronous generation, bounded polling,
+credential-free media download, and multilingual voice presets.
 
 **Cross-platform**: Windows, macOS, Linux
 
@@ -49,7 +52,7 @@ Automatically activate this skill when:
 - Creating audiobook or podcast audio from text
 - User asks to compare TTS providers, choose a TTS backend, or see what voices are available
 - User asks about TTS pricing, features, or which provider supports cloning/SSML/dialects
-- User mentions any of: TTS, text-to-speech, 语音合成, 文字转语音, Edge TTS, Doubao TTS, CosyVoice, 火山引擎, 阿里云语音, Azure TTS, 腾讯云TTS, 百度语音, MiniMax, 讯飞语音, ElevenLabs, OpenAI TTS, Google Cloud TTS
+- User mentions any of: TTS, text-to-speech, 语音合成, 文字转语音, Edge TTS, Doubao TTS, CosyVoice, 火山引擎, 阿里云语音, Azure TTS, 腾讯云TTS, 百度语音, MiniMax, 讯飞语音, ElevenLabs, OpenAI TTS, Google Cloud TTS, Atlas Cloud TTS
 - User needs word-level timestamps/subtitles, pause control, or fixing mispronounced Chinese characters (多音字)
 - Any task where Chinese text-to-speech would be helpful
 
@@ -196,6 +199,7 @@ python3 scripts/tts.py --voice zh-CN-YunxiNeural "欢迎收听今天的节目" w
 # Specific backend
 python3 scripts/tts.py --platform doubao "今天天气真好" weather.wav
 python3 scripts/tts.py --platform minimax "高品质语音合成" hq.wav
+python3 scripts/tts.py --platform atlas "统一 API 多语言语音合成" atlas.wav
 
 # Adjust speed
 python3 scripts/tts.py --rate +15% "快速播报" fast.wav
@@ -349,6 +353,10 @@ export OPENAI_TTS_MODEL="tts-1-hd"                 # optional, this is the defau
 # Google Cloud TTS (international)
 export GOOGLE_TTS_API_KEY="your_api_key"
 export GOOGLE_TTS_LANGUAGE="en-US"                 # optional, auto-derived from voice name
+
+# Atlas Cloud TTS (unified API)
+export ATLASCLOUD_API_KEY="your_api_key"
+export ATLASCLOUD_TTS_LANGUAGE="auto"                # optional, this is the default
 ```
 
 Get API Keys:
@@ -362,6 +370,7 @@ Get API Keys:
 - ElevenLabs: https://elevenlabs.io/app/settings/api-keys
 - OpenAI: https://platform.openai.com/api-keys
 - Google Cloud: https://console.cloud.google.com/apis/credentials
+- Atlas Cloud: https://www.atlascloud.ai/console/api-keys
 
 ## Config File (Optional)
 
@@ -504,7 +513,7 @@ separate forced-alignment pass.
 ### Schema Introspection
 
 ```bash
-python3 scripts/tts.py schema backends              # All 11 backends (compact by default)
+python3 scripts/tts.py schema backends              # All 12 backends (compact by default)
 python3 scripts/tts.py schema backends --full       # All fields (22 per backend)
 python3 scripts/tts.py schema backends.doubao       # Single backend full detail
 python3 scripts/tts.py schema voices                # All voice presets per backend

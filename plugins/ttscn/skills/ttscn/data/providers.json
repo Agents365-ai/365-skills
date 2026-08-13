@@ -1,5 +1,5 @@
 {
-  "updated": "2026-07-15",
+  "updated": "2026-08-13",
   "description": "ttscn provider registry — single source of truth for all TTS backends. Edit this file to update --list output, docs/providers.html, and docs/providers.md.",
   "backends": [
     {
@@ -799,6 +799,72 @@
           "label": "Wavenet-C",
           "style": "Male, 标准普通话",
           "best_for": "中文旁白"
+        }
+      ]
+    },
+    {
+      "id": "atlas",
+      "name": "Atlas Cloud TTS",
+      "provider": "Atlas Cloud",
+      "provider_logo": "atlascloud",
+      "cost_tier": "paid",
+      "cost": "按所选模型计费",
+      "cost_per_10k": "以 Atlas Cloud 模型页实时价格为准",
+      "max_chars": 400,
+      "max_duration_sec": 120,
+      "max_duration_display": "~2 分钟",
+      "voices_count": "5+ 多语言",
+      "supports_ssml": false,
+      "supports_clone": false,
+      "clone_detail": "",
+      "supports_emotion": "",
+      "supports_dialects": "",
+      "languages": "20+ (含中文，可自动识别)",
+      "streaming": "异步 REST / 轮询",
+      "setup_difficulty": "easy",
+      "setup_label": "简单 (一个 API Key)",
+      "env_vars": [
+        "ATLASCLOUD_API_KEY"
+      ],
+      "pip_package": "requests",
+      "import_module": "requests",
+      "pip_install": "pip install requests",
+      "api_url": "https://api.atlascloud.ai/api/v1/model/generateAudio",
+      "get_key_url": "https://www.atlascloud.ai/console/api-keys",
+      "tags": [
+        "intl",
+        "multilingual"
+      ],
+      "voices": [
+        {
+          "id": "eve",
+          "label": "Eve",
+          "style": "",
+          "best_for": ""
+        },
+        {
+          "id": "ara",
+          "label": "Ara",
+          "style": "",
+          "best_for": ""
+        },
+        {
+          "id": "leo",
+          "label": "Leo",
+          "style": "",
+          "best_for": ""
+        },
+        {
+          "id": "rex",
+          "label": "Rex",
+          "style": "",
+          "best_for": ""
+        },
+        {
+          "id": "sal",
+          "label": "Sal",
+          "style": "",
+          "best_for": ""
         }
       ]
     }

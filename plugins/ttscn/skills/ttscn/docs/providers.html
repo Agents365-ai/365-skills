@@ -103,7 +103,7 @@ tr:hover { background:rgba(56,189,248,0.04); }
 
   <header class="header">
     <h1>🎤 ttscn — 中文 <span>TTS</span> 服务商对比</h1>
-    <p>11 个可用的语音合成后端 (国内 + 国际) · 点击行查看详情 · 数据更新于 2026-07-15</p>
+    <p>12 个可用的语音合成后端 (国内 + 国际) · 点击行查看详情 · 数据更新于 2026-08-13</p>
     <p class="updated">💡 编辑 <code>data/providers.json</code> 即可更新此页面</p>
   </header>
 
@@ -135,7 +135,7 @@ tr:hover { background:rgba(56,189,248,0.04); }
         </tr>
       </thead>
       <tbody id="provider-tbody">
-        
+
         <tr class="provider-row" id="row-edge">
           <td class="col-name">
             <a href="#detail-edge" class="provider-link">
@@ -162,7 +162,7 @@ tr:hover { background:rgba(56,189,248,0.04); }
             </a>
           </td>
           <td class="col-cost ">~1 元/万字</td>
-          <td class="col-voices">8 + 声音复刻</td>
+          <td class="col-voices">9 + 声音复刻</td>
           <td class="col-chars">280<small> 字/次</small></td>
           <td class="col-duration">~1 分钟<small> /次</small></td>
           <td class="col-ssml"><span class="no">❌</span></td>
@@ -334,12 +334,30 @@ tr:hover { background:rgba(56,189,248,0.04); }
           <td class="col-streaming">REST</td>
           <td class="col-setup">🟢 简单 (需国际网络)</td>
         </tr>
+        <tr class="provider-row" id="row-atlas">
+          <td class="col-name">
+            <a href="#detail-atlas" class="provider-link">
+              <strong>Atlas Cloud TTS</strong>
+              <small>Atlas Cloud</small>
+            </a>
+          </td>
+          <td class="col-cost ">按所选模型计费</td>
+          <td class="col-voices">5+ 多语言</td>
+          <td class="col-chars">400<small> 字/次</small></td>
+          <td class="col-duration">~2 分钟<small> /次</small></td>
+          <td class="col-ssml"><span class="no">❌</span></td>
+          <td class="col-clone"><span class="no">❌</span></td>
+          <td class="col-emoji"></td>
+          <td class="col-lang">20+ (含中文，可自动识别)</td>
+          <td class="col-streaming">异步 REST / 轮询</td>
+          <td class="col-setup">🟢 简单 (一个 API Key)</td>
+        </tr>
       </tbody>
     </table>
   </div>
 
   <h2 style="margin-bottom:24px;">📋 服务商详情</h2>
-  
+
       <section class="detail-panel" id="detail-edge">
         <div class="detail-header">
           <h2>Edge TTS</h2>
@@ -363,11 +381,11 @@ tr:hover { background:rgba(56,189,248,0.04); }
           <div class="detail-item"><label>API 地址</label><code>N/A (免费，无需注册)</code></div>
           <div class="detail-item full-width"><label>环境变量</label><code>无需</code></div>
         </div>
-        
-        
+
+
         <div class="voice-list">
           <h3>推荐音色</h3>
-          
+
         <div class="voice-card">
           <code class="voice-id">zh-CN-XiaoxiaoNeural</code>
           <span class="voice-label">晓晓</span>
@@ -415,7 +433,7 @@ tr:hover { background:rgba(56,189,248,0.04); }
         <div class="detail-grid">
           <div class="detail-item"><label>费用</label><span class="cost-badge ">~1 元/万字</span></div>
           <div class="detail-item"><label>万字成本</label><span>~¥1</span></div>
-          <div class="detail-item"><label>内置音色</label><span>8 + 声音复刻</span></div>
+          <div class="detail-item"><label>内置音色</label><span>9 + 声音复刻</span></div>
           <div class="detail-item"><label>单次最大字数</label><span>280 字</span></div>
           <div class="detail-item"><label>单次最大时长</label><span>~1 分钟</span></div>
           <div class="detail-item"><label>SSML</label><span class="no">❌</span></div>
@@ -433,7 +451,7 @@ tr:hover { background:rgba(56,189,248,0.04); }
         <div class="key-box"><strong>🔑 获取 API Key:</strong> <a href="https://console.volcengine.com/ark/region:ark+cn-beijing/apikey" target="_blank">https://console.volcengine.com/ark/region:ark+cn-beijing/apikey</a></div>
         <div class="voice-list">
           <h3>推荐音色</h3>
-          
+
         <div class="voice-card">
           <code class="voice-id">BV001_streaming</code>
           <span class="voice-label">标准女声</span>
@@ -457,6 +475,12 @@ tr:hover { background:rgba(56,189,248,0.04); }
           <span class="voice-label">深沉男声</span>
           <span class="voice-style">Male, 专业深沉</span>
           <span class="voice-best">纪录片、旁白</span>
+        </div>
+        <div class="voice-card">
+          <code class="voice-id">zh_female_vv_uranus_bigtts</code>
+          <span class="voice-label">标准女声 (TTS 2.0)</span>
+          <span class="voice-style">Female, 标准普通话</span>
+          <span class="voice-best">通用场景（需 v3 接口）</span>
         </div>
         </div>
       </section>
@@ -487,7 +511,7 @@ tr:hover { background:rgba(56,189,248,0.04); }
         <div class="key-box"><strong>🔑 获取 API Key:</strong> <a href="https://bailian.console.aliyun.com/" target="_blank">https://bailian.console.aliyun.com/</a></div>
         <div class="voice-list">
           <h3>推荐音色</h3>
-          
+
         <div class="voice-card">
           <code class="voice-id">longxiaochun_v3</code>
           <span class="voice-label">小春</span>
@@ -559,7 +583,7 @@ tr:hover { background:rgba(56,189,248,0.04); }
         <div class="key-box"><strong>🔑 获取 API Key:</strong> <a href="https://portal.azure.com/" target="_blank">https://portal.azure.com/</a></div>
         <div class="voice-list">
           <h3>推荐音色</h3>
-          
+
         <div class="voice-card">
           <code class="voice-id">zh-CN-XiaoxiaoNeural</code>
           <span class="voice-label">晓晓</span>
@@ -625,7 +649,7 @@ tr:hover { background:rgba(56,189,248,0.04); }
         <div class="key-box"><strong>🔑 获取 API Key:</strong> <a href="https://console.cloud.tencent.com/tts" target="_blank">https://console.cloud.tencent.com/tts</a></div>
         <div class="voice-list">
           <h3>推荐音色</h3>
-          
+
         <div class="voice-card">
           <code class="voice-id">101001</code>
           <span class="voice-label">标准女声</span>
@@ -679,7 +703,7 @@ tr:hover { background:rgba(56,189,248,0.04); }
         <div class="key-box"><strong>🔑 获取 API Key:</strong> <a href="https://console.bce.baidu.com/ai/#/ai/speech/overview" target="_blank">https://console.bce.baidu.com/ai/#/ai/speech/overview</a></div>
         <div class="voice-list">
           <h3>推荐音色</h3>
-          
+
         <div class="voice-card">
           <code class="voice-id">0</code>
           <span class="voice-label">标准女声</span>
@@ -745,7 +769,7 @@ tr:hover { background:rgba(56,189,248,0.04); }
         <div class="key-box"><strong>🔑 获取 API Key:</strong> <a href="https://platform.minimaxi.com/" target="_blank">https://platform.minimaxi.com/</a></div>
         <div class="voice-list">
           <h3>推荐音色</h3>
-          
+
         <div class="voice-card">
           <code class="voice-id">female-shaonv</code>
           <span class="voice-label">少女</span>
@@ -811,7 +835,7 @@ tr:hover { background:rgba(56,189,248,0.04); }
         <div class="key-box"><strong>🔑 获取 API Key:</strong> <a href="https://www.xfyun.cn/" target="_blank">https://www.xfyun.cn/</a></div>
         <div class="voice-list">
           <h3>推荐音色</h3>
-          
+
         <div class="voice-card">
           <code class="voice-id">xiaoyan</code>
           <span class="voice-label">小燕</span>
@@ -877,7 +901,7 @@ tr:hover { background:rgba(56,189,248,0.04); }
         <div class="key-box"><strong>🔑 获取 API Key:</strong> <a href="https://elevenlabs.io/app/settings/api-keys" target="_blank">https://elevenlabs.io/app/settings/api-keys</a></div>
         <div class="voice-list">
           <h3>推荐音色</h3>
-          
+
         <div class="voice-card">
           <code class="voice-id">21m00Tcm4TlvDq8ikWAM</code>
           <span class="voice-label">Rachel</span>
@@ -939,11 +963,11 @@ tr:hover { background:rgba(56,189,248,0.04); }
           <div class="detail-item"><label>API 地址</label><code>https://api.openai.com/v1/audio/speech</code></div>
           <div class="detail-item full-width"><label>环境变量</label><code>OPENAI_API_KEY</code></div>
         </div>
-        
+
         <div class="key-box"><strong>🔑 获取 API Key:</strong> <a href="https://platform.openai.com/api-keys" target="_blank">https://platform.openai.com/api-keys</a></div>
         <div class="voice-list">
           <h3>推荐音色</h3>
-          
+
         <div class="voice-card">
           <code class="voice-id">alloy</code>
           <span class="voice-label">Alloy</span>
@@ -1005,11 +1029,11 @@ tr:hover { background:rgba(56,189,248,0.04); }
           <div class="detail-item"><label>API 地址</label><code>https://texttospeech.googleapis.com/v1/text:synthesize</code></div>
           <div class="detail-item full-width"><label>环境变量</label><code>GOOGLE_TTS_API_KEY</code></div>
         </div>
-        
+
         <div class="key-box"><strong>🔑 获取 API Key:</strong> <a href="https://console.cloud.google.com/apis/credentials" target="_blank">https://console.cloud.google.com/apis/credentials</a></div>
         <div class="voice-list">
           <h3>推荐音色</h3>
-          
+
         <div class="voice-card">
           <code class="voice-id">en-US-Neural2-F</code>
           <span class="voice-label">Neural2-F</span>
@@ -1048,6 +1072,66 @@ tr:hover { background:rgba(56,189,248,0.04); }
         </div>
         </div>
       </section>
+      <section class="detail-panel" id="detail-atlas">
+        <div class="detail-header">
+          <h2>Atlas Cloud TTS</h2>
+          <span class="provider-name">Atlas Cloud</span>
+          <div class="detail-tags"><span class="tag" style="--tag-color:#0284c7">🌐 国际服务</span> <span class="tag" style="--tag-color:#0ea5e9">🌍 多语言</span></div>
+        </div>
+        <div class="detail-grid">
+          <div class="detail-item"><label>费用</label><span class="cost-badge ">按所选模型计费</span></div>
+          <div class="detail-item"><label>万字成本</label><span>以 Atlas Cloud 模型页实时价格为准</span></div>
+          <div class="detail-item"><label>内置音色</label><span>5+ 多语言</span></div>
+          <div class="detail-item"><label>单次最大字数</label><span>400 字</span></div>
+          <div class="detail-item"><label>单次最大时长</label><span>~2 分钟</span></div>
+          <div class="detail-item"><label>SSML</label><span class="no">❌</span></div>
+          <div class="detail-item"><label>声音克隆</label><span class="no">❌</span></div>
+          <div class="detail-item"><label>情感合成</label><span></span></div>
+          <div class="detail-item"><label>方言支持</label><span>—</span></div>
+          <div class="detail-item"><label>语言</label><span>20+ (含中文，可自动识别)</span></div>
+          <div class="detail-item"><label>流式合成</label><span>异步 REST / 轮询</span></div>
+          <div class="detail-item"><label>配置难度</label><span>🟢 简单 (一个 API Key)</span></div>
+          <div class="detail-item"><label>安装</label><code>pip install requests</code></div>
+          <div class="detail-item"><label>API 地址</label><code>https://api.atlascloud.ai/api/v1/model/generateAudio</code></div>
+          <div class="detail-item full-width"><label>环境变量</label><code>ATLASCLOUD_API_KEY</code></div>
+        </div>
+
+        <div class="key-box"><strong>🔑 获取 API Key:</strong> <a href="https://www.atlascloud.ai/console/api-keys" target="_blank">https://www.atlascloud.ai/console/api-keys</a></div>
+        <div class="voice-list">
+          <h3>推荐音色</h3>
+
+        <div class="voice-card">
+          <code class="voice-id">eve</code>
+          <span class="voice-label">Eve</span>
+          <span class="voice-style"></span>
+          <span class="voice-best"></span>
+        </div>
+        <div class="voice-card">
+          <code class="voice-id">ara</code>
+          <span class="voice-label">Ara</span>
+          <span class="voice-style"></span>
+          <span class="voice-best"></span>
+        </div>
+        <div class="voice-card">
+          <code class="voice-id">leo</code>
+          <span class="voice-label">Leo</span>
+          <span class="voice-style"></span>
+          <span class="voice-best"></span>
+        </div>
+        <div class="voice-card">
+          <code class="voice-id">rex</code>
+          <span class="voice-label">Rex</span>
+          <span class="voice-style"></span>
+          <span class="voice-best"></span>
+        </div>
+        <div class="voice-card">
+          <code class="voice-id">sal</code>
+          <span class="voice-label">Sal</span>
+          <span class="voice-style"></span>
+          <span class="voice-best"></span>
+        </div>
+        </div>
+      </section>
 
   <h2 style="margin:48px 0 24px;">🔧 Developer Reference</h2>
 
@@ -1072,7 +1156,7 @@ tr:hover { background:rgba(56,189,248,0.04); }
     </table>
 
     <h3 style="margin-top:24px;">Schema Introspection</h3>
-    <pre><code>tts.py schema backends           # All 11 backends (compact by default)
+    <pre><code>tts.py schema backends           # All 12 backends (compact by default)
 tts.py schema backends --full    # All 22 fields per backend
 tts.py schema backends.doubao    # Single backend full detail
 tts.py schema voices             # All voice presets

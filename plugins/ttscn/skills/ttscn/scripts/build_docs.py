@@ -369,7 +369,7 @@ document.querySelectorAll('.provider-link').forEach(link => {{
 </script>
 </body>
 </html>"""
-    return html
+    return "\n".join(line.rstrip() for line in html.splitlines()) + "\n"
 
 
 # ═══════════════════════════════════════════════════════════════════════════
