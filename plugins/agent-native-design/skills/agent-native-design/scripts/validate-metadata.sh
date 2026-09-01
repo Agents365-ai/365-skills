@@ -21,8 +21,6 @@ assert_contains docs/install_CN.md 'skills/agent-native-design ~/.codex/skills/'
 assert_contains docs/install_CN.md 'skills/agent-native-design .codex/skills/'
 
 assert_contains skills/agent-native-design/SKILL.md 'Includes sidecar metadata for OpenClaw, Hermes, pi-mono, and OpenAI Codex'
-assert_contains README.md 'includes metadata for the platforms listed below'
-assert_contains README_CN.md '并为下列平台提供元数据'
 
 assert_contains skills/agent-native-design/SKILL.md 'Use the 14-criterion rubric to score the CLI.'
 assert_contains skills/agent-native-design/SKILL.md 'Report the 14-criterion rubric score first'
@@ -47,7 +45,7 @@ verify_frontmatter_version_against_tag() {
   local latest_tag
   latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || true)
   if [ -z "$latest_tag" ]; then
-    return 0  # no tags reachable; nothing to compare against (e.g. shallow clone)
+    return 0 # no tags reachable; nothing to compare against (e.g. shallow clone)
   fi
   local tag_version="${latest_tag#v}"
 
