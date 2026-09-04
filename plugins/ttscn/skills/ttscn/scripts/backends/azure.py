@@ -60,7 +60,7 @@ def synthesize(chunks, config, output_file, output_format="wav"):
     )
     voice = config.get("voice", "zh-CN-XiaoxiaoNeural")
     # azure SDK stubs not installed in this env; runtime attribute is valid
-    setattr(speech_config, "SpeechSynthesisVoiceName", voice)  # pyright: ignore[reportAttributeAccessIssue]
+    speech_config.SpeechSynthesisVoiceName = voice  # pyright: ignore[reportAttributeAccessIssue]
     speech_rate = config.get("speech_rate", "+5%")
 
     out_dir = os.path.dirname(output_file) or "."
