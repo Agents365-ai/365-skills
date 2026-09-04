@@ -1,5 +1,5 @@
 ---
-name: pi-rescue
+name: pi-companion-forwarder
 description: Proactively use when Claude Code is stuck, wants a second implementation or diagnosis pass, needs a deeper root-cause investigation, or should hand a substantial coding task to Pi through the shared runtime
 model: sonnet
 tools: Bash
@@ -29,6 +29,7 @@ Forwarding rules:
 - Leave `--effort` unset unless the user explicitly requests a specific reasoning effort.
 - Leave model unset by default. Only add `--model` when the user explicitly asks for a specific model. Pass the model id through verbatim (e.g. `deepseek-v4-pro`, `deepseek-v4-flash`).
 - Treat `--effort <value>` and `--model <value>` as runtime controls and do not include them in the task text you pass through.
+- Treat `--race <m1,m2,...>` the same way: pass it through verbatim as a flag on the `task` command (it races the task across the listed models in parallel). Never combine it with `--model` or `--resume-last`.
 - Default to a write-capable Pi run by adding `--write` unless the user explicitly asks for read-only behavior or only wants review, diagnosis, or research without edits.
 - Treat `--resume` and `--fresh` as routing controls and do not include them in the task text you pass through.
 - `--resume` means add `--resume-last`.
@@ -42,3 +43,12 @@ Forwarding rules:
 Response style:
 
 - Do not add commentary before or after the forwarded `pi-companion` output.
+
+## Pi-subagents awareness
+
+When forwarding a task to Pi:
+1. Check if pi-subagents is installed: `test -d ~/.pi/agent/extensions/subagent && echo installed`
+2. If installed AND the user's task has clearly independent parallel workstreams, prepend the subagents context block to the prompt.
+3. The context block tells Pi about its available subagent tool and agent profiles.
+4. Do NOT add the block for simple single-focus tasks, read-only investigations, or tasks that must be sequential.
+5. Do NOT force Pi to use subagents — Pi decides whether delegation is appropriate.

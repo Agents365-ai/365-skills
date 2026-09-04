@@ -13,7 +13,7 @@ const DEFAULT_CONTINUE_PROMPT =
 
 const REVIEW_TOOLS = ["read", "grep", "find", "ls"];
 
-const VALID_THINKING_LEVELS = new Set(["off", "minimal", "low", "medium", "high", "xhigh"]);
+const VALID_THINKING_LEVELS = new Set(["off", "minimal", "low", "medium", "high", "xhigh", "max"]);
 
 function cleanPiStderr(stderr) {
   return stderr
@@ -202,7 +202,6 @@ function createTurnCaptureState(options = {}) {
   return {
     sessionId: null,
     sessionFile: null,
-    turnId: null,
     finalTurn: null,
     lastAgentMessage: "",
     reviewText: "",
@@ -414,6 +413,9 @@ async function runPiAgentRun(client, prompt, options = {}) {
       state.completed = true;
       agentEndResolve(event);
     }
+    if (event.type === "auto_retry_end" && event.success === false) {
+      agentEndResolve();
+    }
   });
 
   try {
@@ -426,7 +428,7 @@ async function runPiAgentRun(client, prompt, options = {}) {
     agentEndResolve();
     state.error = { message: error instanceof Error ? error.message : String(error) };
     state.completed = false;
-    state.finalTurn = { id: state.turnId ?? "rejected", status: "failed" };
+    state.finalTurn = { id: "rejected", status: "failed" };
     return state;
   }
 
@@ -440,7 +442,7 @@ async function runPiAgentRun(client, prompt, options = {}) {
     const exitErrorMessage =
       client.exitError instanceof Error ? client.exitError.message : "pi exited before agent_end";
     state.error = state.error ?? { message: exitErrorMessage };
-    state.finalTurn = { id: state.turnId ?? "interrupted", status: "failed" };
+    state.finalTurn = { id: "interrupted", status: "failed" };
     return state;
   }
 
@@ -473,7 +475,7 @@ async function runPiAgentRun(client, prompt, options = {}) {
   }
 
   state.finalTurn = {
-    id: state.turnId ?? "single-turn",
+    id: "single-turn",
     status: state.error ? "failed" : "completed"
   };
   return state;
@@ -481,6 +483,19 @@ async function runPiAgentRun(client, prompt, options = {}) {
 
 function buildResultStatus(turnState) {
   return turnState.finalTurn?.status === "completed" ? 0 : 1;
+}
+
+const MIN_PI_VERSION = "0.75.0";
+
+function _semverGte(actual, minimum) {
+  const a = actual.split(".").map(Number);
+  const b = minimum.split(".").map(Number);
+  for (let i = 0; i < Math.max(a.length, b.length); i++) {
+    const av = a[i] || 0;
+    const bv = b[i] || 0;
+    if (av !== bv) return av > bv;
+  }
+  return true;
 }
 
 export function getPiAvailability(cwd) {
@@ -492,9 +507,18 @@ export function getPiAvailability(cwd) {
     };
   }
 
+  const versionMatch = versionStatus.detail.match(/(\d+\.\d+\.\d+)/);
+  const version = versionMatch ? versionMatch[1] : null;
+  let versionWarning = null;
+  if (version && !_semverGte(version, MIN_PI_VERSION)) {
+    versionWarning = `Pi version ${version} is older than the recommended minimum ${MIN_PI_VERSION}. Some features may not work.`;
+  }
+
   return {
     available: true,
-    detail: versionStatus.detail
+    detail: versionStatus.detail,
+    version,
+    versionWarning
   };
 }
 
@@ -529,18 +553,37 @@ export function getPiModelsStatus(env = process.env) {
     // ignore parse errors; treated as no providers configured
   }
 
-  if (envHints.length === 0 && providerCount === 0) {
+  // Credentials stored by pi's /login live in auth.json (API keys or OAuth
+  // tokens) and rank above env vars in pi's resolution order.
+  const authPath = path.join(piDir, "auth.json");
+  let authProviderCount = 0;
+  try {
+    const parsed = JSON.parse(fs.readFileSync(authPath, "utf8"));
+    if (parsed && typeof parsed === "object") {
+      authProviderCount = Object.keys(parsed).length;
+    }
+  } catch {
+    // missing or unparseable auth.json; treated as no stored credentials
+  }
+
+  if (envHints.length === 0 && providerCount === 0 && authProviderCount === 0) {
     return {
       available: false,
-      detail: `No provider API key in env and no providers configured at ${modelsPath}`,
+      detail: `No provider API key in env, no credentials in ${authPath}, and no providers configured at ${modelsPath}`,
       modelsPath,
       modelsFileExists,
       providerCount,
+      authProviderCount,
       envHints
     };
   }
 
   const detailParts = [];
+  if (authProviderCount > 0) {
+    detailParts.push(
+      `${authProviderCount} credential${authProviderCount === 1 ? "" : "s"} in ${authPath}`
+    );
+  }
   if (providerCount > 0) {
     detailParts.push(`${providerCount} provider${providerCount === 1 ? "" : "s"} in ${modelsPath}`);
   }
@@ -554,8 +597,97 @@ export function getPiModelsStatus(env = process.env) {
     modelsPath,
     modelsFileExists,
     providerCount,
+    authProviderCount,
     envHints
   };
+}
+
+export function getPiSubagentsStatus() {
+  // pi-subagents can be installed via `pi install npm:pi-subagents` (preferred)
+  // or manually cloned to the extensions directory. Check both.
+  const npmDir = path.join(os.homedir(), ".pi", "agent", "npm", "node_modules", "pi-subagents");
+  const legacyDir = path.join(os.homedir(), ".pi", "agent", "extensions", "subagent");
+
+  let subagentDir = null;
+  if (fs.existsSync(npmDir)) {
+    subagentDir = npmDir;
+  } else if (fs.existsSync(legacyDir)) {
+    subagentDir = legacyDir;
+  }
+
+  if (!subagentDir) {
+    return { installed: false, agentCount: 0, agentNames: [], config: null };
+  }
+
+  // Try to read config.json for agent info
+  let config = null;
+  let agentNames = [];
+  try {
+    const configPath = path.join(subagentDir, "config.json");
+    if (fs.existsSync(configPath)) {
+      config = JSON.parse(fs.readFileSync(configPath, "utf8"));
+    }
+  } catch {
+    // config.json may not exist or be unreadable — not critical
+  }
+
+  // Discover agent names from the builtin agents/ directory
+  const builtinAgentsDir = path.join(subagentDir, "agents");
+  if (fs.existsSync(builtinAgentsDir)) {
+    try {
+      agentNames = fs.readdirSync(builtinAgentsDir)
+        .filter(f => f.endsWith(".md"))
+        .map(f => f.replace(/\.md$/, ""));
+    } catch {
+      // directory unreadable — skip
+    }
+  }
+
+  // Also check user and project agent dirs
+  const userAgentsDir = path.join(os.homedir(), ".pi", "agent", "agents");
+  const projectAgentsDir = ".pi/agents";
+
+  const allNames = new Set(agentNames);
+  for (const dir of [userAgentsDir, projectAgentsDir]) {
+    try {
+      if (fs.existsSync(dir)) {
+        for (const f of fs.readdirSync(dir)) {
+          if (f.endsWith(".md")) allNames.add(f.replace(/\.md$/, ""));
+        }
+      }
+    } catch { /* skip */ }
+  }
+
+  return {
+    installed: true,
+    agentCount: allNames.size,
+    agentNames: [...allNames].sort(),
+    config
+  };
+}
+
+export function hasPiSubagents() {
+  return getPiSubagentsStatus().installed;
+}
+
+export function buildSubagentsContextBlock() {
+  const status = getPiSubagentsStatus();
+  if (!status.installed) return "";
+
+  const agents = status.agentNames.length > 0
+    ? status.agentNames.join(", ")
+    : "scout, researcher, planner, worker, reviewer, context-builder, oracle, delegate";
+
+  return [
+    "",
+    "<available_pi_subagents>",
+    "pi-subagents is installed and available. You have the `subagent` tool for delegating work to child agents.",
+    `Available agent profiles: ${agents}`,
+    "If this task has clearly separable independent workstreams, use subagent({ tasks: [...] }) to parallelize.",
+    "For sequential dependencies, use subagent({ chain: [...] }).",
+    "</available_pi_subagents>",
+    ""
+  ].join("\n");
 }
 
 export function getSessionRuntimeStatus(_env = process.env, _cwd = process.cwd()) {
@@ -604,7 +736,6 @@ export async function runAppServerReview(cwd, options = {}) {
         status: buildResultStatus(state),
         piSessionId: state.sessionId,
         piSessionFile: state.sessionFile,
-        turnId: state.turnId,
         reviewText: state.lastAgentMessage,
         reasoningSummary: state.reasoningSummary,
         turn: state.finalTurn,
@@ -652,7 +783,6 @@ export async function runAppServerTurn(cwd, options = {}) {
         status: buildResultStatus(state),
         piSessionId: state.sessionId,
         piSessionFile: state.sessionFile,
-        turnId: state.turnId,
         finalMessage: state.lastAgentMessage,
         reasoningSummary: state.reasoningSummary,
         turn: state.finalTurn,

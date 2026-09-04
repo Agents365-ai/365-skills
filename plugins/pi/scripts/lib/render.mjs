@@ -21,7 +21,16 @@ function formatLineRange(finding) {
   return `:${finding.line_start}-${finding.line_end}`;
 }
 
-function validateReviewResultShape(data) {
+function pushFinding(lines, finding) {
+  const lineSuffix = formatLineRange(finding);
+  lines.push(`- [${finding.severity}] ${finding.title} (${finding.file}${lineSuffix})`);
+  lines.push(`  ${finding.body}`);
+  if (finding.recommendation) {
+    lines.push(`  Recommendation: ${finding.recommendation}`);
+  }
+}
+
+export function validateReviewResultShape(data) {
   if (!data || typeof data !== "object" || Array.isArray(data)) {
     return "Expected a top-level JSON object.";
   }
@@ -59,7 +68,7 @@ function normalizeReviewFinding(finding, index) {
   };
 }
 
-function normalizeReviewResultData(data) {
+export function normalizeReviewResultData(data) {
   return {
     verdict: data.verdict.trim(),
     summary: data.summary.trim(),
@@ -182,12 +191,43 @@ export function renderSetupReport(report) {
     "",
     "Checks:",
     `- node: ${report.node.detail}`,
-    `- pi: ${report.pi.detail}`,
-    `- models: ${report.models.detail}`,
+    `- pi: ${report.pi.detail}`
+  ];
+
+  if (report.pi.version) {
+    const ok = report.pi.versionWarning ? "!" : "ok";
+    lines.push(`  version: ${report.pi.version} (>= 0.75.0 ${ok})`);
+  }
+
+  lines.push(`- models: ${report.models.detail}`);
+
+  if (report.availableModels.length > 0) {
+    lines.push(`- available models: ${report.availableModels.join(", ")}`);
+  }
+
+  const fallbackModels = report.fallbackModels ?? [];
+  lines.push(
+    fallbackModels.length > 0
+      ? `- fallback models: ${fallbackModels.join(", ")}`
+      : "- fallback models: none (set PI_PLUGIN_FALLBACK_MODELS=model1,model2 to auto-retry failed runs on another model)"
+  );
+
+  if (report.subagents) {
+    if (report.subagents.installed) {
+      const names = report.subagents.agentNames.length > 0
+        ? report.subagents.agentNames.join(", ")
+        : "scout, researcher, planner, worker, reviewer, context-builder, oracle, delegate";
+      lines.push(`- pi-subagents: installed (${report.subagents.agentCount} agents: ${names})`);
+    } else {
+      lines.push("- pi-subagents: not installed (run `pi install npm:pi-subagents` to enable parallel subagents)");
+    }
+  }
+
+  lines.push(
     `- session runtime: ${report.sessionRuntime.label}`,
     `- review gate: ${report.reviewGateEnabled ? "enabled" : "disabled"}`,
     ""
-  ];
+  );
 
   if (report.actionsTaken.length > 0) {
     lines.push("Actions taken:");
@@ -205,6 +245,46 @@ export function renderSetupReport(report) {
   }
 
   return `${lines.join("\n").trimEnd()}\n`;
+}
+
+// Compact severity breakdown, e.g. "5 findings: 1 critical, 2 high, 2 low".
+function summarizeSeverityCounts(findings) {
+  if (findings.length === 0) {
+    return "No material findings.";
+  }
+  const counts = new Map();
+  for (const finding of findings) {
+    const severity = finding.severity || "low";
+    counts.set(severity, (counts.get(severity) ?? 0) + 1);
+  }
+  const parts = [...counts.entries()]
+    .sort((left, right) => severityRank(left[0]) - severityRank(right[0]))
+    .map(([severity, count]) => `${count} ${severity}`);
+  return `${findings.length} finding${findings.length === 1 ? "" : "s"}: ${parts.join(", ")}`;
+}
+
+// --out-file mode: the full rendered output is written to a file; only this
+// short summary is relayed to the caller, so a large review does not flood the
+// caller's context. Reviews get verdict + severity counts + one line per
+// finding; free-form runs (task/race) fall back to their one-line summary.
+export function renderOutFileSummary(execution, outFile) {
+  const lines = [];
+  const result = execution.payload?.result;
+  const findings = Array.isArray(result?.findings) ? result.findings : null;
+  if (result && typeof result.verdict === "string" && result.verdict.trim()) {
+    lines.push(`Verdict: ${result.verdict}`);
+  }
+  if (findings) {
+    lines.push(summarizeSeverityCounts(findings));
+    const sorted = [...findings].sort((left, right) => severityRank(left.severity) - severityRank(right.severity));
+    for (const finding of sorted) {
+      lines.push(`- [${finding.severity}] ${finding.title} (${finding.file}${formatLineRange(finding)})`);
+    }
+  } else if (execution.summary) {
+    lines.push(execution.summary);
+  }
+  lines.push("", `Full output written to ${outFile}`);
+  return `${lines.join("\n")}\n`;
 }
 
 export function renderReviewResult(parsedResult, meta) {
@@ -263,12 +343,7 @@ export function renderReviewResult(parsedResult, meta) {
   } else {
     lines.push("Findings:");
     for (const finding of findings) {
-      const lineSuffix = formatLineRange(finding);
-      lines.push(`- [${finding.severity}] ${finding.title} (${finding.file}${lineSuffix})`);
-      lines.push(`  ${finding.body}`);
-      if (finding.recommendation) {
-        lines.push(`  Recommendation: ${finding.recommendation}`);
-      }
+      pushFinding(lines, finding);
     }
   }
 
@@ -284,7 +359,182 @@ export function renderReviewResult(parsedResult, meta) {
   return `${lines.join("\n").trimEnd()}\n`;
 }
 
-export function renderTaskResult(parsedResult, meta) {
+function pushPanelFinding(lines, finding) {
+  const lineSuffix = formatLineRange(finding);
+  lines.push(`- [${finding.severity}] ${finding.title} (${finding.file}${lineSuffix}) — found by: ${finding.foundBy.join(", ")}`);
+  lines.push(`  ${finding.body}`);
+  if (finding.alsoReportedAs.length > 0) {
+    lines.push(`  Also reported as: ${finding.alsoReportedAs.map((title) => `"${title}"`).join(", ")}`);
+  }
+  if (finding.recommendation) {
+    lines.push(`  Recommendation: ${finding.recommendation}`);
+  }
+}
+
+// panel: merged review data plus per-model member outcomes:
+// { verdict, findings, next_steps, members: [{ model, ok, findingCount, summary, failure }] }
+export function renderPanelReviewResult(panel, meta) {
+  const okCount = panel.members.filter((member) => member.ok).length;
+  const lines = [
+    `# Pi Panel ${meta.reviewLabel}`,
+    "",
+    `Target: ${meta.targetLabel}`,
+    `Models: ${okCount}/${panel.members.length} succeeded`
+  ];
+
+  for (const member of panel.members) {
+    if (member.ok) {
+      lines.push(`- ${member.model}: ok (${member.findingCount} finding${member.findingCount === 1 ? "" : "s"})`);
+      if (member.summary) {
+        lines.push(`  ${member.summary}`);
+      }
+    } else {
+      lines.push(`- ${member.model}: failed — ${member.failure}`);
+    }
+  }
+  lines.push("");
+
+  if (okCount === 0) {
+    lines.push("All panel models failed; no review result was produced.");
+    return `${lines.join("\n").trimEnd()}\n`;
+  }
+
+  lines.push(`Verdict: ${panel.verdict}`, "");
+
+  const consensus = panel.findings.filter((finding) => finding.foundBy.length >= 2);
+  const singleSource = panel.findings.filter((finding) => finding.foundBy.length === 1);
+
+  if (panel.findings.length === 0) {
+    lines.push("No material findings from any model.");
+  }
+  if (consensus.length > 0) {
+    lines.push("Consensus findings (2+ models):");
+    for (const finding of consensus) {
+      pushPanelFinding(lines, finding);
+    }
+    lines.push("");
+  }
+  if (singleSource.length > 0) {
+    lines.push("Single-model findings:");
+    for (const finding of singleSource) {
+      pushPanelFinding(lines, finding);
+    }
+    lines.push("");
+  }
+
+  if (panel.next_steps.length > 0) {
+    if (lines[lines.length - 1] !== "") {
+      lines.push("");
+    }
+    lines.push("Next steps:");
+    for (const step of panel.next_steps) {
+      lines.push(`- ${step}`);
+    }
+  }
+
+  return `${lines.join("\n").trimEnd()}\n`;
+}
+
+// sharded: merged review data plus per-shard outcomes:
+// { verdict, summary, findings, next_steps, shards: [{ index, files, ok, findingCount, failure }] }
+export function renderShardedReviewResult(sharded, meta) {
+  const okCount = sharded.shards.filter((shard) => shard.ok).length;
+  const lines = [
+    `# Pi Sharded ${meta.reviewLabel}`,
+    "",
+    `Target: ${meta.targetLabel}`,
+    `Sharded across ${sharded.shards.length} review jobs: ${okCount}/${sharded.shards.length} succeeded`
+  ];
+
+  for (const shard of sharded.shards) {
+    const fileList = shard.files.join(", ");
+    if (shard.ok) {
+      lines.push(`- shard ${shard.index + 1} (${fileList}): ok (${shard.findingCount} finding${shard.findingCount === 1 ? "" : "s"})`);
+    } else {
+      lines.push(`- shard ${shard.index + 1} (${fileList}): failed — ${shard.failure}`);
+    }
+  }
+  lines.push("");
+
+  if (okCount === 0) {
+    lines.push("All review shards failed; no review result was produced.");
+    return `${lines.join("\n").trimEnd()}\n`;
+  }
+
+  lines.push(`Verdict: ${sharded.verdict}`, "");
+  if (sharded.summary) {
+    lines.push(sharded.summary, "");
+  }
+
+  if (sharded.findings.length === 0) {
+    lines.push("No material findings.");
+  } else {
+    lines.push("Findings:");
+    for (const finding of sharded.findings) {
+      pushFinding(lines, finding);
+    }
+  }
+
+  if (sharded.next_steps.length > 0) {
+    lines.push("", "Next steps:");
+    for (const step of sharded.next_steps) {
+      lines.push(`- ${step}`);
+    }
+  }
+
+  return `${lines.join("\n").trimEnd()}\n`;
+}
+
+// race: { write, dirtyWarning, racers: [{ model, ok, finalMessage, failure,
+//   patchFile, patchStat, patchEmpty, piSessionId }] }
+export function renderRaceResult(race, meta) {
+  const okCount = race.racers.filter((racer) => racer.ok).length;
+  const lines = [
+    `# Pi Race (${race.racers.length} models)`,
+    "",
+    `Task: ${meta.taskSummary}`,
+    race.write
+      ? "Mode: write — each racer ran in an isolated git worktree created from HEAD"
+      : "Mode: read-only — racers analyzed the same working tree"
+  ];
+  if (race.dirtyWarning) {
+    lines.push(`Warning: ${race.dirtyWarning}`);
+  }
+  lines.push("");
+
+  for (const racer of race.racers) {
+    lines.push(`## ${racer.model} — ${racer.ok ? "ok" : "failed"}`);
+    if (!racer.ok) {
+      lines.push("", racer.failure || "Run failed.", "");
+      continue;
+    }
+    if (racer.finalMessage?.trim()) {
+      lines.push("", racer.finalMessage.trim(), "");
+    }
+    if (race.write) {
+      if (racer.patchEmpty || !racer.patchFile) {
+        lines.push("Patch: no file changes.", "");
+      } else {
+        lines.push("Patch:", "```text", racer.patchStat, "```", `Apply with: git apply ${racer.patchFile}`, "");
+      }
+    }
+    if (racer.piSessionId) {
+      lines.push(`Resume in Pi: pi --session ${racer.piSessionId}`, "");
+    }
+  }
+
+  if (okCount === 0) {
+    lines.push("All racers failed.");
+  } else if (race.write) {
+    lines.push("Pick a winner: review each patch, then apply exactly one with `git apply <patch>`.");
+  } else {
+    lines.push("Pick a winner: compare the answers above; agreement across models is a strong signal.");
+  }
+
+  return `${lines.join("\n").trimEnd()}\n`;
+}
+
+export function renderTaskResult(parsedResult, _meta) {
   const rawOutput = typeof parsedResult?.rawOutput === "string" ? parsedResult.rawOutput : "";
   if (rawOutput) {
     return rawOutput.endsWith("\n") ? rawOutput : `${rawOutput}\n`;

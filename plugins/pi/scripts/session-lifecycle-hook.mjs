@@ -19,6 +19,9 @@ function readHookInput() {
 }
 
 function shellEscape(value) {
+  if (process.platform === "win32") {
+    return `"${String(value).replace(/"/g, '\\"')}"`;
+  }
   return `'${String(value).replace(/'/g, `'\"'\"'`)}'`;
 }
 
@@ -58,10 +61,12 @@ function cleanupSessionJobs(cwd, sessionId) {
     }
   }
 
-  saveState(workspaceRoot, {
-    ...state,
-    jobs: state.jobs.filter((job) => job.sessionId !== sessionId)
-  });
+  const previousJobs = state.jobs;
+  saveState(
+    workspaceRoot,
+    { ...state, jobs: previousJobs.filter((job) => job.sessionId !== sessionId) },
+    previousJobs
+  );
 }
 
 function handleSessionStart(input) {
@@ -90,5 +95,5 @@ async function main() {
 
 main().catch((error) => {
   process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
-  process.exit(1);
+  process.exitCode = 1;
 });

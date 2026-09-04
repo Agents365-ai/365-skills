@@ -12,11 +12,11 @@ const STATE_FILE_NAME = "state.json";
 const JOBS_DIR_NAME = "jobs";
 const MAX_JOBS = 50;
 
-function nowIso() {
+export function nowIso() {
   return new Date().toISOString();
 }
 
-function defaultState() {
+export function defaultState() {
   return {
     version: STATE_VERSION,
     config: {
@@ -89,8 +89,13 @@ function removeFileIfExists(filePath) {
   }
 }
 
-export function saveState(cwd, state) {
-  const previousJobs = loadState(cwd).jobs;
+// previousJobs is the job list this write is based on (the same snapshot
+// `state` was derived from). It must NOT be re-read from disk here: a
+// concurrent writer (e.g. a background task-worker reporting progress) may
+// have added a job to disk after our snapshot was taken, and diffing against
+// that fresher read would wrongly treat the concurrent job as pruned and
+// delete its job/log files.
+export function saveState(cwd, state, previousJobs = state.jobs) {
   ensureStateDir(cwd);
   const nextJobs = pruneJobs(state.jobs ?? []);
   const nextState = {
@@ -117,8 +122,9 @@ export function saveState(cwd, state) {
 
 export function updateState(cwd, mutate) {
   const state = loadState(cwd);
+  const previousJobs = [...state.jobs];
   mutate(state);
-  return saveState(cwd, state);
+  return saveState(cwd, state, previousJobs);
 }
 
 export function generateJobId(prefix = "job") {

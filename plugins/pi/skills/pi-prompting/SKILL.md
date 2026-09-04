@@ -6,7 +6,7 @@ user-invocable: false
 
 # Pi Prompting
 
-Use this skill when `pi:pi-rescue` needs to ask Pi for help on a non-trivial coding or investigation task.
+Use this skill when `pi:pi-companion-forwarder` needs to ask Pi for help on a non-trivial coding or investigation task.
 
 Pi runs whatever model the user has configured. By default this plugin targets DeepSeek V4 (Pro for review, Flash for everyday tasks). The guidance below assumes the prompt may run on either a non-reasoning model (Flash) or a reasoning model (Pro). Bias toward concrete, numbered checklists rather than abstract instructions — both model classes follow those reliably.
 
@@ -45,3 +45,12 @@ Prompt assembly checklist:
 3. Decide whether Pi should keep going on its own judgment or stop for missing high-risk details.
 4. Add `<grounding_rules>` and `<action_safety>` only where the task needs them.
 5. Remove redundant instructions before sending the prompt.
+
+## Subagent-aware prompting
+
+When pi-subagents is installed:
+- For tasks with parallel workstreams, prepend `<available_pi_subagents>` block before `<task>`.
+- Suggested agent routing: scout for exploration, researcher for web/docs, planner for design, worker for implementation, reviewer for code review.
+- Never suggest subagents in adversarial-review or stop-review-gate prompts (those need deterministic behavior).
+- The block is a suggestion, not a command — Pi decides whether to delegate.
+- For dedicated multi-task parallel execution, use `/pi:parallel-rescue "task1" "task2" ...` instead of manual prompt construction.

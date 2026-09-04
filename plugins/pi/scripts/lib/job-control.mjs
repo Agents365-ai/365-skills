@@ -125,7 +125,7 @@ function inferLegacyJobPhase(job, progressPreview = []) {
     if (line.startsWith("starting pi") || line.startsWith("session ready") || line.startsWith("turn started")) {
       return "starting";
     }
-    if (line.startsWith("reviewer started") || line.includes("review mode")) {
+    if (line.startsWith("reviewing") || line.startsWith("review started")) {
       return "reviewing";
     }
     if (line.startsWith("searching:") || line.startsWith("calling ") || line.startsWith("running tool:")) {
