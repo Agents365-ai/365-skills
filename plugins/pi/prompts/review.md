@@ -25,12 +25,14 @@ Go through these in order. Stop early on any item you cannot ground in the provi
 <finding_bar>
 Report only material findings — defects that would change shipping decisions.
 Do not report:
+
 - naming/style nits
 - missing comments
 - "could be cleaner" without a concrete bug
 - speculative concerns without evidence in the provided context
 
 A finding should answer:
+
 1. What is broken or risky?
 2. Why is this code path vulnerable?
 3. What is the likely impact?
@@ -41,6 +43,7 @@ A finding should answer:
 Respond with EXACTLY ONE fenced ```json block containing a single JSON object that matches the schema below. Do not include any other prose, headings, or commentary before or after the fenced block. Do not include trailing commas. All required fields must be present and non-empty.
 
 Schema:
+
 ```json
 {{REVIEW_SCHEMA}}
 ```
@@ -48,6 +51,7 @@ Schema:
 Use `needs-attention` for `verdict` if any material finding remains unresolved.
 Use `approve` if the change is safe to ship and you have no findings — and explain the basis for that in `summary`.
 Every finding must include:
+
 - the affected file
 - `line_start` and `line_end` (use the same number for a single line)
 - a confidence score from 0 to 1
@@ -62,6 +66,7 @@ If a claim depends on an inference, state that in the finding body and keep `con
 
 <final_check>
 Before finalizing, check that each finding is:
+
 - a real correctness or safety issue (not a style preference)
 - tied to a concrete file and line range
 - actionable for an engineer fixing the issue

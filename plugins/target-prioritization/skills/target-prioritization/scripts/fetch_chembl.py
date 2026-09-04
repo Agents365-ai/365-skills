@@ -10,6 +10,7 @@ Dossier-only: ChEMBL data does not contribute to the composite score. Its
 purpose is to surface concrete tool compounds for downstream experimental
 validation (read by Claude when writing the 'Suggested next step' slot).
 """
+
 import argparse
 import json
 import time
@@ -35,8 +36,10 @@ def resolve_target(gene: str) -> dict | None:
     if not data:
         return None
     candidates = [
-        t for t in (data.get("targets") or [])
-        if t.get("organism") == "Homo sapiens" and t.get("target_type") == "SINGLE PROTEIN"
+        t
+        for t in (data.get("targets") or [])
+        if t.get("organism") == "Homo sapiens"
+        and t.get("target_type") == "SINGLE PROTEIN"
     ]
     if not candidates:
         return None
@@ -66,14 +69,16 @@ def fetch_top_compounds(target_id: str, limit: int = 5) -> list[dict]:
         return []
     out = []
     for a in (data.get("activities") or [])[:limit]:
-        out.append({
-            "chembl_id": a.get("molecule_chembl_id"),
-            "pref_name": a.get("molecule_pref_name"),
-            "pchembl_value": a.get("pchembl_value"),
-            "ic50_nm": a.get("standard_value"),
-            "units": a.get("standard_units"),
-            "assay_id": a.get("assay_chembl_id"),
-        })
+        out.append(
+            {
+                "chembl_id": a.get("molecule_chembl_id"),
+                "pref_name": a.get("molecule_pref_name"),
+                "pchembl_value": a.get("pchembl_value"),
+                "ic50_nm": a.get("standard_value"),
+                "units": a.get("standard_units"),
+                "assay_id": a.get("assay_chembl_id"),
+            }
+        )
     return out
 
 
@@ -91,6 +96,8 @@ def fetch_one(gene: str) -> dict:
     if not target:
         return out
     tid = target.get("target_chembl_id")
+    if not tid:
+        return out
     out["chembl_target_id"] = tid
     out["chembl_target_name"] = target.get("pref_name")
     compounds = fetch_top_compounds(tid)

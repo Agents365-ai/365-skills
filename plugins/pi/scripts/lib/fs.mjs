@@ -11,7 +11,13 @@ export function createTempDir(prefix = "pi-plugin-") {
 }
 
 export function readJsonFile(filePath) {
-  return JSON.parse(fs.readFileSync(filePath, "utf8"));
+  try {
+    return JSON.parse(fs.readFileSync(filePath, "utf8"));
+  } catch (error) {
+    throw new Error(
+      `Failed to read JSON file ${filePath}: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
 }
 
 export function writeJsonFile(filePath, value) {

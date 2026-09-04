@@ -18,11 +18,16 @@ class HunyuanProvider(OpenAICompatibleProvider):
     api_base = "https://api.hunyuan.cloud.tencent.com/v1/images/generations"
     default_model = "hy-image-v3.0"
 
+    # pi-lens-ignore: python-mutable-class-attr
     models = {"hy-image-v3.0"}
 
+    # pi-lens-ignore: python-mutable-class-attr
     SIZES = {
-        "1:1": "1024:1024", "16:9": "1920:1080", "9:16": "1080:1920",
-        "4:3": "1600:1200", "3:4": "1200:1600",
+        "1:1": "1024:1024",
+        "16:9": "1920:1080",
+        "9:16": "1080:1920",
+        "4:3": "1600:1200",
+        "3:4": "1200:1600",
     }
 
     default_size = "1024:1024"
@@ -42,8 +47,10 @@ class HunyuanProvider(OpenAICompatibleProvider):
     @staticmethod
     def tweak_body(body, extra):
         if extra.get("revise") is not None:
+            # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
             body["revise"] = int(extra["revise"])
         if extra.get("logo") is not None:
+            # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
             body["logo_add"] = int(extra["logo"])
         return body
 
@@ -64,7 +71,9 @@ def resolve_hunyuan_size(size_input):
     return _provider.resolve_size(size_input)
 
 
-def generate_with_hunyuan(api_key, model, prompt, size, seed=None, revise=None, logo=None):
+def generate_with_hunyuan(
+    api_key, model, prompt, size, seed=None, revise=None, logo=None
+):
     extra = {}
     if revise is not None:
         extra["revise"] = revise

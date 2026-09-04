@@ -11,7 +11,7 @@ All endpoints are free and require no API key.
   protein_existence, keyword, ft_topo_dom, ft_transmem, ft_signal,
   cc_function`
 - Rate: ~100 req/sec; we sleep 0.1s between calls to be polite.
-- Docs: https://www.uniprot.org/help/api_queries
+- Docs: <https://www.uniprot.org/help/api_queries>
 
 ## OpenTargets GraphQL
 
@@ -36,7 +36,7 @@ All endpoints are free and require no API key.
   `PR` (protein degrader/other), `OC` (other clinical). Each modality has
   ordered tier labels — we pick the highest tier with `value=True`.
 - Rate: generous; 0.2s sleep between targets to avoid hammering.
-- Docs: https://platform-docs.opentargets.org/data-access/graphql-api
+- Docs: <https://platform-docs.opentargets.org/data-access/graphql-api>
 
 ## Human Protein Atlas
 
@@ -57,7 +57,7 @@ All endpoints are free and require no API key.
 - `FOCUS_CELL_TYPES` in `scripts/aggregate.py` must match HPA's exact
   cell-type strings (e.g. `"T-cells"`, `"Hepatocytes"`, `"Microglial cells"`).
 - No documented rate limit; fetcher sleeps 0.15s between calls.
-- Docs: https://www.proteinatlas.org/about/help/dataaccess
+- Docs: <https://www.proteinatlas.org/about/help/dataaccess>
 
 ## PubMed E-utilities
 
@@ -89,7 +89,7 @@ All endpoints are free and require no API key.
 - Output is dossier-only: top compound ID, pIC50, IC50 (nM), optional
   `molecule_pref_name` (named tool compounds like MOBOCERTINIB).
 - No API key, ~5 req/sec friendly; fetcher sleeps 0.2s/gene.
-- Docs: https://www.ebi.ac.uk/chembl/api/data/docs
+- Docs: <https://www.ebi.ac.uk/chembl/api/data/docs>
 
 ## Adding a new source
 

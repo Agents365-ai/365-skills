@@ -15,18 +15,29 @@ function readHookInput() {
   if (!raw) {
     return {};
   }
-  return JSON.parse(raw);
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return {};
+  }
 }
 
 function shellEscape(value) {
-  return `'${String(value).replace(/'/g, `'\"'\"'`)}'`;
+  if (process.platform === "win32") {
+    return `"${String(value).replace(/"/g, '\\"')}"`;
+  }
+  return `'${String(value).replace(/'/g, `'"'"'`)}'`;
 }
 
 function appendEnvVar(name, value) {
   if (!process.env.CLAUDE_ENV_FILE || value == null || value === "") {
     return;
   }
-  fs.appendFileSync(process.env.CLAUDE_ENV_FILE, `export ${name}=${shellEscape(value)}\n`, "utf8");
+  fs.appendFileSync(
+    process.env.CLAUDE_ENV_FILE,
+    `export ${name}=${shellEscape(value)}\n`,
+    "utf8",
+  );
 }
 
 function cleanupSessionJobs(cwd, sessionId) {
@@ -58,10 +69,15 @@ function cleanupSessionJobs(cwd, sessionId) {
     }
   }
 
-  saveState(workspaceRoot, {
-    ...state,
-    jobs: state.jobs.filter((job) => job.sessionId !== sessionId)
-  });
+  const previousJobs = state.jobs;
+  saveState(
+    workspaceRoot,
+    {
+      ...state,
+      jobs: previousJobs.filter((job) => job.sessionId !== sessionId),
+    },
+    previousJobs,
+  );
 }
 
 function handleSessionStart(input) {
@@ -89,6 +105,8 @@ async function main() {
 }
 
 main().catch((error) => {
-  process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
-  process.exit(1);
+  process.stderr.write(
+    `${error instanceof Error ? error.message : String(error)}\n`,
+  );
+  process.exitCode = 1;
 });

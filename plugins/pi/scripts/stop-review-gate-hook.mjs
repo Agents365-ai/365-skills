@@ -23,7 +23,11 @@ function readHookInput() {
   if (!raw) {
     return {};
   }
-  return JSON.parse(raw);
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return {};
+  }
 }
 
 function emitDecision(payload) {
@@ -46,13 +50,15 @@ function filterJobsForCurrentSession(jobs, input = {}) {
 }
 
 function buildStopReviewPrompt(input = {}) {
-  const lastAssistantMessage = String(input.last_assistant_message ?? "").trim();
+  const lastAssistantMessage = String(
+    input.last_assistant_message ?? "",
+  ).trim();
   const template = loadPromptTemplate(ROOT_DIR, "stop-review-gate");
   const claudeResponseBlock = lastAssistantMessage
     ? ["Previous Claude response:", lastAssistantMessage].join("\n")
     : "";
   return interpolateTemplate(template, {
-    CLAUDE_RESPONSE_BLOCK: claudeResponseBlock
+    CLAUDE_RESPONSE_BLOCK: claudeResponseBlock,
   });
 }
 
@@ -72,7 +78,7 @@ function parseStopReviewOutput(rawOutput) {
     return {
       ok: false,
       reason:
-        "The stop-time Pi review task returned no final output. Run /pi:review --wait manually or bypass the gate."
+        "The stop-time Pi review task returned no final output. Run /pi:review --wait manually or bypass the gate.",
     };
   }
 
@@ -84,14 +90,14 @@ function parseStopReviewOutput(rawOutput) {
     const reason = firstLine.slice("BLOCK:".length).trim() || text;
     return {
       ok: false,
-      reason: `Pi stop-time review found issues that still need fixes before ending the session: ${reason}`
+      reason: `Pi stop-time review found issues that still need fixes before ending the session: ${reason}`,
     };
   }
 
   return {
     ok: false,
     reason:
-      "The stop-time Pi review task returned an unexpected answer. Run /pi:review --wait manually or bypass the gate."
+      "The stop-time Pi review task returned an unexpected answer. Run /pi:review --wait manually or bypass the gate.",
   };
 }
 
@@ -104,7 +110,7 @@ function runStopReview(cwd, input = {}) {
   const prompt = buildStopReviewPrompt(input);
   const childEnv = {
     ...process.env,
-    ...(input.session_id ? { [SESSION_ID_ENV]: input.session_id } : {})
+    ...(input.session_id ? { [SESSION_ID_ENV]: input.session_id } : {}),
   };
 
   return new Promise((resolve) => {
@@ -115,12 +121,12 @@ function runStopReview(cwd, input = {}) {
         env: childEnv,
         detached: process.platform !== "win32",
         windowsHide: true,
-        stdio: ["ignore", "pipe", "pipe"]
+        stdio: ["ignore", "pipe", "pipe"],
       });
     } catch (error) {
       resolve({
         ok: false,
-        reason: `The stop-time Pi review task could not start: ${error instanceof Error ? error.message : String(error)}`
+        reason: `The stop-time Pi review task could not start: ${error instanceof Error ? error.message : String(error)}`,
       });
       return;
     }
@@ -153,7 +159,7 @@ function runStopReview(cwd, input = {}) {
       clearTimeout(timer);
       resolve({
         ok: false,
-        reason: `The stop-time Pi review task failed: ${error.message}`
+        reason: `The stop-time Pi review task failed: ${error.message}`,
       });
     });
 
@@ -163,7 +169,7 @@ function runStopReview(cwd, input = {}) {
         resolve({
           ok: false,
           reason:
-            "The stop-time Pi review task timed out after 15 minutes. Run /pi:review --wait manually or bypass the gate."
+            "The stop-time Pi review task timed out after 15 minutes. Run /pi:review --wait manually or bypass the gate.",
         });
         return;
       }
@@ -174,7 +180,7 @@ function runStopReview(cwd, input = {}) {
           ok: false,
           reason: detail
             ? `The stop-time Pi review task failed: ${detail}`
-            : "The stop-time Pi review task failed. Run /pi:review --wait manually or bypass the gate."
+            : "The stop-time Pi review task failed. Run /pi:review --wait manually or bypass the gate.",
         });
         return;
       }
@@ -186,7 +192,7 @@ function runStopReview(cwd, input = {}) {
         resolve({
           ok: false,
           reason:
-            "The stop-time Pi review task returned invalid JSON. Run /pi:review --wait manually or bypass the gate."
+            "The stop-time Pi review task returned invalid JSON. Run /pi:review --wait manually or bypass the gate.",
         });
       }
     });
@@ -199,8 +205,12 @@ async function main() {
   const workspaceRoot = resolveWorkspaceRoot(cwd);
   const config = getConfig(workspaceRoot);
 
-  const jobs = sortJobsNewestFirst(filterJobsForCurrentSession(listJobs(workspaceRoot), input));
-  const runningJob = jobs.find((job) => job.status === "queued" || job.status === "running");
+  const jobs = sortJobsNewestFirst(
+    filterJobsForCurrentSession(listJobs(workspaceRoot), input),
+  );
+  const runningJob = jobs.find(
+    (job) => job.status === "queued" || job.status === "running",
+  );
   const runningTaskNote = runningJob
     ? `Pi task ${runningJob.id} is still running. Check /pi:status and use /pi:cancel ${runningJob.id} if you want to stop it before ending the session.`
     : null;
@@ -217,7 +227,7 @@ async function main() {
   if (setupNote) {
     emitDecision({
       decision: "block",
-      reason: runningTaskNote ? `${runningTaskNote} ${setupNote}` : setupNote
+      reason: runningTaskNote ? `${runningTaskNote} ${setupNote}` : setupNote,
     });
     return;
   }
@@ -226,7 +236,9 @@ async function main() {
   if (!review.ok) {
     emitDecision({
       decision: "block",
-      reason: runningTaskNote ? `${runningTaskNote} ${review.reason}` : review.reason
+      reason: runningTaskNote
+        ? `${runningTaskNote} ${review.reason}`
+        : review.reason,
     });
     return;
   }

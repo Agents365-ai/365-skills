@@ -29,7 +29,8 @@ export function parseArgs(argv, config = {}) {
       const key = aliasMap[rawKey] ?? rawKey;
 
       if (booleanOptions.has(key)) {
-        options[key] = inlineValue === undefined ? true : inlineValue !== "false";
+        options[key] =
+          inlineValue === undefined ? true : inlineValue !== "false";
         continue;
       }
 
@@ -100,7 +101,7 @@ export function splitRawArgumentString(raw) {
       continue;
     }
 
-    if (character === "'" || character === "\"") {
+    if (character === "'" || character === '"') {
       quote = character;
       continue;
     }

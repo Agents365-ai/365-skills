@@ -2,18 +2,22 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { isProbablyText } from "./fs.mjs";
-import { formatCommandFailure, runCommand, runCommandChecked } from "./process.mjs";
+import {
+  formatCommandFailure,
+  runCommand,
+  runCommandChecked,
+} from "./process.mjs";
 
 const MAX_UNTRACKED_BYTES = 24 * 1024;
 const DEFAULT_INLINE_DIFF_MAX_FILES = 2;
 const DEFAULT_INLINE_DIFF_MAX_BYTES = 256 * 1024;
 
 function git(cwd, args, options = {}) {
-  return runCommand("git", args, { cwd, ...options });
+  return runCommand("git", args, { cwd, ...options, shell: false });
 }
 
 function gitChecked(cwd, args, options = {}) {
-  return runCommandChecked("git", args, { cwd, ...options });
+  return runCommandChecked("git", args, { cwd, ...options, shell: false });
 }
 
 function listUniqueFiles(...groups) {
@@ -38,7 +42,10 @@ function normalizeMaxInlineDiffBytes(value) {
 
 function measureGitOutputBytes(cwd, args, maxBytes) {
   const result = git(cwd, args, { maxBuffer: maxBytes + 1 });
-  if (result.error && /** @type {NodeJS.ErrnoException} */ (result.error).code === "ENOBUFS") {
+  if (
+    result.error &&
+    /** @type {NodeJS.ErrnoException} */ (result.error).code === "ENOBUFS"
+  ) {
     return maxBytes + 1;
   }
   if (result.error) {
@@ -66,17 +73,22 @@ function measureCombinedGitOutputBytes(cwd, argSets, maxBytes) {
 }
 
 function buildBranchComparison(cwd, baseRef) {
-  const mergeBase = gitChecked(cwd, ["merge-base", "HEAD", baseRef]).stdout.trim();
+  const mergeBase = gitChecked(cwd, [
+    "merge-base",
+    "HEAD",
+    baseRef,
+  ]).stdout.trim();
   return {
     mergeBase,
     commitRange: `${mergeBase}..HEAD`,
-    reviewRange: `${baseRef}...HEAD`
+    reviewRange: `${baseRef}...HEAD`,
   };
 }
 
 export function ensureGitRepository(cwd) {
   const result = git(cwd, ["rev-parse", "--show-toplevel"]);
-  const errorCode = result.error && "code" in result.error ? result.error.code : null;
+  const errorCode =
+    result.error && "code" in result.error ? result.error.code : null;
   if (errorCode === "ENOENT") {
     throw new Error("git is not installed. Install Git and retry.");
   }
@@ -101,34 +113,100 @@ export function detectDefaultBranch(cwd) {
 
   const candidates = ["main", "master", "trunk"];
   for (const candidate of candidates) {
-    const local = git(cwd, ["show-ref", "--verify", "--quiet", `refs/heads/${candidate}`]);
+    const local = git(cwd, [
+      "show-ref",
+      "--verify",
+      "--quiet",
+      `refs/heads/${candidate}`,
+    ]);
     if (local.status === 0) {
       return candidate;
     }
-    const remote = git(cwd, ["show-ref", "--verify", "--quiet", `refs/remotes/origin/${candidate}`]);
+    const remote = git(cwd, [
+      "show-ref",
+      "--verify",
+      "--quiet",
+      `refs/remotes/origin/${candidate}`,
+    ]);
     if (remote.status === 0) {
       return `origin/${candidate}`;
     }
   }
 
-  throw new Error("Unable to detect the repository default branch. Pass --base <ref> or use --scope working-tree.");
+  throw new Error(
+    "Unable to detect the repository default branch. Pass --base <ref> or use --scope working-tree.",
+  );
 }
 
 export function getCurrentBranch(cwd) {
   return gitChecked(cwd, ["branch", "--show-current"]).stdout.trim() || "HEAD";
 }
 
+export function getHeadSha(cwd) {
+  return gitChecked(cwd, ["rev-parse", "HEAD"]).stdout.trim();
+}
+
+// Exit 1 ("not an ancestor") is a normal outcome here, not a failure — use the
+// non-throwing `git` helper and read the exit status instead of gitChecked.
+export function isAncestor(cwd, sha, ref = "HEAD") {
+  return git(cwd, ["merge-base", "--is-ancestor", sha, ref]).status === 0;
+}
+
 export function getWorkingTreeState(cwd) {
-  const staged = gitChecked(cwd, ["diff", "--cached", "--name-only"]).stdout.trim().split("\n").filter(Boolean);
-  const unstaged = gitChecked(cwd, ["diff", "--name-only"]).stdout.trim().split("\n").filter(Boolean);
-  const untracked = gitChecked(cwd, ["ls-files", "--others", "--exclude-standard"]).stdout.trim().split("\n").filter(Boolean);
+  const staged = gitChecked(cwd, ["diff", "--cached", "--name-only"])
+    .stdout.trim()
+    .split("\n")
+    .filter(Boolean);
+  const unstaged = gitChecked(cwd, ["diff", "--name-only"])
+    .stdout.trim()
+    .split("\n")
+    .filter(Boolean);
+  const untracked = gitChecked(cwd, [
+    "ls-files",
+    "--others",
+    "--exclude-standard",
+  ])
+    .stdout.trim()
+    .split("\n")
+    .filter(Boolean);
 
   return {
     staged,
     unstaged,
     untracked,
-    isDirty: staged.length > 0 || unstaged.length > 0 || untracked.length > 0
+    isDirty: staged.length > 0 || unstaged.length > 0 || untracked.length > 0,
   };
+}
+
+// --- Race worktrees -------------------------------------------------------
+// Each write racer runs in a detached worktree created from HEAD so parallel
+// racers can never touch the user's working tree or each other.
+
+export function addRaceWorktree(repoRoot, worktreePath) {
+  gitChecked(repoRoot, ["worktree", "add", "--detach", worktreePath, "HEAD"]);
+}
+
+export function removeRaceWorktree(repoRoot, worktreePath) {
+  const result = git(repoRoot, ["worktree", "remove", "--force", worktreePath]);
+  if (result.status !== 0) {
+    // Worktree dir may already be gone; drop the stale registration.
+    git(repoRoot, ["worktree", "prune"]);
+  }
+}
+
+const RACE_PATCH_MAX_BYTES = 32 * 1024 * 1024;
+
+export function captureWorktreePatch(worktreePath) {
+  // Stage everything (including untracked files) so one diff captures the
+  // racer's full result; the worktree is discarded afterwards, never committed.
+  gitChecked(worktreePath, ["add", "-A"]);
+  const patch = gitChecked(worktreePath, ["diff", "--cached", "--binary"], {
+    maxBuffer: RACE_PATCH_MAX_BYTES,
+  }).stdout;
+  const stat = gitChecked(worktreePath, ["diff", "--cached", "--stat"], {
+    maxBuffer: RACE_PATCH_MAX_BYTES,
+  }).stdout.trim();
+  return { patch, stat, isEmpty: !patch.trim() };
 }
 
 export function resolveReviewTarget(cwd, options = {}) {
@@ -144,7 +222,7 @@ export function resolveReviewTarget(cwd, options = {}) {
       mode: "branch",
       label: `branch diff against ${baseRef}`,
       baseRef,
-      explicit: true
+      explicit: true,
     };
   }
 
@@ -152,13 +230,13 @@ export function resolveReviewTarget(cwd, options = {}) {
     return {
       mode: "working-tree",
       label: "working tree diff",
-      explicit: true
+      explicit: true,
     };
   }
 
   if (!supportedScopes.has(requestedScope)) {
     throw new Error(
-      `Unsupported review scope "${requestedScope}". Use one of: auto, working-tree, branch, or pass --base <ref>.`
+      `Unsupported review scope "${requestedScope}". Use one of: auto, working-tree, branch, or pass --base <ref>.`,
     );
   }
 
@@ -168,7 +246,7 @@ export function resolveReviewTarget(cwd, options = {}) {
       mode: "branch",
       label: `branch diff against ${detectedBase}`,
       baseRef: detectedBase,
-      explicit: true
+      explicit: true,
     };
   }
 
@@ -176,7 +254,7 @@ export function resolveReviewTarget(cwd, options = {}) {
     return {
       mode: "working-tree",
       label: "working tree diff",
-      explicit: false
+      explicit: false,
     };
   }
 
@@ -185,21 +263,29 @@ export function resolveReviewTarget(cwd, options = {}) {
     mode: "branch",
     label: `branch diff against ${detectedBase}`,
     baseRef: detectedBase,
-    explicit: false
+    explicit: false,
   };
 }
 
 function formatSection(title, body) {
-  return [`## ${title}`, "", body.trim() ? body.trim() : "(none)", ""].join("\n");
+  return [`## ${title}`, "", body.trim() ? body.trim() : "(none)", ""].join(
+    "\n",
+  );
 }
 
 function formatUntrackedFile(cwd, relativePath) {
   const absolutePath = path.join(cwd, relativePath);
   let stat;
   try {
-    stat = fs.statSync(absolutePath);
+    // lstat (not stat): an untracked file can be a symlink pointing outside
+    // the repo (e.g. to ~/.ssh/id_rsa). Following it would embed the
+    // target's content in a review prompt sent to an external LLM provider.
+    stat = fs.lstatSync(absolutePath);
   } catch {
     return `### ${relativePath}\n(skipped: broken symlink or unreadable file)`;
+  }
+  if (stat.isSymbolicLink()) {
+    return `### ${relativePath}\n(skipped: symlink)`;
   }
   if (stat.isDirectory()) {
     return `### ${relativePath}\n(skipped: directory)`;
@@ -218,35 +304,78 @@ function formatUntrackedFile(cwd, relativePath) {
     return `### ${relativePath}\n(skipped: binary file)`;
   }
 
-  return [`### ${relativePath}`, "```", buffer.toString("utf8").trimEnd(), "```"].join("\n");
+  return [
+    `### ${relativePath}`,
+    "```",
+    buffer.toString("utf8").trimEnd(),
+    "```",
+  ].join("\n");
 }
 
 function collectWorkingTreeContext(cwd, state, options = {}) {
   const includeDiff = options.includeDiff !== false;
-  const status = gitChecked(cwd, ["status", "--short", "--untracked-files=all"]).stdout.trim();
-  const changedFiles = listUniqueFiles(state.staged, state.unstaged, state.untracked);
+  // options.files restricts the diff to a shard's file subset (sharded review).
+  const files = options.files ?? null;
+  const pathspec = files && files.length ? ["--", ...files] : [];
+  const status = gitChecked(cwd, [
+    "status",
+    "--short",
+    "--untracked-files=all",
+    ...pathspec,
+  ]).stdout.trim();
+  const changedFiles =
+    files ?? listUniqueFiles(state.staged, state.unstaged, state.untracked);
+  const untracked = files
+    ? state.untracked.filter((file) => files.includes(file))
+    : state.untracked;
 
   let parts;
   if (includeDiff) {
-    const stagedDiff = gitChecked(cwd, ["diff", "--cached", "--binary", "--no-ext-diff", "--submodule=diff"]).stdout;
-    const unstagedDiff = gitChecked(cwd, ["diff", "--binary", "--no-ext-diff", "--submodule=diff"]).stdout;
-    const untrackedBody = state.untracked.map((file) => formatUntrackedFile(cwd, file)).join("\n\n");
+    const stagedDiff = gitChecked(cwd, [
+      "diff",
+      "--cached",
+      "--binary",
+      "--no-ext-diff",
+      "--submodule=diff",
+      ...pathspec,
+    ]).stdout;
+    const unstagedDiff = gitChecked(cwd, [
+      "diff",
+      "--binary",
+      "--no-ext-diff",
+      "--submodule=diff",
+      ...pathspec,
+    ]).stdout;
+    const untrackedBody = untracked
+      .map((file) => formatUntrackedFile(cwd, file))
+      .join("\n\n");
     parts = [
       formatSection("Git Status", status),
       formatSection("Staged Diff", stagedDiff),
       formatSection("Unstaged Diff", unstagedDiff),
-      formatSection("Untracked Files", untrackedBody)
+      formatSection("Untracked Files", untrackedBody),
     ];
   } else {
-    const stagedStat = gitChecked(cwd, ["diff", "--shortstat", "--cached"]).stdout.trim();
-    const unstagedStat = gitChecked(cwd, ["diff", "--shortstat"]).stdout.trim();
-    const untrackedBody = state.untracked.map((file) => formatUntrackedFile(cwd, file)).join("\n\n");
+    const stagedStat = gitChecked(cwd, [
+      "diff",
+      "--shortstat",
+      "--cached",
+      ...pathspec,
+    ]).stdout.trim();
+    const unstagedStat = gitChecked(cwd, [
+      "diff",
+      "--shortstat",
+      ...pathspec,
+    ]).stdout.trim();
+    const untrackedBody = untracked
+      .map((file) => formatUntrackedFile(cwd, file))
+      .join("\n\n");
     parts = [
       formatSection("Git Status", status),
       formatSection("Staged Diff Stat", stagedStat),
       formatSection("Unstaged Diff Stat", unstagedStat),
       formatSection("Changed Files", changedFiles.join("\n")),
-      formatSection("Untracked Files", untrackedBody)
+      formatSection("Untracked Files", untrackedBody),
     ];
   }
 
@@ -254,7 +383,7 @@ function collectWorkingTreeContext(cwd, state, options = {}) {
     mode: "working-tree",
     summary: `Reviewing ${state.staged.length} staged, ${state.unstaged.length} unstaged, and ${state.untracked.length} untracked file(s).`,
     content: parts.join("\n"),
-    changedFiles
+    changedFiles,
   };
 }
 
@@ -262,9 +391,27 @@ function collectBranchContext(cwd, baseRef, options = {}) {
   const includeDiff = options.includeDiff !== false;
   const comparison = options.comparison ?? buildBranchComparison(cwd, baseRef);
   const currentBranch = getCurrentBranch(cwd);
-  const changedFiles = gitChecked(cwd, ["diff", "--name-only", comparison.commitRange]).stdout.trim().split("\n").filter(Boolean);
-  const logOutput = gitChecked(cwd, ["log", "--oneline", "--decorate", comparison.commitRange]).stdout.trim();
-  const diffStat = gitChecked(cwd, ["diff", "--stat", comparison.commitRange]).stdout.trim();
+  // options.files restricts the diff to a shard's file subset (sharded review).
+  const files = options.files ?? null;
+  const pathspec = files && files.length ? ["--", ...files] : [];
+  const changedFiles =
+    files ??
+    gitChecked(cwd, ["diff", "--name-only", comparison.commitRange])
+      .stdout.trim()
+      .split("\n")
+      .filter(Boolean);
+  const logOutput = gitChecked(cwd, [
+    "log",
+    "--oneline",
+    "--decorate",
+    comparison.commitRange,
+  ]).stdout.trim();
+  const diffStat = gitChecked(cwd, [
+    "diff",
+    "--stat",
+    comparison.commitRange,
+    ...pathspec,
+  ]).stdout.trim();
 
   return {
     mode: "branch",
@@ -275,16 +422,23 @@ function collectBranchContext(cwd, baseRef, options = {}) {
           formatSection("Diff Stat", diffStat),
           formatSection(
             "Branch Diff",
-            gitChecked(cwd, ["diff", "--binary", "--no-ext-diff", "--submodule=diff", comparison.commitRange]).stdout
-          )
+            gitChecked(cwd, [
+              "diff",
+              "--binary",
+              "--no-ext-diff",
+              "--submodule=diff",
+              comparison.commitRange,
+              ...pathspec,
+            ]).stdout,
+          ),
         ].join("\n")
       : [
           formatSection("Commit Log", logOutput),
           formatSection("Diff Stat", diffStat),
-          formatSection("Changed Files", changedFiles.join("\n"))
+          formatSection("Changed Files", changedFiles.join("\n")),
         ].join("\n"),
     changedFiles,
-    comparison
+    comparison,
   };
 }
 
@@ -300,7 +454,13 @@ export function collectReviewContext(cwd, target, options = {}) {
   const repoRoot = getRepoRoot(cwd);
   const currentBranch = getCurrentBranch(repoRoot);
   const maxInlineFiles = normalizeMaxInlineFiles(options.maxInlineFiles);
-  const maxInlineDiffBytes = normalizeMaxInlineDiffBytes(options.maxInlineDiffBytes);
+  const maxInlineDiffBytes = normalizeMaxInlineDiffBytes(
+    options.maxInlineDiffBytes,
+  );
+  // options.files restricts the diff to a shard's file subset (sharded review):
+  // size checks below measure only that subset, not the whole diff.
+  const files = options.files ?? null;
+  const pathspec = files && files.length ? ["--", ...files] : [];
   let details;
   let includeDiff;
   let diffBytes;
@@ -310,26 +470,56 @@ export function collectReviewContext(cwd, target, options = {}) {
     diffBytes = measureCombinedGitOutputBytes(
       repoRoot,
       [
-        ["diff", "--cached", "--binary", "--no-ext-diff", "--submodule=diff"],
-        ["diff", "--binary", "--no-ext-diff", "--submodule=diff"]
+        [
+          "diff",
+          "--cached",
+          "--binary",
+          "--no-ext-diff",
+          "--submodule=diff",
+          ...pathspec,
+        ],
+        ["diff", "--binary", "--no-ext-diff", "--submodule=diff", ...pathspec],
       ],
-      maxInlineDiffBytes
+      maxInlineDiffBytes,
+    );
+    const relevantFileCount = files
+      ? files.length
+      : listUniqueFiles(state.staged, state.unstaged, state.untracked).length;
+    includeDiff =
+      options.includeDiff ??
+      (relevantFileCount <= maxInlineFiles && diffBytes <= maxInlineDiffBytes);
+    details = collectWorkingTreeContext(repoRoot, state, {
+      includeDiff,
+      files,
+    });
+  } else {
+    const comparison = buildBranchComparison(repoRoot, target.baseRef);
+    const fileCount = files
+      ? files.length
+      : gitChecked(repoRoot, ["diff", "--name-only", comparison.commitRange])
+          .stdout.trim()
+          .split("\n")
+          .filter(Boolean).length;
+    diffBytes = measureGitOutputBytes(
+      repoRoot,
+      [
+        "diff",
+        "--binary",
+        "--no-ext-diff",
+        "--submodule=diff",
+        comparison.commitRange,
+        ...pathspec,
+      ],
+      maxInlineDiffBytes,
     );
     includeDiff =
       options.includeDiff ??
-      (listUniqueFiles(state.staged, state.unstaged, state.untracked).length <= maxInlineFiles &&
-        diffBytes <= maxInlineDiffBytes);
-    details = collectWorkingTreeContext(repoRoot, state, { includeDiff });
-  } else {
-    const comparison = buildBranchComparison(repoRoot, target.baseRef);
-    const fileCount = gitChecked(repoRoot, ["diff", "--name-only", comparison.commitRange]).stdout.trim().split("\n").filter(Boolean).length;
-    diffBytes = measureGitOutputBytes(
-      repoRoot,
-      ["diff", "--binary", "--no-ext-diff", "--submodule=diff", comparison.commitRange],
-      maxInlineDiffBytes
-    );
-    includeDiff = options.includeDiff ?? (fileCount <= maxInlineFiles && diffBytes <= maxInlineDiffBytes);
-    details = collectBranchContext(repoRoot, target.baseRef, { includeDiff, comparison });
+      (fileCount <= maxInlineFiles && diffBytes <= maxInlineDiffBytes);
+    details = collectBranchContext(repoRoot, target.baseRef, {
+      includeDiff,
+      comparison,
+      files,
+    });
   }
 
   return {
@@ -341,6 +531,14 @@ export function collectReviewContext(cwd, target, options = {}) {
     diffBytes,
     inputMode: includeDiff ? "inline-diff" : "self-collect",
     collectionGuidance: buildAdversarialCollectionGuidance({ includeDiff }),
-    ...details
+    ...details,
   };
 }
+
+// Test-only exports — pure logic functions
+export {
+  listUniqueFiles,
+  normalizeMaxInlineFiles,
+  normalizeMaxInlineDiffBytes,
+  formatUntrackedFile,
+};

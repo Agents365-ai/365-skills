@@ -1,4 +1,10 @@
-import { useCurrentFrame, useVideoConfig, interpolate, spring, Easing } from "remotion";
+import {
+  useCurrentFrame,
+  useVideoConfig,
+  interpolate,
+  spring,
+  Easing,
+} from "remotion";
 import type { TransitionPresentation } from "@remotion/transitions";
 import { fade } from "@remotion/transitions/fade";
 import { slide } from "@remotion/transitions/slide";
@@ -65,15 +71,31 @@ export const useExit = (
 export const useCounter = (target: number, delay = 0, durationFrames = 45) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const progress = spring({ frame, fps, delay, config: { damping: 200 }, durationInFrames: durationFrames });
+  const progress = spring({
+    frame,
+    fps,
+    delay,
+    config: { damping: 200 },
+    durationInFrames: durationFrames,
+  });
   return Math.round(interpolate(progress, [0, 1], [0, target]));
 };
 
 // Animated bar fill — returns 0-100 percentage
-export const useBarFill = (targetPct: number, delay = 0, durationFrames = 40) => {
+export const useBarFill = (
+  targetPct: number,
+  delay = 0,
+  durationFrames = 40,
+) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const progress = spring({ frame, fps, delay, config: { damping: 150 }, durationInFrames: durationFrames });
+  const progress = spring({
+    frame,
+    fps,
+    delay,
+    config: { damping: 150 },
+    durationInFrames: durationFrames,
+  });
   return interpolate(progress, [0, 1], [0, targetPct]);
 };
 
@@ -103,7 +125,8 @@ export const usePulse = (
   const frame = useCurrentFrame();
   const t = ((frame + phaseOffset) / periodFrames) % 1;
   // Smooth sine wave between min and max
-  const scale = minScale + (maxScale - minScale) * (0.5 + 0.5 * Math.sin(t * Math.PI * 2));
+  const scale =
+    minScale + (maxScale - minScale) * (0.5 + 0.5 * Math.sin(t * Math.PI * 2));
   return { scale };
 };
 
@@ -140,11 +163,15 @@ export const useTextReveal = (
 ) => {
   const frame = useCurrentFrame();
 
-  if (!enabled) return { words: text.split(/\s+/), visibleCount: Infinity, progress: 1 };
+  if (!enabled)
+    return { words: text.split(/\s+/), visibleCount: Infinity, progress: 1 };
 
   const words = text.split(/\s+/);
   const elapsed = Math.max(0, frame - delay);
-  const visibleCount = Math.min(words.length, Math.floor(elapsed / framesPerWord) + 1);
+  const visibleCount = Math.min(
+    words.length,
+    Math.floor(elapsed / framesPerWord) + 1,
+  );
   const progress = visibleCount / words.length;
 
   return { words, visibleCount, progress };
@@ -159,11 +186,15 @@ export const useCharReveal = (
 ) => {
   const frame = useCurrentFrame();
 
-  if (!enabled) return { chars: text.split(""), visibleCount: Infinity, progress: 1 };
+  if (!enabled)
+    return { chars: text.split(""), visibleCount: Infinity, progress: 1 };
 
   const chars = text.split("");
   const elapsed = Math.max(0, frame - delay);
-  const visibleCount = Math.min(chars.length, Math.floor(elapsed / framesPerChar) + 1);
+  const visibleCount = Math.min(
+    chars.length,
+    Math.floor(elapsed / framesPerChar) + 1,
+  );
   const progress = visibleCount / chars.length;
 
   return { chars, visibleCount, progress };
@@ -187,10 +218,17 @@ export const useDrawOn = (
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  if (!enabled || !path) return { progress: 1, strokeDasharray: "none", strokeDashoffset: 0 };
+  if (!enabled || !path)
+    return { progress: 1, strokeDasharray: "none", strokeDashoffset: 0 };
 
   const config = SPRING_PRESETS[preset];
-  const progress = spring({ frame, fps, delay, config, durationInFrames: durationFrames });
+  const progress = spring({
+    frame,
+    fps,
+    delay,
+    config,
+    durationInFrames: durationFrames,
+  });
   const evolved = evolvePath(progress, path);
 
   return {
@@ -213,15 +251,26 @@ export const useStaggeredDrawOn = (
   const { fps } = useVideoConfig();
 
   if (!enabled) {
-    return paths.map(() => ({ progress: 1, strokeDasharray: "none" as string, strokeDashoffset: 0 }));
+    return paths.map(() => ({
+      progress: 1,
+      strokeDasharray: "none" as string,
+      strokeDashoffset: 0,
+    }));
   }
 
   const config = SPRING_PRESETS[preset];
 
   return paths.map((path, i) => {
-    if (!path) return { progress: 1, strokeDasharray: "none", strokeDashoffset: 0 };
+    if (!path)
+      return { progress: 1, strokeDasharray: "none", strokeDashoffset: 0 };
     const pathDelay = delay + i * staggerInterval;
-    const progress = spring({ frame, fps, delay: pathDelay, config, durationInFrames: durationPerPath });
+    const progress = spring({
+      frame,
+      fps,
+      delay: pathDelay,
+      config,
+      durationInFrames: durationPerPath,
+    });
     const evolved = evolvePath(progress, path);
     return {
       progress,
@@ -237,10 +286,15 @@ export const getPresentation = (
   type: string,
 ): TransitionPresentation<Record<string, unknown>> => {
   switch (type) {
-    case "fade": return fade();
-    case "slide": return slide({ direction: "from-right" });
-    case "wipe": return wipe({ direction: "from-right" });
-    case "none": return none();
-    default: return fade();
+    case "fade":
+      return fade();
+    case "slide":
+      return slide({ direction: "from-right" });
+    case "wipe":
+      return wipe({ direction: "from-right" });
+    case "none":
+      return none();
+    default:
+      return fade();
   }
 };

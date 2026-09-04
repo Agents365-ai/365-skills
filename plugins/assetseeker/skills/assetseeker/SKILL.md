@@ -8,7 +8,7 @@ version: 1.0.0
 created: 2026-07-09
 updated: 2026-07-09
 homepage: https://github.com/Agents365-ai/assetSeeker
-metadata: {"openclaw":{"requires":{"bins":["python3"]},"env":["PEXELS_API_KEY"]},"primaryEnv":"PEXELS_API_KEY","emoji":"🔍"}}
+metadata: {"openclaw":{"requires":{"bins":["python3"],"env":["PEXELS_API_KEY"]},"primaryEnv":"PEXELS_API_KEY","emoji":"🔍"}}
 ---
 
 # Asset Seeker — Online Creative Asset Search
@@ -37,7 +37,7 @@ Do NOT use for: local file search, video editing, or asset management tools (Eag
 ### Photos
 
 | Source | API | Free Tier | China Access | License |
-|--------|-----|-----------|-------------|---------|
+| -------- | ----- | ----------- | ------------- | --------- |
 | **Pexels** (default) | ✅ Photos + Videos | 200 req/hr, 20k/month | ✅ Direct | No attribution required |
 | **Unsplash** | ✅ Photos | 50 req/hr (demo) | ✅ Direct | Attribution appreciated |
 | **Pixabay** | ✅ Photos + Videos | Free | ✅ Direct | No attribution required |
@@ -45,7 +45,7 @@ Do NOT use for: local file search, video editing, or asset management tools (Eag
 ### Illustrations & Vectors
 
 | Source | API | Notes |
-|--------|-----|-------|
+| -------- | ----- | ------- |
 | **unDraw** | ❌ | One-click recolor; all free |
 | **Storyset** | ❌ (Freepik API paid) | Editable characters + animations |
 | **Humaaans / Open Doodles / Open Peeps** | ❌ | Direct download from site |
@@ -60,7 +60,7 @@ Do NOT use for: local file search, video editing, or asset management tools (Eag
 ### Video Footage
 
 | Source | API | Free Tier | China Access |
-|--------|-----|-----------|-------------|
+| -------- | ----- | ----------- | ------------- |
 | **Pexels Video** (default) | ✅ | 200 req/hr, 20k/month | ✅ Direct |
 | **Pixabay Video** | ✅ | Free | ✅ Direct |
 | **Mixkit** | 🎭 Playwright scraper | Free, no attribution | ✅ Direct |
@@ -69,7 +69,7 @@ Do NOT use for: local file search, video editing, or asset management tools (Eag
 ### Music & Sound Effects
 
 | Source | API | Notes |
-|--------|-----|-------|
+| -------- | ----- | ------- |
 | **Freesound** (default for SFX) | ✅ | OAuth, community-largest SFX library |
 | **Pixabay Music** | ❌ Music API unavailable | Web download only; no attribution |
 | **YouTube Audio Library** | ❌ | Manual; some need attribution |
@@ -86,6 +86,7 @@ Do NOT use for: local file search, video editing, or asset management tools (Eag
 ### Step 1 — Understand the request
 
 Determine:
+
 - **Asset type**: photo / icon / video / music / sfx / font / illustration
 - **Keywords**: what the user is searching for
 - **Style hints**: orientation, color, mood, style
@@ -137,6 +138,7 @@ python3 "${SKILL_DIR}/scripts/seek_assets.py" search icon "arrow" --format text
 ### Step 4 — Present results
 
 For each result, show:
+
 - Thumbnail/preview URL (when available)
 - Source name + license
 - Download link or instructions
@@ -163,6 +165,7 @@ python3 seek_assets.py search <type> <keyword> [options]
 Types: `photo`, `icon`, `video`, `music`, `sfx`, `font`
 
 Options:
+
 - `--max N` — Results per source (default: 10)
 - `--source S` — Specific source (e.g., `--source pexels`, `--source iconify`)
 - `--orientation landscape|portrait|square` — Photo/video orientation
@@ -214,12 +217,12 @@ export NOUN_PROJECT_SECRET="your-noun-project-secret"
 ### Get API Keys
 
 | Service | Signup URL | Time to get key |
-|---------|-----------|----------------|
-| Pexels | https://www.pexels.com/api/ | ~2 min |
-| Unsplash | https://unsplash.com/developers | ~5 min (needs app registration) |
-| Pixabay | https://pixabay.com/api/docs/ | ~2 min |
-| Freesound | https://freesound.org/apiv2/apply/ | ~1 day (manual approval) |
-| Google Fonts | https://console.cloud.google.com/ | ~5 min |
+| --------- | ----------- | ---------------- |
+| Pexels | <https://www.pexels.com/api/> | ~2 min |
+| Unsplash | <https://unsplash.com/developers> | ~5 min (needs app registration) |
+| Pixabay | <https://pixabay.com/api/docs/> | ~2 min |
+| Freesound | <https://freesound.org/apiv2/apply/> | ~1 day (manual approval) |
+| Google Fonts | <https://console.cloud.google.com/> | ~5 min |
 
 ## Requirements
 

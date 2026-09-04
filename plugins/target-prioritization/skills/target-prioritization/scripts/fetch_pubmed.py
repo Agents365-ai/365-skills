@@ -9,6 +9,7 @@ Customize CONTEXTS for your project. Examples:
   - Neurodegen:    '... AND ("Alzheimer"[tiab] OR "Parkinson"[tiab] OR "neurodegeneration"[tiab])'
   - Cell context:  '"T cell"', '"macrophage"', '"hepatocyte"', '"neuron"', etc.
 """
+
 import argparse
 import json
 import time
@@ -19,14 +20,20 @@ from pathlib import Path
 ESEARCH = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
 
 CONTEXTS = {
-    "total":           '"{gene}"[tiab]',
-    "focus_disease":   '"{gene}"[tiab] AND ("inflammatory bowel disease"[tiab] OR "Crohn"[tiab] OR "ulcerative colitis"[tiab] OR ibd[tiab])',
-    "cell_context":    '"{gene}"[tiab] AND ("T cell"[tiab] OR "T-cell"[tiab] OR "T lymphocyte"[tiab])',
+    "total": '"{gene}"[tiab]',
+    "focus_disease": '"{gene}"[tiab] AND ("inflammatory bowel disease"[tiab] OR "Crohn"[tiab] OR "ulcerative colitis"[tiab] OR ibd[tiab])',
+    "cell_context": '"{gene}"[tiab] AND ("T cell"[tiab] OR "T-cell"[tiab] OR "T lymphocyte"[tiab])',
 }
 
 
 def esearch(term: str, retmax: int = 0) -> dict:
-    params = {"db": "pubmed", "term": term, "retmode": "json", "retmax": str(retmax), "sort": "pub_date"}
+    params = {
+        "db": "pubmed",
+        "term": term,
+        "retmode": "json",
+        "retmax": str(retmax),
+        "sort": "pub_date",
+    }
     url = f"{ESEARCH}?{urllib.parse.urlencode(params)}"
     try:
         with urllib.request.urlopen(url, timeout=20) as r:
@@ -54,7 +61,9 @@ def fetch_one(gene: str) -> dict:
             count = 0
         out[f"pubmed_{key}"] = count
         if key == "focus_disease":
-            out["recent_focus_disease_pmids"] = data.get("esearchresult", {}).get("idlist", [])[:5]
+            out["recent_focus_disease_pmids"] = data.get("esearchresult", {}).get(
+                "idlist", []
+            )[:5]
         time.sleep(0.34)  # NCBI rate limit: 3/sec without API key
 
     total = out["pubmed_total"]

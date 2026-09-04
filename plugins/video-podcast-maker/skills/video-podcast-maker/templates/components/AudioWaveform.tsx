@@ -45,7 +45,7 @@ export const AudioWaveform = ({
     audioData,
     frame,
     fps,
-    numberOfSamples: barCount,  // MUST be a power of 2 (32, 64, 128, 256)
+    numberOfSamples: barCount, // MUST be a power of 2 (32, 64, 128, 256)
     smoothing: true,
   });
 
@@ -59,32 +59,51 @@ export const AudioWaveform = ({
         : { width: "100%" };
 
   return (
-    <div style={{ ...positionStyle, height, display: "flex", alignItems: "flex-end", justifyContent: "center", gap: mode === "dots" ? 4 : 2, padding: "0 20px", opacity }}>
-      {mode === "bars" && visualization.map((v, i) => {
-        const barHeight = Math.max(2, v * height * 0.9);
-        return (
-          <div
-            key={i}
-            style={{
-              flex: 1,
-              height: barHeight,
-              backgroundColor: fillColor,
-              borderRadius: 2,
-              transition: "height 0.05s ease",
-            }}
-          />
-        );
-      })}
+    <div
+      style={{
+        ...positionStyle,
+        height,
+        display: "flex",
+        alignItems: "flex-end",
+        justifyContent: "center",
+        gap: mode === "dots" ? 4 : 2,
+        padding: "0 20px",
+        opacity,
+      }}
+    >
+      {mode === "bars" &&
+        visualization.map((v, i) => {
+          const barHeight = Math.max(2, v * height * 0.9);
+          return (
+            <div
+              key={i}
+              style={{
+                flex: 1,
+                height: barHeight,
+                backgroundColor: fillColor,
+                borderRadius: 2,
+                transition: "height 0.05s ease",
+              }}
+            />
+          );
+        })}
 
       {mode === "wave" && (
-        <svg width="100%" height={height} viewBox={`0 0 ${visualization.length} ${height}`} preserveAspectRatio="none">
+        <svg
+          width="100%"
+          height={height}
+          viewBox={`0 0 ${visualization.length} ${height}`}
+          preserveAspectRatio="none"
+        >
           <path
             d={
               `M 0 ${height} ` +
-              visualization.map((v, i) => {
-                const y = height - v * height * 0.85;
-                return `L ${i} ${y}`;
-              }).join(" ") +
+              visualization
+                .map((v, i) => {
+                  const y = height - v * height * 0.85;
+                  return `L ${i} ${y}`;
+                })
+                .join(" ") +
               ` L ${visualization.length - 1} ${height} Z`
             }
             fill={fillColor}
@@ -93,10 +112,12 @@ export const AudioWaveform = ({
           <path
             d={
               `M 0 ${height - visualization[0] * height * 0.85} ` +
-              visualization.map((v, i) => {
-                const y = height - v * height * 0.85;
-                return `L ${i} ${y}`;
-              }).join(" ")
+              visualization
+                .map((v, i) => {
+                  const y = height - v * height * 0.85;
+                  return `L ${i} ${y}`;
+                })
+                .join(" ")
             }
             fill="none"
             stroke={fillColor}
@@ -105,22 +126,23 @@ export const AudioWaveform = ({
         </svg>
       )}
 
-      {mode === "dots" && visualization.map((v, i) => {
-        const dotSize = Math.max(3, v * 16);
-        return (
-          <div
-            key={i}
-            style={{
-              width: dotSize,
-              height: dotSize,
-              borderRadius: "50%",
-              backgroundColor: fillColor,
-              opacity: 0.3 + v * 0.7,
-              alignSelf: "center",
-            }}
-          />
-        );
-      })}
+      {mode === "dots" &&
+        visualization.map((v, i) => {
+          const dotSize = Math.max(3, v * 16);
+          return (
+            <div
+              key={i}
+              style={{
+                width: dotSize,
+                height: dotSize,
+                borderRadius: "50%",
+                backgroundColor: fillColor,
+                opacity: 0.3 + v * 0.7,
+                alignSelf: "center",
+              }}
+            />
+          );
+        })}
     </div>
   );
 };

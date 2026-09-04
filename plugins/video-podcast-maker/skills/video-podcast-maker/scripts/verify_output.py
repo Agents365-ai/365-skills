@@ -18,18 +18,18 @@ Exit codes:
 """
 
 from __future__ import annotations
-import os
-import sys
-import json
-import time
+
 import argparse
+import json
+import os
 import shutil
 import subprocess
+import sys
+import time
 from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import cli_envelope  # noqa: E402
-
 
 CORE_REQUIRED = [
     "podcast.txt",
@@ -446,13 +446,17 @@ def verify(video_dir, strict=False, do_auto_fix=True):
             codec_ok = info["video_codec"] == "h264"
             audio_ok = info["audio_codec"] == "aac"
             fps_ok = info["fps"] is not None and abs(info["fps"] - 30) < 0.5
-            print(f"  {'✓' if codec_ok else '✗'} Video codec: {info['video_codec']} (expected h264)")
+            print(
+                f"  {'✓' if codec_ok else '✗'} Video codec: {info['video_codec']} (expected h264)"
+            )
             print(
                 f"  {'✓' if audio_ok else '✗'} Audio codec: {info['audio_codec'] or 'NONE'} (expected aac)"
             )
             print(f"  {'✓' if fps_ok else '✗'} FPS: {info['fps']} (expected ~30)")
             if not codec_ok:
-                errors.append(f"final_video.mp4 video codec {info['video_codec']} != h264")
+                errors.append(
+                    f"final_video.mp4 video codec {info['video_codec']} != h264"
+                )
             if not audio_ok:
                 errors.append(
                     f"final_video.mp4 audio codec {info['audio_codec'] or 'NONE'} != aac"
@@ -502,18 +506,24 @@ def verify(video_dir, strict=False, do_auto_fix=True):
                     f"(got {info['width']}x{info['height']} {info['video_codec']}/"
                     f"{info['audio_codec']} @ {info['fps']}fps)"
                 )
-                print(f"  ✗ {label}: {info['width']}x{info['height']} {info['video_codec']}/"
-                      f"{info['audio_codec']} @ {info['fps']}fps")
+                print(
+                    f"  ✗ {label}: {info['width']}x{info['height']} {info['video_codec']}/"
+                    f"{info['audio_codec']} @ {info['fps']}fps"
+                )
             else:
-                print(f"  ✓ {label}: {info['width']}x{info['height']} h264/aac @ {info['fps']}fps")
-            shorts_records.append({
-                "path": str(label),
-                "resolution_ok": res_ok,
-                "codec_ok": codec_ok,
-                "audio_ok": audio_ok,
-                "fps_ok": fps_ok,
-                "ok": short_ok,
-            })
+                print(
+                    f"  ✓ {label}: {info['width']}x{info['height']} h264/aac @ {info['fps']}fps"
+                )
+            shorts_records.append(
+                {
+                    "path": str(label),
+                    "resolution_ok": res_ok,
+                    "codec_ok": codec_ok,
+                    "audio_ok": audio_ok,
+                    "fps_ok": fps_ok,
+                    "ok": short_ok,
+                }
+            )
         result["shorts"] = {
             "count": len(shorts_mp4s),
             "files": shorts_records,
@@ -692,7 +702,7 @@ def verify(video_dir, strict=False, do_auto_fix=True):
 
     # Asset manifest (Step 5) — only checked when a manifest exists;
     # text-only videos have none and that is valid.
-    from assets import validate_manifest
+    from assets import validate_manifest  # pyright: ignore[reportAttributeAccessIssue]
 
     m_errors, m_warnings, m_manifest = validate_manifest(video_dir)
     if m_manifest is not None or m_errors:

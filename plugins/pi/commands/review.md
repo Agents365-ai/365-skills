@@ -1,6 +1,6 @@
 ---
 description: Run a Pi code review against local git state
-argument-hint: '[--wait|--background] [--base <ref>] [--scope auto|working-tree|branch]'
+argument-hint: '[--base <ref>] [--scope auto|working-tree|branch] [--incremental] [--models <m1,m2,...>|--shards <N>] [--out-file <path>]'
 disable-model-invocation: true
 allowed-tools: Read, Glob, Grep, Bash(node:*), Bash(git:*), AskUserQuestion
 ---
@@ -11,50 +11,29 @@ Raw slash-command arguments:
 `$ARGUMENTS`
 
 Core constraint:
+
 - This command is review-only.
 - Do not fix issues, apply patches, or suggest that you are about to make changes.
 - Your only job is to run the review and return Pi's output verbatim to the user.
 
-Execution mode rules:
-- If the raw arguments include `--wait`, do not ask. Run the review in the foreground.
-- If the raw arguments include `--background`, do not ask. Run the review in a Claude background task.
-- Otherwise, estimate the review size before asking:
-  - For working-tree review, start with `git status --short --untracked-files=all`.
-  - For working-tree review, also inspect both `git diff --shortstat --cached` and `git diff --shortstat`.
-  - For base-branch review, use `git diff --shortstat <base>...HEAD`.
-  - Treat untracked files or directories as reviewable work even when `git diff --shortstat` is empty.
-  - Only conclude there is nothing to review when the relevant working-tree status is empty or the explicit branch diff is empty.
-  - Recommend waiting only when the review is clearly tiny, roughly 1-2 files total and no sign of a broader directory-sized change.
-  - In every other case, including unclear size, recommend background.
-  - When in doubt, run the review instead of declaring that there is nothing to review.
-- Then use `AskUserQuestion` exactly once with two options, putting the recommended option first and suffixing its label with `(Recommended)`:
-  - `Wait for results`
-  - `Run in background`
+Execution:
 
-Argument handling:
-- Preserve the user's arguments exactly.
-- Do not strip `--wait` or `--background` yourself.
-- Do not add extra review instructions or rewrite the user's intent.
-- The companion script parses `--wait` and `--background`, but Claude Code's `Bash(..., run_in_background: true)` is what actually detaches the run.
+- Run the review in the foreground.
+- If there is nothing to review (empty working tree and no base branch diff), say so and skip the review.
 - `/pi:review` does not accept extra focus text. If the user needs custom review instructions or more adversarial framing, they should use `/pi:adversarial-review`.
+- `--incremental` only reviews commits since the last review on the current branch (cached per branch); falls back to a full review when there is no valid cache (no prior review, or the cached commit is no longer an ancestor of HEAD, e.g. after a rebase). Not combinable with `--base`. Composes with `--models`/`--shards`.
+- `--models <m1,m2,...>` (2+ models) runs a multi-model review panel: the same diff is reviewed by every listed model in parallel and the findings are merged, with consensus findings (reported by 2+ models) ranked first.
+- `--shards <N>` (N >= 2, and only when more than one file changed) splits the changed files across N review jobs that run in parallel, each scoped to only its own files, then merges the findings into one result. Not combinable with `--models`.
+- `--out-file <path>` writes the full review to `<path>` and returns only a short summary (verdict, finding counts, one line per finding) — this keeps a large review out of the conversation's context to save tokens. When it is used, relay the short summary verbatim; the user opens the file for the full detail.
 
 Foreground flow:
+
 - Run:
+
 ```bash
 node "${CLAUDE_PLUGIN_ROOT}/scripts/pi-companion.mjs" review "$ARGUMENTS"
 ```
+
 - Return the command stdout verbatim, exactly as-is.
 - Do not paraphrase, summarize, or add commentary before or after it.
 - Do not fix any issues mentioned in the review output.
-
-Background flow:
-- Launch the review with `Bash` in the background:
-```typescript
-Bash({
-  command: `node "${CLAUDE_PLUGIN_ROOT}/scripts/pi-companion.mjs" review "$ARGUMENTS"`,
-  description: "Pi review",
-  run_in_background: true
-})
-```
-- Do not call `BashOutput` or wait for completion in this turn.
-- After launching the command, tell the user: "Pi review started in the background. Check `/pi:status` for progress."

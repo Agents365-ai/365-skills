@@ -1,4 +1,5 @@
 """Shared utilities for TTS backends."""
+
 import os
 import subprocess
 
@@ -15,8 +16,19 @@ def check_resume(part_file):
         return None
     try:
         probe = subprocess.run(
-            ["ffprobe", "-v", "quiet", "-show_entries", "format=duration", "-of", "csv=p=0", part_file],
-            capture_output=True, text=True)
+            [
+                "ffprobe",
+                "-v",
+                "quiet",
+                "-show_entries",
+                "format=duration",
+                "-of",
+                "csv=p=0",
+                part_file,
+            ],
+            capture_output=True,
+            text=True,
+        )
     except OSError:
         return None
     try:

@@ -18,11 +18,17 @@ class ZhipuProvider(OpenAICompatibleProvider):
     api_base = "https://api.z.ai/api/paas/v4/images/generations"
     default_model = "cogview-4"
 
+    # pi-lens-ignore: python-mutable-class-attr
     models = {"cogview-4", "cogview-4-250304", "glm-image"}
 
+    # pi-lens-ignore: python-mutable-class-attr
     SIZES = {
-        "1:1": "1024x1024", "9:16": "768x1344", "3:4": "864x1152",
-        "16:9": "1344x768", "4:3": "1152x864", "2:1": "1440x720",
+        "1:1": "1024x1024",
+        "9:16": "768x1344",
+        "3:4": "864x1152",
+        "16:9": "1344x768",
+        "4:3": "1152x864",
+        "2:1": "1440x720",
         "1:2": "720x1440",
     }
 

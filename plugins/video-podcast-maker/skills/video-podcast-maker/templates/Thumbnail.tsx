@@ -47,7 +47,15 @@ export const Thumbnail = ({
         }}
       >
         {/* Tags + Icons */}
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 20, alignItems: "center", justifyContent: "center" }}>
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 20,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
           {tags.map((tag, i) => (
             <div
               key={i}

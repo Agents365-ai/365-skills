@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Aggregate raw fetcher JSONs → composite score → targets_summary.csv + targets_report.md (skeleton)."""
+
 import argparse
 import csv
 import json
@@ -97,7 +98,7 @@ def derive_hpa_signal(hpa_entry: dict) -> dict:
     tissue_tag = (hpa_entry.get("tissue_specificity_tag") or "").strip()
     TISSUE_MAP = {
         "Tissue enriched": 1.0,
-        "Group enriched":  1.0,
+        "Group enriched": 1.0,
         "Tissue enhanced": 0.7,
         "Low tissue specificity": 0.2,
         "Not detected": 0.0,
@@ -141,7 +142,10 @@ def derive_disease_signal(ot_entry: dict) -> dict:
     max_any_score = 0.0
     for r in rows:
         name = (r.get("name") or "").lower()
-        score = float(r.get("score") or 0)
+        try:
+            score = float(r.get("score") or 0)
+        except (TypeError, ValueError):
+            score = 0.0
         max_any_score = max(max_any_score, score)
         if any(t in name for t in FOCUS_DISEASE_TERMS):
             focus_hits.append(r.get("name"))
@@ -155,14 +159,23 @@ def derive_disease_signal(ot_entry: dict) -> dict:
     }
 
 
-def compute_components(g: str, uniprot: dict, ot: dict, pubmed: dict, hpa: dict,
-                       weights: dict, input_expr: dict) -> dict:
-    w = weights["weights"]; c = weights["caps"]; f = weights["flags"]
-    u = (uniprot.get(g) or {})
-    o = (ot.get(g) or {})
+def compute_components(
+    g: str,
+    uniprot: dict,
+    ot: dict,
+    pubmed: dict,
+    hpa: dict,
+    weights: dict,
+    input_expr: dict,
+) -> dict:
+    w = weights["weights"]
+    c = weights["caps"]
+    f = weights["flags"]
+    u = uniprot.get(g) or {}
+    o = ot.get(g) or {}
     gw = derive_disease_signal(o)
-    pm = (pubmed.get(g) or {})
-    hp = (hpa.get(g) or {})
+    pm = pubmed.get(g) or {}
+    hp = hpa.get(g) or {}
     hs = derive_hpa_signal(hp)
     tissue_specificity = clamp01(hs["tissue_score"])
     cell_context_score = clamp01(hs["cell_score"])
@@ -184,7 +197,10 @@ def compute_components(g: str, uniprot: dict, ot: dict, pubmed: dict, hpa: dict,
     if gw["any_assoc"]:
         g_score += 0.4 * gw["max_any_score"]
     if gw["is_focus_disease_associated"]:
-        g_score += f.get("focus_disease_assoc_bonus", 0.5) + 0.2 * gw["max_focus_disease_score"]
+        g_score += (
+            f.get("focus_disease_assoc_bonus", 0.5)
+            + 0.2 * gw["max_focus_disease_score"]
+        )
     disease_genetics = clamp01(g_score)
 
     # 4) tractability bonus
@@ -199,7 +215,7 @@ def compute_components(g: str, uniprot: dict, ot: dict, pubmed: dict, hpa: dict,
     # 5) expression score — from input DE table (if provided)
     expr = input_expr.get(g)
     if expr is not None:
-        expression = clamp01(expr / 3.0)   # log1p(CP10K) ~ 0-3 typical range
+        expression = clamp01(expr / 3.0)  # log1p(CP10K) ~ 0-3 typical range
     else:
         expression = 0.0
 
@@ -208,7 +224,7 @@ def compute_components(g: str, uniprot: dict, ot: dict, pubmed: dict, hpa: dict,
     cap = c.get("pubmed_total_for_maturity", 100)
     floor = c.get("pubmed_well_studied_floor", 5)
     if total < floor:
-        novelty = 0.3       # too uncharted = risk
+        novelty = 0.3  # too uncharted = risk
         over_studied = 0.0
     elif total <= cap:
         novelty = 1.0
@@ -218,37 +234,40 @@ def compute_components(g: str, uniprot: dict, ot: dict, pubmed: dict, hpa: dict,
         over_studied = clamp01((total - cap) / (5 * cap))
 
     composite = (
-        w.get("druggability_score", 0)          * druggability
-        + w.get("disease_genetics_score", 0)     * disease_genetics
-        + w.get("tractability_bonus", 0)         * tractability
-        + w.get("tissue_specificity", 0)         * tissue_specificity
-        + w.get("cell_context_score", 0)         * cell_context_score
-        + w.get("essentiality_score", 0)         * essentiality_score
-        + w.get("safety_constraint_score", 0)    * safety_constraint_score
-        + w.get("expression_score", 0)           * expression
-        + w.get("novelty_bonus", 0)              * novelty
-        - w.get("over_studied_penalty", 0)       * over_studied
+        w.get("druggability_score", 0) * druggability
+        + w.get("disease_genetics_score", 0) * disease_genetics
+        + w.get("tractability_bonus", 0) * tractability
+        + w.get("tissue_specificity", 0) * tissue_specificity
+        + w.get("cell_context_score", 0) * cell_context_score
+        + w.get("essentiality_score", 0) * essentiality_score
+        + w.get("safety_constraint_score", 0) * safety_constraint_score
+        + w.get("expression_score", 0) * expression
+        + w.get("novelty_bonus", 0) * novelty
+        - w.get("over_studied_penalty", 0) * over_studied
     )
 
     return {
-        "druggability":            round(druggability, 3),
-        "disease_genetics":        round(disease_genetics, 3),
-        "tractability":            round(tractability, 3),
-        "tissue_specificity":      round(tissue_specificity, 3),
-        "cell_context_score":      round(cell_context_score, 3),
-        "essentiality_score":      round(essentiality_score, 3),
+        "druggability": round(druggability, 3),
+        "disease_genetics": round(disease_genetics, 3),
+        "tractability": round(tractability, 3),
+        "tissue_specificity": round(tissue_specificity, 3),
+        "cell_context_score": round(cell_context_score, 3),
+        "essentiality_score": round(essentiality_score, 3),
         "safety_constraint_score": round(safety_constraint_score, 3),
-        "expression":              round(expression, 3),
-        "novelty":                 round(novelty, 3),
-        "over_studied":            round(over_studied, 3),
-        "composite_raw":           round(composite, 4),
+        "expression": round(expression, 3),
+        "novelty": round(novelty, 3),
+        "over_studied": round(over_studied, 3),
+        "composite_raw": round(composite, 4),
     }
 
 
 def tier_for(score_norm: float) -> str:
-    if score_norm >= 0.75: return "Tier-1-priority"
-    if score_norm >= 0.50: return "Tier-2-candidate"
-    if score_norm >= 0.30: return "Tier-3-watchlist"
+    if score_norm >= 0.75:
+        return "Tier-1-priority"
+    if score_norm >= 0.50:
+        return "Tier-2-candidate"
+    if score_norm >= 0.30:
+        return "Tier-3-watchlist"
     return "Tier-4-deprioritized"
 
 
@@ -270,6 +289,8 @@ def load_input_expr(csv_path: str) -> dict:
                 vals = []
                 for k in ("mean_g2", "mean_g1", "sample_mean_g2", "sample_mean_g1"):
                     v = row.get(k)
+                    if v is None:
+                        continue
                     try:
                         vals.append(float(v))
                     except (ValueError, TypeError):
@@ -286,19 +307,24 @@ def main():
     ap.add_argument("--raw-dir", required=True)
     ap.add_argument("--output-dir", required=True)
     ap.add_argument("--weights", required=True)
-    ap.add_argument("--input-csv", default="", help="Original DE CSV (used for expression score)")
+    ap.add_argument(
+        "--input-csv", default="", help="Original DE CSV (used for expression score)"
+    )
     args = ap.parse_args()
 
     raw = Path(args.raw_dir)
     out_dir = Path(args.output_dir)
     weights = load_weights(Path(args.weights))
 
-    genes = json.loads((raw / "genes.json").read_text(encoding="utf-8"))
+    try:
+        genes = json.loads((raw / "genes.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError) as e:
+        sys.exit(f"aggregate: cannot read {raw / 'genes.json'}: {e}")
     uniprot = load_json(raw / "uniprot.json")
-    ot      = load_json(raw / "opentargets.json")
-    pubmed  = load_json(raw / "pubmed.json")
-    hpa     = load_json(raw / "hpa.json")
-    chembl  = load_json(raw / "chembl.json")
+    ot = load_json(raw / "opentargets.json")
+    pubmed = load_json(raw / "pubmed.json")
+    hpa = load_json(raw / "hpa.json")
+    chembl = load_json(raw / "chembl.json")
     input_expr = load_input_expr(args.input_csv)
 
     rows = []
@@ -311,63 +337,79 @@ def main():
         hp = hpa.get(g, {}) or {}
         hs = derive_hpa_signal(hp)
         cb = chembl.get(g, {}) or {}
-        rows.append({
-            "gene": g,
-            "composite_raw": comp["composite_raw"],
-            "druggability": comp["druggability"],
-            "disease_genetics": comp["disease_genetics"],
-            "tractability": comp["tractability"],
-            "tissue_specificity": comp["tissue_specificity"],
-            "cell_context_score": comp["cell_context_score"],
-            "essentiality_score": comp["essentiality_score"],
-            "safety_constraint_score": comp["safety_constraint_score"],
-            "expression": comp["expression"],
-            "novelty": comp["novelty"],
-            "over_studied_penalty": comp["over_studied"],
-            "uniprot_id": u.get("uniprot_id"),
-            "protein_name": u.get("protein_name"),
-            "subcellular_location": " | ".join(u.get("subcellular_location") or []),
-            "is_surface": u.get("is_surface"),
-            "is_secreted": u.get("is_secreted"),
-            "is_mhc": u.get("is_mhc"),
-            "has_transmembrane": u.get("has_transmembrane"),
-            "approved_drug_count": o.get("approved_drug_count", 0),
-            "highest_clinical_phase": o.get("highest_clinical_phase", 0),
-            "any_focus_disease_drug": o.get("any_focus_disease_drug", False),
-            "focus_disease_drugs": "; ".join(o.get("focus_disease_drugs") or []),
-            "tractability_small_molecule": o.get("tractability_small_molecule"),
-            "tractability_antibody": o.get("tractability_antibody"),
-            "any_disease_assoc": gw["any_assoc"],
-            "is_focus_disease_associated": gw["is_focus_disease_associated"],
-            "focus_disease_traits": "; ".join(gw["focus_disease_hits"]),
-            "max_focus_disease_assoc_score": round(gw["max_focus_disease_score"], 3),
-            "max_disease_assoc_score": round(gw["max_any_score"], 3),
-            "pubmed_total": pm.get("pubmed_total", 0),
-            "pubmed_focus_disease": pm.get("pubmed_focus_disease", 0),
-            "pubmed_cell_context": pm.get("pubmed_cell_context", 0),
-            "maturity_tag": pm.get("maturity_tag"),
-            "hpa_tissue_specificity_tag": hp.get("tissue_specificity_tag"),
-            "hpa_tissue_top_types": "; ".join(f"{k}={v}" for k, v in (hp.get("tissue_top_types") or [])),
-            "hpa_cell_specificity_tag": hp.get("cell_specificity_tag"),
-            "hpa_cell_top_types": "; ".join(f"{k}={v}" for k, v in (hp.get("cell_top_types") or [])),
-            "hpa_focus_cell_hits": "; ".join(hs["focus_cell_hits"]),
-            "hpa_expression_cluster": hp.get("expression_cluster"),
-            "hpa_n_prognostic_cancers": (hp.get("pathology") or {}).get("n_prognostic_cancers", 0),
-            "hpa_cancer_specificity": (hp.get("pathology") or {}).get("rna_cancer_specificity"),
-            "depmap_n_screens": o.get("depmap_n_screens", 0),
-            "depmap_mean_gene_effect": (round(o["depmap_mean_gene_effect"], 3) if o.get("depmap_mean_gene_effect") is not None else None),
-            "depmap_pct_essential": round(o.get("depmap_pct_essential", 0.0), 3),
-            "loeuf": o.get("loeuf"),
-            "constraint_oe_lof": o.get("constraint_oe_lof"),
-            "constraint_top_decile": o.get("constraint_top_decile", False),
-            "chembl_target_id": cb.get("chembl_target_id"),
-            "chembl_best_pchembl": cb.get("best_pchembl"),
-            "chembl_best_ic50_nm": cb.get("best_ic50_nm"),
-            "chembl_top_compounds": "; ".join(
-                f"{c.get('pref_name') or c.get('chembl_id')}(pIC50={c.get('pchembl_value')})"
-                for c in (cb.get("top_compounds") or [])[:3]
-            ),
-        })
+        rows.append(
+            {
+                "gene": g,
+                "composite_raw": comp["composite_raw"],
+                "druggability": comp["druggability"],
+                "disease_genetics": comp["disease_genetics"],
+                "tractability": comp["tractability"],
+                "tissue_specificity": comp["tissue_specificity"],
+                "cell_context_score": comp["cell_context_score"],
+                "essentiality_score": comp["essentiality_score"],
+                "safety_constraint_score": comp["safety_constraint_score"],
+                "expression": comp["expression"],
+                "novelty": comp["novelty"],
+                "over_studied_penalty": comp["over_studied"],
+                "uniprot_id": u.get("uniprot_id"),
+                "protein_name": u.get("protein_name"),
+                "subcellular_location": " | ".join(u.get("subcellular_location") or []),
+                "is_surface": u.get("is_surface"),
+                "is_secreted": u.get("is_secreted"),
+                "is_mhc": u.get("is_mhc"),
+                "has_transmembrane": u.get("has_transmembrane"),
+                "approved_drug_count": o.get("approved_drug_count", 0),
+                "highest_clinical_phase": o.get("highest_clinical_phase", 0),
+                "any_focus_disease_drug": o.get("any_focus_disease_drug", False),
+                "focus_disease_drugs": "; ".join(o.get("focus_disease_drugs") or []),
+                "tractability_small_molecule": o.get("tractability_small_molecule"),
+                "tractability_antibody": o.get("tractability_antibody"),
+                "any_disease_assoc": gw["any_assoc"],
+                "is_focus_disease_associated": gw["is_focus_disease_associated"],
+                "focus_disease_traits": "; ".join(gw["focus_disease_hits"]),
+                "max_focus_disease_assoc_score": round(
+                    gw["max_focus_disease_score"], 3
+                ),
+                "max_disease_assoc_score": round(gw["max_any_score"], 3),
+                "pubmed_total": pm.get("pubmed_total", 0),
+                "pubmed_focus_disease": pm.get("pubmed_focus_disease", 0),
+                "pubmed_cell_context": pm.get("pubmed_cell_context", 0),
+                "maturity_tag": pm.get("maturity_tag"),
+                "hpa_tissue_specificity_tag": hp.get("tissue_specificity_tag"),
+                "hpa_tissue_top_types": "; ".join(
+                    f"{k}={v}" for k, v in (hp.get("tissue_top_types") or [])
+                ),
+                "hpa_cell_specificity_tag": hp.get("cell_specificity_tag"),
+                "hpa_cell_top_types": "; ".join(
+                    f"{k}={v}" for k, v in (hp.get("cell_top_types") or [])
+                ),
+                "hpa_focus_cell_hits": "; ".join(hs["focus_cell_hits"]),
+                "hpa_expression_cluster": hp.get("expression_cluster"),
+                "hpa_n_prognostic_cancers": (hp.get("pathology") or {}).get(
+                    "n_prognostic_cancers", 0
+                ),
+                "hpa_cancer_specificity": (hp.get("pathology") or {}).get(
+                    "rna_cancer_specificity"
+                ),
+                "depmap_n_screens": o.get("depmap_n_screens", 0),
+                "depmap_mean_gene_effect": (
+                    round(o["depmap_mean_gene_effect"], 3)
+                    if o.get("depmap_mean_gene_effect") is not None
+                    else None
+                ),
+                "depmap_pct_essential": round(o.get("depmap_pct_essential", 0.0), 3),
+                "loeuf": o.get("loeuf"),
+                "constraint_oe_lof": o.get("constraint_oe_lof"),
+                "constraint_top_decile": o.get("constraint_top_decile", False),
+                "chembl_target_id": cb.get("chembl_target_id"),
+                "chembl_best_pchembl": cb.get("best_pchembl"),
+                "chembl_best_ic50_nm": cb.get("best_ic50_nm"),
+                "chembl_top_compounds": "; ".join(
+                    f"{c.get('pref_name') or c.get('chembl_id')}(pIC50={c.get('pchembl_value')})"
+                    for c in (cb.get("top_compounds") or [])[:3]
+                ),
+            }
+        )
 
     # Min-max rescale composite into [0,1] for tier assignment
     raws = [r["composite_raw"] for r in rows]
@@ -382,40 +424,77 @@ def main():
     # CSV
     csv_path = out_dir / "targets_summary.csv"
     if rows:
-        with open(csv_path, "w", newline="", encoding="utf-8") as f:
-            w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
-            w.writeheader()
-            w.writerows(rows)
+        try:
+            with open(csv_path, "w", newline="", encoding="utf-8") as f:
+                w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
+                w.writeheader()
+                w.writerows(rows)
+        except OSError as e:
+            sys.exit(f"aggregate: cannot write {csv_path}: {e}")
     print(f"aggregate: wrote {csv_path}")
 
     # Markdown skeleton (rationale slots left for Claude to fill)
-    md = ["# Target Prioritization Report\n",
-          f"_{len(rows)} genes scored. Sorted by composite_score (descending)._\n",
-          "## Executive summary\n",
-          "_TO BE FILLED BY CLAUDE — 3–5 sentences on the top 5–10 genes._\n",
-          "## Per-gene dossier\n"]
+    md = [
+        "# Target Prioritization Report\n",
+        f"_{len(rows)} genes scored. Sorted by composite_score (descending)._\n",
+        "## Executive summary\n",
+        "_TO BE FILLED BY CLAUDE — 3–5 sentences on the top 5–10 genes._\n",
+        "## Per-gene dossier\n",
+    ]
     for r in rows:
-        md.append(f"### {r['gene']}  —  composite {r['composite_score']:.3f}  ({r['tier']})\n")
+        md.append(
+            f"### {r['gene']}  —  composite {r['composite_score']:.3f}  ({r['tier']})\n"
+        )
         md.append("| Field | Value |")
         md.append("|---|---|")
-        md.append(f"| UniProt | {r['uniprot_id'] or '—'} — {r['protein_name'] or '—'} |")
+        md.append(
+            f"| UniProt | {r['uniprot_id'] or '—'} — {r['protein_name'] or '—'} |"
+        )
         md.append(f"| Localization | {r['subcellular_location'] or '—'} |")
-        md.append(f"| Surface / secreted / MHC | surf={r['is_surface']}  sec={r['is_secreted']}  mhc={r['is_mhc']}  TM={r['has_transmembrane']} |")
-        md.append(f"| Druggability | approved={r['approved_drug_count']}  max_phase={r['highest_clinical_phase']}  focus_disease_drug={r['any_focus_disease_drug']}  focus_disease_drugs={r['focus_disease_drugs'] or '—'} |")
-        md.append(f"| Tractability | sm_mol={r['tractability_small_molecule'] or '—'}  Ab={r['tractability_antibody'] or '—'} |")
-        md.append(f"| Disease assoc (OT) | any={r['any_disease_assoc']}  focus={r['is_focus_disease_associated']}  focus_traits={r['focus_disease_traits'] or '—'}  max_score={r['max_disease_assoc_score']} |")
-        md.append(f"| PubMed | total={r['pubmed_total']}  focus_disease={r['pubmed_focus_disease']}  cell_context={r['pubmed_cell_context']}  maturity={r['maturity_tag']} |")
-        md.append(f"| HPA tissue | tag={r['hpa_tissue_specificity_tag'] or '—'}  top={r['hpa_tissue_top_types'] or '—'} |")
-        md.append(f"| HPA single-cell | tag={r['hpa_cell_specificity_tag'] or '—'}  top={r['hpa_cell_top_types'] or '—'}  focus_cell_hits={r['hpa_focus_cell_hits'] or '—'}  cluster={r['hpa_expression_cluster'] or '—'} |")
-        md.append(f"| HPA pathology | n_prognostic_cancers={r['hpa_n_prognostic_cancers']}  cancer_specificity={r['hpa_cancer_specificity'] or '—'} |")
-        md.append(f"| DepMap CRISPR | n_screens={r['depmap_n_screens']}  mean_geneEffect={r['depmap_mean_gene_effect']}  pct_essential={r['depmap_pct_essential']} |")
-        md.append(f"| gnomAD constraint | LOEUF={r['loeuf']}  oe_lof={r['constraint_oe_lof']}  top_decile={r['constraint_top_decile']} |")
-        md.append(f"| ChEMBL tool compounds | target={r['chembl_target_id'] or '—'}  best_pIC50={r['chembl_best_pchembl']}  best_IC50_nM={r['chembl_best_ic50_nm']}  top3={r['chembl_top_compounds'] or '—'} |")
-        md.append(f"| Component breakdown | drug={r['druggability']}  genetics={r['disease_genetics']}  tract={r['tractability']}  tissue_spec={r['tissue_specificity']}  cell_ctx={r['cell_context_score']}  ess={r['essentiality_score']}  safety={r['safety_constraint_score']}  expr={r['expression']}  novelty={r['novelty']}  over_studied={r['over_studied_penalty']} |")
+        md.append(
+            f"| Surface / secreted / MHC | surf={r['is_surface']}  sec={r['is_secreted']}  mhc={r['is_mhc']}  TM={r['has_transmembrane']} |"
+        )
+        md.append(
+            f"| Druggability | approved={r['approved_drug_count']}  max_phase={r['highest_clinical_phase']}  focus_disease_drug={r['any_focus_disease_drug']}  focus_disease_drugs={r['focus_disease_drugs'] or '—'} |"
+        )
+        md.append(
+            f"| Tractability | sm_mol={r['tractability_small_molecule'] or '—'}  Ab={r['tractability_antibody'] or '—'} |"
+        )
+        md.append(
+            f"| Disease assoc (OT) | any={r['any_disease_assoc']}  focus={r['is_focus_disease_associated']}  focus_traits={r['focus_disease_traits'] or '—'}  max_score={r['max_disease_assoc_score']} |"
+        )
+        md.append(
+            f"| PubMed | total={r['pubmed_total']}  focus_disease={r['pubmed_focus_disease']}  cell_context={r['pubmed_cell_context']}  maturity={r['maturity_tag']} |"
+        )
+        md.append(
+            f"| HPA tissue | tag={r['hpa_tissue_specificity_tag'] or '—'}  top={r['hpa_tissue_top_types'] or '—'} |"
+        )
+        md.append(
+            f"| HPA single-cell | tag={r['hpa_cell_specificity_tag'] or '—'}  top={r['hpa_cell_top_types'] or '—'}  focus_cell_hits={r['hpa_focus_cell_hits'] or '—'}  cluster={r['hpa_expression_cluster'] or '—'} |"
+        )
+        md.append(
+            f"| HPA pathology | n_prognostic_cancers={r['hpa_n_prognostic_cancers']}  cancer_specificity={r['hpa_cancer_specificity'] or '—'} |"
+        )
+        md.append(
+            f"| DepMap CRISPR | n_screens={r['depmap_n_screens']}  mean_geneEffect={r['depmap_mean_gene_effect']}  pct_essential={r['depmap_pct_essential']} |"
+        )
+        md.append(
+            f"| gnomAD constraint | LOEUF={r['loeuf']}  oe_lof={r['constraint_oe_lof']}  top_decile={r['constraint_top_decile']} |"
+        )
+        md.append(
+            f"| ChEMBL tool compounds | target={r['chembl_target_id'] or '—'}  best_pIC50={r['chembl_best_pchembl']}  best_IC50_nM={r['chembl_best_ic50_nm']}  top3={r['chembl_top_compounds'] or '—'} |"
+        )
+        md.append(
+            f"| Component breakdown | drug={r['druggability']}  genetics={r['disease_genetics']}  tract={r['tractability']}  tissue_spec={r['tissue_specificity']}  cell_ctx={r['cell_context_score']}  ess={r['essentiality_score']}  safety={r['safety_constraint_score']}  expr={r['expression']}  novelty={r['novelty']}  over_studied={r['over_studied_penalty']} |"
+        )
         md.append("")
-        md.append("**Rationale**: _TO BE FILLED BY CLAUDE — 2–3 sentences. Use prompts/rationale_template.md._")
+        md.append(
+            "**Rationale**: _TO BE FILLED BY CLAUDE — 2–3 sentences. Use prompts/rationale_template.md._"
+        )
         md.append("")
-        md.append("**Suggested next step**: _TO BE FILLED BY CLAUDE — 1 concrete sentence (e.g. siRNA knockdown in the relevant cell type; orthogonal IHC; ex-vivo tool-compound challenge; cross-cohort replication)._")
+        md.append(
+            "**Suggested next step**: _TO BE FILLED BY CLAUDE — 1 concrete sentence (e.g. siRNA knockdown in the relevant cell type; orthogonal IHC; ex-vivo tool-compound challenge; cross-cohort replication)._"
+        )
         md.append("")
         md.append("---\n")
 

@@ -18,6 +18,7 @@ If something only works on the happy path, treat that as a real weakness.
 
 <attack_surface>
 Prioritize the kinds of failures that are expensive, dangerous, or hard to detect:
+
 - auth, permissions, tenant isolation, and trust boundaries
 - data loss, corruption, duplication, and irreversible state changes
 - rollback safety, retries, partial failure, and idempotency gaps
@@ -39,6 +40,7 @@ If the user supplied a focus area, weight it heavily, but still report any other
 Report only material findings.
 Do not include style feedback, naming feedback, low-value cleanup, or speculative concerns without evidence.
 A finding should answer:
+
 1. What can go wrong?
 2. Why is this code path vulnerable?
 3. What is the likely impact?
@@ -49,6 +51,7 @@ A finding should answer:
 Respond with EXACTLY ONE fenced ```json block containing a single JSON object that matches the schema below. Do not include any other prose, headings, or commentary before or after the fenced block. Do not include trailing commas. All required fields must be present and non-empty.
 
 Schema:
+
 ```json
 {{REVIEW_SCHEMA}}
 ```
@@ -56,6 +59,7 @@ Schema:
 Use `needs-attention` for `verdict` if there is any material risk worth blocking on.
 Use `approve` only if you cannot support any substantive adversarial finding from the provided context.
 Every finding must include:
+
 - the affected file
 - `line_start` and `line_end` (use the same number for a single line)
 - a confidence score from 0 to 1
@@ -78,6 +82,7 @@ If the change looks safe, return `verdict: "approve"`, an empty `findings` array
 
 <final_check>
 Before finalizing, check that each finding is:
+
 - adversarial rather than stylistic
 - tied to a concrete code location
 - plausible under a real failure scenario

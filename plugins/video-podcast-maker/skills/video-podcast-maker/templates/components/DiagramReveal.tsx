@@ -38,11 +38,11 @@ import { useEntrance, useDrawOn, staggerDelay } from "./animations";
 export interface DiagramNode {
   id: string;
   label: string;
-  x?: number;       // auto-computed if omitted
-  y?: number;       // auto-computed if omitted
+  x?: number; // auto-computed if omitted
+  y?: number; // auto-computed if omitted
   icon?: string;
-  width?: number;   // default: auto from label length
-  height?: number;  // default 56
+  width?: number; // default: auto from label length
+  height?: number; // default 56
 }
 
 export interface DiagramEdge {
@@ -87,7 +87,10 @@ const autoLayout = (
   // If no roots found (cycle), use all nodes as roots
   const startNodes = roots.length > 0 ? roots : [nodes[0]];
 
-  const queue: { id: string; layer: number }[] = startNodes.map((n) => ({ id: n.id, layer: 0 }));
+  const queue: { id: string; layer: number }[] = startNodes.map((n) => ({
+    id: n.id,
+    layer: 0,
+  }));
   const visited = new Set<string>();
 
   while (queue.length > 0) {
@@ -112,13 +115,17 @@ const autoLayout = (
 
   // Group nodes by layer
   const maxLayer = Math.max(...layerMap.values());
-  const layers: DiagramNode[][] = Array.from({ length: maxLayer + 1 }, () => []);
+  const layers: DiagramNode[][] = Array.from(
+    { length: maxLayer + 1 },
+    () => [],
+  );
   for (const n of nodes) {
     layers[layerMap.get(n.id) ?? 0].push(n);
   }
 
   // Compute node dimensions
-  const getNodeWidth = (n: DiagramNode) => n.width ?? Math.max(120, n.label.length * 16 + 40);
+  const getNodeWidth = (n: DiagramNode) =>
+    n.width ?? Math.max(120, n.label.length * 16 + 40);
   const getNodeHeight = (n: DiagramNode) => n.height ?? 56;
 
   // Layout padding
@@ -139,22 +146,25 @@ const autoLayout = (
     for (let layer = 0; layer <= maxLayer; layer++) {
       const nodesInLayer = layers[layer];
       const count = nodesInLayer.length;
-      const totalWidth = nodesInLayer.reduce((sum, n) => sum + getNodeWidth(n), 0);
+      const totalWidth = nodesInLayer.reduce(
+        (sum, n) => sum + getNodeWidth(n),
+        0,
+      );
       const gapCount = Math.max(count - 1, 1);
-      const gap = count > 1 ? Math.min(40, (usableW - totalWidth) / gapCount) : 0;
+      const gap =
+        count > 1 ? Math.min(40, (usableW - totalWidth) / gapCount) : 0;
       const rowWidth = totalWidth + gap * (count - 1);
       let cx = padX + (usableW - rowWidth) / 2;
 
       for (const n of nodesInLayer) {
         const w = getNodeWidth(n);
         const h = getNodeHeight(n);
-        const y = layerCount === 1
-          ? padY + usableH / 2
-          : padY + layer * layerSpacing;
+        const y =
+          layerCount === 1 ? padY + usableH / 2 : padY + layer * layerSpacing;
 
         result.push({
           ...n,
-          x: n.x ?? (cx + w / 2),
+          x: n.x ?? cx + w / 2,
           y: n.y ?? y,
           width: w,
           height: h,
@@ -170,23 +180,26 @@ const autoLayout = (
     for (let layer = 0; layer <= maxLayer; layer++) {
       const nodesInLayer = layers[layer];
       const count = nodesInLayer.length;
-      const totalHeight = nodesInLayer.reduce((sum, n) => sum + getNodeHeight(n), 0);
+      const totalHeight = nodesInLayer.reduce(
+        (sum, n) => sum + getNodeHeight(n),
+        0,
+      );
       const gapCount = Math.max(count - 1, 1);
-      const gap = count > 1 ? Math.min(30, (usableH - totalHeight) / gapCount) : 0;
+      const gap =
+        count > 1 ? Math.min(30, (usableH - totalHeight) / gapCount) : 0;
       const colHeight = totalHeight + gap * (count - 1);
       let cy = padY + (usableH - colHeight) / 2;
 
       for (const n of nodesInLayer) {
         const w = getNodeWidth(n);
         const h = getNodeHeight(n);
-        const x = layerCount === 1
-          ? padX + usableW / 2
-          : padX + layer * layerSpacing;
+        const x =
+          layerCount === 1 ? padX + usableW / 2 : padX + layer * layerSpacing;
 
         result.push({
           ...n,
           x: n.x ?? x,
-          y: n.y ?? (cy + h / 2),
+          y: n.y ?? cy + h / 2,
           width: w,
           height: h,
           layer,
@@ -279,10 +292,19 @@ const buildArrowHead = (
 // --- Animated sub-components ---
 
 const AnimatedEdge = ({
-  fromNode, toNode, edge, color, enabled, delay,
+  fromNode,
+  toNode,
+  edge,
+  color,
+  enabled,
+  delay,
 }: {
-  fromNode: LayoutNode; toNode: LayoutNode; edge: DiagramEdge;
-  color: string; enabled: boolean; delay: number;
+  fromNode: LayoutNode;
+  toNode: LayoutNode;
+  edge: DiagramEdge;
+  color: string;
+  enabled: boolean;
+  delay: number;
 }) => {
   const edgePath = buildEdgePath(fromNode, toNode, edge.style);
   const headPath = buildArrowHead(fromNode, toNode);
@@ -329,10 +351,19 @@ const AnimatedEdge = ({
 };
 
 const AnimatedNode = ({
-  node, color, textColor, bgColor, enabled, delay,
+  node,
+  color,
+  textColor,
+  bgColor,
+  enabled,
+  delay,
 }: {
-  node: LayoutNode; color: string; textColor: string;
-  bgColor: string; enabled: boolean; delay: number;
+  node: LayoutNode;
+  color: string;
+  textColor: string;
+  bgColor: string;
+  enabled: boolean;
+  delay: number;
 }) => {
   const w = node.width;
   const h = node.height;
@@ -422,11 +453,13 @@ export const DiagramReveal = ({
   const nodeMap = new Map(layoutNodes.map((n) => [n.id, n]));
 
   return (
-    <div style={{
-      width: "100%",
-      opacity: a.opacity,
-      transform: `translateY(${a.translateY}px)`,
-    }}>
+    <div
+      style={{
+        width: "100%",
+        opacity: a.opacity,
+        transform: `translateY(${a.translateY}px)`,
+      }}
+    >
       <svg
         width="100%"
         viewBox={`0 0 ${width} ${height}`}

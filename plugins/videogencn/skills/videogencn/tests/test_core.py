@@ -5,27 +5,33 @@ These tests use mocked requests so no real API keys or network calls are needed.
 Run with: python -m pytest skills/videogencn/tests/ -v
 """
 
-import os
+# pyright: reportMissingImports=false
 import sys
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 # Allow imports from the scripts package (sibling to tests/)
 _skill_root = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_skill_root / "scripts"))
 
-from providers import register_providers, get_provider, detect_provider, list_providers
+from generate_video import _run, detect_mode, download_video, parse_ref
+from providers import detect_provider, get_provider, list_providers, register_providers
 from providers.base import (
-    GenerationRequest, pick_size, SIZE_TABLE,
-    validate_media_file, InputError,
-    ConfigError, APIError, TaskFailedError, TaskTimeoutError, VideoGenError,
+    APIError,
+    ConfigError,
+    GenerationRequest,
+    InputError,
+    TaskFailedError,
+    TaskTimeoutError,
+    VideoGenError,
+    pick_size,
+    validate_media_file,
 )
-from generate_video import detect_mode, parse_ref, download_video, _run
-
 
 # ---------------------------------------------------------------------------
 # Fixture: register providers once
 # ---------------------------------------------------------------------------
+
 
 def setup_module():
     register_providers()
@@ -34,6 +40,7 @@ def setup_module():
 # ---------------------------------------------------------------------------
 # Exception hierarchy
 # ---------------------------------------------------------------------------
+
 
 class TestExceptions:
     def test_config_error_is_videogenerror(self):
@@ -66,6 +73,7 @@ class TestExceptions:
 # GenerationRequest
 # ---------------------------------------------------------------------------
 
+
 class TestGenerationRequest:
     def test_defaults(self):
         req = GenerationRequest(prompt="test", mode="t2v", model="wan")
@@ -78,9 +86,16 @@ class TestGenerationRequest:
 
     def test_custom_values(self):
         req = GenerationRequest(
-            prompt="hello", mode="i2v", model="custom",
-            duration=10, resolution="720P", ratio="9:16",
-            seed=42, audio=True, camera_motion="orbit left")
+            prompt="hello",
+            mode="i2v",
+            model="custom",
+            duration=10,
+            resolution="720P",
+            ratio="9:16",
+            seed=42,
+            audio=True,
+            camera_motion="orbit left",
+        )
         assert req.prompt == "hello"
         assert req.mode == "i2v"
         assert req.duration == 10
@@ -95,24 +110,34 @@ class TestGenerationRequest:
 # SIZE_TABLE and pick_size
 # ---------------------------------------------------------------------------
 
+
 class TestPickSize:
     def test_standard_sizes(self):
-        req = GenerationRequest(prompt="x", mode="t2v", model="x",
-                                resolution="1080P", ratio="16:9")
+        req = GenerationRequest(
+            prompt="x", mode="t2v", model="x", resolution="1080P", ratio="16:9"
+        )
         assert pick_size(req) == "1920*1080"
 
-        req2 = GenerationRequest(prompt="x", mode="t2v", model="x",
-                                 resolution="720P", ratio="9:16")
+        req2 = GenerationRequest(
+            prompt="x", mode="t2v", model="x", resolution="720P", ratio="9:16"
+        )
         assert pick_size(req2) == "720*1280"
 
     def test_custom_size_overrides_table(self):
-        req = GenerationRequest(prompt="x", mode="t2v", model="x",
-                                size="640*480", resolution="1080P", ratio="16:9")
+        req = GenerationRequest(
+            prompt="x",
+            mode="t2v",
+            model="x",
+            size="640*480",
+            resolution="1080P",
+            ratio="16:9",
+        )
         assert pick_size(req) == "640*480"
 
     def test_new_ratios(self):
-        req = GenerationRequest(prompt="x", mode="t2v", model="x",
-                                resolution="1080P", ratio="1:1")
+        req = GenerationRequest(
+            prompt="x", mode="t2v", model="x", resolution="1080P", ratio="1:1"
+        )
         assert pick_size(req) == "1080*1080"
 
 
@@ -120,31 +145,45 @@ class TestPickSize:
 # Mode detection
 # ---------------------------------------------------------------------------
 
+
 class TestModeDetection:
     def test_t2v_default(self):
         class A:
-            ref = []; image = None; last_frame = None
+            ref = []
+            image = None
+            last_frame = None
+
         assert detect_mode(A()) == "t2v"
 
     def test_i2v_with_image(self):
         class A:
-            ref = []; image = "img.png"; last_frame = None
+            ref = []
+            image = "img.png"
+            last_frame = None
+
         assert detect_mode(A()) == "i2v"
 
     def test_kf2v_with_both(self):
         class A:
-            ref = []; image = "a.png"; last_frame = "b.png"
+            ref = []
+            image = "a.png"
+            last_frame = "b.png"
+
         assert detect_mode(A()) == "kf2v"
 
     def test_r2v_with_refs(self):
         class A:
-            ref = ["x=img.png"]; image = None; last_frame = None
+            ref = ["x=img.png"]
+            image = None
+            last_frame = None
+
         assert detect_mode(A()) == "r2v"
 
 
 # ---------------------------------------------------------------------------
 # CLI validation / download helpers
 # ---------------------------------------------------------------------------
+
 
 class TestCliHelpers:
     def test_run_missing_prompt_raises_input_error(self):
@@ -189,6 +228,7 @@ class TestCliHelpers:
 # Ref parsing
 # ---------------------------------------------------------------------------
 
+
 class TestRefParsing:
     def test_plain_path(self):
         name, value = parse_ref("image.png")
@@ -210,6 +250,7 @@ class TestRefParsing:
 # ---------------------------------------------------------------------------
 # Provider registration and detection
 # ---------------------------------------------------------------------------
+
 
 class TestProviderRegistry:
     def test_all_four_registered(self):
@@ -233,6 +274,7 @@ class TestProviderRegistry:
 
     def test_unknown_provider_raises(self):
         import pytest
+
         with pytest.raises(KeyError):
             get_provider("nonexistent")
 
@@ -257,6 +299,7 @@ class TestProviderRegistry:
 # Mode / model validation
 # ---------------------------------------------------------------------------
 
+
 class TestModeValidation:
     def test_bailian_supports_all_four(self):
         p = get_provider("bailian")
@@ -275,12 +318,14 @@ class TestModeValidation:
 
     def test_bailian_wrong_mode_raises(self):
         import pytest
+
         p = get_provider("bailian")
         with pytest.raises(InputError):
             p.check_mode("wan2.7-t2v-2026-04-25", "r2v")
 
     def test_hunyuan_i2v_only_model(self):
         import pytest
+
         p = get_provider("hunyuan")
         with pytest.raises(InputError):
             p.check_mode("yt-video-fx", "t2v")
@@ -289,6 +334,7 @@ class TestModeValidation:
 # ---------------------------------------------------------------------------
 # Default models
 # ---------------------------------------------------------------------------
+
 
 class TestDefaultModels:
     def test_bailian_defaults(self):
@@ -302,7 +348,7 @@ class TestDefaultModels:
 
     def test_minimax_defaults(self):
         p = get_provider("minimax")
-        assert p.default_models["t2v"] == "video-01"
+        assert p.default_models["t2v"] == "MiniMax-H3"
 
     def test_hunyuan_defaults(self):
         p = get_provider("hunyuan")
@@ -313,11 +359,13 @@ class TestDefaultModels:
 # Body construction (smoke tests with GenerationRequest)
 # ---------------------------------------------------------------------------
 
+
 class TestBodyConstruction:
     def test_bailian_t2v_body(self):
         p = get_provider("bailian")
-        req = GenerationRequest(prompt="a cat", mode="t2v",
-                                model="wan2.7-t2v-2026-04-25", duration=5)
+        req = GenerationRequest(
+            prompt="a cat", mode="t2v", model="wan2.7-t2v-2026-04-25", duration=5
+        )
         body = p.build_body(req, None, None, [])
         assert body["model"] == "wan2.7-t2v-2026-04-25"
         assert body["input"]["prompt"] == "a cat"
@@ -325,16 +373,20 @@ class TestBodyConstruction:
 
     def test_bailian_i2v_body(self):
         p = get_provider("bailian")
-        req = GenerationRequest(prompt="zoom in", mode="i2v",
-                                model="wan2.6-i2v-flash")
+        req = GenerationRequest(prompt="zoom in", mode="i2v", model="wan2.6-i2v-flash")
         body = p.build_body(req, "http://example.com/img.png", None, [])
         assert body["input"]["img_url"] == "http://example.com/img.png"
 
     def test_jimeng_t2v_body(self):
         p = get_provider("jimeng")
-        req = GenerationRequest(prompt="sunset", mode="t2v",
-                                model="doubao-seedance-2-0-260128",
-                                duration=10, seed=42, audio=True)
+        req = GenerationRequest(
+            prompt="sunset",
+            mode="t2v",
+            model="doubao-seedance-2-0-260128",
+            duration=10,
+            seed=42,
+            audio=True,
+        )
         body = p.build_body(req, None, None, [])
         assert body["duration"] == 10
         assert body["seed"] == 42
@@ -342,41 +394,82 @@ class TestBodyConstruction:
 
     def test_jimeng_camera_motion(self):
         p = get_provider("jimeng")
-        req = GenerationRequest(prompt="tracking shot", mode="t2v",
-                                model="doubao-seedance-2-0-260128",
-                                camera_motion="slow orbit left")
+        req = GenerationRequest(
+            prompt="tracking shot",
+            mode="t2v",
+            model="doubao-seedance-2-0-260128",
+            camera_motion="slow orbit left",
+        )
         body = p.build_body(req, None, None, [])
         assert body["camera_motion"] == "slow orbit left"
 
     def test_minimax_t2v_body(self):
         p = get_provider("minimax")
-        req = GenerationRequest(prompt="waves", mode="t2v",
-                                model="video-01", duration=6)
+        req = GenerationRequest(
+            prompt="waves", mode="t2v", model="video-01", duration=6
+        )
         body = p.build_body(req, None, None, [])
         assert body["prompt_optimizer"] is True
         assert body["duration"] == 6
 
     def test_minimax_no_optimizer(self):
         p = get_provider("minimax")
-        req = GenerationRequest(prompt="waves", mode="t2v",
-                                model="video-01",
-                                no_prompt_optimizer=True)
+        req = GenerationRequest(
+            prompt="waves", mode="t2v", model="video-01", no_prompt_optimizer=True
+        )
         body = p.build_body(req, None, None, [])
         assert body["prompt_optimizer"] is False
 
+    def test_minimax_h3_t2v_body(self):
+        p = get_provider("minimax")
+        req = GenerationRequest(
+            prompt="waves", mode="t2v", model="MiniMax-H3", duration=10, ratio="9:16"
+        )
+        body = p.build_body(req, None, None, [])
+        assert body["model"] == "MiniMax-H3"
+        assert body["content"] == [{"type": "text", "text": "waves"}]
+        assert body["duration"] == 10
+        assert body["resolution"] == "1080P"
+        assert body["ratio"] == "9:16"
+        assert "prompt_optimizer" not in body
+
+    def test_minimax_h3_resolution_map(self):
+        p = get_provider("minimax")
+        req = GenerationRequest(
+            prompt="waves", mode="t2v", model="MiniMax-H3", resolution="720P"
+        )
+        body = p.build_body(req, None, None, [])
+        assert body["resolution"] == "768P"
+
+    def test_minimax_h3_i2v_body(self):
+        p = get_provider("minimax")
+        req = GenerationRequest(prompt="zoom", mode="i2v", model="MiniMax-H3")
+        body = p.build_body(req, "http://x.com/img.png", None, [])
+        assert body["content"][1] == {
+            "type": "image_url",
+            "image_url": {"url": "http://x.com/img.png"},
+            "role": "first_frame",
+        }
+        assert p._h3 is True
+
     def test_hunyuan_t2v_body(self):
         p = get_provider("hunyuan")
-        req = GenerationRequest(prompt="field", mode="t2v",
-                                model="hy-video-1.5", duration=5, seed=99)
+        req = GenerationRequest(
+            prompt="field", mode="t2v", model="hy-video-1.5", duration=5, seed=99
+        )
         body = p.build_body(req, None, None, [])
         assert body["duration"] == 5
         assert body["seed"] == 99
 
     def test_hunyuan_experimental_skips_params(self):
         p = get_provider("hunyuan")
-        req = GenerationRequest(prompt="animate", mode="i2v",
-                                model="yt-video-humanactor",
-                                duration=10, seed=42)
+        req = GenerationRequest(
+            prompt="animate",
+            mode="i2v",
+            model="yt-video-humanactor",
+            duration=10,
+            seed=42,
+        )
         body = p.build_body(req, "http://x.com/img.png", None, [])
         assert "duration" not in body  # experimental model skips it
         assert "seed" not in body
@@ -384,11 +477,18 @@ class TestBodyConstruction:
 
     def test_pixverse_r2v_refs(self):
         p = get_provider("bailian")
-        req = GenerationRequest(prompt="@hero fights @monster", mode="r2v",
-                                model="pixverse/pixverse-c1-r2v")
-        body = p.build_body(req, None, None,
-                           [("hero", "http://x.com/hero.png"),
-                            ("monster", "http://x.com/monster.png")])
+        req = GenerationRequest(
+            prompt="@hero fights @monster", mode="r2v", model="pixverse/pixverse-c1-r2v"
+        )
+        body = p.build_body(
+            req,
+            None,
+            None,
+            [
+                ("hero", "http://x.com/hero.png"),
+                ("monster", "http://x.com/monster.png"),
+            ],
+        )
         media = body["input"]["media"]
         assert len(media) == 2
         assert media[0]["ref_name"] == "hero"
@@ -399,12 +499,14 @@ class TestBodyConstruction:
 # Poll status normalization
 # ---------------------------------------------------------------------------
 
+
 class TestPollNormalization:
     def test_bailian_succeeded(self):
         p = get_provider("bailian")
         mock_rsp = MagicMock()
         mock_rsp.json.return_value = {
-            "output": {"task_status": "SUCCEEDED", "video_url": "http://x.com/v.mp4"}}
+            "output": {"task_status": "SUCCEEDED", "video_url": "http://x.com/v.mp4"}
+        }
         status, url, err = p._parse_poll_response(mock_rsp)
         assert status == "SUCCEEDED"
         assert url == "http://x.com/v.mp4"
@@ -413,7 +515,8 @@ class TestPollNormalization:
         p = get_provider("bailian")
         mock_rsp = MagicMock()
         mock_rsp.json.return_value = {
-            "output": {"task_status": "FAILED", "code": "ERR", "message": "bad"}}
+            "output": {"task_status": "FAILED", "code": "ERR", "message": "bad"}
+        }
         status, url, err = p._parse_poll_response(mock_rsp)
         assert status == "FAILED"
         assert "ERR" in err
@@ -422,7 +525,9 @@ class TestPollNormalization:
         p = get_provider("jimeng")
         mock_rsp = MagicMock()
         mock_rsp.json.return_value = {
-            "status": "succeeded", "content": {"video_url": "http://x.com/v.mp4"}}
+            "status": "succeeded",
+            "content": {"video_url": "http://x.com/v.mp4"},
+        }
         status, url, err = p._parse_poll_response(mock_rsp)
         assert status == "SUCCEEDED"
 
@@ -430,12 +535,13 @@ class TestPollNormalization:
         # The download URL call uses safe_request imported in minimax module
         p = get_provider("minimax")
         mock_rsp = MagicMock()
-        mock_rsp.json.return_value = {
-            "status": "Success", "file_id": "f123"}
-        with patch.object(p, 'auth_headers', return_value={}):
-            with patch('providers.minimax.safe_request') as mock_req:
+        mock_rsp.json.return_value = {"status": "Success", "file_id": "f123"}
+        with patch.object(p, "auth_headers", return_value={}):
+            with patch("providers.minimax.safe_request") as mock_req:
                 mock_dl = MagicMock()
-                mock_dl.json.return_value = {"file": {"download_url": "http://x.com/v.mp4"}}
+                mock_dl.json.return_value = {
+                    "file": {"download_url": "http://x.com/v.mp4"}
+                }
                 mock_req.return_value = mock_dl
                 status, url, err = p._parse_poll_response(mock_rsp)
                 assert status == "SUCCEEDED"
@@ -445,7 +551,33 @@ class TestPollNormalization:
         p = get_provider("minimax")
         mock_rsp = MagicMock()
         mock_rsp.json.return_value = {
-            "status": "Fail", "base_resp": {"status_code": 500, "status_msg": "error"}}
+            "status": "Fail",
+            "base_resp": {"status_code": 500, "status_msg": "error"},
+        }
+        status, url, err = p._parse_poll_response(mock_rsp)
+        assert status == "FAILED"
+
+    def test_minimax_h3_succeeded(self):
+        p = get_provider("minimax")
+        mock_rsp = MagicMock()
+        mock_rsp.json.return_value = {
+            "task": {"status": "succeeded", "content": {"url": "http://x.com/v.mp4"}}
+        }
+        status, url, err = p._parse_poll_response(mock_rsp)
+        assert status == "SUCCEEDED"
+        assert url == "http://x.com/v.mp4"
+
+    def test_minimax_h3_running(self):
+        p = get_provider("minimax")
+        mock_rsp = MagicMock()
+        mock_rsp.json.return_value = {"task": {"status": "running"}}
+        status, url, err = p._parse_poll_response(mock_rsp)
+        assert status == "processing"
+
+    def test_minimax_h3_failed(self):
+        p = get_provider("minimax")
+        mock_rsp = MagicMock()
+        mock_rsp.json.return_value = {"task": {"status": "failed"}}
         status, url, err = p._parse_poll_response(mock_rsp)
         assert status == "FAILED"
 
@@ -453,15 +585,16 @@ class TestPollNormalization:
         p = get_provider("hunyuan")
         mock_rsp = MagicMock()
         mock_rsp.json.return_value = {
-            "status": "completed", "data": {"url": "http://x.com/v.mp4"}}
+            "status": "completed",
+            "data": {"url": "http://x.com/v.mp4"},
+        }
         status, url, err = p._parse_poll_response(mock_rsp)
         assert status == "SUCCEEDED"
 
     def test_hunyuan_completed_no_url(self):
         p = get_provider("hunyuan")
         mock_rsp = MagicMock()
-        mock_rsp.json.return_value = {
-            "status": "completed", "data": {}}
+        mock_rsp.json.return_value = {"status": "completed", "data": {}}
         status, url, err = p._parse_poll_response(mock_rsp)
         assert status == "FAILED"  # completed without URL = failed
 
@@ -470,14 +603,17 @@ class TestPollNormalization:
 # Media validation
 # ---------------------------------------------------------------------------
 
+
 class TestMediaValidation:
     def test_missing_file_raises(self):
         import pytest
+
         with pytest.raises(InputError, match="image not found"):
             validate_media_file("/nonexistent/path/image.png")
 
     def test_bad_extension_raises(self, tmp_path):
         import pytest
+
         bad = tmp_path / "doc.txt"
         bad.write_text("not an image")
         with pytest.raises(InputError, match="unsupported image format"):
@@ -489,7 +625,9 @@ class TestMediaValidation:
         result = validate_media_file(str(img))
         assert result.name == "photo.png"
 
-    def test_bailian_upload_policy_missing_data_raises_api_error(self, tmp_path, monkeypatch):
+    def test_bailian_upload_policy_missing_data_raises_api_error(
+        self, tmp_path, monkeypatch
+    ):
         import pytest
 
         img = tmp_path / "photo.png"

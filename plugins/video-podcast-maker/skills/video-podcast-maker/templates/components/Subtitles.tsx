@@ -14,7 +14,12 @@
  */
 
 import React from "react";
-import { useCurrentFrame, useVideoConfig, delayRender, continueRender } from "remotion";
+import {
+  useCurrentFrame,
+  useVideoConfig,
+  delayRender,
+  continueRender,
+} from "remotion";
 
 interface SrtEntry {
   index: number;
@@ -34,7 +39,11 @@ const parseSrtTime = (t: string): number => {
 const parseSrt = (raw: string): SrtEntry[] => {
   const entries: SrtEntry[] = [];
   // Normalize line endings and split into blocks
-  const blocks = raw.replace(/\r\n/g, "\n").replace(/\r/g, "\n").trim().split(/\n\n+/);
+  const blocks = raw
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .trim()
+    .split(/\n\n+/);
   for (const block of blocks) {
     const lines = block.trim().split("\n");
     if (lines.length < 3) continue;
@@ -103,16 +112,16 @@ export const Subtitles = ({
   src,
   // Visual style — all sizes are in the 4K (3840x2160) pixel space
   // because this component sits OUTSIDE the Scale4K wrapper.
-  mode = "background",      // "outline" = text-shadow outline, "background" = bg bar
-  fontSize = 80,            // ~40px in 1080p design space × 2
+  mode = "background", // "outline" = text-shadow outline, "background" = bg bar
+  fontSize = 80, // ~40px in 1080p design space × 2
   color = "#1a1a1a",
   outlineColor = "#ffffff",
   outlineWidth = 6,
   bgColor = "rgba(240, 240, 240, 0.85)", // light gray background for "background" mode
   bgPadding = "16px 40px",
   bgBorderRadius = 16,
-  bottomOffset = 56,        // px from bottom of 4K frame
-  maxWidth = 3400,          // max line width in 4K pixels
+  bottomOffset = 56, // px from bottom of 4K frame
+  maxWidth = 3400, // max line width in 4K pixels
 }: {
   src: string;
   mode?: "outline" | "background";
@@ -132,7 +141,7 @@ export const Subtitles = ({
 
   const entries = useSrt(src);
   const current = entries.find(
-    (e) => currentMs >= e.startMs && currentMs <= e.endMs
+    (e) => currentMs >= e.startMs && currentMs <= e.endMs,
   );
 
   if (!current) return null;
@@ -181,9 +190,7 @@ export const Subtitles = ({
         zIndex: 100,
       }}
     >
-      <div style={textStyle}>
-        {current.text}
-      </div>
+      <div style={textStyle}>{current.text}</div>
     </div>
   );
 };

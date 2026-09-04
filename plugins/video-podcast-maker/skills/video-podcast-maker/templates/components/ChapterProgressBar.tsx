@@ -40,7 +40,11 @@ export const ChapterProgressBar = ({
         const chEnd = (ch.start_frame + ch.duration_frames) / totalFrames;
         const isActive = progress >= chStart && progress < chEnd;
         const isPast = progress >= chEnd;
-        const chProgress = isActive ? (progress - chStart) / (chEnd - chStart) : isPast ? 1 : 0;
+        const chProgress = isActive
+          ? (progress - chStart) / (chEnd - chStart)
+          : isPast
+            ? 1
+            : 0;
 
         return (
           <div
@@ -51,7 +55,11 @@ export const ChapterProgressBar = ({
               borderRadius: 38,
               position: "relative",
               overflow: "hidden",
-              background: isActive ? props.progressActiveColor : isPast ? "#f3f4f6" : "#f9fafb",
+              background: isActive
+                ? props.progressActiveColor
+                : isPast
+                  ? "#f3f4f6"
+                  : "#f9fafb",
               border: isActive ? "none" : "2px solid #e5e7eb",
               display: "flex",
               alignItems: "center",

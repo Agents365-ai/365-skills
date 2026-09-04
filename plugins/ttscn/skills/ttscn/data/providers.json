@@ -1,5 +1,5 @@
 {
-  "updated": "2026-07-15",
+  "updated": "2026-08-08",
   "description": "ttscn provider registry — single source of truth for all TTS backends. Edit this file to update --list output, docs/providers.html, and docs/providers.md.",
   "backends": [
     {
@@ -99,8 +99,13 @@
         "VOLCENGINE_ACCESS_TOKEN"
       ],
       "env_any": [
-        ["VOLCENGINE_APPID", "VOLCENGINE_ACCESS_TOKEN"],
-        ["VOLCENGINE_API_KEY"]
+        [
+          "VOLCENGINE_APPID",
+          "VOLCENGINE_ACCESS_TOKEN"
+        ],
+        [
+          "VOLCENGINE_API_KEY"
+        ]
       ],
       "pip_package": "requests",
       "import_module": "requests",
@@ -151,8 +156,8 @@
       "provider": "Alibaba (阿里云百炼)",
       "provider_logo": "alibaba",
       "cost_tier": "paid",
-      "cost": "~2 元/万字",
-      "cost_per_10k": "~¥2",
+      "cost": "~2 元/万字 (v3-flash) / ~0.8 元/万字 (v3.5-flash)",
+      "cost_per_10k": "~¥2 / ~¥0.8",
       "max_chars": 400,
       "max_duration_sec": 120,
       "max_duration_display": "~2 分钟",
@@ -160,6 +165,7 @@
       "supports_ssml": false,
       "supports_clone": true,
       "clone_detail": "音色复刻免费(合成正常计费): 10-20s公网URL音频, 1000音色/账户, 1年不用过期; tts.py clone create --platform cosyvoice",
+      "notes": "模型: cosyvoice-v3-flash(默认, 支持预置音色) / cosyvoice-v3.5-flash(2026-03发布: 克隆与音效设计更强、首包延迟更低; 仅北京地域, 不支持预置音色, 须用自定义/克隆音色且与合成同模型, 音色ID不跨模型通用)",
       "supports_emotion": "Via voice style",
       "supports_dialects": "",
       "languages": "中文",
@@ -220,6 +226,197 @@
           "label": "小悦",
           "style": "Female, 甜美",
           "best_for": "客服、导航"
+        }
+      ]
+    },
+    {
+      "id": "qwen",
+      "name": "Qwen3-TTS",
+      "provider": "Alibaba (阿里云百炼)",
+      "provider_logo": "alibaba",
+      "cost_tier": "paid",
+      "cost": "~1 元/万字",
+      "cost_per_10k": "~¥1",
+      "max_chars": 400,
+      "max_duration_sec": 120,
+      "max_duration_display": "~2 分钟",
+      "voices_count": "10+",
+      "supports_ssml": false,
+      "supports_clone": true,
+      "clone_detail": "声音复刻(qwen-voice-enrollment)与声音设计(qwen-voice-design): 定制音色后通过 voice 参数调用",
+      "supports_emotion": "Via instructions (qwen3-tts-instruct-flash)",
+      "supports_dialects": "",
+      "languages": "10 (中/英/日/韩/法/德/意/葡/西/俄)",
+      "streaming": "SDK 流式 (realtime 模型)",
+      "setup_difficulty": "easy",
+      "setup_label": "简单 (复用 DASHSCOPE_API_KEY)",
+      "env_vars": [
+        "DASHSCOPE_API_KEY"
+      ],
+      "pip_package": "dashscope",
+      "import_module": "dashscope",
+      "pip_install": "pip install dashscope",
+      "api_url": "https://dashscope.aliyuncs.com/api/v1",
+      "get_key_url": "https://bailian.console.aliyun.com/",
+      "tags": [
+        "streaming",
+        "fast",
+        "multilingual",
+        "emotion"
+      ],
+      "voices": [
+        {
+          "id": "Cherry",
+          "label": "Cherry",
+          "style": "Female, 甜美活泼",
+          "best_for": "短视频、带货"
+        },
+        {
+          "id": "Serena",
+          "label": "Serena",
+          "style": "Female, 温柔自然",
+          "best_for": "有声书、陪伴"
+        },
+        {
+          "id": "Ethan",
+          "label": "Ethan",
+          "style": "Male, 沉稳",
+          "best_for": "商务、纪录片"
+        },
+        {
+          "id": "Brian",
+          "label": "Brian",
+          "style": "Male, 英文为主",
+          "best_for": "英语内容"
+        }
+      ]
+    },
+    {
+      "id": "stepfun",
+      "name": "StepFun TTS",
+      "provider": "阶跃星辰",
+      "provider_logo": "stepfun",
+      "cost_tier": "paid",
+      "cost": "低价 (step-tts-mini)",
+      "cost_per_10k": "≈¥1",
+      "max_chars": 1000,
+      "max_duration_sec": 120,
+      "max_duration_display": "~2 分钟",
+      "voices_count": "数十种官方音色",
+      "supports_ssml": false,
+      "supports_clone": true,
+      "clone_detail": "音色复刻: ~10s 参考音频; step-tts-2 复刻音色支持全部情绪/风格控制",
+      "supports_emotion": "Via 音色 (step-tts-2)",
+      "supports_dialects": "",
+      "languages": "中/英/中英混合/日",
+      "streaming": "REST only",
+      "setup_difficulty": "easy",
+      "setup_label": "简单 (复用 STEP_API_KEY)",
+      "env_vars": [
+        "STEP_API_KEY"
+      ],
+      "pip_package": "requests",
+      "import_module": "requests",
+      "pip_install": "pip install requests",
+      "api_url": "https://api.stepfun.com/v1/audio/speech",
+      "get_key_url": "https://platform.stepfun.com/",
+      "tags": [
+        "fast",
+        "cheapest",
+        "clone",
+        "multilingual"
+      ],
+      "voices": [
+        {
+          "id": "cixingnansheng",
+          "label": "磁性男声",
+          "style": "Male, 磁性",
+          "best_for": "营销、带货"
+        },
+        {
+          "id": "jingdiannvsheng",
+          "label": "经典女声",
+          "style": "Female, 经典",
+          "best_for": "通用"
+        },
+        {
+          "id": "qingchunshaonv",
+          "label": "青春少女",
+          "style": "Female, 年轻活力",
+          "best_for": "短视频、动漫"
+        },
+        {
+          "id": "wenrounansheng",
+          "label": "温柔男声",
+          "style": "Male, 温柔",
+          "best_for": "客服、陪伴"
+        },
+        {
+          "id": "elegantgentle-female",
+          "label": "气质温婉",
+          "style": "Female, 温婉",
+          "best_for": "客服、商务"
+        },
+        {
+          "id": "livelybreezy-female",
+          "label": "活力轻快",
+          "style": "Female, 轻快",
+          "best_for": "营销、广告"
+        }
+      ]
+    },
+    {
+      "id": "zhipu",
+      "name": "GLM-TTS",
+      "provider": "智谱 (BigModel)",
+      "provider_logo": "zhipu",
+      "cost_tier": "paid",
+      "cost": "低价",
+      "cost_per_10k": "≈¥1",
+      "max_chars": 400,
+      "max_duration_sec": 120,
+      "max_duration_display": "~2 分钟",
+      "voices_count": "7 (含动动动物圈系列)",
+      "supports_ssml": false,
+      "supports_clone": true,
+      "clone_detail": "音色复刻 (glm-tts-clone / voice/clone 接口)",
+      "supports_emotion": "情感调节",
+      "supports_dialects": "",
+      "languages": "中/英",
+      "streaming": "SSE 流式 (可选)",
+      "setup_difficulty": "easy",
+      "setup_label": "简单 (复用 ZHIPUAI_API_KEY)",
+      "env_vars": [
+        "ZHIPUAI_API_KEY"
+      ],
+      "pip_package": "requests",
+      "import_module": "requests",
+      "pip_install": "pip install requests",
+      "api_url": "https://open.bigmodel.cn/api/paas/v4/audio/speech",
+      "get_key_url": "https://open.bigmodel.cn/",
+      "tags": [
+        "fast",
+        "multilingual",
+        "emotion"
+      ],
+      "voices": [
+        {
+          "id": "tongtong",
+          "label": "彤彤",
+          "style": "默认音色",
+          "best_for": "通用"
+        },
+        {
+          "id": "chuichui",
+          "label": "锤锤",
+          "style": "活泼",
+          "best_for": "儿童、动画"
+        },
+        {
+          "id": "xiaochen",
+          "label": "小陈",
+          "style": "Male, 沉稳",
+          "best_for": "商务"
         }
       ]
     },

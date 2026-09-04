@@ -8,7 +8,9 @@ Generate images using five Chinese T2I platforms plus Google Gemini:
   - Tencent Hunyuan:                   Hunyuan Image 3.0
   - Zhipu / BigModel:                  CogView-4, GLM-Image
   - StepFun / 阶跃星辰:                 Step-2X, Step-Image-Edit-2
-  - Google Gemini (international):     Gemini 3 Pro Image
+  - Google Gemini (international):     Gemini 3 Pro Image / 3.1 Flash Image
+  - Grok / xAI:                        Grok Imagine
+  - OpenAI:                            GPT Image
 
 Usage:
     python generate_image.py "prompt" [output_path]
@@ -26,6 +28,9 @@ Environment variables:
     ZHIPUAI_API_KEY (required for Zhipu) - Zhipu API Key
     STEP_API_KEY (required for StepFun) - StepFun API Key
     GEMINI_API_KEY (required for Gemini) - Google AI Studio API Key
+    XAI_API_KEY (required for Grok) - xAI API Key
+    OPENAI_API_KEY (required for OpenAI) - OpenAI API Key
+    BFL_API_KEY (required for FLUX) - Black Forest Labs API Key
 
 Exit codes (stable, agent-parseable):
     0 — success
@@ -41,14 +46,15 @@ import os
 import re
 import sys
 from datetime import datetime
-from pathlib import Path
 from http import HTTPStatus
+from pathlib import Path
+from typing import Any, NoReturn
 
 try:
+    import dashscope
     import requests
     from dashscope import ImageSynthesis, MultiModalConversation
     from dashscope.aigc.image_generation import ImageGeneration
-    import dashscope
 except ImportError:
     print("Error: Required packages not installed", file=sys.stderr)
     print("\nInstall with:", file=sys.stderr)
@@ -56,23 +62,26 @@ except ImportError:
     sys.exit(1)
 
 # Rich output (optional, falls back to plain text)
+# Annotated Any: rich is optional; guarded by _HAS_RICH at every use site.
+console: Any = None
+err_console: Any = None
+Table: Any = None
 try:
     from rich.console import Console
     from rich.table import Table
+
     console = Console()
     err_console = Console(stderr=True)
     _HAS_RICH = True
 except ImportError:
-    console = None
-    err_console = None
     _HAS_RICH = False
 
 # ── Exit codes (stable, agent-parseable) ──────────────────────────────
 
-EX_USAGE = 1   # bad arguments, unknown model
-EX_AUTH  = 2   # missing or invalid API key, config error
-EX_API   = 3   # upstream API failure, rate limit, quota
-EX_IO    = 4   # file I/O error (write, download)
+EX_USAGE = 1  # bad arguments, unknown model
+EX_AUTH = 2  # missing or invalid API key, config error
+EX_API = 3  # upstream API failure, rate limit, quota
+EX_IO = 4  # file I/O error (write, download)
 
 EXIT_CODE_LABELS = {
     0: "SUCCESS",
@@ -83,6 +92,7 @@ EXIT_CODE_LABELS = {
 }
 
 # ── Output format detection ───────────────────────────────────────────
+
 
 def _detect_format(explicit):
     """Determine output format: 'json' or 'table'.
@@ -101,15 +111,18 @@ def _json_out(data):
     sys.stdout.flush()
 
 
-def _emit_error(code, message, retryable=False, **extra):
+def _emit_error(code, message, retryable=False, **extra) -> NoReturn:
     """Emit a structured error and exit.
 
     In JSON mode: {"ok":false,"error":{"code":...,"message":...,"retryable":...}}
     In table mode: human-readable error on stderr.
     """
     if _FMT == "json":
-        err_obj = {"code": EXIT_CODE_LABELS.get(code, "UNKNOWN"), "message": message,
-                    "retryable": retryable}
+        err_obj = {
+            "code": EXIT_CODE_LABELS.get(code, "UNKNOWN"),
+            "message": message,
+            "retryable": retryable,
+        }
         err_obj.update(extra)
         _json_out({"ok": False, "error": err_obj})
     else:
@@ -135,8 +148,9 @@ def _emit_success(data, meta=None):
 def _emit_dry_run(data):
     """Emit dry-run preview in the current format."""
     if _FMT == "json":
-        _json_out({"ok": True, "dry_run": True, "data": data,
-                    "meta": {"version": "1.0"}})
+        _json_out(
+            {"ok": True, "dry_run": True, "data": data, "meta": {"version": "1.0"}}
+        )
     else:
         for key, val in data.items():
             print(f"  {key}: {val}")
@@ -145,6 +159,7 @@ def _emit_dry_run(data):
 
 
 # ── Schema introspection ──────────────────────────────────────────────
+
 
 def _load_models_json():
     """Load structured model metadata from docs/models.json."""
@@ -181,10 +196,15 @@ def show_schema(target=None):
         # Compact top-level listing
         out = {"providers": [], "model_count": 0}
         for p in data["providers"]:
-            out["providers"].append({
-                "id": p["id"], "name": p["shortName"], "nameCN": p["nameCN"],
-                "models": p["modelCount"], "envVar": p["envVar"],
-            })
+            out["providers"].append(
+                {
+                    "id": p["id"],
+                    "name": p["shortName"],
+                    "nameCN": p["nameCN"],
+                    "models": p["modelCount"],
+                    "envVar": p["envVar"],
+                }
+            )
             out["model_count"] += p["modelCount"]
         out["updated"] = data.get("updated", "unknown")
         out["quick_reference"] = data.get("quickReference", [])
@@ -201,8 +221,13 @@ def show_schema(target=None):
                 m["providerId"] = p["id"]
                 m["providerCN"] = p["nameCN"]
                 all_models.append(m)
-        _json_out({"models": all_models, "total": len(all_models),
-                    "updated": data.get("updated")})
+        _json_out(
+            {
+                "models": all_models,
+                "total": len(all_models),
+                "updated": data.get("updated"),
+            }
+        )
 
     else:
         # Look up a specific model
@@ -215,11 +240,15 @@ def show_schema(target=None):
                     m["envVar"] = p["envVar"]
                     _json_out(m)
                     return
-        _emit_error(EX_USAGE, f"Unknown model: {target}",
-                     hint="Use --schema models to list all models")
+        _emit_error(
+            EX_USAGE,
+            f"Unknown model: {target}",
+            hint="Use --schema models to list all models",
+        )
 
 
 # ── Output helpers ────────────────────────────────────────────────────
+
 
 def _out(msg, **kwargs):
     """Print to stdout, using rich if available (table mode only)."""
@@ -244,13 +273,16 @@ def _err(msg):
 # Ensure platform modules are importable from any working directory
 sys.path.insert(0, str(Path(__file__).parent.resolve()))
 
-from providers.base import ImageGenError, APIError  # noqa: E402
+from providers.base import APIError, ImageGenError  # noqa: E402
 
 # Platform modules (lazy imports — SDK checked inside each generate function)
 try:
     from volcano_ark import (  # noqa: E402
-        generate_with_ark, ARK_MODELS, ARK_SIZES,
-        resolve_ark_size, get_ark_api_key,
+        ARK_MODELS,
+        ARK_SIZES,
+        generate_with_ark,
+        get_ark_api_key,
+        resolve_ark_size,
     )
 except ImportError:
     generate_with_ark = None  # type: ignore[assignment]
@@ -261,8 +293,11 @@ except ImportError:
 
 try:
     from hunyuan import (  # noqa: E402
-        generate_with_hunyuan, HUNYUAN_MODELS, HUNYUAN_SIZES,
-        resolve_hunyuan_size, get_hunyuan_api_key,
+        HUNYUAN_MODELS,
+        HUNYUAN_SIZES,
+        generate_with_hunyuan,
+        get_hunyuan_api_key,
+        resolve_hunyuan_size,
     )
 except ImportError:
     generate_with_hunyuan = None  # type: ignore[assignment]
@@ -273,8 +308,11 @@ except ImportError:
 
 try:
     from zhipu import (  # noqa: E402
-        generate_with_zhipu, ZHIPU_MODELS, ZHIPU_SIZES,
-        resolve_zhipu_size, get_zhipu_api_key,
+        ZHIPU_MODELS,
+        ZHIPU_SIZES,
+        generate_with_zhipu,
+        get_zhipu_api_key,
+        resolve_zhipu_size,
     )
 except ImportError:
     generate_with_zhipu = None  # type: ignore[assignment]
@@ -285,8 +323,11 @@ except ImportError:
 
 try:
     from stepfun import (  # noqa: E402
-        generate_with_stepfun, STEPFUN_MODELS, STEPFUN_SIZES,
-        resolve_stepfun_size, get_stepfun_api_key,
+        STEPFUN_MODELS,
+        STEPFUN_SIZES,
+        generate_with_stepfun,
+        get_stepfun_api_key,
+        resolve_stepfun_size,
     )
 except ImportError:
     generate_with_stepfun = None  # type: ignore[assignment]
@@ -297,8 +338,12 @@ except ImportError:
 
 try:
     from gemini import (  # noqa: E402
-        generate_with_gemini, save_gemini_image, GEMINI_MODELS, GEMINI_SIZES,
-        resolve_gemini_size, get_gemini_api_key,
+        GEMINI_MODELS,
+        GEMINI_SIZES,
+        generate_with_gemini,
+        get_gemini_api_key,
+        resolve_gemini_size,
+        save_gemini_image,
     )
 except ImportError:
     generate_with_gemini = None  # type: ignore[assignment]
@@ -307,6 +352,53 @@ except ImportError:
     GEMINI_SIZES = {}
     resolve_gemini_size = None  # type: ignore[assignment]
     get_gemini_api_key = None  # type: ignore[assignment]
+
+try:
+    from grok import (  # noqa: E402  # type: ignore[reportMissingImports]  # new module; pyright workspace snapshot updates on server restart
+        GROK_MODELS,
+        GROK_SIZES,
+        generate_with_grok,
+        get_grok_api_key,
+        resolve_grok_size,
+    )
+except ImportError:
+    generate_with_grok = None  # type: ignore[assignment]
+    GROK_MODELS = set()
+    GROK_SIZES = {}
+    resolve_grok_size = None  # type: ignore[assignment]
+    get_grok_api_key = None  # type: ignore[assignment]
+
+try:
+    from openai_img import (  # noqa: E402  # type: ignore[reportMissingImports]  # new module; pyright workspace snapshot updates on server restart
+        OPENAI_MODELS,
+        OPENAI_SIZES,
+        generate_with_openai,
+        get_openai_api_key,
+        resolve_openai_size,
+        save_openai_image,
+    )
+except ImportError:
+    generate_with_openai = None  # type: ignore[assignment]
+    save_openai_image = None  # type: ignore[assignment]
+    OPENAI_MODELS = set()
+    OPENAI_SIZES = {}
+    resolve_openai_size = None  # type: ignore[assignment]
+    get_openai_api_key = None  # type: ignore[assignment]
+
+try:
+    from bfl import (  # noqa: E402  # type: ignore[reportMissingImports]  # new module; pyright workspace snapshot updates on server restart
+        BFL_MODELS,
+        BFL_SIZES,
+        generate_with_bfl,
+        get_bfl_api_key,
+        resolve_bfl_size,
+    )
+except ImportError:
+    generate_with_bfl = None  # type: ignore[assignment]
+    BFL_MODELS = set()
+    BFL_SIZES = {}
+    resolve_bfl_size = None  # type: ignore[assignment]
+    get_bfl_api_key = None  # type: ignore[assignment]
 
 
 DEFAULT_MODEL = "qwen-image-2.0-pro"
@@ -325,16 +417,24 @@ SYNTHESIS_MODELS = {"qwen-image-plus", "qwen-image-plus-2026-01-09", "qwen-image
 
 # Models using ImageGeneration (Wan series, messages format)
 GENERATION_MODELS = {
-    "wan2.7-image-pro", "wan2.7-image",
-    "wan2.6-t2i", "wan2.5-t2i-preview",
-    "wan2.2-t2i-flash", "wan2.2-t2i-plus",
-    "wanx2.1-t2i-turbo", "wanx2.1-t2i-plus", "wanx2.0-t2i-turbo",
+    "wan2.7-image-pro",
+    "wan2.7-image",
+    "wan2.6-t2i",
+    "wan2.5-t2i-preview",
+    "wan2.2-t2i-flash",
+    "wan2.2-t2i-plus",
+    "wanx2.1-t2i-turbo",
+    "wanx2.1-t2i-plus",
+    "wanx2.0-t2i-turbo",
 }
 
 # Models using MultiModalConversation (Qwen-Image 2.0 family, native 2K)
 MULTIMODAL_MODELS = {
-    "qwen-image-2.0-pro", "qwen-image-2.0-pro-2026-06-22",
-    "qwen-image-2.0", "qwen-image-max", "qwen-image-max-2025-12-30",
+    "qwen-image-2.0-pro",
+    "qwen-image-2.0-pro-2026-06-22",
+    "qwen-image-2.0",
+    "qwen-image-max",
+    "qwen-image-max-2025-12-30",
 }
 
 # Z-Image models (lightweight, fast) - also use MultiModalConversation
@@ -342,7 +442,8 @@ ZIMAGE_MODELS = {"z-image-turbo"}
 
 # Qwen-Image edit models (image editing, require --image) - MultiModalConversation
 EDIT_MODELS = {
-    "qwen-image-edit-max", "qwen-image-edit-max-2026-01-16",
+    "qwen-image-edit-max",
+    "qwen-image-edit-max-2026-01-16",
     "qwen-image-edit-plus",
 }
 
@@ -394,8 +495,11 @@ WAN_SIZES = {
 def get_api_key():
     api_key = os.environ.get("DASHSCOPE_API_KEY")
     if not api_key:
-        _emit_error(EX_AUTH, "DASHSCOPE_API_KEY environment variable not set",
-                     hint="Get a key at https://bailian.console.aliyun.com/")
+        _emit_error(
+            EX_AUTH,
+            "DASHSCOPE_API_KEY environment variable not set",
+            hint="Get a key at https://bailian.console.aliyun.com/",
+        )
     return api_key
 
 
@@ -444,6 +548,12 @@ def detect_platform(model):
         return "stepfun"
     if model in GEMINI_MODELS:
         return "gemini"
+    if model in GROK_MODELS:
+        return "grok"
+    if model in OPENAI_MODELS:
+        return "openai"
+    if model in BFL_MODELS:
+        return "bfl"
     return "dashscope"
 
 
@@ -459,6 +569,12 @@ def get_default_model_for_platform(platform):
         return os.environ.get("STEP_MODEL", "step-2x-large")
     if platform == "gemini":
         return os.environ.get("GEMINI_MODEL", "gemini-3-pro-image-preview")
+    if platform == "grok":
+        return os.environ.get("XAI_MODEL", "grok-imagine-image-quality")
+    if platform == "openai":
+        return os.environ.get("OPENAI_MODEL", "gpt-image-1")
+    if platform == "bfl":
+        return os.environ.get("BFL_MODEL", "flux-2-pro-preview")
     return os.environ.get("DASHSCOPE_MODEL", DEFAULT_MODEL)
 
 
@@ -477,6 +593,12 @@ def resolve_size(size_input, model, platform=None):
         return resolve_stepfun_size(size_input)
     if platform == "gemini" and resolve_gemini_size is not None:
         return resolve_gemini_size(size_input)
+    if platform == "grok" and resolve_grok_size is not None:
+        return resolve_grok_size(size_input)
+    if platform == "openai" and resolve_openai_size is not None:
+        return resolve_openai_size(size_input)
+    if platform == "bfl" and resolve_bfl_size is not None:
+        return resolve_bfl_size(size_input)
 
     # DashScope size resolution (unchanged)
     if model in EDIT_MODELS:
@@ -532,8 +654,9 @@ def create_output_dir(output_path):
         output_dir.mkdir(parents=True, exist_ok=True)
 
 
-def generate_with_synthesis(api_key, model, prompt, size, negative_prompt=None,
-                           prompt_extend=True):
+def generate_with_synthesis(
+    api_key, model, prompt, size, negative_prompt=None, prompt_extend=True
+):
     """Generate image using ImageSynthesis (for qwen-image-plus)."""
     params = {
         "api_key": api_key,
@@ -549,8 +672,9 @@ def generate_with_synthesis(api_key, model, prompt, size, negative_prompt=None,
     return ImageSynthesis.call(**params)
 
 
-def generate_with_generation(api_key, model, prompt, size, negative_prompt=None,
-                            prompt_extend=True):
+def generate_with_generation(
+    api_key, model, prompt, size, negative_prompt=None, prompt_extend=True
+):
     """Generate image using ImageGeneration (for wan2.6-t2i, wan2.7-image, etc)."""
     messages = [{"role": "user", "content": [{"text": prompt}]}]
     params = {
@@ -567,8 +691,9 @@ def generate_with_generation(api_key, model, prompt, size, negative_prompt=None,
     return ImageGeneration.call(**params)
 
 
-def generate_with_multimodal(api_key, model, prompt, size, negative_prompt=None, image=None,
-                            prompt_extend=True):
+def generate_with_multimodal(
+    api_key, model, prompt, size, negative_prompt=None, image=None, prompt_extend=True
+):
     """Generate image using MultiModalConversation (qwen-image-2.0/edit family, z-image)."""
     content = []
     if image:
@@ -596,13 +721,13 @@ def extract_image_url(rsp, model):
         if rsp.output and rsp.output.results:
             return rsp.output.results[0].url
     # ImageGeneration and MultiModalConversation share the choices/message format
-    if hasattr(rsp, 'output') and rsp.output:
-        choices = rsp.output.get('choices', [])
+    if hasattr(rsp, "output") and rsp.output:
+        choices = rsp.output.get("choices", [])
         if choices:
-            content = choices[0].get('message', {}).get('content', [])
+            content = choices[0].get("message", {}).get("content", [])
             for item in content:
-                if 'image' in item:
-                    return item['image']
+                if "image" in item:
+                    return item["image"]
     return None
 
 
@@ -635,7 +760,9 @@ def list_models():
     for m in sorted(MULTIMODAL_MODELS):
         default = " (default)" if m == DEFAULT_MODEL else ""
         print(f"  - {m}{default}")
-    print("\nQwen-Image edit family (image editing, requires --image) [MultiModalConversation API]:")
+    print(
+        "\nQwen-Image edit family (image editing, requires --image) [MultiModalConversation API]:"
+    )
     for m in sorted(EDIT_MODELS):
         print(f"  - {m}")
     print("\nZ-Image (lightweight, fast & low-cost) [MultiModalConversation API]:")
@@ -670,25 +797,46 @@ def list_models():
     for m in sorted(GEMINI_MODELS):
         default = " (default)" if m == DEFAULT_MODEL else ""
         print(f"  - {m}{default}")
+    print("\nGrok / xAI [OpenAI-compatible API]:")
+    for m in sorted(GROK_MODELS):
+        default = " (default)" if m == DEFAULT_MODEL else ""
+        print(f"  - {m}{default}")
+    print("\nOpenAI (GPT Image) [Images API]:")
+    for m in sorted(OPENAI_MODELS):
+        default = " (default)" if m == DEFAULT_MODEL else ""
+        print(f"  - {m}{default}")
+    print("\nBlack Forest Labs / FLUX [async REST API]:")
+    for m in sorted(BFL_MODELS):
+        default = " (default)" if m == DEFAULT_MODEL else ""
+        print(f"  - {m}{default}")
     print("\nSize presets:")
     print("  Qwen-Image 2.0:", ", ".join(QWEN2_SIZES.keys()))
     print("  Z-Image:", ", ".join(ZIMAGE_SIZES.keys()))
     print("  Qwen-Image legacy:", ", ".join(QWEN_SIZES.keys()))
     print("  Wan Series:", ", ".join(WAN_SIZES.keys()))
     print("  Volcano Ark:", ", ".join(ARK_SIZES.keys()) if ARK_SIZES else "N/A")
-    print("  Tencent Hunyuan:", ", ".join(HUNYUAN_SIZES.keys()) if HUNYUAN_SIZES else "N/A")
+    print(
+        "  Tencent Hunyuan:",
+        ", ".join(HUNYUAN_SIZES.keys()) if HUNYUAN_SIZES else "N/A",
+    )
     print("  Zhipu:", ", ".join(ZHIPU_SIZES.keys()) if ZHIPU_SIZES else "N/A")
     print("  StepFun:", ", ".join(STEPFUN_SIZES.keys()) if STEPFUN_SIZES else "N/A")
     print("  Google Gemini:", ", ".join(GEMINI_SIZES.keys()) if GEMINI_SIZES else "N/A")
+    print("  Grok (xAI):", ", ".join(GROK_SIZES.keys()) if GROK_SIZES else "N/A")
+    print("  OpenAI:", ", ".join(OPENAI_SIZES.keys()) if OPENAI_SIZES else "N/A")
+    print("  FLUX (BFL):", ", ".join(BFL_SIZES.keys()) if BFL_SIZES else "N/A")
     print("\nAPI endpoints:")
     for region, url in API_ENDPOINTS.items():
         default = " (default)" if region == "cn" else ""
         print(f"  - {region}: {url}{default}")
-    print(f"  - Volcano Ark: https://ark.cn-beijing.volces.com/api/v3")
-    print(f"  - Tencent Hunyuan: https://tokenhub.tencentmaas.com/v1/images/generations")
-    print(f"  - Zhipu: https://api.z.ai/api/paas/v4/images/generations")
-    print(f"  - StepFun: https://api.stepfun.com/v1/images/generations")
-    print(f"  - Google Gemini: https://generativelanguage.googleapis.com/v1beta/models")
+    print("  - Volcano Ark: https://ark.cn-beijing.volces.com/api/v3")
+    print("  - Tencent Hunyuan: https://tokenhub.tencentmaas.com/v1/images/generations")
+    print("  - Zhipu: https://api.z.ai/api/paas/v4/images/generations")
+    print("  - StepFun: https://api.stepfun.com/v1/images/generations")
+    print("  - Google Gemini: https://generativelanguage.googleapis.com/v1beta/models")
+    print("  - Grok (xAI): https://api.x.ai/v1/images/generations")
+    print("  - OpenAI: https://api.openai.com/v1/images/generations")
+    print("  - FLUX (BFL): https://api.bfl.ai/v1")
 
 
 def _validate_size(model, size):
@@ -701,22 +849,25 @@ def _validate_size(model, size):
         return
     # Ark: Seedream 5.0 does not support 4K
     if model == "doubao-seedream-5-0-260128" and size == "4K":
-        _err("[yellow]Warning:[/] Seedream 5.0 max resolution is 3K "
-              "(4K requested).  Use --model doubao-seedream-4-5-251128 for 4K."
-              if _HAS_RICH else
-              "Warning: Seedream 5.0 max is 3K (4K requested). "
-              "Use doubao-seedream-4-5-251128 for 4K.")
+        _err(
+            "[yellow]Warning:[/] Seedream 5.0 max resolution is 3K "
+            "(4K requested).  Use --model doubao-seedream-4-5-251128 for 4K."
+            if _HAS_RICH
+            else "Warning: Seedream 5.0 max is 3K (4K requested). "
+            "Use doubao-seedream-4-5-251128 for 4K."
+        )
     # Hunyuan: max 2048 on either side
     if model in HUNYUAN_MODELS and (":" in size):
         parts = size.split(":")
         try:
             w, h = int(parts[0]), int(parts[1])
             if w > 2048 or h > 2048:
-                _err("[yellow]Warning:[/] Hunyuan max resolution is 2048px "
-                      f"per side (requested {size})."
-                      if _HAS_RICH else
-                      f"Warning: Hunyuan max is 2048px per side "
-                      f"(requested {size}).")
+                _err(
+                    "[yellow]Warning:[/] Hunyuan max resolution is 2048px "
+                    f"per side (requested {size})."
+                    if _HAS_RICH
+                    else f"Warning: Hunyuan max is 2048px per side (requested {size})."
+                )
         except (ValueError, IndexError):
             pass
     # Zhipu: 512-2048 px, divisible by 16, total pixels <= 2^21
@@ -725,23 +876,29 @@ def _validate_size(model, size):
             w_str, h_str = size.split("x")
             w, h = int(w_str), int(h_str)
             if w < 512 or w > 2048 or h < 512 or h > 2048:
-                _err("[yellow]Warning:[/] Zhipu requires 512-2048 px per side "
-                      f"(requested {size})."
-                      if _HAS_RICH else
-                      f"Warning: Zhipu requires 512-2048 px per side "
-                      f"(requested {size}).")
+                _err(
+                    "[yellow]Warning:[/] Zhipu requires 512-2048 px per side "
+                    f"(requested {size})."
+                    if _HAS_RICH
+                    else f"Warning: Zhipu requires 512-2048 px per side "
+                    f"(requested {size})."
+                )
             elif w % 16 != 0 or h % 16 != 0:
-                _err("[yellow]Warning:[/] Zhipu requires dimensions divisible "
-                      f"by 16 (requested {size})."
-                      if _HAS_RICH else
-                      f"Warning: Zhipu requires dimensions divisible by 16 "
-                      f"(requested {size}).")
+                _err(
+                    "[yellow]Warning:[/] Zhipu requires dimensions divisible "
+                    f"by 16 (requested {size})."
+                    if _HAS_RICH
+                    else f"Warning: Zhipu requires dimensions divisible by 16 "
+                    f"(requested {size})."
+                )
             elif w * h > 2_097_152:
-                _err("[yellow]Warning:[/] Zhipu total pixels must be <= 2^21 "
-                      f"(requested {size} = {w * h} px)."
-                      if _HAS_RICH else
-                      f"Warning: Zhipu total pixels must be <= 2^21 "
-                      f"(requested {size} = {w * h} px).")
+                _err(
+                    "[yellow]Warning:[/] Zhipu total pixels must be <= 2^21 "
+                    f"(requested {size} = {w * h} px)."
+                    if _HAS_RICH
+                    else f"Warning: Zhipu total pixels must be <= 2^21 "
+                    f"(requested {size} = {w * h} px)."
+                )
         except (ValueError, IndexError):
             pass
 
@@ -757,40 +914,101 @@ Examples:
   %(prog)s --format json --platform ark "Portrait" portrait.png
   %(prog)s --schema           # list all platforms (JSON)
   %(prog)s --schema qwen-image-2.0-pro   # model details (JSON)
-        """
+        """,
     )
     parser.add_argument("prompt", nargs="?", help="Text description of the image")
-    parser.add_argument("output", nargs="?", default=None,
-                        help="Output file path (default: auto-named)")
-    parser.add_argument("--model", "-m", help=f"Model to use (default: {DEFAULT_MODEL})")
+    parser.add_argument(
+        "output", nargs="?", default=None, help="Output file path (default: auto-named)"
+    )
+    parser.add_argument(
+        "--model", "-m", help=f"Model to use (default: {DEFAULT_MODEL})"
+    )
     parser.add_argument("--size", "-s", help="Image size as ratio or pixels")
     parser.add_argument("--negative", "-n", help="Negative prompt")
-    parser.add_argument("--image", "-i", help="Input image (path or URL) for editing models")
-    parser.add_argument("--guidance-scale", type=float, default=None,
-                        help="Guidance scale (Volcano Ark only)")
-    parser.add_argument("--logo", type=int, choices=[0, 1], default=None,
-                        help="Add AI logo: 0=no, 1=yes (Tencent Hunyuan only)")
-    parser.add_argument("--no-watermark", action="store_true",
-                        help="Disable watermark (Volcano Ark only)")
-    parser.add_argument("--platform", "-p",
-                        choices=["dashscope", "ark", "hunyuan", "zhipu", "stepfun", "gemini"],
-                        help="Target platform (auto-detect from model name by default)")
-    parser.add_argument("--revise", type=int, choices=[0, 1], default=None,
-                        help="Auto-enhance prompt: 0=off 1=on (Tencent Hunyuan only)")
-    parser.add_argument("--seed", type=int, default=None,
-                        help="Random seed for reproducibility")
-    parser.add_argument("--no-extend", action="store_true",
-                        help="Disable automatic prompt extension (DashScope only)")
-    parser.add_argument("--format", choices=["json", "table"],
-                        help="Output format (default: auto-detect from TTY)")
-    parser.add_argument("--idempotency-key", help="Stable key for reproducible output filename; "
-                        "skips generation if output file already exists")
-    parser.add_argument("--dry-run", action="store_true",
-                        help="Preview without generating (show what would be called)")
-    parser.add_argument("--list-models", action="store_true", help="List available models")
-    parser.add_argument("--schema", nargs="?", const=None, default=None,
-                        help="Schema introspection: none=platforms, 'models'=all models, "
-                             "'<model-id>'=single model details")
+    parser.add_argument(
+        "--image", "-i", help="Input image (path or URL) for editing models"
+    )
+    parser.add_argument(
+        "--guidance-scale",
+        type=float,
+        default=None,
+        help="Guidance scale (Volcano Ark only)",
+    )
+    parser.add_argument(
+        "--logo",
+        type=int,
+        choices=[0, 1],
+        default=None,
+        help="Add AI logo: 0=no, 1=yes (Tencent Hunyuan only)",
+    )
+    parser.add_argument(
+        "--no-watermark",
+        action="store_true",
+        help="Disable watermark (Volcano Ark only)",
+    )
+    parser.add_argument(
+        "--platform",
+        "-p",
+        choices=[
+            "dashscope",
+            "ark",
+            "hunyuan",
+            "zhipu",
+            "stepfun",
+            "gemini",
+            "grok",
+            "openai",
+            "bfl",
+        ],
+        help="Target platform (auto-detect from model name by default)",
+    )
+    parser.add_argument(
+        "--revise",
+        type=int,
+        choices=[0, 1],
+        default=None,
+        help="Auto-enhance prompt: 0=off 1=on (Tencent Hunyuan only)",
+    )
+    parser.add_argument(
+        "--seed", type=int, default=None, help="Random seed for reproducibility"
+    )
+    parser.add_argument(
+        "--quality",
+        choices=["low", "medium", "high", "auto"],
+        default=None,
+        help="Rendering quality (OpenAI only)",
+    )
+    parser.add_argument(
+        "--no-extend",
+        action="store_true",
+        help="Disable automatic prompt extension (DashScope only)",
+    )
+    parser.add_argument(
+        "--format",
+        choices=["json", "table"],
+        help="Output format (default: auto-detect from TTY)",
+    )
+    parser.add_argument(
+        "--idempotency-key",
+        help="Stable key for reproducible output filename; "
+        "skips generation if output file already exists",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Preview without generating (show what would be called)",
+    )
+    parser.add_argument(
+        "--list-models", action="store_true", help="List available models"
+    )
+    parser.add_argument(
+        "--schema",
+        nargs="?",
+        const=None,
+        default=None,
+        help="Schema introspection: none=platforms, 'models'=all models, "
+        "'<model-id>'=single model details",
+    )
 
     # ── Progressive help (P3): intercept before argparse exits ──
     # --help models → list all models
@@ -802,9 +1020,21 @@ Examples:
                 if target == "models":
                     list_models()
                     sys.exit(0)
-                all_model_ids = (SYNTHESIS_MODELS | GENERATION_MODELS | MULTIMODAL_MODELS |
-                                 ZIMAGE_MODELS | EDIT_MODELS | ARK_MODELS | HUNYUAN_MODELS |
-                                 ZHIPU_MODELS | STEPFUN_MODELS | GEMINI_MODELS)
+                all_model_ids = (
+                    SYNTHESIS_MODELS
+                    | GENERATION_MODELS
+                    | MULTIMODAL_MODELS
+                    | ZIMAGE_MODELS
+                    | EDIT_MODELS
+                    | ARK_MODELS
+                    | HUNYUAN_MODELS
+                    | ZHIPU_MODELS
+                    | STEPFUN_MODELS
+                    | GEMINI_MODELS
+                    | GROK_MODELS
+                    | OPENAI_MODELS
+                    | BFL_MODELS
+                )
                 if target in all_model_ids:
                     show_schema(target)
                     return
@@ -817,8 +1047,11 @@ Examples:
     _FMT = _detect_format(args.format)
 
     # ── Schema introspection (no API call needed) ──────────────────
-    if args.schema is not None or (args.schema is None and hasattr(args, 'schema') and
-                                    any(a.startswith('--schema') for a in sys.argv[1:])):
+    if args.schema is not None or (
+        args.schema is None
+        and hasattr(args, "schema")
+        and any(a.startswith("--schema") for a in sys.argv[1:])
+    ):
         # Re-parse to handle --schema with an argument vs bare --schema
         if args.schema is not None or args.prompt is None:
             target = args.schema  # None for bare --schema, string for --schema <target>
@@ -848,8 +1081,11 @@ Examples:
         else:
             model = config_model or get_default_model_for_platform(platform)
     else:
-        model = (args.model or config_model or
-                 os.environ.get("DASHSCOPE_MODEL", DEFAULT_MODEL))
+        model = (
+            args.model
+            or config_model
+            or os.environ.get("DASHSCOPE_MODEL", DEFAULT_MODEL)
+        )
         # CLI --model takes precedence over config platform: detect from the
         # model the user explicitly chose, not from a stale config entry.
         if args.model:
@@ -857,15 +1093,29 @@ Examples:
         else:
             platform = config_platform or detect_platform(model)
 
-    all_models = (SYNTHESIS_MODELS | GENERATION_MODELS | MULTIMODAL_MODELS |
-                  ZIMAGE_MODELS | EDIT_MODELS | ARK_MODELS | HUNYUAN_MODELS |
-                  ZHIPU_MODELS | STEPFUN_MODELS | GEMINI_MODELS)
+    all_models = (
+        SYNTHESIS_MODELS
+        | GENERATION_MODELS
+        | MULTIMODAL_MODELS
+        | ZIMAGE_MODELS
+        | EDIT_MODELS
+        | ARK_MODELS
+        | HUNYUAN_MODELS
+        | ZHIPU_MODELS
+        | STEPFUN_MODELS
+        | GEMINI_MODELS
+        | GROK_MODELS
+        | OPENAI_MODELS
+        | BFL_MODELS
+    )
 
     # Validate model
     if model not in all_models:
-        msg = (f"[yellow]Warning:[/] Unknown model '{model}'. Using platform default"
-               if _HAS_RICH else
-               f"Warning: Unknown model '{model}'. Using platform default")
+        msg = (
+            f"[yellow]Warning:[/] Unknown model '{model}'. Using platform default"
+            if _HAS_RICH
+            else f"Warning: Unknown model '{model}'. Using platform default"
+        )
         _err(msg)
         model = get_default_model_for_platform(platform)
     elif args.platform or config_platform:
@@ -877,13 +1127,18 @@ Examples:
             "zhipu": ZHIPU_MODELS,
             "stepfun": STEPFUN_MODELS,
             "gemini": GEMINI_MODELS,
-        }.get(effective_platform)
+            "grok": GROK_MODELS,
+            "openai": OPENAI_MODELS,
+            "bfl": BFL_MODELS,
+        }.get(effective_platform or "")
         if platform_models and model not in platform_models:
-            msg = (f"[yellow]Warning:[/] Model '{model}' is not a "
-                   f"'{effective_platform}' model. Using platform default"
-                   if _HAS_RICH else
-                   f"Warning: Model '{model}' is not a "
-                   f"'{effective_platform}' model. Using platform default")
+            msg = (
+                f"[yellow]Warning:[/] Model '{model}' is not a "
+                f"'{effective_platform}' model. Using platform default"
+                if _HAS_RICH
+                else f"Warning: Model '{model}' is not a "
+                f"'{effective_platform}' model. Using platform default"
+            )
             _err(msg)
             model = get_default_model_for_platform(platform)
 
@@ -893,27 +1148,37 @@ Examples:
     if args.output:
         output_path = Path(args.output)
     else:
-        output_path = Path(make_output_name(platform, model,
-                                            idempotency_key=args.idempotency_key))
+        output_path = Path(
+            make_output_name(platform, model, idempotency_key=args.idempotency_key)
+        )
     create_output_dir(output_path)
 
     # Idempotency: skip generation if output file already exists
     if args.idempotency_key and output_path.exists() and output_path.stat().st_size > 0:
         file_size = get_file_size(output_path)
-        _emit_success({
-            "output_path": str(output_path),
-            "size_bytes": output_path.stat().st_size,
-            "size_human": file_size,
-            "model": model,
-            "platform": platform,
-            "cached": True,
-        }, {"version": "1.0", "idempotency": "Returned cached result for key: " + args.idempotency_key})
+        _emit_success(
+            {
+                "output_path": str(output_path),
+                "size_bytes": output_path.stat().st_size,
+                "size_human": file_size,
+                "model": model,
+                "platform": platform,
+                "cached": True,
+            },
+            {
+                "version": "1.0",
+                "idempotency": "Returned cached result for key: "
+                + args.idempotency_key,
+            },
+        )
         return
 
     # Handle input image (DashScope edit models only)
     input_image = args.image
     if platform == "dashscope" and model in EDIT_MODELS and not input_image:
-        _emit_error(EX_USAGE, f"Model '{model}' is an editing model and requires --image")
+        _emit_error(
+            EX_USAGE, f"Model '{model}' is an editing model and requires --image"
+        )
     if input_image and os.path.exists(input_image):
         input_image = f"file://{Path(input_image).resolve()}"
 
@@ -937,6 +1202,15 @@ Examples:
     elif platform == "gemini":
         api_type = "Google Gemini (generateContent)"
         endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+    elif platform == "grok":
+        api_type = "Grok / xAI (OpenAI-compatible)"
+        endpoint = "https://api.x.ai/v1/images/generations"
+    elif platform == "openai":
+        api_type = "OpenAI (Images API)"
+        endpoint = "https://api.openai.com/v1/images/generations"
+    elif platform == "bfl":
+        api_type = "Black Forest Labs / FLUX (async REST)"
+        endpoint = f"https://api.bfl.ai/v1/{model}"
     elif model in SYNTHESIS_MODELS:
         api_type = "ImageSynthesis"
         endpoint = dashscope.base_http_api_url
@@ -984,62 +1258,115 @@ Examples:
             print()
 
     # ── Execute generation ─────────────────────────────────────────
+    image_url: Any = None  # set in the branch below; used only on matching platforms
+    image_bytes: Any = None
+    rsp: Any = None
     try:
         if platform == "ark":
-            if not get_ark_api_key:
-                _emit_error(EX_AUTH, "Volcano Ark module not available",
-                             hint="Ensure volcano_ark.py is in the scripts directory")
+            if not get_ark_api_key or not generate_with_ark:
+                _emit_error(
+                    EX_AUTH,
+                    "Volcano Ark module not available",
+                    hint="Ensure volcano_ark.py is in the scripts directory",
+                )
             ark_key = get_ark_api_key()
             image_url = generate_with_ark(
-                ark_key, model, args.prompt, size,
+                ark_key,
+                model,
+                args.prompt,
+                size,
                 seed=args.seed,
                 guidance_scale=args.guidance_scale,
                 no_watermark=args.no_watermark,
             )
         elif platform == "hunyuan":
-            if not get_hunyuan_api_key:
+            if not get_hunyuan_api_key or not generate_with_hunyuan:
                 _emit_error(EX_AUTH, "Hunyuan module not available")
             hy_key = get_hunyuan_api_key()
             image_url = generate_with_hunyuan(
-                hy_key, model, args.prompt, size,
+                hy_key,
+                model,
+                args.prompt,
+                size,
                 seed=args.seed,
                 revise=args.revise,
                 logo=args.logo,
             )
         elif platform == "zhipu":
-            if not get_zhipu_api_key:
+            if not get_zhipu_api_key or not generate_with_zhipu:
                 _emit_error(EX_AUTH, "Zhipu module not available")
             zp_key = get_zhipu_api_key()
-            image_url = generate_with_zhipu(zp_key, model, args.prompt, size,
-                                            seed=args.seed)
+            image_url = generate_with_zhipu(
+                zp_key, model, args.prompt, size, seed=args.seed
+            )
         elif platform == "stepfun":
-            if not get_stepfun_api_key:
+            if not get_stepfun_api_key or not generate_with_stepfun:
                 _emit_error(EX_AUTH, "StepFun module not available")
             sf_key = get_stepfun_api_key()
-            image_url = generate_with_stepfun(sf_key, model, args.prompt, size,
-                                              negative=args.negative)
+            image_url = generate_with_stepfun(
+                sf_key, model, args.prompt, size, negative=args.negative
+            )
         elif platform == "gemini":
-            if not get_gemini_api_key:
+            if not get_gemini_api_key or not generate_with_gemini:
                 _emit_error(EX_AUTH, "Gemini module not available")
             gm_key = get_gemini_api_key()
-            image_bytes = generate_with_gemini(gm_key, model, args.prompt, size,
-                                               seed=args.seed)
+            image_bytes = generate_with_gemini(
+                gm_key, model, args.prompt, size, seed=args.seed
+            )
+        elif platform == "grok":
+            if not get_grok_api_key or not generate_with_grok:
+                _emit_error(EX_AUTH, "Grok module not available")
+            gk_key = get_grok_api_key()
+            image_url = generate_with_grok(
+                gk_key, model, args.prompt, size, seed=args.seed
+            )
+        elif platform == "openai":
+            if not get_openai_api_key or not generate_with_openai:
+                _emit_error(EX_AUTH, "OpenAI module not available")
+            oa_key = get_openai_api_key()
+            image_bytes = generate_with_openai(
+                oa_key, model, args.prompt, size, quality=args.quality
+            )
+        elif platform == "bfl":
+            if not get_bfl_api_key or not generate_with_bfl:
+                _emit_error(EX_AUTH, "FLUX module not available")
+            bf_key = get_bfl_api_key()
+            image_url = generate_with_bfl(
+                bf_key, model, args.prompt, size, seed=args.seed
+            )
         elif model in SYNTHESIS_MODELS:
             api_key = get_api_key()
-            rsp = generate_with_synthesis(api_key, model, args.prompt, size,
-                                          args.negative,
-                                          prompt_extend=not args.no_extend)
-        elif model in MULTIMODAL_MODELS or model in ZIMAGE_MODELS or model in EDIT_MODELS:
+            rsp = generate_with_synthesis(
+                api_key,
+                model,
+                args.prompt,
+                size,
+                args.negative,
+                prompt_extend=not args.no_extend,
+            )
+        elif (
+            model in MULTIMODAL_MODELS or model in ZIMAGE_MODELS or model in EDIT_MODELS
+        ):
             api_key = get_api_key()
-            rsp = generate_with_multimodal(api_key, model, args.prompt, size,
-                                           args.negative,
-                                           image=input_image,
-                                           prompt_extend=not args.no_extend)
+            rsp = generate_with_multimodal(
+                api_key,
+                model,
+                args.prompt,
+                size,
+                args.negative,
+                image=input_image,
+                prompt_extend=not args.no_extend,
+            )
         else:
             api_key = get_api_key()
-            rsp = generate_with_generation(api_key, model, args.prompt, size,
-                                           args.negative,
-                                           prompt_extend=not args.no_extend)
+            rsp = generate_with_generation(
+                api_key,
+                model,
+                args.prompt,
+                size,
+                args.negative,
+                prompt_extend=not args.no_extend,
+            )
     except ImageGenError as e:
         # ConfigError (missing key) → exit 2 / AUTH_ERROR, not retryable;
         # APIError → exit 3 / API_ERROR, retryable.
@@ -1049,22 +1376,32 @@ Examples:
 
     if platform == "gemini":
         # Gemini returns image bytes directly (no URL to download)
+        if not save_gemini_image:
+            _emit_error(EX_AUTH, "Gemini module not available")
         try:
             save_gemini_image(image_bytes, output_path)
         except Exception as e:
             _emit_error(EX_IO, f"Failed to save image to {output_path}: {e}")
-    elif platform in ("ark", "hunyuan", "zhipu", "stepfun"):
+    elif platform == "openai":
+        # OpenAI returns base64 bytes directly (no URL to download)
+        if not save_openai_image:
+            _emit_error(EX_AUTH, "OpenAI module not available")
+        try:
+            save_openai_image(image_bytes, output_path)
+        except Exception as e:
+            _emit_error(EX_IO, f"Failed to save image to {output_path}: {e}")
+    elif platform in ("ark", "hunyuan", "zhipu", "stepfun", "grok", "bfl"):
         # URL returned directly from generation function
         if not save_image(image_url, output_path):
             _emit_error(EX_IO, f"Failed to save image to {output_path}")
     else:
         # DashScope response handling
-        if hasattr(rsp, 'status_code') and rsp.status_code != HTTPStatus.OK:
+        if hasattr(rsp, "status_code") and rsp.status_code != HTTPStatus.OK:
             msg = f"API returned {rsp.status_code}"
             extra = {"http_status": rsp.status_code}
-            if hasattr(rsp, 'code') and rsp.code:
+            if hasattr(rsp, "code") and rsp.code:
                 extra["api_code"] = str(rsp.code)
-            if hasattr(rsp, 'message') and rsp.message:
+            if hasattr(rsp, "message") and rsp.message:
                 extra["api_message"] = str(rsp.message)
             _emit_error(EX_API, msg, retryable=True, **extra)
 
@@ -1085,8 +1422,10 @@ Examples:
             "model": model,
             "platform": platform,
         }
-        meta = {"version": "1.0", "idempotency_note":
-                "Image generation is not idempotent — each call produces a new image."}
+        meta = {
+            "version": "1.0",
+            "idempotency_note": "Image generation is not idempotent — each call produces a new image.",
+        }
         _emit_success(out_data, meta)
     else:
         _emit_error(EX_IO, f"Failed to save image to {output_path}")
