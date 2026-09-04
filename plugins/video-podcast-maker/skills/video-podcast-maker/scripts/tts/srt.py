@@ -1,7 +1,6 @@
 """SRT subtitle and timing.json generation."""
-import os
-import re
 import json
+import re
 import subprocess
 
 
@@ -166,7 +165,7 @@ def reconcile_timing_with_wav(timing_path, wav_path, drift_threshold=0.5):
     if real is None:
         print(f"Warning: ffprobe failed on {wav_path}; timing.json left unchanged")
         return 1.0, None
-    with open(timing_path, 'r', encoding='utf-8') as f:
+    with open(timing_path, encoding='utf-8') as f:
         timing = json.load(f)
     reported = timing['total_duration']
     drift = real - reported

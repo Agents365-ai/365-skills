@@ -18,28 +18,45 @@ import os
 import re
 import sys
 import time
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.resolve()))
 
+import idempotency
 from backends import (
-    BACKENDS, VOICES, VOICE_DESCRIPTIONS, TAGS,
-    init_backend, get_synthesize_func, get_max_chars,
-    resolve_backend, resolve_voice, resolve_speech_rate,
-    BackendError, MissingPackageError, MissingEnvVarError,
-    UnknownBackendError,
-)
-from output import (
-    use_json, envelope, success, error, emit_success, emit_error,
-    EXIT_OK, EXIT_INTERNAL, EXIT_VALIDATION, EXIT_AUTH, EXIT_BACKEND,
-    exit_for_error_code, SCHEMA_VERSION, VERSION,
+    BACKENDS,
+    TAGS,
+    VOICE_DESCRIPTIONS,
+    VOICES,
+    BackendError,
+    MissingEnvVarError,
+    MissingPackageError,
+    get_max_chars,
+    get_synthesize_func,
+    init_backend,
+    resolve_backend,
+    resolve_speech_rate,
+    resolve_voice,
 )
 from markers import (
-    SOUND_TAG_RE, protect_pauses, restore_pauses, render_markers, strip_markers,
+    SOUND_TAG_RE,
+    protect_pauses,
+    render_markers,
+    restore_pauses,
+    strip_markers,
 )
-from phonemes import load_phonemes, apply_phonemes_minimax
-import idempotency
+from output import (
+    EXIT_AUTH,
+    EXIT_BACKEND,
+    EXIT_INTERNAL,
+    EXIT_VALIDATION,
+    SCHEMA_VERSION,
+    VERSION,
+    emit_error,
+    emit_success,
+)
+from phonemes import apply_phonemes_minimax, load_phonemes
 
 DEFAULT_BACKEND = "edge"
 
@@ -135,7 +152,7 @@ def _prepare_chunks(backend, text, max_chars, phoneme_dict):
             chunks = [render_markers(c, "minimax") for c in chunks]
             # Sound tags are only understood by speech-2.8 models — on older
             # models MiniMax reads "(chuckle)" aloud, so strip them instead.
-            if not os.environ.get("MINIMAX_MODEL", "").startswith("speech-2.8"):
+            if not os.environ.get("MINIMAX_MODEL", "speech-2.8-hd").startswith("speech-2.8"):
                 if any(SOUND_TAG_RE.search(c) for c in chunks):
                     print("warning: sound tags stripped — set "
                           "MINIMAX_MODEL=speech-2.8-hd to voice them",
@@ -217,7 +234,7 @@ def _list_text(args_fields=None):
         if info.get('supports_clone'):
             print(f"      Clone:         ✅ yes — {info.get('clone_detail','')}")
         else:
-            print(f"      Clone:         ❌ no")
+            print("      Clone:         ❌ no")
         envs = ", ".join(info["env"]) if info["env"] else "none required"
         print(f"      Env vars:      {envs}")
         print()
@@ -285,7 +302,7 @@ def _handle_schema(args):
                        "providers_updated": _get_providers_updated()})
 
     emit_error("validation_failed",
-               "Unknown schema path: {}. Use: backends, backends.<id>, voices, tags, version".format(path),
+               f"Unknown schema path: {path}. Use: backends, backends.<id>, voices, tags, version",
                field="path", retryable=False, exit_code=EXIT_VALIDATION)
 
 
@@ -307,7 +324,7 @@ def _ensure_mp3(output_file, started_at):
     )
     if conv.returncode != 0:
         emit_error("backend_error",
-                   "MP3 transcode failed: {}".format(conv.stderr[-200:]),
+                   f"MP3 transcode failed: {conv.stderr[-200:]}",
                    retryable=False, exit_code=EXIT_BACKEND,
                    started_at=started_at)
     os.replace(tmp_file, output_file)
@@ -446,7 +463,7 @@ def _resolve_output(args, backend, fmt):
         return args.output
     if fmt in ("wav", "mp3"):
         ts = datetime.now().strftime("%Y%m%d-%H%M%S")
-        return "ttscn-{}-{}.{}".format(backend, ts, fmt)
+        return f"ttscn-{backend}-{ts}.{fmt}"
     return None
 
 
@@ -524,10 +541,10 @@ def _run(args, started_at, json_mode=False):
     if args.input:
         if not os.path.exists(args.input):
             emit_error("input_not_found",
-                       "Input file not found: {}".format(args.input),
+                       f"Input file not found: {args.input}",
                        field="input", retryable=False,
                        exit_code=EXIT_VALIDATION, started_at=started_at)
-        with open(args.input, "r", encoding="utf-8") as f:
+        with open(args.input, encoding="utf-8") as f:
             text = f.read().strip()
     elif args.text:
         text = args.text
@@ -554,12 +571,12 @@ def _run(args, started_at, json_mode=False):
             if cached_file and not os.path.exists(cached_file):
                 # Cached metadata is worthless if the audio was deleted —
                 # fall through and synthesize again.
-                print("idempotency hit: {} — but {} no longer exists; "
-                      "re-synthesizing".format(idem_key[:20], cached_file),
+                print(f"idempotency hit: {idem_key[:20]} — but {cached_file} no longer exists; "
+                      "re-synthesizing",
                       file=_diag)
             else:
                 cached = dict(cached, cached=True)
-                print("idempotency hit: {} — returning cached result".format(idem_key[:20]),
+                print(f"idempotency hit: {idem_key[:20]} — returning cached result",
                       file=_diag)
                 if json_mode:
                     emit_success(cached, started_at=started_at)
@@ -581,17 +598,17 @@ def _run(args, started_at, json_mode=False):
         output_file = _with_extension(output_file, "." + output_fmt)
 
     # ── Display config ────────────────────────────────────────────────────
-    print("Backend:  {} [from {}]".format(backend, backend_src), file=_diag)
-    print("Voice:    {} [from {}]".format(voice, voice_src), file=_diag)
+    print(f"Backend:  {backend} [from {backend_src}]", file=_diag)
+    print(f"Voice:    {voice} [from {voice_src}]", file=_diag)
     desc = _resolve_voice_name(backend, voice)
     if desc and desc != voice:
-        print("          {}".format(desc), file=_diag)
-    print("Rate:     {} [from {}]".format(rate, rate_src), file=_diag)
-    print("Format:   {}".format(output_fmt), file=_diag)
-    print("Output:   {}".format(output_file), file=_diag)
-    print("Text:     {} characters".format(len(text)), file=_diag)
+        print(f"          {desc}", file=_diag)
+    print(f"Rate:     {rate} [from {rate_src}]", file=_diag)
+    print(f"Format:   {output_fmt}", file=_diag)
+    print(f"Output:   {output_file}", file=_diag)
+    print(f"Text:     {len(text)} characters", file=_diag)
     if idem_key:
-        print("Idem key: {}...".format(idem_key[:30]), file=_diag)
+        print(f"Idem key: {idem_key[:30]}...", file=_diag)
     print(file=_diag)
 
     max_chars = get_max_chars(backend)
@@ -601,14 +618,14 @@ def _run(args, started_at, json_mode=False):
     if args.phonemes:
         if not os.path.exists(args.phonemes):
             emit_error("input_not_found",
-                       "Phonemes file not found: {}".format(args.phonemes),
+                       f"Phonemes file not found: {args.phonemes}",
                        field="phonemes", retryable=False,
                        exit_code=EXIT_VALIDATION, started_at=started_at)
         try:
             phoneme_dict = load_phonemes(args.phonemes)
         except ValueError as e:
             emit_error("validation_failed",
-                       "Invalid phonemes file: {}".format(e),
+                       f"Invalid phonemes file: {e}",
                        field="phonemes", retryable=False,
                        exit_code=EXIT_VALIDATION, started_at=started_at)
 
@@ -644,11 +661,11 @@ def _run(args, started_at, json_mode=False):
             emit_success(dry_run_data, started_at=started_at)
         else:
             print("--- Dry Run ---", file=_diag)
-            print("  Chinese chars:  {}".format(cn), file=_diag)
-            print("  English words:  {}".format(en), file=_diag)
-            print("  Total chars:    {}".format(len(text)), file=_diag)
-            print("  Chunks:         {} (max {} chars/chunk)".format(len(chunks), max_chars), file=_diag)
-            print("  Est. duration:  {:.0f}s ({:.1f} min)".format(est_duration, est_duration / 60), file=_diag)
+            print(f"  Chinese chars:  {cn}", file=_diag)
+            print(f"  English words:  {en}", file=_diag)
+            print(f"  Total chars:    {len(text)}", file=_diag)
+            print(f"  Chunks:         {len(chunks)} (max {max_chars} chars/chunk)", file=_diag)
+            print(f"  Est. duration:  {est_duration:.0f}s ({est_duration / 60:.1f} min)", file=_diag)
             print("  SSML:           {}".format("yes" if BACKENDS[backend]["supports_ssml"] else "no"), file=_diag)
             print("  API call:       not made", file=_diag)
         return
@@ -677,14 +694,14 @@ def _run(args, started_at, json_mode=False):
         config["phoneme_dict"] = phoneme_dict
 
     # ── Synthesize ────────────────────────────────────────────────────────
-    print("Split into {} chunk(s) (max {} chars/chunk)\n".format(len(chunks), max_chars),
+    print(f"Split into {len(chunks)} chunk(s) (max {max_chars} chars/chunk)\n",
           file=_diag)
 
     synthesize = get_synthesize_func(backend)
     try:
         synth_result = synthesize(chunks, config, output_file, output_format=output_fmt)
     except Exception as e:
-        emit_error("backend_error", "Synthesis failed: {}".format(e),
+        emit_error("backend_error", f"Synthesis failed: {e}",
                    retryable=True, backend=backend,
                    exit_code=EXIT_BACKEND, started_at=started_at)
 
@@ -731,11 +748,11 @@ def _run(args, started_at, json_mode=False):
     if json_mode:
         emit_success(result, started_at=started_at)
     else:
-        size_str = "{:.1f} KB".format(file_size / 1024) if file_size < 1024 * 1024 else "{:.1f} MB".format(file_size / 1024 / 1024)
+        size_str = f"{file_size / 1024:.1f} KB" if file_size < 1024 * 1024 else f"{file_size / 1024 / 1024:.1f} MB"
         print("\nDone!")
-        print("  Output:   {} ({})".format(output_file, size_str))
-        print("  Duration: {:.1f}s ({:.1f} min)".format(duration, duration / 60))
-        print("  Time:     {:.1f}s wall clock".format(elapsed))
+        print(f"  Output:   {output_file} ({size_str})")
+        print(f"  Duration: {duration:.1f}s ({duration / 60:.1f} min)")
+        print(f"  Time:     {elapsed:.1f}s wall clock")
 
 
 if __name__ == "__main__":

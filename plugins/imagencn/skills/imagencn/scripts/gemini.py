@@ -14,23 +14,40 @@ and save_gemini_image() writes them to disk (no download step).
 
 import base64
 import os
+from typing import Any
 
 from providers.base import (
-    OpenAICompatibleProvider, ConfigError, APIError, safe_request, safe_json,
+    APIError,
+    ConfigError,
+    IOError_,
+    OpenAICompatibleProvider,
+    safe_json,
+    safe_request,
 )
 
 GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta/models"
 GEMINI_DEFAULT_MODEL = "gemini-3-pro-image-preview"
 GEMINI_DEFAULT_SIZE = "1K"
 
-GEMINI_MODELS = {"gemini-3-pro-image-preview"}
+GEMINI_MODELS = {
+    "gemini-3-pro-image-preview",
+    "gemini-3-pro-image",
+    "gemini-3.1-flash-image",
+    "gemini-3.1-flash-lite-image",
+}
 
 # Named sizes ("512"/"1K"/"2K") map to imageConfig.image_size; ratio presets
 # map to imageConfig.aspect_ratio. Gemini has no exact pixel-size parameter.
 GEMINI_SIZES = {
-    "512": "512", "1K": "1K", "2K": "2K",
-    "1:1": "1:1", "16:9": "16:9", "9:16": "9:16",
-    "4:3": "4:3", "3:4": "3:4",
+    "512": "512",
+    "1K": "1K",
+    "2K": "2K",
+    "4K": "4K",
+    "1:1": "1:1",
+    "16:9": "16:9",
+    "9:16": "9:16",
+    "4:3": "4:3",
+    "3:4": "3:4",
 }
 
 
@@ -41,7 +58,8 @@ def get_gemini_api_key():
         raise ConfigError(
             "GEMINI_API_KEY environment variable not set.\n"
             "Set it with: export GEMINI_API_KEY='your-api-key'\n"
-            "Get a free key at: https://aistudio.google.com/")
+            "Get a free key at: https://aistudio.google.com/"
+        )
     return key
 
 
@@ -63,7 +81,7 @@ def generate_with_gemini(api_key, model, prompt, size, seed=None):
         "x-goog-api-key": api_key,
         "Content-Type": "application/json",
     }
-    generation_config = {"responseModalities": ["IMAGE", "TEXT"]}
+    generation_config: dict[str, Any] = {"responseModalities": ["IMAGE", "TEXT"]}
     if size:
         if ":" in size:
             generation_config["imageConfig"] = {"aspect_ratio": size}
@@ -76,8 +94,9 @@ def generate_with_gemini(api_key, model, prompt, size, seed=None):
         "generationConfig": generation_config,
     }
 
-    rsp = safe_request("POST", url, headers=headers, json_data=body,
-                       label="Gemini generate")
+    rsp = safe_request(
+        "POST", url, headers=headers, json_data=body, label="Gemini generate"
+    )
     if rsp.status_code != 200:
         # Gemini errors use the same {"error": {"code", "message"}} shape.
         raise APIError(OpenAICompatibleProvider.format_error(rsp))
@@ -88,14 +107,16 @@ def generate_with_gemini(api_key, model, prompt, size, seed=None):
             inline = part.get("inlineData")
             if inline and inline.get("data"):
                 return base64.b64decode(inline["data"])
-    raise APIError(
-        "Gemini returned no image data (prompt may have been blocked)")
+    raise APIError("Gemini returned no image data (prompt may have been blocked)")
 
 
 def save_gemini_image(image_bytes, output_path):
     """Write decoded image bytes to output_path. Returns byte count."""
     path = os.path.abspath(output_path)
-    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
-    with open(path, "wb") as f:
-        f.write(image_bytes)
+    try:
+        os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+        with open(path, "wb") as f:
+            f.write(image_bytes)
+    except OSError as e:
+        raise IOError_(f"failed to write {output_path}: {e}") from e
     return len(image_bytes)

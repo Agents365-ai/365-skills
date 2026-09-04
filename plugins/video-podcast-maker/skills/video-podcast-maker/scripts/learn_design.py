@@ -20,7 +20,6 @@ from datetime import datetime, timezone
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import cli_envelope  # noqa: E402
 
-
 # ============ Constants ============
 
 # Skill root (one level above scripts/).

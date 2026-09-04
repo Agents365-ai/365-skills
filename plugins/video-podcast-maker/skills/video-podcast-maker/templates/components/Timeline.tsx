@@ -114,7 +114,7 @@ const TimelineItem = ({
           />
         )}
       </div>
-      <div style={{ paddingBottom: !isLast ? 32 : 0, flex: 1 }}>
+      <div style={{ paddingBottom: isLast ? 0 : 32, flex: 1 }}>
         <div style={{ fontSize: 34, fontWeight: 700, color: props.primaryColor }}>{item.label}</div>
         <div style={{ fontSize: 26, color: props.textColor, marginTop: 6, lineHeight: 1.5, opacity: 0.75 }}>
           {item.description}

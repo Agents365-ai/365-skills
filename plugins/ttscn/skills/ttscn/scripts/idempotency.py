@@ -11,7 +11,6 @@ import hashlib
 import json
 import os
 import time
-from pathlib import Path
 
 CACHE_DIR = os.path.expanduser("~/.ttscn_idem")
 CACHE_TTL_SECONDS = 7 * 24 * 3600  # 7 days

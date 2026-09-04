@@ -11,6 +11,7 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/pi-companion.mjs" setup --json $ARGUMENTS
 ```
 
 If the result says Pi is unavailable and npm is available:
+
 - Use `AskUserQuestion` exactly once to ask whether Claude should install Pi now.
 - Put the install option first and suffix it with `(Recommended)`.
 - Use these two options:
@@ -29,9 +30,11 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/pi-companion.mjs" setup --json $ARGUMENTS
 ```
 
 If Pi is already installed or npm is unavailable:
+
 - Do not ask about installation.
 
 Output rules:
+
 - Present the final setup output to the user.
 - If installation was skipped, present the original setup output.
 - If Pi is installed but no provider is configured, preserve the guidance to set a provider API key (e.g. `DEEPSEEK_API_KEY`) or write `~/.pi/agent/models.json` per pi's `providers.md`.

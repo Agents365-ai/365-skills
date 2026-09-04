@@ -3,19 +3,24 @@
 TTS Script for Video Podcast Maker — all backends route through the ttscn component skill.
 Generates audio from podcast.txt and creates SRT subtitles + timing.json for Remotion sync
 """
+import argparse
 import json
 import os
-import sys
 import re
-import time
-import argparse
 import subprocess
+import sys
+import time
 
 import cli_envelope
 from tts.markers import protect_pauses, restore_pauses, strip_markers
-from tts.phonemes import load_phoneme_dicts, extract_inline_phonemes
-from tts.sections import parse_sections, validate_sections, print_validation_report, match_section_times
-from tts.srt import write_srt, write_timing, reconcile_timing_with_wav
+from tts.phonemes import extract_inline_phonemes, load_phoneme_dicts
+from tts.sections import (
+    match_section_times,
+    parse_sections,
+    print_validation_report,
+    validate_sections,
+)
+from tts.srt import reconcile_timing_with_wav, write_srt, write_timing
 from tts.voice_advisor import print_advisory
 
 
@@ -162,7 +167,11 @@ def _run(args, started_at):
     # --- Backend init (skip for validate-only) ---
     if not args.validate:
         from tts.backends import (
-            BackendError, init_backend, get_synthesize_func, get_max_chars, resolve_backend,
+            BackendError,
+            get_max_chars,
+            get_synthesize_func,
+            init_backend,
+            resolve_backend,
         )
         if args.backend:
             BACKEND, source = args.backend, 'cli'
@@ -201,7 +210,7 @@ def _run(args, started_at):
             field="input", started_at=started_at,
         ))
 
-    with open(args.input, "r", encoding="utf-8") as f:
+    with open(args.input, encoding="utf-8") as f:
         text = f.read().strip()
 
     # --- Parse sections ---

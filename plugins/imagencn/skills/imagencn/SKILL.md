@@ -1,10 +1,10 @@
 ---
 name: imagencn
-description: Multi-platform AI image generation via DashScope/Ark/Hunyuan/Zhipu/StepFun plus Google Gemini (international), specializing in Chinese text rendering and photorealistic images
+description: Multi-platform AI image generation via DashScope/Ark/Hunyuan/Zhipu/StepFun plus Grok/OpenAI/Gemini/FLUX (international), specializing in Chinese text rendering and photorealistic images
 author: Agents365-ai
-version: 1.1.1
+version: 1.3.0
 created: 2024-12-01
-updated: 2026-07-16
+updated: 2026-08-08
 homepage: https://github.com/Agents365-ai/imagenCN
 metadata: {"openclaw":{"requires":{"bins":["python3"],"env":["DASHSCOPE_API_KEY"]},"primaryEnv":"DASHSCOPE_API_KEY","emoji":"🎨"}}
 ---
@@ -17,24 +17,29 @@ metadata: {"openclaw":{"requires":{"bins":["python3"],"env":["DASHSCOPE_API_KEY"
 
 Generate images using Alibaba Cloud Bailian API. **Default endpoint is China region**.
 
-Supports six platforms across ten model families:
+Supports nine platforms across fourteen model families:
+
 - **Alibaba Cloud Bailian** (DashScope): Qwen-Image 2.0, Qwen-Image Edit, Qwen-Image legacy, Wan Series, Z-Image
 - **ByteDance Volcano Ark**: Doubao-Seedream series (OpenAI-compatible REST)
 - **Tencent Hunyuan**: Hunyuan Image 3.0 (OpenAI-compatible REST)
 - **Zhipu / BigModel**: CogView-4 and GLM-Image (OpenAI-compatible REST)
 - **StepFun / 阶跃星辰**: Step-2X and Step-Image-Edit (OpenAI-compatible REST)
-- **Google Gemini** (international): Gemini 3 Pro Image (generateContent REST)
+- **Google Gemini** (international): Gemini 3 Pro Image / 3.1 Flash Image (generateContent REST)
+- **Grok / xAI** (international): Grok Imagine (OpenAI-compatible REST)
+- **OpenAI** (international): GPT Image 1 / 2 (Images API)
+- **Black Forest Labs / FLUX** (international): FLUX.2 Pro / Max (async REST)
 
 **Cross-platform support**: Windows, macOS, Linux
 
 ## When to Use This Skill
 
 Automatically activate this skill when:
+
 - User requests image generation with Chinese text or calligraphy
 - Need photorealistic images or photography-style visuals
 - Creating commercial posters, illustrations, or digital art
-- User mentions any of these: Alibaba Cloud / Bailian / Qwen / Wan / DashScope, ByteDance / Volcano Ark / Seedream / Doubao, Tencent / Hunyuan, Google / Gemini / Nano Banana
-- User wants an international (non-China) image provider — use the Gemini platform
+- User mentions any of these: Alibaba Cloud / Bailian / Qwen / Wan / DashScope, ByteDance / Volcano Ark / Seedream / Doubao, Tencent / Hunyuan, Google / Gemini / Nano Banana, Grok / xAI, OpenAI / GPT Image, FLUX / Black Forest Labs
+- User wants an international (non-China) image provider — use the Gemini / Grok / OpenAI / FLUX platforms
 - Any task where AI-generated image with strong Chinese support would be helpful
 
 ## Model Reference
@@ -46,7 +51,7 @@ choosing, open the local model reference page in their browser:
 open ~/.claude/skills/imagencn/docs/models.html
 ```
 
-This page shows all 31 models across 6 platforms with pricing, resolution,
+This page shows all 44 models across 9 platforms with pricing, resolution,
 feature highlights, and a quick-reference guide.  On Linux use `xdg-open`;
 the file also works from `file://` with no server needed.
 
@@ -94,7 +99,7 @@ If the output path was implicit, save into the user's current working directory.
 ### Qwen-Image 2.0 family - Latest Flagship (MultiModalConversation API)
 
 | Model | Description |
-|-------|-------------|
+| ------- | ------------- |
 | `qwen-image-2.0-pro` | **Default**. Latest flagship, native 2K, strongest typography and detail |
 | `qwen-image-2.0-pro-2026-06-22` | Latest snapshot (Jun 2026): generation + editing fusion, better text rendering and prompt adherence |
 | `qwen-image-2.0` | Standard 2.0 tier, native 2K |
@@ -106,7 +111,7 @@ If the output path was implicit, save into the user's current working directory.
 Editing models require an input image via `--image` (local path or URL). Omit `--size` to match the input image dimensions.
 
 | Model | Description |
-|-------|-------------|
+| ------- | ------------- |
 | `qwen-image-edit-max` | Flagship editing model, strongest instruction following |
 | `qwen-image-edit-max-2026-01-16` | Latest max snapshot (Jan 2026) |
 | `qwen-image-edit-plus` | Faster, lower-cost editing |
@@ -114,7 +119,7 @@ Editing models require an input image via `--image` (local path or URL). Omit `-
 ### Qwen-Image legacy (ImageSynthesis API)
 
 | Model | Description |
-|-------|-------------|
+| ------- | ------------- |
 | `qwen-image-plus` | Distilled accelerated version of qwen-image-max |
 | `qwen-image-plus-2026-01-09` | qwen-image-plus snapshot (Jan 2026): faster high-quality generation |
 | `qwen-image` | Base model |
@@ -122,7 +127,7 @@ Editing models require an input image via `--image` (local path or URL). Omit `-
 ### Wan Series - Photorealistic Generation (ImageGeneration API)
 
 | Model | Description |
-|-------|-------------|
+| ------- | ------------- |
 | `wan2.7-image-pro` | **Latest**. Up to 4K output, unified architecture (T2I + edit + multi-image) |
 | `wan2.7-image` | Wan 2.7 standard, up to 2K |
 | `wan2.6-t2i` | Wan 2.6, flexible sizing |
@@ -142,7 +147,7 @@ Editing models require an input image via `--image` (local path or URL). Omit `-
 ### Volcano Ark - ByteDance Seedream (OpenAI-compatible API)
 
 | Model | Description |
-|-------|-------------|
+| ------- | ------------- |
 | `doubao-seedream-5-0-260128` | **Ark default**. Latest, up to 3K, PNG/JPEG output, best text rendering |
 | `doubao-seedream-4-5-251128` | Seedream 4.5, up to 4K |
 | `doubao-seedream-4-0-250828` | Seedream 4.0, up to 4K, budget-friendly |
@@ -156,7 +161,7 @@ Editing models require an input image via `--image` (local path or URL). Omit `-
 ### Zhipu / BigModel - CogView-4 & GLM-Image (OpenAI-compatible API)
 
 | Model | Description |
-|-------|-------------|
+| ------- | ------------- |
 | `cogview-4` | **Zhipu default**. Stable alias for latest CogView-4, native Chinese text rendering |
 | `cogview-4-250304` | CogView-4 fixed snapshot (Mar 2025), reproducible results |
 | `glm-image` | GLM-Image flagship, up to 2048x2048, hybrid autoregressive/diffusion |
@@ -171,8 +176,43 @@ Editing models require an input image via `--image` (local path or URL). Omit `-
 ### Google Gemini - International (generateContent API)
 
 | Model | Description |
-|-------|-------------|
+| ------- | ------------- |
 | `gemini-3-pro-image-preview` | **Gemini default**. Google flagship image model, 512/1K/2K named sizes plus aspect-ratio presets |
+| `gemini-3-pro-image` | Stable flagship (Nano Banana Pro), 1K/2K/4K |
+| `gemini-3.1-flash-image` | Nano Banana 2: fast generalist, 512/1K/2K/4K, strong text rendering |
+| `gemini-3.1-flash-lite-image` | Nano Banana 2 Lite: fastest/cheapest, 1K only |
+
+### Grok / xAI - International (OpenAI-compatible API)
+
+| Model | Description |
+| ------- | ------------- |
+| `grok-imagine-image-quality` | **Grok default**. High-quality Grok image model, aspect-ratio + resolution presets (up to 4K) |
+| `grok-imagine-image` | Standard Grok image model (alias `grok-imagine-image-2026-03-02`) |
+| `grok-2-image` | Legacy JPG model, no size control |
+
+### OpenAI - GPT Image (Images API)
+
+| Model | Description |
+| ------- | ------------- |
+| `gpt-image-1` | **OpenAI default**. Multimodal image model; 1024x1024 / 1536x1024 / 1024x1536 only |
+| `gpt-image-1-mini` | Fast, cheap GPT image variant |
+| `gpt-image-1.5` | Improved GPT image generation quality |
+| `gpt-image-2` | Latest flagship; arbitrary WxH sizes (edges divisible by 16) up to 4K |
+
+### Black Forest Labs / FLUX - International (async REST API)
+
+FLUX uses an asynchronous API: submit a request, poll for completion, then
+save. Prompt upsampling is built in (disable with `disable_pup` when needed).
+
+| Model | Description |
+| ------- | ------------- |
+| `flux-2-pro-preview` | **FLUX default**. Latest rolling FLUX.2 Pro, recommended for new use cases |
+| `flux-2-pro` | Fixed snapshot of FLUX.2 Pro for reproducible workflows |
+| `flux-2-max` | Highest quality FLUX.2, search-grounding for real-time information |
+
+> **FLUX 3**: image generation is not yet publicly available via API (early
+> access only, no public endpoint as of Aug 2026). Watch `bfl.ai` for the
+> general release.
 
 ## Usage
 
@@ -202,6 +242,7 @@ python ~/.claude/skills/imagencn/scripts/generate_image.py --size 1280*720 "Cust
 ### Size Presets
 
 **Qwen-Image 2.0 (native 2K):**
+
 - `1:1` -> 2048x2048 (default)
 - `16:9` -> 2688x1536
 - `9:16` -> 1536x2688
@@ -211,6 +252,7 @@ python ~/.claude/skills/imagencn/scripts/generate_image.py --size 1280*720 "Cust
 - `2K` -> 2048x2048
 
 **Qwen-Image legacy:**
+
 - `1:1` -> 1328x1328
 - `16:9` -> 1664x928
 - `9:16` -> 928x1664
@@ -218,6 +260,7 @@ python ~/.claude/skills/imagencn/scripts/generate_image.py --size 1280*720 "Cust
 - `3:4` -> 1104x1472
 
 **Z-Image (pixel area 512x512 to 2048x2048):**
+
 - `1:1` -> 1024x1024 (default)
 - `16:9` -> 1280x720
 - `9:16` -> 720x1280
@@ -226,6 +269,7 @@ python ~/.claude/skills/imagencn/scripts/generate_image.py --size 1280*720 "Cust
 - `1K` -> 1024x1024
 
 **Wan Series (Wan2.7 also accepts `1K`/`2K`/`4K`):**
+
 - `1:1` -> 1024x1024
 - `1:1-large` -> 1280x1280
 - `16:9` -> 1280x720
@@ -235,6 +279,7 @@ python ~/.claude/skills/imagencn/scripts/generate_image.py --size 1280*720 "Cust
 - `2:1` -> 1440x720
 
 **Volcano Ark (Seedream):**
+
 - `1:1` -> 2048x2048
 - `16:9` -> 2848x1600
 - `9:16` -> 1600x2848
@@ -245,6 +290,7 @@ python ~/.claude/skills/imagencn/scripts/generate_image.py --size 1280*720 "Cust
 - `1K` / `2K` / `3K` / `4K` (model-dependent max resolution)
 
 **Tencent Hunyuan (colon-separated format):**
+
 - `1:1` -> 1024:1024
 - `16:9` -> 1920:1080
 - `9:16` -> 1080:1920
@@ -252,6 +298,7 @@ python ~/.claude/skills/imagencn/scripts/generate_image.py --size 1280*720 "Cust
 - `3:4` -> 1200:1600
 
 **Zhipu (CogView-4 / GLM-Image):**
+
 - `1:1` -> 1024x1024 (default)
 - `16:9` -> 1344x768
 - `9:16` -> 768x1344
@@ -261,14 +308,36 @@ python ~/.claude/skills/imagencn/scripts/generate_image.py --size 1280*720 "Cust
 - `1:2` -> 720x1440
 
 **StepFun (Step-2X):**
+
 - `1:1` -> 1024x1024 (default)
 - `1:1-small` -> 512x512
 - `16:9` -> 1280x800
 - `9:16` -> 800x1280
 
 **Google Gemini (named sizes + aspect ratios):**
-- `512` / `1K` (default) / `2K` -> named output size
+
+- `512` / `1K` (default) / `2K` / `4K` -> named output size (4K on Pro / 3.1 Flash; Lite is 1K only)
 - `1:1`, `16:9`, `9:16`, `4:3`, `3:4` -> aspect ratio (no exact pixel sizes)
+
+**Grok / xAI (aspect ratio + resolution):**
+
+- `1:1`, `16:9`, `9:16`, `4:3`, `3:4`, `2:1` -> sent as `aspect_ratio` (default: 1:1)
+- `1K` / `2K` / `4K` -> sent as `resolution`
+
+**OpenAI (GPT Image):**
+
+- `1:1` -> 1024x1024 (default)
+- `16:9` -> 1536x1024, `9:16` -> 1024x1536
+- `4:3` -> 1344x1024, `3:4` -> 1024x1344
+- `1K` -> 1024x1024, `2K` -> 2048x2048 (gpt-image-2 only), `4K` -> 3840x2160 (gpt-image-2 only)
+
+**FLUX (Black Forest Labs):**
+
+- `1:1` -> 1024x1024 (default)
+- `16:9` -> 1344x768, `9:16` -> 768x1344
+- `4:3` -> 1152x864, `3:4` -> 864x1152
+- `2:1` -> 1440x720, `1:2` -> 720x1440
+- `1K` -> 1024x1024, `2K` -> 2048x2048 (flexible WxH also accepted)
 
 ### Advanced Options
 
@@ -281,6 +350,9 @@ python ~/.claude/skills/imagencn/scripts/generate_image.py --no-extend "A photor
 
 # Set random seed for reproducibility
 python ~/.claude/skills/imagencn/scripts/generate_image.py --seed 42 "A cat" cat.png
+
+# Rendering quality (OpenAI only: low / medium / high / auto)
+python ~/.claude/skills/imagencn/scripts/generate_image.py --platform openai --quality high "A cat" cat.png
 
 # Guidance scale (Volcano Ark only)
 python ~/.claude/skills/imagencn/scripts/generate_image.py --platform ark --guidance-scale 7.5 "Portrait" portrait.png
@@ -337,15 +409,31 @@ export STEP_MODEL="step-2x-large"               # Optional default model
 # Google Gemini (international)
 export GEMINI_API_KEY="your_api_key"            # Required for Gemini
 export GEMINI_MODEL="gemini-3-pro-image-preview" # Optional default model
+
+# Grok / xAI (international)
+export XAI_API_KEY="your_api_key"                # Required for Grok
+export XAI_MODEL="grok-imagine-image-quality"    # Optional default model
+
+# OpenAI (international)
+export OPENAI_API_KEY="your_api_key"             # Required for OpenAI
+export OPENAI_MODEL="gpt-image-1"                # Optional default model
+
+# Black Forest Labs / FLUX (international)
+export BFL_API_KEY="your_api_key"                # Required for FLUX
+export BFL_MODEL="flux-2-pro-preview"            # Optional default model
 ```
 
 Get API Keys:
-- DashScope: https://bailian.console.aliyun.com/
-- Volcano Ark: https://console.volcengine.com/ark/region:ark+cn-beijing/apikey
-- Tencent Hunyuan: https://console.cloud.tencent.com/tokenhub/apikey
-- Zhipu: https://bigmodel.cn
-- StepFun: https://platform.stepfun.com/interface-key
-- Google Gemini: https://aistudio.google.com/
+
+- DashScope: <https://bailian.console.aliyun.com/>
+- Volcano Ark: <https://console.volcengine.com/ark/region:ark+cn-beijing/apikey>
+- Tencent Hunyuan: <https://console.cloud.tencent.com/tokenhub/apikey>
+- Zhipu: <https://bigmodel.cn>
+- StepFun: <https://platform.stepfun.com/interface-key>
+- Google Gemini: <https://aistudio.google.com/>
+- Grok / xAI: <https://console.x.ai/>
+- OpenAI: <https://platform.openai.com/api-keys>
+- Black Forest Labs / FLUX: <https://api.bfl.ai/>
 
 ## Config File (Optional)
 
@@ -362,16 +450,17 @@ security.
 ```
 
 All keys are optional.  Priority (highest first):
+
 1. CLI arguments (`--platform`, `--model`, `--size`)
 2. Project config (`.imagencn.json` in current directory)
 3. User config (`~/.imagencn.json`)
-4. Environment variables (`DASHSCOPE_MODEL`, `ARK_MODEL`, `HUNYUAN_MODEL`, `ZHIPUAI_MODEL`, `STEP_MODEL`, `GEMINI_MODEL`)
+4. Environment variables (`DASHSCOPE_MODEL`, `ARK_MODEL`, `HUNYUAN_MODEL`, `ZHIPUAI_MODEL`, `STEP_MODEL`, `GEMINI_MODEL`, `XAI_MODEL`, `OPENAI_MODEL`, `BFL_MODEL`)
 5. Built-in defaults
 
 ## API Endpoints
 
 | Region | Alias | URL |
-|--------|-------|-----|
+| -------- | ------- | ----- |
 | **China** (default) | `cn` | `https://dashscope.aliyuncs.com/api/v1` |
 | Singapore | `sg` | `https://dashscope-intl.aliyuncs.com/api/v1` |
 | Virginia | `us` | `https://dashscope-us.aliyuncs.com/api/v1` |
@@ -386,10 +475,10 @@ export DASHSCOPE_API_BASE="https://dashscope-intl.aliyuncs.com/api/v1"
 
 ## Model Selection Guide
 
-### Quick Pick — You Only Need Eight
+### Quick Pick — You Only Need Nine
 
 | What you want | Model | Platform |
-|---------------|-------|----------|
+| --------------- | ------- | ---------- |
 | **Default / general** (posters, text) | `qwen-image-2.0-pro` | DashScope |
 | **Photorealistic** (portraits, landscapes) | `wan2.7-image-pro` | DashScope |
 | **Edit an image** | `qwen-image-edit-max` | DashScope |
@@ -399,13 +488,16 @@ export DASHSCOPE_API_BASE="https://dashscope-intl.aliyuncs.com/api/v1"
 | **Chinese text in images** | `cogview-4` | Zhipu |
 | **Ultra-cheap volume gen** | `step-image-edit-2` | StepFun |
 | **International (non-China)** | `gemini-3-pro-image-preview` | Google Gemini |
+| **International / Grok** | `grok-imagine-image-quality` | Grok / xAI |
+| **International / OpenAI** | `gpt-image-1` | OpenAI |
+| **International / FLUX** | `flux-2-pro-preview` | Black Forest Labs |
 
 All other models are legacy/snapshot variants.
 
 ### Full Reference
 
 | Use Case | Recommended Model |
-|----------|-------------------|
+| ---------- | ------------------- |
 | General high-quality (default) | `qwen-image-2.0-pro` |
 | Chinese text/calligraphy | `qwen-image-2.0-pro` |
 | English text on images | `qwen-image-2.0-pro` |
@@ -425,17 +517,18 @@ All other models are legacy/snapshot variants.
 
 ## Platform Quick Comparison
 
-| Feature | DashScope | Ark | Hunyuan | Zhipu | StepFun | Gemini |
-|---------|-----------|-----|---------|-------|--------|--------|
-| Best for | Text, variety | Photo+text | Complex CN | CN text in image | Ultra-cheap | International |
-| Max res | 4K | 4K | 2K | 2K | 1K | 2K |
-| SDK | `dashscope` | None | None | None | None | None |
-| Price | Varies | ~0.22 | ~0.20 | ~0.06 | ~0.02 | ~$0.13 |
-| Env var | `DASHSCOPE_API_KEY` | `ARK_API_KEY` | `HUNYUAN_API_KEY` | `ZHIPUAI_API_KEY` | `STEP_API_KEY` | `GEMINI_API_KEY` |
+| Feature | DashScope | Ark | Hunyuan | Zhipu | StepFun | Gemini | Grok | OpenAI | FLUX |
+| --------- | ----------- | ----- | --------- | ------- | -------- | -------- | ------ | -------- | ------ |
+| Best for | Text, variety | Photo+text | Complex CN | CN text in image | Ultra-cheap | International | International | International | International |
+| Max res | 4K | 4K | 2K | 2K | 1K | 4K | 4K | 4K (gpt-image-2) | 2K |
+| SDK | `dashscope` | None | None | None | None | None | None | None | None |
+| Price | Varies | ~0.22 | ~0.20 | ~0.06 | ~0.02 | ~$0.13 | ~$0.14 | ~$0.04 | ~$0.03 |
+| Env var | `DASHSCOPE_API_KEY` | `ARK_API_KEY` | `HUNYUAN_API_KEY` | `ZHIPUAI_API_KEY` | `STEP_API_KEY` | `GEMINI_API_KEY` | `XAI_API_KEY` | `OPENAI_API_KEY` | `BFL_API_KEY` |
 
 ## Examples
 
 ### Volcano Ark (ByteDance)
+
 ```bash
 # Default Ark model (Seedream 5.0)
 ARK_API_KEY="xxx" python scripts/generate_image.py \
@@ -451,6 +544,7 @@ ARK_API_KEY="xxx" python scripts/generate_image.py \
 ```
 
 ### Tencent Hunyuan
+
 ```bash
 # Default Hunyuan model (Image 3.0)
 HUNYUAN_API_KEY="xxx" python scripts/generate_image.py \
@@ -466,6 +560,7 @@ HUNYUAN_API_KEY="xxx" python scripts/generate_image.py \
 ```
 
 ### Google Gemini (international)
+
 ```bash
 # Default Gemini model (Gemini 3 Pro Image)
 GEMINI_API_KEY="xxx" python scripts/generate_image.py \
@@ -474,7 +569,44 @@ GEMINI_API_KEY="xxx" python scripts/generate_image.py \
   garden.png
 ```
 
+### Grok / xAI (international)
+
+```bash
+# Default Grok model (Grok Imagine Image Quality)
+XAI_API_KEY="xxx" python scripts/generate_image.py \
+  --platform grok --size 16:9 \
+  "A cinematic cyberpunk city street at night, neon reflections" \
+  city.png
+```
+
+### OpenAI (international)
+
+```bash
+# Default OpenAI model (GPT Image 1), high quality
+OPENAI_API_KEY="xxx" python scripts/generate_image.py \
+  --platform openai --quality high \
+  "Minimalist product shot of a ceramic teapot on linen, soft studio light" \
+  teapot.png
+```
+
+### Black Forest Labs / FLUX (international)
+
+```bash
+# Default FLUX model (FLUX.2 Pro Preview); async API — polls until ready
+BFL_API_KEY="xxx" python scripts/generate_image.py \
+  --platform bfl --size 16:9 \
+  "A dramatic volcanic coastline at dusk, long exposure photography" \
+  coast.png
+
+# Pinned snapshot for reproducible results
+BFL_API_KEY="xxx" python scripts/generate_image.py \
+  --platform bfl --model flux-2-pro --seed 42 \
+  "An astronaut walking through a bioluminescent jungle" \
+  jungle.png
+```
+
 ### Chinese New Year Poster (DashScope)
+
 ```bash
 python ~/.claude/skills/imagencn/scripts/generate_image.py \
   "A beautiful Chinese New Year poster with red background, golden text, fireworks and firecrackers" \
@@ -482,6 +614,7 @@ python ~/.claude/skills/imagencn/scripts/generate_image.py \
 ```
 
 ### Photorealistic Landscape (4K)
+
 ```bash
 python ~/.claude/skills/imagencn/scripts/generate_image.py \
   --model wan2.7-image-pro \
@@ -491,6 +624,7 @@ python ~/.claude/skills/imagencn/scripts/generate_image.py \
 ```
 
 ### Product Shot
+
 ```bash
 python ~/.claude/skills/imagencn/scripts/generate_image.py \
   --model wan2.7-image \

@@ -177,7 +177,11 @@ export function writeJobFile(cwd, jobId, payload) {
 }
 
 export function readJobFile(jobFile) {
-  return JSON.parse(fs.readFileSync(jobFile, "utf8"));
+  try {
+    return JSON.parse(fs.readFileSync(jobFile, "utf8"));
+  } catch (error) {
+    throw new Error(`Failed to read job file ${jobFile}: ${error instanceof Error ? error.message : String(error)}`);
+  }
 }
 
 function removeJobFile(jobFile) {

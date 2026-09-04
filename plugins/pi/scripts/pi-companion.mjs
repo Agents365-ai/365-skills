@@ -527,15 +527,15 @@ async function runPanelMemberReview(prep, request, model) {
     let failure = null;
     if (result.status !== 0) {
       failure = result.error?.message?.trim() || "Pi run failed.";
-    } else if (!parsed.parsed) {
-      failure = `invalid structured output: ${parsed.parseError}`;
-    } else {
+    } else if (parsed.parsed) {
       const shapeError = validateReviewResultShape(parsed.parsed);
       if (shapeError) {
         failure = `unexpected review shape: ${shapeError}`;
       } else {
         normalized = normalizeReviewResultData(parsed.parsed);
       }
+    } else {
+      failure = `invalid structured output: ${parsed.parseError}`;
     }
 
     return { model, normalized, failure, piSessionId: result.piSessionId ?? null };
@@ -626,15 +626,15 @@ async function runShardReview(request, prep, shardFiles, shardIndex, shardTotal)
     let failure = null;
     if (result.status !== 0) {
       failure = result.error?.message?.trim() || "Pi run failed.";
-    } else if (!parsed.parsed) {
-      failure = `invalid structured output: ${parsed.parseError}`;
-    } else {
+    } else if (parsed.parsed) {
       const shapeError = validateReviewResultShape(parsed.parsed);
       if (shapeError) {
         failure = `unexpected review shape: ${shapeError}`;
       } else {
         normalized = normalizeReviewResultData(parsed.parsed);
       }
+    } else {
+      failure = `invalid structured output: ${parsed.parseError}`;
     }
 
     return { files: shardFiles, normalized, failure, piSessionId: result.piSessionId ?? null };

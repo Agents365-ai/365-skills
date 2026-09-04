@@ -23,11 +23,11 @@ def build_ssml_fragment(chunk, phoneme_dict):
 
     def _save(m):
         tags.append(m.group(0))
-        return "\x00{}\x00".format(len(tags) - 1)
+        return f"\x00{len(tags) - 1}\x00"
 
     frag = escape(re.sub(r"<[^>]+>", _save, frag))
     for i, tag in enumerate(tags):
-        frag = frag.replace("\x00{}\x00".format(i), tag)
+        frag = frag.replace(f"\x00{i}\x00", tag)
     return frag
 
 

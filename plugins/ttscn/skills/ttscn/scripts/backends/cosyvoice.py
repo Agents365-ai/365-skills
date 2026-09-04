@@ -54,9 +54,11 @@ def synthesize(chunks, config, output_file, output_format="wav"):
     """
     import re as _re
     import struct
-    import json as _json
+
     from dashscope.audio.tts_v2 import (
-        SpeechSynthesizer, ResultCallback, AudioFormat,
+        AudioFormat,
+        ResultCallback,
+        SpeechSynthesizer,
     )
 
     speech_rate = config.get("speech_rate", "+5%")

@@ -18,7 +18,6 @@ wrong).
 """
 import re
 
-
 # Bare English abbreviations that Chinese speakers typically read as letters
 # (no language switch needed — Xiaoxiao reads them naturally in zh-CN context)
 COMMON_ABBREVS = {
@@ -105,11 +104,11 @@ def print_advisory(text, current_voice):
     print(f"  Reason: {metrics['reason']}")
 
     if current_voice and 'Multilingual' in current_voice and metrics['recommendation'] == 'standard':
-        print(f"  ⚠️  Current voice is Multilingual but content does not require it.")
+        print("  ⚠️  Current voice is Multilingual but content does not require it.")
         print(f"      Consider switching to {suggested} via TTS_VOICE env var.")
-        print(f"      Multilingual is known to produce vocoder artifacts at certain")
-        print(f"      Chinese-tone → English-letter transitions (e.g. '是，AI让...').")
+        print("      Multilingual is known to produce vocoder artifacts at certain")
+        print("      Chinese-tone → English-letter transitions (e.g. '是，AI让...').")
     elif current_voice and 'Multilingual' not in current_voice and metrics['recommendation'] == 'multilingual':
-        print(f"  ⚠️  Current voice is standard but content has substantial English.")
+        print("  ⚠️  Current voice is standard but content has substantial English.")
         print(f"      Consider switching to {suggested} for better English pronunciation.")
     return metrics

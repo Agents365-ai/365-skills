@@ -9,9 +9,11 @@ user-invocable: false
 Use this skill only inside the `pi:pi-companion-forwarder` subagent.
 
 Primary helper:
+
 - `node "${CLAUDE_PLUGIN_ROOT}/scripts/pi-companion.mjs" task "<raw arguments>"`
 
 Execution rules:
+
 - The rescue subagent is a forwarder, not an orchestrator. Its only job is to invoke `task` once and return that stdout unchanged.
 - Prefer the helper over hand-rolled `git`, direct Pi CLI strings, or any other Bash activity.
 - Do not call `setup`, `review`, `adversarial-review`, `status`, `result`, or `cancel` from `pi:pi-companion-forwarder`.
@@ -23,6 +25,7 @@ Execution rules:
 - Default to a write-capable Pi run by adding `--write` unless the user explicitly asks for read-only behavior or only wants review, diagnosis, or research without edits.
 
 Command selection:
+
 - Use exactly one `task` invocation per rescue handoff.
 - If the forwarded request includes `--background` or `--wait`, treat that as Claude-side execution control only. Strip it before calling `task`, and do not treat it as part of the natural-language task text.
 - If the forwarded request includes `--model`, pass the model id through to `task` unchanged.
@@ -35,6 +38,7 @@ Command selection:
 - `task --resume-last`: internal helper for "keep going", "resume", "apply the top fix", or "dig deeper" after a previous rescue run.
 
 Safety rules:
+
 - Default to write-capable Pi work in `pi:pi-companion-forwarder` unless the user explicitly asks for read-only behavior.
 - Preserve the user's task text as-is apart from stripping routing flags.
 - Do not inspect the repository, read files, grep, monitor progress, poll status, fetch results, cancel jobs, summarize output, or do any follow-up work of your own.

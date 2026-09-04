@@ -13,6 +13,7 @@ def synthesize(chunks, config, output_file, output_format="wav"):
     is {"text", "offset", "duration"} in seconds, absolute in the final file.
     """
     import asyncio
+
     import edge_tts
 
     voice = config.get("voice", "zh-CN-XiaoxiaoNeural")

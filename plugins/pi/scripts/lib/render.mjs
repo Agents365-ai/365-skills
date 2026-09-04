@@ -85,8 +85,8 @@ function isStructuredReviewStoredResult(storedJob) {
     return false;
   }
   return (
-    Object.prototype.hasOwnProperty.call(result, "result") ||
-    Object.prototype.hasOwnProperty.call(result, "parseError")
+    Object.hasOwn(result, "result") ||
+    Object.hasOwn(result, "parseError")
   );
 }
 

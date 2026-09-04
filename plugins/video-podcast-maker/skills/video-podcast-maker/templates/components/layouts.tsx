@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 import { AbsoluteFill } from "remotion";
 
 // 4K scaling wrapper - design at half resolution, auto-scale to 4K

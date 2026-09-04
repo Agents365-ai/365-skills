@@ -31,7 +31,6 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import cli_envelope  # noqa: E402
 from tts.backends import BACKENDS, resolve_backend  # noqa: E402
 
-
 REQUIRED_BINS = ["node", "python3", "ffmpeg"]
 
 

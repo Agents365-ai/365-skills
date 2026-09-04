@@ -33,8 +33,9 @@ import os
 import subprocess
 import sys
 import time
-from .base import check_resume
+
 from ..markers import strip_markers
+from .base import check_resume
 
 SUPPORTED_SCHEMA_MAJOR = 1
 

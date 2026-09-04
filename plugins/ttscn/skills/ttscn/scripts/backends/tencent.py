@@ -1,7 +1,7 @@
 """Tencent Cloud TTS backend — lowest cost, 380+ voices, SSML."""
 
-import os
 import base64
+import os
 import subprocess
 import uuid
 
@@ -13,8 +13,10 @@ def synthesize(chunks, config, output_file, output_format="wav"):
     Returns: total_duration_seconds (float)
     """
     from tencentcloud.common import credential
-    from tencentcloud.common.exception.tencent_cloud_sdk_exception import TencentCloudSDKException
-    from tencentcloud.tts.v20190823 import tts_client, models
+    from tencentcloud.common.exception.tencent_cloud_sdk_exception import (
+        TencentCloudSDKException,
+    )
+    from tencentcloud.tts.v20190823 import models, tts_client
 
     cred = credential.Credential(config["secret_id"], config["secret_key"])
     client = tts_client.TtsClient(cred, config.get("region", "ap-shanghai"))

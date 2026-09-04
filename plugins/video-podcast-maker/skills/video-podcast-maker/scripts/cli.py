@@ -35,7 +35,6 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import cli_envelope  # noqa: E402
 
-
 SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
 
 

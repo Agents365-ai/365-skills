@@ -1,10 +1,10 @@
 ---
 name: ttscn
-description: Multi-platform Chinese & multilingual TTS text-to-speech via Edge/Doubao/CosyVoice/Azure/Tencent/Baidu/MiniMax/Xunfei plus ElevenLabs/OpenAI/Google — 11 backends, word-level timestamps, [PAUSE:x] pause markers, pinyin pronunciation overrides
+description: Multi-platform Chinese & multilingual TTS text-to-speech via Edge/Doubao/CosyVoice/Qwen3/StepFun/GLM-TTS/Azure/Tencent/Baidu/MiniMax/Xunfei plus ElevenLabs/OpenAI/Google — 14 backends, word-level timestamps, [PAUSE:x] pause markers, pinyin pronunciation overrides
 author: Agents365-ai
-version: 1.7.0
+version: 1.9.0
 created: 2026-07-08
-updated: 2026-07-30
+updated: 2026-08-08
 homepage: https://github.com/Agents365-ai/ttsCN
 metadata: {"openclaw":{"requires":{"bins":["python3","ffmpeg"]},"emoji":"🔊"}}
 ---
@@ -13,21 +13,24 @@ metadata: {"openclaw":{"requires":{"bins":["python3","ffmpeg"]},"emoji":"🔊"}}
 
 ## Overview
 
-Generate natural speech audio from text. **11 backends** — 8 China-friendly clouds plus 3 international (ElevenLabs / OpenAI / Google).
+Generate natural speech audio from text. **14 backends** — 11 China-friendly clouds plus 3 international (ElevenLabs / OpenAI / Google).
 
 | # | Backend | Cost | Key strength |
-|---|---------|------|-------------|
+| --- | --------- | ------ | ------------- |
 | 1 | **Edge TTS** (default) | Free | No API key, works everywhere |
 | 2 | **Doubao** (ByteDance) | ~1 RMB/10K | Best Chinese naturalness (9/10) |
 | 3 | **CosyVoice** (Alibaba) | ~0.2 RMB/1K | Fast streaming, flexible |
-| 4 | **Azure** (Microsoft) | ~1 USD/M chars | Enterprise SSML, eastasia |
-| 5 | **Tencent Cloud** | **0.75 RMB/10K** | Lowest cost, 380+ voices |
-| 6 | **Baidu AI** | Flexible | 30+ voices, emotion + dialects |
-| 7 | **MiniMax** | ~$0.10/1K | Best quality, 300+ voices, cloning |
-| 8 | **iFlytek Xunfei** | ~2 RMB/10K | MOS 4.8, 500+ voices, pro grade |
-| 9 | **ElevenLabs** | Paid tiers (from $5/mo) | Top voice quality, instant cloning |
-| 10 | **OpenAI TTS** | ~$15-30/M chars | 6 voices, multilingual, simple REST |
-| 11 | **Google Cloud TTS** | ~$16/M chars (free tier) | 220+ voices, 40+ languages |
+| 4 | **Qwen3-TTS** (Alibaba) | ~1 RMB/10K | 10 languages, instruction control |
+| 5 | **StepFun** (阶跃星辰) | Low cost | OpenAI-compatible, ~10s cloning |
+| 6 | **GLM-TTS** (Zhipu) | Low cost | Emotion control, simple REST |
+| 7 | **Azure** (Microsoft) | ~1 USD/M chars | Enterprise SSML, eastasia |
+| 8 | **Tencent Cloud** | **0.75 RMB/10K** | Lowest cost, 380+ voices |
+| 9 | **Baidu AI** | Flexible | 30+ voices, emotion + dialects |
+| 10 | **MiniMax** | ~$0.10/1K | Best quality, 300+ voices, cloning |
+| 11 | **iFlytek Xunfei** | ~2 RMB/10K | MOS 4.8, 500+ voices, pro grade |
+| 12 | **ElevenLabs** | Paid tiers (from $5/mo) | Top voice quality, instant cloning |
+| 13 | **OpenAI TTS** | ~$15-30/M chars | 6 voices, multilingual, simple REST |
+| 14 | **Google Cloud TTS** | ~$16/M chars (free tier) | 220+ voices, 40+ languages |
 
 New in 1.4–1.6: **word-level timestamps** (edge/azure/doubao/minimax/cosyvoice —
 best-effort, degrades to no boundaries), **[PAUSE:x] + sound-tag markers** (all
@@ -35,6 +38,12 @@ platforms), **--phonemes pronunciation overrides** (azure/minimax).
 New in 1.7: **--json flag** (JSON envelope independent of `--format`), idempotency
 hits report `cached: true` and **re-synthesize if the cached audio was deleted**,
 `--input f out.wav` positional fixed, chunker never splits inside `[PAUSE:x]`.
+New in 1.8: **MiniMax defaults to speech-2.8-hd** (sound tags voiced out of the
+box), **CosyVoice v3.5-flash supported** (custom/cloned voices only — presets
+need cosyvoice-v3-flash).
+New in 1.9: **Qwen3-TTS** (DashScope, reuses DASHSCOPE_API_KEY), **StepFun**
+(reuses STEP_API_KEY) and **GLM-TTS** (reuses ZHIPUAI_API_KEY) backends — 14
+backends total, all three reuse keys you already have.
 
 **Cross-platform**: Windows, macOS, Linux
 
@@ -44,6 +53,7 @@ directory containing this SKILL.md) — resolve them against it.
 ## When to Use This Skill
 
 Automatically activate this skill when:
+
 - User wants to convert Chinese text to speech audio
 - Generating voice narration or voiceover for videos
 - Creating audiobook or podcast audio from text
@@ -67,6 +77,7 @@ python3 -m webbrowser docs/providers.html
 ```
 
 The comparison page includes:
+
 - **Filterable table** — filter by free, SSML, voice cloning, streaming, dialects, multilingual
 - **Per-provider detail panels** — cost, max chars/duration, clone method, emotion, languages
 - **Voice cards** — recommended voices with style descriptions and best-use labels
@@ -91,6 +102,7 @@ voice they want.
 ### Step 1 — Understand the request
 
 Clarify what the user needs:
+
 - **Text**: inline text or a file? Short or long-form?
 - **Voice style**: male/female, young/mature, warm/energetic? (see voice guide below)
 - **Speed**: normal, faster (+10-20%), slower (-10-20%)?
@@ -114,14 +126,14 @@ Confirm: output path, file size, audio duration.
 ### Quick Pick
 
 | Use case | Backend | Voice | Why |
-|----------|---------|-------|-----|
+| ---------- | --------- | ------- | ----- |
 | **Default / general** | edge | zh-CN-XiaoxiaoNeural | Free, no setup |
 | **Short video / Douyin** | doubao | BV001_streaming | Native short-video style |
 | **Audiobook / long-form** | cosyvoice | longxiaochun_v3 | Fast synthesis, natural |
 | **Enterprise / SSML** | azure | zh-CN-XiaoxiaoNeural | Rich prosody control |
 | **Bulk / lowest cost** | tencent | 101001 | 0.75 RMB/10K chars |
 | **Emotion / dialects** | baidu | 3 or 4 | Emotion synthesis, Cantonese |
-| **Best quality / cloning** | minimax | female-shaonv | speech-2.6-hd, voice design |
+| **Best quality / cloning** | minimax | female-shaonv | speech-2.8-hd, voice design |
 | **Education / pro** | xunfei | xiaoyan | MOS 4.8, 500+ voices |
 | **Male narration** | edge | zh-CN-YunxiNeural | Energetic male voice |
 | **Documentary** | azure | zh-CN-YunyangNeural | Deep, professional male |
@@ -130,6 +142,9 @@ Confirm: output path, file size, audio duration.
 | **English, top quality** | elevenlabs | 21m00Tcm4TlvDq8ikWAM (Rachel) | Best-in-class English voices |
 | **English, simple/cheap** | openai | alloy | tts-1-hd, one env var |
 | **English, enterprise** | google | en-US-Neural2-F | 220+ voices, free tier |
+| **Multilingual / instruct** | qwen | Cherry | 10 languages, natural-language style control, reuses your DASHSCOPE key |
+| **Marketing / fast** | stepfun | cixingnansheng | OpenAI-compatible, reuses your STEP key |
+| **Simple / emotion** | zhipu | tongtong | Minimal REST, reuses your ZHIPUAI key |
 
 ### Full capability & voice data
 
@@ -160,7 +175,9 @@ unused).
 python3 scripts/tts.py clone create --platform minimax --audio my_voice.wav --name myvoice --yes
 
 # CosyVoice — free, but --audio must be a public URL; --target-model must
-# match the synthesis model (default: $COSYVOICE_MODEL or cosyvoice-v3-flash)
+# match the synthesis model (default: $COSYVOICE_MODEL or cosyvoice-v3-flash).
+# v3.5-flash has NO preset voices — it needs a custom/cloned voice created with
+# the same model (voice IDs are not interchangeable across models).
 python3 scripts/tts.py clone create --platform cosyvoice --audio https://example.com/my.wav --name myvoice
 
 # Manage
@@ -172,6 +189,7 @@ python3 scripts/tts.py "用我的声音说这句话" out.wav --platform minimax 
 ```
 
 Rules the agent MUST follow:
+
 - MiniMax creation is paid — never run `clone create --platform minimax`
   without the user's explicit confirmation (the CLI enforces `--yes`).
 - Only clone the user's own voice or one they are authorized to use — both
@@ -301,9 +319,9 @@ export TTS_RATE="+5%"
 export TTS_FORMAT="wav"              # wav | mp3 | json (json = JSON envelope mode)
 
 # Backend tuning (optional)
-export MINIMAX_MODEL="speech-2.6-hd"       # use speech-2.8-* to voice sound tags
+export MINIMAX_MODEL="speech-2.8-hd"       # default; sound tags need speech-2.8-*
 export MINIMAX_GROUP_ID=""                 # required by some MiniMax accounts
-export COSYVOICE_MODEL="cosyvoice-v3-flash"
+export COSYVOICE_MODEL="cosyvoice-v3-flash"  # or cosyvoice-v3.5-flash (custom/cloned voices only)
 
 # ByteDance Volcano Ark (Doubao)
 # v3 (recommended, no appid): API key from the new console (Ark API Key page)
@@ -313,8 +331,19 @@ export VOLCENGINE_RESOURCE_ID="seed-tts-2.0"   # optional; seed-tts-1.0 / seed-i
 export VOLCENGINE_APPID="your_app_id"
 export VOLCENGINE_ACCESS_TOKEN="your_token"
 
-# Alibaba DashScope (CosyVoice)
+# Alibaba DashScope (CosyVoice + Qwen3-TTS)
 export DASHSCOPE_API_KEY="your_api_key"
+export QWEN_TTS_MODEL="qwen3-tts-flash"   # or qwen3-tts-instruct-flash (instructions control)
+export QWEN_TTS_LANGUAGE=""              # optional: Chinese / English / ... ; unset = Auto
+export QWEN_TTS_INSTRUCTIONS=""          # optional: natural-language style, instruct models only
+
+# StepFun (阶跃星辰)
+export STEP_API_KEY="your_api_key"
+export STEPFUN_TTS_MODEL="step-tts-mini"   # or step-tts-2 / stepaudio-2.5-tts
+
+# Zhipu (智谱)
+export ZHIPUAI_API_KEY="your_api_key"
+export ZHIPU_TTS_MODEL="glm-tts"
 
 # Microsoft Azure
 export AZURE_SPEECH_KEY="your_key"
@@ -352,16 +381,17 @@ export GOOGLE_TTS_LANGUAGE="en-US"                 # optional, auto-derived from
 ```
 
 Get API Keys:
-- Volcano Ark: https://console.volcengine.com/ark/region:ark+cn-beijing/apikey
-- DashScope: https://bailian.console.aliyun.com/
-- Azure: https://portal.azure.com/
-- Tencent Cloud: https://console.cloud.tencent.com/tts
-- Baidu AI: https://console.bce.baidu.com/ai/#/ai/speech/overview
-- MiniMax: https://platform.minimaxi.com
-- Xunfei: https://www.xfyun.cn
-- ElevenLabs: https://elevenlabs.io/app/settings/api-keys
-- OpenAI: https://platform.openai.com/api-keys
-- Google Cloud: https://console.cloud.google.com/apis/credentials
+
+- Volcano Ark: <https://console.volcengine.com/ark/region:ark+cn-beijing/apikey>
+- DashScope: <https://bailian.console.aliyun.com/>
+- Azure: <https://portal.azure.com/>
+- Tencent Cloud: <https://console.cloud.tencent.com/tts>
+- Baidu AI: <https://console.bce.baidu.com/ai/#/ai/speech/overview>
+- MiniMax: <https://platform.minimaxi.com>
+- Xunfei: <https://www.xfyun.cn>
+- ElevenLabs: <https://elevenlabs.io/app/settings/api-keys>
+- OpenAI: <https://platform.openai.com/api-keys>
+- Google Cloud: <https://console.cloud.google.com/apis/credentials>
 
 ## Config File (Optional)
 
@@ -376,6 +406,7 @@ Create `~/.ttscn.json` for personal defaults, or `.ttscn.json` in a project dire
 ```
 
 Priority (highest first):
+
 1. CLI arguments (`--platform`, `--voice`, `--rate`)
 2. Environment variables (`TTS_BACKEND`, `TTS_VOICE`, `TTS_RATE`)
 3. Project config (`.ttscn.json` in current directory)
@@ -494,7 +525,7 @@ separate forced-alignment pass.
 ### Exit Codes
 
 | Code | Meaning | Agent action |
-|------|---------|-------------|
+| ------ | --------- | ------------- |
 | **0** | Success | Parse `data`, proceed |
 | **1** | Internal / runtime error | Report to user, do not retry |
 | **2** | Validation / fixable error (bad input, missing package) | Fix input or install package, retry allowed |
@@ -504,7 +535,7 @@ separate forced-alignment pass.
 ### Schema Introspection
 
 ```bash
-python3 scripts/tts.py schema backends              # All 11 backends (compact by default)
+python3 scripts/tts.py schema backends              # All 14 backends (compact by default)
 python3 scripts/tts.py schema backends --full       # All fields (22 per backend)
 python3 scripts/tts.py schema backends.doubao       # Single backend full detail
 python3 scripts/tts.py schema voices                # All voice presets per backend

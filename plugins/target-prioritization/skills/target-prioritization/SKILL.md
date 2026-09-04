@@ -1,7 +1,7 @@
 ---
 name: target-prioritization
 description: Prioritize drug targets from a ranked gene list (e.g., scRNA-seq DE output) by orchestrating parallel API queries against UniProt, OpenTargets (with integrated DepMap CRISPR essentiality + gnomAD constraint), PubMed, the Human Protein Atlas (HPA), and ChEMBL tool compounds, then re-ranking by a composite score combining protein localization, druggability, disease genetics, tissue specificity (safety), focus-cell-type expression, CRISPR essentiality, LoF safety constraint, and research maturity. Use whenever the user wants to filter, triage, prioritize, or "do due diligence" on a list of candidate genes for drug discovery, especially after a DE / DEG analysis when they say things like "which of these should I follow up on", "filter for druggable targets", "make a target dossier", "rank these for tractability", "annotate these genes for druggability", or "build a target report". Trigger even when the user says just "filter these candidate genes" or hands over a CSV from a DE pipeline.
-metadata: {"openclaw":{"requires":{"bins":["python3","curl"]},"emoji":"🎯"},"version":"0.4.0"}
+metadata: {"openclaw":{"requires":{"bins":["python3","curl"]},"emoji":"🎯"},"version":"0.5.0"}
 ---
 
 # Target Prioritization
@@ -17,17 +17,23 @@ point; the final priority is informed by protein biology, genetics,
 druggability, and research maturity.
 
 Common input shapes:
+
 - A CSV with a `gene` column (DE output like `expression_table_pass_either_1s.csv`)
 - A plain-text gene list (one symbol per line)
 - A list of symbols inline in the user's message
 
 ## Output
 
-Three files inside `<output_dir>/`:
+Four files inside `<output_dir>/`:
+
 1. **`targets_report.md`** — one section per gene, sorted by composite score, with a
    short LLM-written rationale and recommended next step
-2. **`targets_summary.csv`** — flat table for sorting/filtering in Excel/pandas
-3. **`raw_data/<source>.json`** — raw API responses (audit trail, reusable across
+2. **`targets_report.html`** — self-contained interactive report (sortable +
+   searchable summary table, tier-filterable per-gene cards, score-component
+   bars, UniProt links). Built from the `.md` and `.csv` as the final step,
+   after Claude has filled the rationale slots and executive summary.
+3. **`targets_summary.csv`** — flat table for sorting/filtering in Excel/pandas
+4. **`raw_data/<source>.json`** — raw API responses (audit trail, reusable across
    future re-scorings)
 
 ## Pipeline
@@ -57,6 +63,12 @@ output_dir/
   ├─ raw_data/*.json
   ├─ targets_summary.csv       ← composite-score-ranked
   └─ targets_report.md         ← Claude fills the rationale sections
+   │
+   ▼
+scripts/build_html_report.py   ← run AFTER Claude fills rationales
+   │
+   ▼
+output_dir/targets_report.html ← self-contained interactive report
 ```
 
 ## How to invoke
@@ -122,9 +134,35 @@ For the top 5–10 genes by composite score, also write a short executive
 summary at the top of the report. Keep it factual and grounded in the
 dossier data; do not hallucinate beyond what the JSONs contain.
 
+## Building the HTML report (final step)
+
+Once `targets_report.md` has its rationale slots and executive summary
+filled in, run `build_html_report.py` to produce a self-contained
+interactive HTML report:
+
+```bash
+python3 ~/myagents/myskills/target-prioritization/scripts/build_html_report.py \
+    --report-dir <output_dir> \
+    [--title "Target Prioritization Report"] \
+    [--subtitle "<cohort / contrast description>"]
+```
+
+This is **always the last step**. It reads `targets_summary.csv` and
+`targets_report.md` from `--report-dir` and writes `targets_report.html`
+in the same directory. The output is a single file with no external
+dependencies: sortable summary table at top, live search + tier-filter
+buttons, one card per gene with chips (surface / secreted / MHC /
+focus-disease / approved-drug), full dossier grid, and horizontal bars
+for each score component. Open it directly in a browser; share it as-is.
+
+If rationale slots are still blank when this runs, the per-gene cards
+will show "not yet written" in those spots — useful for previewing the
+layout, but the user should be told to fill rationales before sharing.
+
 ## Data source notes
 
 All free, no API key needed. Rate limits handled in fetchers:
+
 - **UniProt REST** — 100 req/sec, batched via `accession` query
 - **OpenTargets GraphQL** — generous, single endpoint; provides disease genetics signal via integrated `associatedDiseases`
 - **PubMed E-utilities** — 3 req/sec without key; fetchers respect this
@@ -167,6 +205,7 @@ neutral `focus_disease_*` / `cell_context` prefixes.
 ## Iteration tips
 
 The pipeline is designed to be re-runnable cheaply:
+
 - Raw JSON cache means re-scoring with different `weights.yaml` is a one-second `aggregate.py` rerun
 - To add a new evidence source, add `scripts/fetch_<source>.py` that writes
   `raw_data/<source>.json` with the same `{gene: {fields}}` shape, then add

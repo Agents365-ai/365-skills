@@ -1,7 +1,7 @@
 """MiniMax TTS backend — best quality, 300+ voices, voice cloning."""
 
-import os
 import json
+import os
 import re
 import subprocess
 
@@ -45,7 +45,7 @@ def synthesize(chunks, config, output_file, output_format="wav"):
     import requests
 
     api_key = config["api_key"]
-    model = config.get("model", "speech-2.6-hd")
+    model = config.get("model", "speech-2.8-hd")
     voice_id = config.get("voice", "female-shaonv")
     group_id = config.get("group_id", "")
     speech_rate = config.get("speech_rate", "+5%")

@@ -21,7 +21,7 @@ def load_phonemes(path):
 
     Raises OSError if unreadable, ValueError if not a JSON object.
     """
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         data = json.load(f)
     if not isinstance(data, dict):
         raise ValueError("phonemes file must be a JSON object")

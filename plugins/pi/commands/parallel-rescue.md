@@ -7,6 +7,7 @@ allowed-tools: Bash(node:*), AskUserQuestion
 Run multiple independent tasks in parallel through Pi using pi-subagents.
 
 First, check that pi-subagents is installed:
+
 ```bash
 test -d ~/.pi/agent/extensions/subagent && echo "installed" || echo "not-installed"
 ```
@@ -16,6 +17,7 @@ If the output is "not-installed", tell the user:
 Then STOP — do not proceed.
 
 Read the parallel-rescue prompt template:
+
 ```bash
 cat "${CLAUDE_PLUGIN_ROOT}/prompts/parallel-rescue.md"
 ```
@@ -31,6 +33,7 @@ Task 2: <second task text>
 ```
 
 Run the task through the companion:
+
 ```bash
 node "${CLAUDE_PLUGIN_ROOT}/scripts/pi-companion.mjs" task --write "${PROMPT}"
 ```

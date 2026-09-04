@@ -35,12 +35,11 @@ import cli_envelope  # noqa: E402
 from _state import resolve_state_file  # noqa: E402
 from learn_design import (  # noqa: E402
     PREFS_VERSION,
-    _load_template,
     _deep_merge,
+    _load_template,
     _structural_migrate,
     save_prefs,
 )
-
 
 
 def migrate(prefs_path, dry_run=False):

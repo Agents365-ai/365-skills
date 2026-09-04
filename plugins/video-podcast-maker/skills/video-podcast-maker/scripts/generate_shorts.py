@@ -4,17 +4,16 @@ Vertical Shorts Generator for Video Podcast Maker
 Reads timing.json + podcast_audio.wav from a video directory and generates
 per-section short video assets (audio slice, timing, composition metadata).
 """
-import os
-import sys
-import json
-import time
 import argparse
-import subprocess
+import json
+import os
 import re
+import subprocess
+import sys
+import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import cli_envelope  # noqa: E402
-
 
 # ============ Constants ============
 
@@ -52,7 +51,7 @@ def load_timing(input_dir):
     Errors propagate so main() can route them through the envelope.
     """
     path = os.path.join(input_dir, 'timing.json')
-    with open(path, 'r', encoding='utf-8') as f:
+    with open(path, encoding='utf-8') as f:
         return json.load(f)
 
 
@@ -64,7 +63,7 @@ def load_script(input_dir):
     path = os.path.join(input_dir, 'podcast.txt')
     if not os.path.exists(path):
         return {}
-    with open(path, 'r', encoding='utf-8') as f:
+    with open(path, encoding='utf-8') as f:
         text = f.read()
 
     section_pattern = r'\[SECTION:(\w[\w-]*)\]'

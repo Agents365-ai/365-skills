@@ -35,8 +35,11 @@ from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from output import (  # noqa: E402
-    emit_success, emit_error,
-    EXIT_VALIDATION, EXIT_AUTH, EXIT_BACKEND,
+    EXIT_AUTH,
+    EXIT_BACKEND,
+    EXIT_VALIDATION,
+    emit_error,
+    emit_success,
 )
 
 CLONE_PLATFORMS = ("minimax", "cosyvoice")

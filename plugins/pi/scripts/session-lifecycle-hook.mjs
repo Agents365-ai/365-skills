@@ -15,14 +15,18 @@ function readHookInput() {
   if (!raw) {
     return {};
   }
-  return JSON.parse(raw);
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return {};
+  }
 }
 
 function shellEscape(value) {
   if (process.platform === "win32") {
     return `"${String(value).replace(/"/g, '\\"')}"`;
   }
-  return `'${String(value).replace(/'/g, `'\"'\"'`)}'`;
+  return `'${String(value).replace(/'/g, `'"'"'`)}'`;
 }
 
 function appendEnvVar(name, value) {

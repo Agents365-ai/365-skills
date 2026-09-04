@@ -66,8 +66,9 @@ tr:hover { background:rgba(56,189,248,0.04); }
 .detail-item.full-width { grid-column:1/-1; }
 .detail-item code,.clone-box code,.key-box code { background:rgba(0,0,0,0.3); padding:3px 8px; border-radius:4px; font-size:0.85rem; color:var(--accent); word-break:break-all; }
 
-.clone-box,.key-box { padding:14px 18px; border-radius:8px; margin-bottom:16px; background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.2); }
+.clone-box,.key-box,.note-box { padding:14px 18px; border-radius:8px; margin-bottom:16px; background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.2); }
 .key-box { background:rgba(56,189,248,0.06); border-color:rgba(56,189,248,0.2); }
+.note-box { background:rgba(139,92,246,0.06); border-color:rgba(139,92,246,0.2); }
 .clone-box a,.key-box a { font-size:0.85rem; }
 
 .cost-badge { font-weight:700; }
@@ -103,7 +104,7 @@ tr:hover { background:rgba(56,189,248,0.04); }
 
   <header class="header">
     <h1>🎤 ttscn — 中文 <span>TTS</span> 服务商对比</h1>
-    <p>11 个可用的语音合成后端 (国内 + 国际) · 点击行查看详情 · 数据更新于 2026-07-15</p>
+    <p>14 个可用的语音合成后端 (国内 + 国际) · 点击行查看详情 · 数据更新于 2026-08-08</p>
     <p class="updated">💡 编辑 <code>data/providers.json</code> 即可更新此页面</p>
   </header>
 
@@ -162,7 +163,7 @@ tr:hover { background:rgba(56,189,248,0.04); }
             </a>
           </td>
           <td class="col-cost ">~1 元/万字</td>
-          <td class="col-voices">8 + 声音复刻</td>
+          <td class="col-voices">9 + 声音复刻</td>
           <td class="col-chars">280<small> 字/次</small></td>
           <td class="col-duration">~1 分钟<small> /次</small></td>
           <td class="col-ssml"><span class="no">❌</span></td>
@@ -179,7 +180,7 @@ tr:hover { background:rgba(56,189,248,0.04); }
               <small>Alibaba (阿里云百炼)</small>
             </a>
           </td>
-          <td class="col-cost ">~2 元/万字</td>
+          <td class="col-cost ">~2 元/万字 (v3-flash) / ~0.8 元/万字 (v3.5-flash)</td>
           <td class="col-voices">7</td>
           <td class="col-chars">400<small> 字/次</small></td>
           <td class="col-duration">~2 分钟<small> /次</small></td>
@@ -189,6 +190,60 @@ tr:hover { background:rgba(56,189,248,0.04); }
           <td class="col-lang">中文</td>
           <td class="col-streaming">SDK 流式</td>
           <td class="col-setup">🟢 简单</td>
+        </tr>
+        <tr class="provider-row" id="row-qwen">
+          <td class="col-name">
+            <a href="#detail-qwen" class="provider-link">
+              <strong>Qwen3-TTS</strong>
+              <small>Alibaba (阿里云百炼)</small>
+            </a>
+          </td>
+          <td class="col-cost ">~1 元/万字</td>
+          <td class="col-voices">10+</td>
+          <td class="col-chars">400<small> 字/次</small></td>
+          <td class="col-duration">~2 分钟<small> /次</small></td>
+          <td class="col-ssml"><span class="no">❌</span></td>
+          <td class="col-clone"><span class="yes">✅</span></td>
+          <td class="col-emoji">Via instructions (qwen3-tts-instruct-flash)</td>
+          <td class="col-lang">10 (中/英/日/韩/法/德/意/葡/西/俄)</td>
+          <td class="col-streaming">SDK 流式 (realtime 模型)</td>
+          <td class="col-setup">🟢 简单 (复用 DASHSCOPE_API_KEY)</td>
+        </tr>
+        <tr class="provider-row" id="row-stepfun">
+          <td class="col-name">
+            <a href="#detail-stepfun" class="provider-link">
+              <strong>StepFun TTS</strong>
+              <small>阶跃星辰</small>
+            </a>
+          </td>
+          <td class="col-cost ">低价 (step-tts-mini)</td>
+          <td class="col-voices">数十种官方音色</td>
+          <td class="col-chars">1000<small> 字/次</small></td>
+          <td class="col-duration">~2 分钟<small> /次</small></td>
+          <td class="col-ssml"><span class="no">❌</span></td>
+          <td class="col-clone"><span class="yes">✅</span></td>
+          <td class="col-emoji">Via 音色 (step-tts-2)</td>
+          <td class="col-lang">中/英/中英混合/日</td>
+          <td class="col-streaming">REST only</td>
+          <td class="col-setup">🟢 简单 (复用 STEP_API_KEY)</td>
+        </tr>
+        <tr class="provider-row" id="row-zhipu">
+          <td class="col-name">
+            <a href="#detail-zhipu" class="provider-link">
+              <strong>GLM-TTS</strong>
+              <small>智谱 (BigModel)</small>
+            </a>
+          </td>
+          <td class="col-cost ">低价</td>
+          <td class="col-voices">7 (含动动动物圈系列)</td>
+          <td class="col-chars">400<small> 字/次</small></td>
+          <td class="col-duration">~2 分钟<small> /次</small></td>
+          <td class="col-ssml"><span class="no">❌</span></td>
+          <td class="col-clone"><span class="yes">✅</span></td>
+          <td class="col-emoji">情感调节</td>
+          <td class="col-lang">中/英</td>
+          <td class="col-streaming">SSE 流式 (可选)</td>
+          <td class="col-setup">🟢 简单 (复用 ZHIPUAI_API_KEY)</td>
         </tr>
         <tr class="provider-row" id="row-azure">
           <td class="col-name">
@@ -365,6 +420,7 @@ tr:hover { background:rgba(56,189,248,0.04); }
         </div>
         
         
+        
         <div class="voice-list">
           <h3>推荐音色</h3>
           
@@ -415,7 +471,7 @@ tr:hover { background:rgba(56,189,248,0.04); }
         <div class="detail-grid">
           <div class="detail-item"><label>费用</label><span class="cost-badge ">~1 元/万字</span></div>
           <div class="detail-item"><label>万字成本</label><span>~¥1</span></div>
-          <div class="detail-item"><label>内置音色</label><span>8 + 声音复刻</span></div>
+          <div class="detail-item"><label>内置音色</label><span>9 + 声音复刻</span></div>
           <div class="detail-item"><label>单次最大字数</label><span>280 字</span></div>
           <div class="detail-item"><label>单次最大时长</label><span>~1 分钟</span></div>
           <div class="detail-item"><label>SSML</label><span class="no">❌</span></div>
@@ -429,6 +485,7 @@ tr:hover { background:rgba(56,189,248,0.04); }
           <div class="detail-item"><label>API 地址</label><code>https://openspeech.bytedance.com/api/v1/tts</code></div>
           <div class="detail-item full-width"><label>环境变量</label><code>VOLCENGINE_APPID VOLCENGINE_ACCESS_TOKEN</code></div>
         </div>
+        
         <div class="clone-box"><strong>🔊 声音克隆:</strong> seed-icl-2.0: 5秒音频即可复刻, 150元/音色/年</div>
         <div class="key-box"><strong>🔑 获取 API Key:</strong> <a href="https://console.volcengine.com/ark/region:ark+cn-beijing/apikey" target="_blank">https://console.volcengine.com/ark/region:ark+cn-beijing/apikey</a></div>
         <div class="voice-list">
@@ -458,6 +515,12 @@ tr:hover { background:rgba(56,189,248,0.04); }
           <span class="voice-style">Male, 专业深沉</span>
           <span class="voice-best">纪录片、旁白</span>
         </div>
+        <div class="voice-card">
+          <code class="voice-id">zh_female_vv_uranus_bigtts</code>
+          <span class="voice-label">标准女声 (TTS 2.0)</span>
+          <span class="voice-style">Female, 标准普通话</span>
+          <span class="voice-best">通用场景（需 v3 接口）</span>
+        </div>
         </div>
       </section>
       <section class="detail-panel" id="detail-cosyvoice">
@@ -467,8 +530,8 @@ tr:hover { background:rgba(56,189,248,0.04); }
           <div class="detail-tags"><span class="tag" style="--tag-color:#06b6d4">🌊 流式</span> <span class="tag" style="--tag-color:#10b981">🚀 快速</span></div>
         </div>
         <div class="detail-grid">
-          <div class="detail-item"><label>费用</label><span class="cost-badge ">~2 元/万字</span></div>
-          <div class="detail-item"><label>万字成本</label><span>~¥2</span></div>
+          <div class="detail-item"><label>费用</label><span class="cost-badge ">~2 元/万字 (v3-flash) / ~0.8 元/万字 (v3.5-flash)</span></div>
+          <div class="detail-item"><label>万字成本</label><span>~¥2 / ~¥0.8</span></div>
           <div class="detail-item"><label>内置音色</label><span>7</span></div>
           <div class="detail-item"><label>单次最大字数</label><span>400 字</span></div>
           <div class="detail-item"><label>单次最大时长</label><span>~2 分钟</span></div>
@@ -483,6 +546,7 @@ tr:hover { background:rgba(56,189,248,0.04); }
           <div class="detail-item"><label>API 地址</label><code>https://dashscope.aliyuncs.com/api/v1</code></div>
           <div class="detail-item full-width"><label>环境变量</label><code>DASHSCOPE_API_KEY</code></div>
         </div>
+        <div class="note-box"><strong>📌 说明:</strong> 模型: cosyvoice-v3-flash(默认, 支持预置音色) / cosyvoice-v3.5-flash(2026-03发布: 克隆与音效设计更强、首包延迟更低; 仅北京地域, 不支持预置音色, 须用自定义/克隆音色且与合成同模型, 音色ID不跨模型通用)</div>
         <div class="clone-box"><strong>🔊 声音克隆:</strong> 音色复刻免费(合成正常计费): 10-20s公网URL音频, 1000音色/账户, 1年不用过期; tts.py clone create --platform cosyvoice</div>
         <div class="key-box"><strong>🔑 获取 API Key:</strong> <a href="https://bailian.console.aliyun.com/" target="_blank">https://bailian.console.aliyun.com/</a></div>
         <div class="voice-list">
@@ -532,6 +596,177 @@ tr:hover { background:rgba(56,189,248,0.04); }
         </div>
         </div>
       </section>
+      <section class="detail-panel" id="detail-qwen">
+        <div class="detail-header">
+          <h2>Qwen3-TTS</h2>
+          <span class="provider-name">Alibaba (阿里云百炼)</span>
+          <div class="detail-tags"><span class="tag" style="--tag-color:#06b6d4">🌊 流式</span> <span class="tag" style="--tag-color:#10b981">🚀 快速</span> <span class="tag" style="--tag-color:#0ea5e9">🌍 多语言</span> <span class="tag" style="--tag-color:#ef4444">😊 情感合成</span></div>
+        </div>
+        <div class="detail-grid">
+          <div class="detail-item"><label>费用</label><span class="cost-badge ">~1 元/万字</span></div>
+          <div class="detail-item"><label>万字成本</label><span>~¥1</span></div>
+          <div class="detail-item"><label>内置音色</label><span>10+</span></div>
+          <div class="detail-item"><label>单次最大字数</label><span>400 字</span></div>
+          <div class="detail-item"><label>单次最大时长</label><span>~2 分钟</span></div>
+          <div class="detail-item"><label>SSML</label><span class="no">❌</span></div>
+          <div class="detail-item"><label>声音克隆</label><span class="yes">✅</span></div>
+          <div class="detail-item"><label>情感合成</label><span>Via instructions (qwen3-tts-instruct-flash)</span></div>
+          <div class="detail-item"><label>方言支持</label><span>—</span></div>
+          <div class="detail-item"><label>语言</label><span>10 (中/英/日/韩/法/德/意/葡/西/俄)</span></div>
+          <div class="detail-item"><label>流式合成</label><span>SDK 流式 (realtime 模型)</span></div>
+          <div class="detail-item"><label>配置难度</label><span>🟢 简单 (复用 DASHSCOPE_API_KEY)</span></div>
+          <div class="detail-item"><label>安装</label><code>pip install dashscope</code></div>
+          <div class="detail-item"><label>API 地址</label><code>https://dashscope.aliyuncs.com/api/v1</code></div>
+          <div class="detail-item full-width"><label>环境变量</label><code>DASHSCOPE_API_KEY</code></div>
+        </div>
+        
+        <div class="clone-box"><strong>🔊 声音克隆:</strong> 声音复刻(qwen-voice-enrollment)与声音设计(qwen-voice-design): 定制音色后通过 voice 参数调用</div>
+        <div class="key-box"><strong>🔑 获取 API Key:</strong> <a href="https://bailian.console.aliyun.com/" target="_blank">https://bailian.console.aliyun.com/</a></div>
+        <div class="voice-list">
+          <h3>推荐音色</h3>
+          
+        <div class="voice-card">
+          <code class="voice-id">Cherry</code>
+          <span class="voice-label">Cherry</span>
+          <span class="voice-style">Female, 甜美活泼</span>
+          <span class="voice-best">短视频、带货</span>
+        </div>
+        <div class="voice-card">
+          <code class="voice-id">Serena</code>
+          <span class="voice-label">Serena</span>
+          <span class="voice-style">Female, 温柔自然</span>
+          <span class="voice-best">有声书、陪伴</span>
+        </div>
+        <div class="voice-card">
+          <code class="voice-id">Ethan</code>
+          <span class="voice-label">Ethan</span>
+          <span class="voice-style">Male, 沉稳</span>
+          <span class="voice-best">商务、纪录片</span>
+        </div>
+        <div class="voice-card">
+          <code class="voice-id">Brian</code>
+          <span class="voice-label">Brian</span>
+          <span class="voice-style">Male, 英文为主</span>
+          <span class="voice-best">英语内容</span>
+        </div>
+        </div>
+      </section>
+      <section class="detail-panel" id="detail-stepfun">
+        <div class="detail-header">
+          <h2>StepFun TTS</h2>
+          <span class="provider-name">阶跃星辰</span>
+          <div class="detail-tags"><span class="tag" style="--tag-color:#10b981">🚀 快速</span> <span class="tag" style="--tag-color:#f59e0b">💰 最低价</span> <span class="tag" style="--tag-color:#f59e0b">🎭 声音克隆</span> <span class="tag" style="--tag-color:#0ea5e9">🌍 多语言</span></div>
+        </div>
+        <div class="detail-grid">
+          <div class="detail-item"><label>费用</label><span class="cost-badge ">低价 (step-tts-mini)</span></div>
+          <div class="detail-item"><label>万字成本</label><span>≈¥1</span></div>
+          <div class="detail-item"><label>内置音色</label><span>数十种官方音色</span></div>
+          <div class="detail-item"><label>单次最大字数</label><span>1000 字</span></div>
+          <div class="detail-item"><label>单次最大时长</label><span>~2 分钟</span></div>
+          <div class="detail-item"><label>SSML</label><span class="no">❌</span></div>
+          <div class="detail-item"><label>声音克隆</label><span class="yes">✅</span></div>
+          <div class="detail-item"><label>情感合成</label><span>Via 音色 (step-tts-2)</span></div>
+          <div class="detail-item"><label>方言支持</label><span>—</span></div>
+          <div class="detail-item"><label>语言</label><span>中/英/中英混合/日</span></div>
+          <div class="detail-item"><label>流式合成</label><span>REST only</span></div>
+          <div class="detail-item"><label>配置难度</label><span>🟢 简单 (复用 STEP_API_KEY)</span></div>
+          <div class="detail-item"><label>安装</label><code>pip install requests</code></div>
+          <div class="detail-item"><label>API 地址</label><code>https://api.stepfun.com/v1/audio/speech</code></div>
+          <div class="detail-item full-width"><label>环境变量</label><code>STEP_API_KEY</code></div>
+        </div>
+        
+        <div class="clone-box"><strong>🔊 声音克隆:</strong> 音色复刻: ~10s 参考音频; step-tts-2 复刻音色支持全部情绪/风格控制</div>
+        <div class="key-box"><strong>🔑 获取 API Key:</strong> <a href="https://platform.stepfun.com/" target="_blank">https://platform.stepfun.com/</a></div>
+        <div class="voice-list">
+          <h3>推荐音色</h3>
+          
+        <div class="voice-card">
+          <code class="voice-id">cixingnansheng</code>
+          <span class="voice-label">磁性男声</span>
+          <span class="voice-style">Male, 磁性</span>
+          <span class="voice-best">营销、带货</span>
+        </div>
+        <div class="voice-card">
+          <code class="voice-id">jingdiannvsheng</code>
+          <span class="voice-label">经典女声</span>
+          <span class="voice-style">Female, 经典</span>
+          <span class="voice-best">通用</span>
+        </div>
+        <div class="voice-card">
+          <code class="voice-id">qingchunshaonv</code>
+          <span class="voice-label">青春少女</span>
+          <span class="voice-style">Female, 年轻活力</span>
+          <span class="voice-best">短视频、动漫</span>
+        </div>
+        <div class="voice-card">
+          <code class="voice-id">wenrounansheng</code>
+          <span class="voice-label">温柔男声</span>
+          <span class="voice-style">Male, 温柔</span>
+          <span class="voice-best">客服、陪伴</span>
+        </div>
+        <div class="voice-card">
+          <code class="voice-id">elegantgentle-female</code>
+          <span class="voice-label">气质温婉</span>
+          <span class="voice-style">Female, 温婉</span>
+          <span class="voice-best">客服、商务</span>
+        </div>
+        <div class="voice-card">
+          <code class="voice-id">livelybreezy-female</code>
+          <span class="voice-label">活力轻快</span>
+          <span class="voice-style">Female, 轻快</span>
+          <span class="voice-best">营销、广告</span>
+        </div>
+        </div>
+      </section>
+      <section class="detail-panel" id="detail-zhipu">
+        <div class="detail-header">
+          <h2>GLM-TTS</h2>
+          <span class="provider-name">智谱 (BigModel)</span>
+          <div class="detail-tags"><span class="tag" style="--tag-color:#10b981">🚀 快速</span> <span class="tag" style="--tag-color:#0ea5e9">🌍 多语言</span> <span class="tag" style="--tag-color:#ef4444">😊 情感合成</span></div>
+        </div>
+        <div class="detail-grid">
+          <div class="detail-item"><label>费用</label><span class="cost-badge ">低价</span></div>
+          <div class="detail-item"><label>万字成本</label><span>≈¥1</span></div>
+          <div class="detail-item"><label>内置音色</label><span>7 (含动动动物圈系列)</span></div>
+          <div class="detail-item"><label>单次最大字数</label><span>400 字</span></div>
+          <div class="detail-item"><label>单次最大时长</label><span>~2 分钟</span></div>
+          <div class="detail-item"><label>SSML</label><span class="no">❌</span></div>
+          <div class="detail-item"><label>声音克隆</label><span class="yes">✅</span></div>
+          <div class="detail-item"><label>情感合成</label><span>情感调节</span></div>
+          <div class="detail-item"><label>方言支持</label><span>—</span></div>
+          <div class="detail-item"><label>语言</label><span>中/英</span></div>
+          <div class="detail-item"><label>流式合成</label><span>SSE 流式 (可选)</span></div>
+          <div class="detail-item"><label>配置难度</label><span>🟢 简单 (复用 ZHIPUAI_API_KEY)</span></div>
+          <div class="detail-item"><label>安装</label><code>pip install requests</code></div>
+          <div class="detail-item"><label>API 地址</label><code>https://open.bigmodel.cn/api/paas/v4/audio/speech</code></div>
+          <div class="detail-item full-width"><label>环境变量</label><code>ZHIPUAI_API_KEY</code></div>
+        </div>
+        
+        <div class="clone-box"><strong>🔊 声音克隆:</strong> 音色复刻 (glm-tts-clone / voice/clone 接口)</div>
+        <div class="key-box"><strong>🔑 获取 API Key:</strong> <a href="https://open.bigmodel.cn/" target="_blank">https://open.bigmodel.cn/</a></div>
+        <div class="voice-list">
+          <h3>推荐音色</h3>
+          
+        <div class="voice-card">
+          <code class="voice-id">tongtong</code>
+          <span class="voice-label">彤彤</span>
+          <span class="voice-style">默认音色</span>
+          <span class="voice-best">通用</span>
+        </div>
+        <div class="voice-card">
+          <code class="voice-id">chuichui</code>
+          <span class="voice-label">锤锤</span>
+          <span class="voice-style">活泼</span>
+          <span class="voice-best">儿童、动画</span>
+        </div>
+        <div class="voice-card">
+          <code class="voice-id">xiaochen</code>
+          <span class="voice-label">小陈</span>
+          <span class="voice-style">Male, 沉稳</span>
+          <span class="voice-best">商务</span>
+        </div>
+        </div>
+      </section>
       <section class="detail-panel" id="detail-azure">
         <div class="detail-header">
           <h2>Azure TTS</h2>
@@ -555,6 +790,7 @@ tr:hover { background:rgba(56,189,248,0.04); }
           <div class="detail-item"><label>API 地址</label><code>https://eastasia.tts.speech.microsoft.com/</code></div>
           <div class="detail-item full-width"><label>环境变量</label><code>AZURE_SPEECH_KEY</code></div>
         </div>
+        
         <div class="clone-box"><strong>🔊 声音克隆:</strong> Custom Neural Voice: 需申请白名单, 300+句训练语料, 企业定制</div>
         <div class="key-box"><strong>🔑 获取 API Key:</strong> <a href="https://portal.azure.com/" target="_blank">https://portal.azure.com/</a></div>
         <div class="voice-list">
@@ -621,6 +857,7 @@ tr:hover { background:rgba(56,189,248,0.04); }
           <div class="detail-item"><label>API 地址</label><code>https://tts.tencentcloudapi.com/</code></div>
           <div class="detail-item full-width"><label>环境变量</label><code>TENCENT_SECRET_ID TENCENT_SECRET_KEY</code></div>
         </div>
+        
         <div class="clone-box"><strong>🔊 声音克隆:</strong> 一句话版(5-15s) / 基础版(10-20min), VoiceClone API</div>
         <div class="key-box"><strong>🔑 获取 API Key:</strong> <a href="https://console.cloud.tencent.com/tts" target="_blank">https://console.cloud.tencent.com/tts</a></div>
         <div class="voice-list">
@@ -675,6 +912,7 @@ tr:hover { background:rgba(56,189,248,0.04); }
           <div class="detail-item"><label>API 地址</label><code>https://tsn.baidu.com/text2audio</code></div>
           <div class="detail-item full-width"><label>环境变量</label><code>BAIDU_APP_ID BAIDU_API_KEY BAIDU_SECRET_KEY</code></div>
         </div>
+        
         <div class="clone-box"><strong>🔊 声音克隆:</strong> 大模型声音复刻: 任意音频→秒级复刻, 支持方言+情感迁移</div>
         <div class="key-box"><strong>🔑 获取 API Key:</strong> <a href="https://console.bce.baidu.com/ai/#/ai/speech/overview" target="_blank">https://console.bce.baidu.com/ai/#/ai/speech/overview</a></div>
         <div class="voice-list">
@@ -741,6 +979,7 @@ tr:hover { background:rgba(56,189,248,0.04); }
           <div class="detail-item"><label>API 地址</label><code>https://api.minimax.io/v1/t2a_v2</code></div>
           <div class="detail-item full-width"><label>环境变量</label><code>MINIMAX_API_KEY</code></div>
         </div>
+        
         <div class="clone-box"><strong>🔊 声音克隆:</strong> 快速复刻: 10s-5min音频, 全球站$1.5/音色(国内站首次使用¥9.9); 新音色为临时音色, 创建后全球站7天/国内站48小时内需正式合成一次(试听不算)否则删除, 用过即永久保留; tts.py clone create --platform minimax</div>
         <div class="key-box"><strong>🔑 获取 API Key:</strong> <a href="https://platform.minimaxi.com/" target="_blank">https://platform.minimaxi.com/</a></div>
         <div class="voice-list">
@@ -807,6 +1046,7 @@ tr:hover { background:rgba(56,189,248,0.04); }
           <div class="detail-item"><label>API 地址</label><code>wss://tts-api.xfyun.cn/v2/tts</code></div>
           <div class="detail-item full-width"><label>环境变量</label><code>XUNFEI_APP_ID XUNFEI_API_KEY XUNFEI_API_SECRET</code></div>
         </div>
+        
         <div class="clone-box"><strong>🔊 声音克隆:</strong> 一句话复刻(≈3秒): 500万+已创建声音, 130+语种, MOS>4.4</div>
         <div class="key-box"><strong>🔑 获取 API Key:</strong> <a href="https://www.xfyun.cn/" target="_blank">https://www.xfyun.cn/</a></div>
         <div class="voice-list">
@@ -873,6 +1113,7 @@ tr:hover { background:rgba(56,189,248,0.04); }
           <div class="detail-item"><label>API 地址</label><code>https://api.elevenlabs.io/v1/text-to-speech/{voice_id}</code></div>
           <div class="detail-item full-width"><label>环境变量</label><code>ELEVENLABS_API_KEY</code></div>
         </div>
+        
         <div class="clone-box"><strong>🔊 声音克隆:</strong> Instant Voice Cloning: 1分钟音频即可复刻 (付费订阅); Professional 版需 30 分钟以上语料</div>
         <div class="key-box"><strong>🔑 获取 API Key:</strong> <a href="https://elevenlabs.io/app/settings/api-keys" target="_blank">https://elevenlabs.io/app/settings/api-keys</a></div>
         <div class="voice-list">
@@ -940,6 +1181,7 @@ tr:hover { background:rgba(56,189,248,0.04); }
           <div class="detail-item full-width"><label>环境变量</label><code>OPENAI_API_KEY</code></div>
         </div>
         
+        
         <div class="key-box"><strong>🔑 获取 API Key:</strong> <a href="https://platform.openai.com/api-keys" target="_blank">https://platform.openai.com/api-keys</a></div>
         <div class="voice-list">
           <h3>推荐音色</h3>
@@ -1005,6 +1247,7 @@ tr:hover { background:rgba(56,189,248,0.04); }
           <div class="detail-item"><label>API 地址</label><code>https://texttospeech.googleapis.com/v1/text:synthesize</code></div>
           <div class="detail-item full-width"><label>环境变量</label><code>GOOGLE_TTS_API_KEY</code></div>
         </div>
+        
         
         <div class="key-box"><strong>🔑 获取 API Key:</strong> <a href="https://console.cloud.google.com/apis/credentials" target="_blank">https://console.cloud.google.com/apis/credentials</a></div>
         <div class="voice-list">
@@ -1072,7 +1315,7 @@ tr:hover { background:rgba(56,189,248,0.04); }
     </table>
 
     <h3 style="margin-top:24px;">Schema Introspection</h3>
-    <pre><code>tts.py schema backends           # All 11 backends (compact by default)
+    <pre><code>tts.py schema backends           # All 14 backends (compact by default)
 tts.py schema backends --full    # All 22 fields per backend
 tts.py schema backends.doubao    # Single backend full detail
 tts.py schema voices             # All voice presets

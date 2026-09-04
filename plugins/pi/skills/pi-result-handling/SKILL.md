@@ -7,6 +7,7 @@ user-invocable: false
 # Pi Result Handling
 
 When the helper returns Pi output:
+
 - Preserve the helper's verdict, summary, findings, and next steps structure.
 - For review output, present findings first and keep them ordered by severity.
 - Use the file paths and line numbers exactly as the helper reports them.

@@ -3,7 +3,6 @@
 import argparse
 import csv
 import json
-import os
 import subprocess
 import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed

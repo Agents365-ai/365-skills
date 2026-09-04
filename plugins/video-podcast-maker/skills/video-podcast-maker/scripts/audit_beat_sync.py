@@ -30,16 +30,16 @@ Beat data format expected in the .tsx file:
 If your video uses different conventions, adapt the regexes near the top.
 """
 from __future__ import annotations
+
 import argparse
-import sys
-import re
 import json
 import os
+import re
+import sys
 import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import cli_envelope  # noqa: E402
-
 
 # Regex helpers -------------------------------------------------------------
 
@@ -157,7 +157,7 @@ def _norm(s):
     """Normalize for beat-vs-narration comparison: lowercase, drop whitespace
     and punctuation (CJK + ASCII) so "故事" matches inside "每一个故事"."""
     return re.sub(
-        r"[\s，。！？、：；""''“”‘’.,!?;:()\[\]（）·—\-]", '', s.lower()
+        r"[\s，。！？、：；"r"''“”‘’.,!?;:()\[\]（）·—\-]", '', s.lower()
     )
 
 
@@ -169,9 +169,9 @@ def audit(tsx_path, timing_path, srt_path, drift_warn=1.5):
     Raises ValueError if no SECTION_CONFIG entries with `beats:` are found
     in the .tsx — main() converts this into an 'input_invalid' envelope.
     """
-    tsx_text = open(tsx_path, 'r', encoding='utf-8').read()
-    timing = json.loads(open(timing_path, 'r', encoding='utf-8').read())
-    srt_text = open(srt_path, 'r', encoding='utf-8').read()
+    tsx_text = open(tsx_path, encoding='utf-8').read()
+    timing = json.loads(open(timing_path, encoding='utf-8').read())
+    srt_text = open(srt_path, encoding='utf-8').read()
     subs = parse_srt(srt_text)
 
     name_to_beats, beats_arrays = parse_beats(tsx_text)

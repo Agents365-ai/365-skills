@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 import { useCurrentFrame, interpolate } from "remotion";
 import { getLucideIcon, isEmoji } from "./iconMap";
 

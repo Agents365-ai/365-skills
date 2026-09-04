@@ -29,7 +29,6 @@ import sys
 import time
 import uuid
 
-
 ERROR_CODES = {
     "input_not_found":       {"retryable": False, "exit": 1},
     "input_invalid":         {"retryable": False, "exit": 1},

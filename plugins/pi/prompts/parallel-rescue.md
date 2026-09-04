@@ -20,6 +20,7 @@ Complete the following independent tasks in parallel.
 Structure the response with one section per task:
 
 ## Task N: <brief one-line description>
+
 - Agent: <agent profile used>
 - Status: completed | failed
 - Result:

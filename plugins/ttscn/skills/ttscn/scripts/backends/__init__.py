@@ -15,7 +15,7 @@ def _load_providers():
     """Load provider data from providers.json."""
     if not os.path.exists(_PROVIDERS_JSON):
         raise FileNotFoundError(f"providers.json not found at {_PROVIDERS_JSON}")
-    with open(_PROVIDERS_JSON, "r", encoding="utf-8") as f:
+    with open(_PROVIDERS_JSON, encoding="utf-8") as f:
         return json.load(f)
 
 
@@ -135,6 +135,7 @@ def resolve_voice(backend):
         "minimax": "female-shaonv", "xunfei": "xiaoyan",
         "elevenlabs": "21m00Tcm4TlvDq8ikWAM", "openai": "alloy",
         "google": "en-US-Neural2-F",
+        "qwen": "Cherry", "stepfun": "cixingnansheng", "zhipu": "tongtong",
     }
     return defaults.get(backend, "zh-CN-XiaoxiaoNeural"), "default"
 
@@ -234,8 +235,19 @@ def _build_config(name):
         config["secret_key"] = os.environ["BAIDU_SECRET_KEY"]
     elif name == "minimax":
         config["api_key"] = os.environ["MINIMAX_API_KEY"]
-        config["model"] = os.environ.get("MINIMAX_MODEL", "speech-2.6-hd")
+        config["model"] = os.environ.get("MINIMAX_MODEL", "speech-2.8-hd")
         config["group_id"] = os.environ.get("MINIMAX_GROUP_ID", "")
+    elif name == "qwen":
+        # key comes from DASHSCOPE_API_KEY, read by the dashscope SDK itself
+        config["model"] = os.environ.get("QWEN_TTS_MODEL", "qwen3-tts-flash")
+        config["language_type"] = os.environ.get("QWEN_TTS_LANGUAGE", "")
+        config["instructions"] = os.environ.get("QWEN_TTS_INSTRUCTIONS", "")
+    elif name == "stepfun":
+        config["key"] = os.environ["STEP_API_KEY"]
+        config["model"] = os.environ.get("STEPFUN_TTS_MODEL", "step-tts-mini")
+    elif name == "zhipu":
+        config["key"] = os.environ["ZHIPUAI_API_KEY"]
+        config["model"] = os.environ.get("ZHIPU_TTS_MODEL", "glm-tts")
     elif name == "xunfei":
         config["app_id"] = os.environ["XUNFEI_APP_ID"]
         config["api_key"] = os.environ["XUNFEI_API_KEY"]
