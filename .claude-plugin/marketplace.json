@@ -4,7 +4,7 @@
     "name": "Agents365-ai"
   },
   "metadata": {
-    "description": "Production-grade Claude Code skills — diagramming, visualization, and more"
+    "description": "Production-grade skills for AI coding agents — diagrams, scientific research, CLI & agent design, notes, and AI media generation"
   },
   "plugins": [
     {
@@ -241,6 +241,25 @@
         "bibtex",
         "jabref",
         "citation",
+        "academic",
+        "research"
+      ]
+    },
+    {
+      "name": "journal-if",
+      "source": "./plugins/journal-if",
+      "description": "Journal impact factor (JCR IF) lookup — find a journal's IF by name, compare IF across journals, and rank publication venue quality, backed by a bundled journals_if.csv dataset and a local Python CLI",
+      "version": "1.0.0",
+      "author": {
+        "name": "Agents365-ai"
+      },
+      "repository": "https://github.com/Agents365-ai/journal-if",
+      "license": "MIT",
+      "keywords": [
+        "journal-impact-factor",
+        "jcr",
+        "impact-factor",
+        "journal-rank",
         "academic",
         "research"
       ]

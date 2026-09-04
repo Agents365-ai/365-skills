@@ -1,5 +1,13 @@
 # 365 Skills
 
+[![GitHub stars](https://img.shields.io/github/stars/Agents365-ai/365-skills?style=flat&logo=github)](https://github.com/Agents365-ai/365-skills/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/Agents365-ai/365-skills?style=flat&logo=github)](https://github.com/Agents365-ai/365-skills/network/members)
+[![Last Commit](https://img.shields.io/github/last-commit/Agents365-ai/365-skills?logo=github)](https://github.com/Agents365-ai/365-skills/commits/main)
+
+[![SkillsMP](https://img.shields.io/badge/SkillsMP-listed-1f6feb)](https://skillsmp.com)
+[![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-plugin-8a2be2)](https://github.com/Agents365-ai/365-skills)
+[![Agent Skills](https://img.shields.io/badge/Agent%20Skills-compatible-2ea44f)](https://agentskills.io)
+
 Production-grade skills for AI coding agents by [Agents365-ai](https://github.com/Agents365-ai). Agent-agnostic, works with Claude Code, Cursor, Copilot, OpenClaw & more.
 
 English | [中文](README_CN.md)
@@ -7,12 +15,14 @@ English | [中文](README_CN.md)
 ## Install
 
 ```bash
-# Any agent (Claude Code, Cursor, Copilot, etc.) — agent-agnostic
+# Agent-agnostic — any agent (Claude Code, Cursor, Copilot, etc.)
 npx skills add Agents365-ai/365-skills -g
 
 # Claude Code plugin marketplace (optional)
 /plugin marketplace add Agents365-ai/365-skills
 ```
+
+Install a single plugin (Claude Code): `/plugin install <plugin-name>`, e.g. `/plugin install drawio`.
 
 ## Available plugins
 
@@ -42,6 +52,7 @@ npx skills add Agents365-ai/365-skills -g
 | `scholar-deep-research` | End-to-end literature review pipeline — 8-phase script-driven workflow, 7 federated sources (OpenAlex, arXiv, Crossref, PubMed, DBLP, bioRxiv, Exa), cross-source dedup, dual-backend citation chasing, parallel deep-read fan-out, mandatory self-critique, cited reports across 5 archetypes |
 | `asta` | Ai2 Asta MCP — Semantic Scholar academic graph over MCP (no Python). Intent-to-tool routing, safe `fields` defaults, citation traversal, snippet evidence retrieval, and DOI/arXiv/PMID via `externalIds` |
 | `journal-abbrev` | Journal name abbreviation lookup — ISO 4 + MEDLINE, multi-source cascade (JabRef → AbbrevISO → NLM), BibTeX rewrite with `--idempotency-key`, atomic cache rebuild, agent-native JSON envelope with stable error codes and dry-run |
+| `journal-if` | Journal impact factor (JCR IF) lookup — find a journal's IF by name, compare IF across journals, and rank publication venue quality, backed by a bundled `journals_if.csv` dataset |
 | `target-prioritization` | Multi-source drug-target due-diligence — turn a ranked gene list (e.g. scRNA-seq DE output) into a per-gene dossier across UniProt, OpenTargets, and PubMed, plus a local cross-lineage DE scan, then re-rank by a configurable composite score (cross-lineage convergence + druggability + disease genetics + tractability + novelty). Disease-agnostic |
 
 ### Knowledge & notes
@@ -61,14 +72,6 @@ npx skills add Agents365-ai/365-skills -g
 | `video-podcast-maker` | Automated topic-driven video podcast creation — research → script → TTS (7 backends) → 4K Remotion render → BGM mix → Remotion-native subtitles. Multi-platform output (Bilibili / YouTube / Xiaohongshu / Douyin / WeChat Channels), horizontal long-form (16:9 4K) and vertical shorts (9:16), 15-step workflow with mandatory Studio preview |
 | `bangumi-frames` | Bilibili anime frame & character organizer — download a bangumi/UP video (or local file), extract scene-change keyframes, split scenery vs character crops, cluster by CCIP identity or pull one character via a reference folder; optional OCR+LaMa subtitle/watermark removal |
 | `yt2bb` | Repurpose YouTube videos for Bilibili — download via yt-dlp, transcribe with whisper, generate bilingual (English-Chinese) SRT subtitles, hardcode them with ffmpeg |
-
-## Install individual plugins
-
-Agent-agnostic install: `npx skills add Agents365-ai/365-skills` and pick the skill. Claude Code plugin path:
-
-```bash
-/plugin install drawio
-```
 
 ## Development
 
