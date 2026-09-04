@@ -1,5 +1,13 @@
 # 365 Skills
 
+[![GitHub stars](https://img.shields.io/github/stars/Agents365-ai/365-skills?style=flat&logo=github)](https://github.com/Agents365-ai/365-skills/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/Agents365-ai/365-skills?style=flat&logo=github)](https://github.com/Agents365-ai/365-skills/network/members)
+[![Last Commit](https://img.shields.io/github/last-commit/Agents365-ai/365-skills?logo=github)](https://github.com/Agents365-ai/365-skills/commits/main)
+
+[![SkillsMP](https://img.shields.io/badge/SkillsMP-listed-1f6feb)](https://skillsmp.com)
+[![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-plugin-8a2be2)](https://github.com/Agents365-ai/365-skills)
+[![Agent Skills](https://img.shields.io/badge/Agent%20Skills-compatible-2ea44f)](https://agentskills.io)
+
 [Agents365-ai](https://github.com/Agents365-ai) 出品，面向各类 AI 编码智能体的生产级技能集合。与 Agent 无关，兼容 Claude Code、Cursor、Copilot、OpenClaw 等。
 
 [English](README.md) | 中文
@@ -7,12 +15,14 @@
 ## 安装
 
 ```bash
-# 任意 Agent 工具（Claude Code、Cursor、Copilot 等）—— Agent 无关
+# 任意 Agent 工具（Claude Code、Cursor、Copilot 等）—— 与 Agent 无关
 npx skills add Agents365-ai/365-skills -g
 
 # Claude Code 插件市场（可选）
 /plugin marketplace add Agents365-ai/365-skills
 ```
+
+单插件的 Claude Code 安装：`/plugin install <插件名>`，例如 `/plugin install drawio`。
 
 ## 可用插件
 
@@ -42,6 +52,7 @@ npx skills add Agents365-ai/365-skills -g
 | `scholar-deep-research` | 端到端文献综述流水线 —— 8 阶段脚本驱动工作流，跨 7 个数据源（OpenAlex、arXiv、Crossref、PubMed、DBLP、bioRxiv、Exa）联邦检索、去重、双 backend 引用追溯、并行精读派发、强制自我批判，输出 5 种原型的带引用报告 |
 | `asta` | Ai2 Asta MCP —— Semantic Scholar 学术图谱以 MCP 暴露（无需 Python）。意图到工具的路由、安全 `fields` 默认值（避免上下文炸开）、引文遍历、片段证据检索，并通过 `externalIds` 获取 DOI / arXiv / PMID |
 | `journal-abbrev` | 期刊名称缩写查询 —— 支持 ISO 4 与 MEDLINE 两种标准，多源级联（JabRef → AbbrevISO → NLM）、BibTeX 字段批量重写并支持 `--idempotency-key` 幂等重试、原子缓存重建，agent-native JSON 信封带稳定错误码与 dry-run |
+| `journal-if` | 期刊影响因子（JCR IF）查询 —— 按名称查期刊 IF、跨期刊比较、评估投稿期刊档次，内置 `journals_if.csv` 数据集 |
 | `target-prioritization` | 多源药物靶点尽职调查 —— 将排序基因列表（如 scRNA-seq 差异表达输出）转化为逐基因档案（UniProt、OpenTargets、PubMed），叠加本地跨谱系差异表达扫描，再按可配置综合评分（跨谱系趋同 + 成药性 + 疾病遗传学 + 可开发性 + 新颖性）重排。疾病无关，可配置靶疾病与细胞上下文查询 |
 
 ### 知识与笔记
@@ -61,14 +72,6 @@ npx skills add Agents365-ai/365-skills -g
 | `video-podcast-maker` | 自动化主题驱动视频播客制作 —— 选题研究 → 脚本 → TTS（7 后端）→ 4K Remotion 渲染 → BGM 混音 → Remotion 原生字幕。多平台输出（B 站 / YouTube / 小红书 / 抖音 / 视频号），横版长视频（16:9 4K）与竖版 shorts（9:16），15 步工作流强制 Studio 预览 |
 | `bangumi-frames` | B 站番剧帧与角色整理 —— 下载番剧/UP 主视频（或本地文件），抽取场景切换关键帧，拆分风景与角色裁剪，按 CCIP 身份聚类或通过参考文件夹提取单个角色；可选 OCR+LaMa 去字幕/水印 |
 | `yt2bb` | YouTube 视频搬运至 B 站 —— yt-dlp 下载、whisper 转写、生成中英双语 SRT 字幕并用 ffmpeg 硬编码 |
-
-## 单独安装插件
-
-与 Agent 无关的安装方式：`npx skills add Agents365-ai/365-skills` 后选择对应技能。Claude Code 插件路径：
-
-```bash
-/plugin install drawio
-```
 
 ## 开发
 
