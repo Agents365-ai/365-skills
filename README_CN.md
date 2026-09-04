@@ -19,8 +19,9 @@ npx skills add Agents365-ai/365-skills -g
 ### 开发与 CLI 设计
 
 | 插件 | 说明 |
-|---|---|
+| --- | --- |
 | `agent-native-design` | AI 智能体 CLI 设计 —— 评估、设计和重构 CLI，使其能同时服务人类、AI 智能体和编排系统 |
+| `pi-plugin-cc` | 从 Claude Code 驱动 Pi coding agent —— 模型无关的任务委派与代码审查。`/pi:review` 结构化发现、`/pi:adversarial-review`、`/pi:rescue`、`/pi:parallel-rescue`，跨 provider 竞速/回退，增量审查 |
 
 ### 绘图与图表
 
@@ -41,12 +42,25 @@ npx skills add Agents365-ai/365-skills -g
 | `scholar-deep-research` | 端到端文献综述流水线 —— 8 阶段脚本驱动工作流，跨 7 个数据源（OpenAlex、arXiv、Crossref、PubMed、DBLP、bioRxiv、Exa）联邦检索、去重、双 backend 引用追溯、并行精读派发、强制自我批判，输出 5 种原型的带引用报告 |
 | `asta` | Ai2 Asta MCP —— Semantic Scholar 学术图谱以 MCP 暴露（无需 Python）。意图到工具的路由、安全 `fields` 默认值（避免上下文炸开）、引文遍历、片段证据检索，并通过 `externalIds` 获取 DOI / arXiv / PMID |
 | `journal-abbrev` | 期刊名称缩写查询 —— 支持 ISO 4 与 MEDLINE 两种标准，多源级联（JabRef → AbbrevISO → NLM）、BibTeX 字段批量重写并支持 `--idempotency-key` 幂等重试、原子缓存重建，agent-native JSON 信封带稳定错误码与 dry-run |
+| `target-prioritization` | 多源药物靶点尽职调查 —— 将排序基因列表（如 scRNA-seq 差异表达输出）转化为逐基因档案（UniProt、OpenTargets、PubMed），叠加本地跨谱系差异表达扫描，再按可配置综合评分（跨谱系趋同 + 成药性 + 疾病遗传学 + 可开发性 + 新颖性）重排。疾病无关，可配置靶疾病与细胞上下文查询 |
 
 ### 知识与笔记
 
 | 插件 | 说明 |
 |---|---|
 | `obsidian-organizer` | 让庞大的 Obsidian 仓库保持整洁 —— 把新笔记归入最合适的文件夹，并按需审计/重组已有结构，以仓库内的唯一权威地图笔记（`00_Index/Folder_Map.md`）为准。设计上保证链接安全（移动/重命名都走 `obsidian` CLI，wikilink 自动修复，禁止裸 shell），批量重组先出方案再确认 |
+
+### 媒体与创意
+
+| 插件 | 说明 |
+| --- | --- |
+| `ttscn` | 多平台中文语音合成 —— 14 个后端（Edge/豆包/CosyVoice/通义千问/StepFun/智谱/Azure/腾讯/百度/MiniMax/讯飞/ElevenLabs/OpenAI/Google），agent-native CLI 带 JSON 信封、schema 自省、音色克隆、SSML、情感、方言、可过滤 HTML 对比页 |
+| `imagencn` | AI 图像生成，接入阿里百炼、字节火山方舟与腾讯混元 —— 23 个模型，中文文字出图表现优秀，富终端 UI，智能配置 |
+| `videogencn` | 中国视频模型 AI 视频片段生成 —— 文生视频、图生视频、首尾帧与参考图生视频，覆盖百炼（Wan/PixVerse/Kling/Vidu）、即梦（doubao-seedance）、MiniMax（海螺）、混元 |
+| `assetseeker` | 免费商用创意素材检索 —— 照片、插画、图标、视频片段、音乐、音效与字体，覆盖 Pexels、Unsplash、Pixabay、Iconify、Freesound、Google Fonts 等 |
+| `video-podcast-maker` | 自动化主题驱动视频播客制作 —— 选题研究 → 脚本 → TTS（7 后端）→ 4K Remotion 渲染 → BGM 混音 → Remotion 原生字幕。多平台输出（B 站 / YouTube / 小红书 / 抖音 / 视频号），横版长视频（16:9 4K）与竖版 shorts（9:16），15 步工作流强制 Studio 预览 |
+| `bangumi-frames` | B 站番剧帧与角色整理 —— 下载番剧/UP 主视频（或本地文件），抽取场景切换关键帧，拆分风景与角色裁剪，按 CCIP 身份聚类或通过参考文件夹提取单个角色；可选 OCR+LaMa 去字幕/水印 |
+| `yt2bb` | YouTube 视频搬运至 B 站 —— yt-dlp 下载、whisper 转写、生成中英双语 SRT 字幕并用 ffmpeg 硬编码 |
 
 ## 安装插件
 
@@ -56,35 +70,42 @@ npx skills add Agents365-ai/365-skills -g
 
 ## 开发
 
-各插件下的 skills 是源仓库的直接拷贝（非 submodule）。更新某个插件的方式：
+各插件下的 skills 是源仓库的直接拷贝（非 submodule）。本仓库是集中分发点：先更新源 skill 仓库，再把更新拷贝到这里，并在 `.claude-plugin/marketplace.json` 中 bump 对应插件的 `version`：
 
 ```bash
 cp -r ../drawio-skill/skills/drawio-skill/* plugins/drawio/skills/drawio-skill/
+# 在 .claude-plugin/marketplace.json 中 bump 对应插件版本
 git add plugins/drawio && git commit -m "chore: sync drawio-skill"
 ```
 
-### 自动同步（agent-native-design、semanticscholar、paper-fetch、scholar-deep-research、asta）
-
-`agent-native-design`、`semanticscholar-skill`、`paper-fetch`、`scholar-deep-research` 与 `asta-skill` 各自仓库中带有 GitHub Actions workflow（`.github/workflows/sync-365-skills.yml`），任何对各自 `skills/<name>/**` 的改动会自动推送到本仓库，并更新 `marketplace.json` 中的版本号。需要每个源仓库配置 `SYNC_365_SKILLS_TOKEN` secret，并对本仓库具有 `Contents: write` 权限。
+多数源仓库现已转为私有；对这部分插件而言，本 marketplace 是唯一分发渠道。
 
 ## 源仓库
 
-每个插件都对应一个独立的 skill 仓库 —— 与具体插件相关的 bug 请到对应仓库提交 issue：
+每个插件都对应一个独立的 skill 仓库 —— 与具体插件相关的 bug 请到对应仓库提交 issue（私有仓库仅协作者可提 issue）：
 
 | 插件 | 源仓库 |
 | --- | --- |
 | `agent-native-design` | [Agents365-ai/agent-native-design](https://github.com/Agents365-ai/agent-native-design) |
 | `drawio` | [Agents365-ai/drawio-skill](https://github.com/Agents365-ai/drawio-skill) |
-| `mermaid` | [Agents365-ai/mermaid-skill](https://github.com/Agents365-ai/mermaid-skill) |
-| `excalidraw` | [Agents365-ai/excalidraw-skill](https://github.com/Agents365-ai/excalidraw-skill) |
-| `plantuml` | [Agents365-ai/plantuml-skill](https://github.com/Agents365-ai/plantuml-skill) |
-| `tldraw` | [Agents365-ai/tldraw-skill](https://github.com/Agents365-ai/tldraw-skill) |
-| `semanticscholar` | [Agents365-ai/semanticscholar-skill](https://github.com/Agents365-ai/semanticscholar-skill) |
-| `paper-fetch` | [Agents365-ai/paper-fetch](https://github.com/Agents365-ai/paper-fetch) |
 | `scholar-deep-research` | [Agents365-ai/scholar-deep-research](https://github.com/Agents365-ai/scholar-deep-research) |
-| `asta` | [Agents365-ai/asta-skill](https://github.com/Agents365-ai/asta-skill) |
 | `journal-abbrev` | [Agents365-ai/journal-abbrev](https://github.com/Agents365-ai/journal-abbrev) |
+| `video-podcast-maker` | [Agents365-ai/video-podcast-maker](https://github.com/Agents365-ai/video-podcast-maker) |
 | `obsidian-organizer` | [Agents365-ai/obsidian-organizer](https://github.com/Agents365-ai/obsidian-organizer) |
+| `asta` | Agents365-ai/asta-skill（私有） |
+| `bangumi-frames` | Agents365-ai/bangumi-frames（私有） |
+| `excalidraw` | Agents365-ai/excalidraw-skill（私有） |
+| `imagencn` | Agents365-ai/imagencn（私有） |
+| `mermaid` | Agents365-ai/mermaid-skill（私有） |
+| `paper-fetch` | Agents365-ai/paper-fetch（私有） |
+| `pi-plugin-cc` | Agents365-ai/pi-plugin-cc（私有） |
+| `plantuml` | Agents365-ai/plantuml-skill（私有） |
+| `semanticscholar` | Agents365-ai/semanticscholar-skill（私有） |
+| `target-prioritization` | Agents365-ai/target-prioritization（私有） |
+| `tldraw` | Agents365-ai/tldraw-skill（私有） |
+| `ttscn` | Agents365-ai/ttscn（私有） |
+| `videogencn` | 仅通过本仓库分发 |
+| `yt2bb` | Agents365-ai/yt2bb（私有） |
 
 ## 微信交流群
 
