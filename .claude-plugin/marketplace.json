@@ -267,8 +267,8 @@
       ]
     },
     {
-      "name": "pi",
-      "source": "./plugins/pi",
+      "name": "pi-plugin-cc",
+      "source": "./plugins/pi-plugin-cc",
       "description": "Drive the Pi coding agent from Claude Code — model-agnostic delegation and code review. /pi:review with structured findings, /pi:adversarial-review, /pi:rescue, /pi:parallel-rescue, racing/fallback across providers, incremental review.",
       "version": "0.7.2",
       "author": {
