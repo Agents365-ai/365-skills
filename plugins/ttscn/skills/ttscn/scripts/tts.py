@@ -607,7 +607,7 @@ def main():
 
 
 def _run(args, started_at, json_mode=False):
-    if json_mode is False:
+    if not json_mode:
         json_mode = _resolve_json_mode(args)
     _diag = sys.stderr if json_mode else sys.stdout
 
