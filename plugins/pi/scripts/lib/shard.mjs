@@ -27,7 +27,9 @@ export function mergeShardReviews(shardResults) {
   const succeeded = shardResults.filter(Boolean);
 
   const findings = succeeded.flatMap((result) => result.findings);
-  findings.sort((left, right) => severityRank(left.severity) - severityRank(right.severity));
+  findings.sort(
+    (left, right) => severityRank(left.severity) - severityRank(right.severity),
+  );
 
   const nextSteps = [];
   const seenSteps = new Set();
@@ -42,11 +44,16 @@ export function mergeShardReviews(shardResults) {
   }
 
   return {
-    verdict: succeeded.some((result) => result.verdict === "needs-attention") ? "needs-attention" : "approve",
-    summary: succeeded.map((result) => result.summary).filter(Boolean).join(" "),
+    verdict: succeeded.some((result) => result.verdict === "needs-attention")
+      ? "needs-attention"
+      : "approve",
+    summary: succeeded
+      .map((result) => result.summary)
+      .filter(Boolean)
+      .join(" "),
     findings,
     next_steps: nextSteps,
     shardCount: shardResults.length,
-    failedCount: shardResults.length - succeeded.length
+    failedCount: shardResults.length - succeeded.length,
   };
 }

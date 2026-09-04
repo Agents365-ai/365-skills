@@ -7,7 +7,7 @@ import { terminateProcessTree } from "./process.mjs";
 const CHANNEL_DEFAULTS = {
   command: "pi",
   modeArgs: ["--mode", "rpc"],
-  extraArgs: []
+  extraArgs: [],
 };
 
 // Cap accumulated stderr to last STDERR_MAX_BYTES so a long-running task
@@ -25,7 +25,7 @@ export class PiRpcClient {
     this.command = options.command ?? CHANNEL_DEFAULTS.command;
     this.spawnArgs = [
       ...CHANNEL_DEFAULTS.modeArgs,
-      ...(options.spawnArgs ?? CHANNEL_DEFAULTS.extraArgs)
+      ...(options.spawnArgs ?? CHANNEL_DEFAULTS.extraArgs),
     ];
     this.env = options.env ?? process.env;
     this.proc = null;
@@ -65,8 +65,8 @@ export class PiRpcClient {
         detached: true,
         env: this.env,
         stdio: ["pipe", "pipe", "pipe"],
-        shell: process.platform === "win32" ? (process.env.SHELL || true) : false,
-        windowsHide: true
+        shell: process.platform === "win32" ? process.env.SHELL || true : false,
+        windowsHide: true,
       });
     } catch (error) {
       this._handleExit(error);
@@ -92,7 +92,7 @@ export class PiRpcClient {
     this.proc.on("exit", (code, signal) => {
       if (code !== 0 || signal) {
         this.exitDetail = new Error(
-          `pi --mode rpc exited unexpectedly (${signal ? `signal ${signal}` : `exit ${code}`}).`
+          `pi --mode rpc exited unexpectedly (${signal ? `signal ${signal}` : `exit ${code}`}).`,
         );
       }
     });
@@ -136,7 +136,8 @@ export class PiRpcClient {
   }
 
   _handleChunk(chunk) {
-    const decoded = typeof chunk === "string" ? chunk : this.decoder.write(chunk);
+    const decoded =
+      typeof chunk === "string" ? chunk : this.decoder.write(chunk);
     this.stdoutBuffer += decoded;
     while (true) {
       const newlineIndex = this.stdoutBuffer.indexOf("\n");
@@ -161,7 +162,11 @@ export class PiRpcClient {
     try {
       message = JSON.parse(line);
     } catch (error) {
-      this._handleExit(new Error(`Failed to parse pi RPC JSONL: ${error.message}: ${line.slice(0, 200)}`));
+      this._handleExit(
+        new Error(
+          `Failed to parse pi RPC JSONL: ${error.message}: ${line.slice(0, 200)}`,
+        ),
+      );
       return;
     }
 
@@ -194,7 +199,8 @@ export class PiRpcClient {
       return;
     }
 
-    const errorMessage = message.error ?? `pi RPC command ${pending.command} failed.`;
+    const errorMessage =
+      message.error ?? `pi RPC command ${pending.command} failed.`;
     pending.reject(new Error(errorMessage));
   }
 
@@ -242,7 +248,7 @@ export class PiRpcClient {
       this.pending.set(id, {
         command: commandObject.type ?? "unknown",
         resolve,
-        reject
+        reject,
       });
 
       try {
@@ -283,7 +289,10 @@ export class PiRpcClient {
     }
 
     const procStillAlive = () =>
-      this.proc && !this.proc.killed && this.proc.exitCode === null && !this.exitResolved;
+      this.proc &&
+      !this.proc.killed &&
+      this.proc.exitCode === null &&
+      !this.exitResolved;
 
     this._termTimer = setTimeout(() => {
       this._termTimer = null;
@@ -349,7 +358,9 @@ export class PiRpcClient {
     return this.request({
       type: "prompt",
       message,
-      ...(options.streamingBehavior ? { streamingBehavior: options.streamingBehavior } : {})
+      ...(options.streamingBehavior
+        ? { streamingBehavior: options.streamingBehavior }
+        : {}),
     });
   }
 

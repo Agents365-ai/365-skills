@@ -123,9 +123,8 @@ def _resolve_voice(name):
     ttscn resolves its own per-platform default (no default-voice table is
     duplicated here).
     """
-    return (
-        os.environ.get("TTS_VOICE")
-        or user_prefs_get("global", "tts", "voices", name)
+    return os.environ.get("TTS_VOICE") or user_prefs_get(
+        "global", "tts", "voices", name
     )
 
 

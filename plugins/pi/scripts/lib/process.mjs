@@ -9,8 +9,10 @@ export function runCommand(command, args = [], options = {}) {
     input: options.input,
     maxBuffer: options.maxBuffer,
     stdio: options.stdio ?? "pipe",
-    shell: options.shell ?? (process.platform === "win32" ? (process.env.SHELL || true) : false),
-    windowsHide: true
+    shell:
+      options.shell ??
+      (process.platform === "win32" ? process.env.SHELL || true : false),
+    windowsHide: true,
   });
 
   return {
@@ -20,7 +22,7 @@ export function runCommand(command, args = [], options = {}) {
     signal: result.signal ?? null,
     stdout: result.stdout ?? "",
     stderr: result.stderr ?? "",
-    error: result.error ?? null
+    error: result.error ?? null,
   };
 }
 
@@ -35,24 +37,37 @@ export function runCommandChecked(command, args = [], options = {}) {
   return result;
 }
 
-export function binaryAvailable(command, versionArgs = ["--version"], options = {}) {
+export function binaryAvailable(
+  command,
+  versionArgs = ["--version"],
+  options = {},
+) {
   const runImpl = options.runCommandImpl ?? runCommand;
   const result = runImpl(command, versionArgs, options);
-  if (result.error && /** @type {NodeJS.ErrnoException} */ (result.error).code === "ENOENT") {
+  if (
+    result.error &&
+    /** @type {NodeJS.ErrnoException} */ (result.error).code === "ENOENT"
+  ) {
     return { available: false, detail: "not found" };
   }
   if (result.error) {
     return { available: false, detail: result.error.message };
   }
   if (result.status !== 0) {
-    const detail = result.stderr.trim() || result.stdout.trim() || `exit ${result.status}`;
+    const detail =
+      result.stderr.trim() || result.stdout.trim() || `exit ${result.status}`;
     return { available: false, detail };
   }
-  return { available: true, detail: result.stdout.trim() || result.stderr.trim() || "ok" };
+  return {
+    available: true,
+    detail: result.stdout.trim() || result.stderr.trim() || "ok",
+  };
 }
 
 function looksLikeMissingProcessMessage(text) {
-  return /not found|no running instance|cannot find|does not exist|no such process/i.test(text);
+  return /not found|no running instance|cannot find|does not exist|no such process/i.test(
+    text,
+  );
 }
 
 // Default grace period before escalating SIGTERM to SIGKILL on Unix.
@@ -92,10 +107,14 @@ export function terminateProcessTree(pid, options = {}) {
   const escalateAfterMs = options.escalateAfterMs ?? DEFAULT_ESCALATE_MS;
 
   if (platform === "win32") {
-    const result = runCommandImpl("taskkill", ["/PID", String(pid), "/T", "/F"], {
-      cwd: options.cwd,
-      env: options.env
-    });
+    const result = runCommandImpl(
+      "taskkill",
+      ["/PID", String(pid), "/T", "/F"],
+      {
+        cwd: options.cwd,
+        env: options.env,
+      },
+    );
 
     if (!result.error && result.status === 0) {
       return { attempted: true, delivered: true, method: "taskkill", result };

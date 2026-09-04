@@ -11,6 +11,7 @@ Customize FOCUS_DISEASE_TERMS for your project. Examples:
 A drug whose indication list contains any of these substrings is tagged
 in `focus_disease_drugs` and `any_focus_disease_drug = True`.
 """
+
 import argparse
 import json
 import time
@@ -59,12 +60,20 @@ query Target($id: String!) {
 """
 
 PHASE_MAP = {
-    "APPROVAL": 4, "PHASE_IV": 4, "PHASE_4": 4,
-    "PHASE_III": 3, "PHASE_3": 3,
-    "PHASE_II": 2, "PHASE_2": 2,
-    "PHASE_I": 1, "PHASE_1": 1,
-    "EARLY_PHASE_1": 1, "PRECLINICAL": 0,
-    "WITHDRAWN": -1, "UNKNOWN": 0, "": 0,
+    "APPROVAL": 4,
+    "PHASE_IV": 4,
+    "PHASE_4": 4,
+    "PHASE_III": 3,
+    "PHASE_3": 3,
+    "PHASE_II": 2,
+    "PHASE_2": 2,
+    "PHASE_I": 1,
+    "PHASE_1": 1,
+    "EARLY_PHASE_1": 1,
+    "PRECLINICAL": 0,
+    "WITHDRAWN": -1,
+    "UNKNOWN": 0,
+    "": 0,
 }
 
 
@@ -80,12 +89,22 @@ def is_approved_stage(stage: str | None) -> bool:
 
 # Per-modality tractability label priority (highest tier first).
 TRACTABILITY_PRIORITY = [
-    "Approved Drug", "Advanced Clinical", "Phase 1 Clinical",
-    "Structure with Ligand", "High-Quality Ligand", "High-Quality Pocket",
-    "Med-Quality Pocket", "Druggable Family",
-    "UniProt loc high conf", "GO CC high conf", "UniProt loc med conf",
-    "UniProt SigP or TMHMM", "GO CC med conf", "Human Protein Atlas loc",
-    "Small Molecule Binder", "Literature",
+    "Approved Drug",
+    "Advanced Clinical",
+    "Phase 1 Clinical",
+    "Structure with Ligand",
+    "High-Quality Ligand",
+    "High-Quality Pocket",
+    "Med-Quality Pocket",
+    "Druggable Family",
+    "UniProt loc high conf",
+    "GO CC high conf",
+    "UniProt loc med conf",
+    "UniProt SigP or TMHMM",
+    "GO CC med conf",
+    "Human Protein Atlas loc",
+    "Small Molecule Binder",
+    "Literature",
 ]
 
 
@@ -106,7 +125,8 @@ FOCUS_DISEASE_TERMS = ("crohn", "ulcerative colitis", "inflammatory bowel")
 def gql(query: str, variables: dict) -> dict:
     body = json.dumps({"query": query, "variables": variables}).encode()
     req = urllib.request.Request(
-        OT_URL, data=body,
+        OT_URL,
+        data=body,
         headers={"Content-Type": "application/json", "Accept": "application/json"},
     )
     try:
@@ -174,24 +194,31 @@ def fetch_one(gene: str) -> dict:
         row_phase = stage_to_phase(row.get("maxClinicalStage"))
         drug_phase = stage_to_phase(drug.get("maximumClinicalStage"))
         ph = max(row_phase, drug_phase)
-        approved = is_approved_stage(row.get("maxClinicalStage")) or is_approved_stage(drug.get("maximumClinicalStage"))
+        approved = is_approved_stage(row.get("maxClinicalStage")) or is_approved_stage(
+            drug.get("maximumClinicalStage")
+        )
         out["highest_clinical_phase"] = max(out["highest_clinical_phase"], ph)
-        d = drugs_seen.setdefault(name, {
-            "name": name,
-            "approved": approved,
-            "max_phase": ph,
-            "mechanisms": set(),
-            "diseases": set(),
-        })
+        d = drugs_seen.setdefault(
+            name,
+            {
+                "name": name,
+                "approved": approved,
+                "max_phase": ph,
+                "mechanisms": set(),
+                "diseases": set(),
+            },
+        )
         d["max_phase"] = max(d["max_phase"], ph)
         if approved:
             d["approved"] = True
-        moa = ((drug.get("mechanismsOfAction") or {}).get("rows") or [])
+        moa = (drug.get("mechanismsOfAction") or {}).get("rows") or []
         for m in moa:
             if m.get("mechanismOfAction"):
                 d["mechanisms"].add(m["mechanismOfAction"])
-        for dis_item in (row.get("diseases") or []):
-            dis = (dis_item.get("disease") or {}).get("name") or dis_item.get("diseaseFromSource")
+        for dis_item in row.get("diseases") or []:
+            dis = (dis_item.get("disease") or {}).get("name") or dis_item.get(
+                "diseaseFromSource"
+            )
             if not dis:
                 continue
             d["diseases"].add(dis)
@@ -203,16 +230,22 @@ def fetch_one(gene: str) -> dict:
     approved = [d for d in drugs_seen.values() if d["approved"]]
     out["approved_drug_count"] = len(approved)
     out["approved_drugs"] = [
-        {"name": d["name"], "max_phase": d["max_phase"],
-         "mechanisms": sorted(d["mechanisms"]), "diseases": sorted(d["diseases"])[:5]}
+        {
+            "name": d["name"],
+            "max_phase": d["max_phase"],
+            "mechanisms": sorted(d["mechanisms"]),
+            "diseases": sorted(d["diseases"])[:5],
+        }
         for d in approved[:10]
     ]
 
     for row in (tgt.get("associatedDiseases") or {}).get("rows", []) or []:
-        out["associated_diseases_top5"].append({
-            "name": (row.get("disease") or {}).get("name"),
-            "score": row.get("score"),
-        })
+        out["associated_diseases_top5"].append(
+            {
+                "name": (row.get("disease") or {}).get("name"),
+                "score": row.get("score"),
+            }
+        )
 
     # DepMap CRISPR essentiality — geneEffect < 0 means KO reduces fitness.
     # We summarize across all screened cell lines; pan-essentials (>80%) and
@@ -239,7 +272,7 @@ def fetch_one(gene: str) -> dict:
         if row.get("constraintType") == "lof":
             out["loeuf"] = row.get("oeUpper")
             out["constraint_oe_lof"] = row.get("oe")
-            out["constraint_top_decile"] = (row.get("upperBin") == 1)
+            out["constraint_top_decile"] = row.get("upperBin") == 1
             break
 
     return out

@@ -13,7 +13,9 @@ export function buildModelChain(primaryModel, fallbackModels = []) {
 }
 
 function shortenError(message, limit = 160) {
-  const normalized = String(message ?? "").trim().replace(/\s+/g, " ");
+  const normalized = String(message ?? "")
+    .trim()
+    .replace(/\s+/g, " ");
   if (normalized.length <= limit) {
     return normalized || "unknown error";
   }
@@ -41,13 +43,18 @@ export async function runWithModelFallback(chain, runOnce, onProgress = null) {
         // Nothing left to fall back to — preserve the original throwing behavior.
         throw error;
       }
-      result = { status: 1, error: { message: error instanceof Error ? error.message : String(error) } };
+      result = {
+        status: 1,
+        error: {
+          message: error instanceof Error ? error.message : String(error),
+        },
+      };
     }
 
     attempts.push({
       model: modelLabel(model),
       status: result.status,
-      error: result.status === 0 ? null : shortenError(result.error?.message)
+      error: result.status === 0 ? null : shortenError(result.error?.message),
     });
 
     if (result.status === 0) {
@@ -58,7 +65,7 @@ export async function runWithModelFallback(chain, runOnce, onProgress = null) {
     if (next !== undefined) {
       onProgress?.({
         message: `Model ${modelLabel(model)} failed (${shortenError(result.error?.message)}); falling back to ${next}.`,
-        phase: "starting"
+        phase: "starting",
       });
     }
   }

@@ -34,18 +34,27 @@ BFL_MODELS = {"flux-2-pro-preview", "flux-2-pro", "flux-2-max"}
 
 # Ratio presets map to pixel dimensions; 1K/2K are named sizes.
 BFL_SIZES = {
-    "1:1": "1024x1024", "16:9": "1344x768", "9:16": "768x1344",
-    "4:3": "1152x864", "3:4": "864x1152", "2:1": "1440x720",
+    "1:1": "1024x1024",
+    "16:9": "1344x768",
+    "9:16": "768x1344",
+    "4:3": "1152x864",
+    "3:4": "864x1152",
+    "2:1": "1440x720",
     "1:2": "720x1440",
-    "1K": "1024x1024", "2K": "2048x2048",
+    "1K": "1024x1024",
+    "2K": "2048x2048",
 }
 
 # Non-terminal statuses to keep polling
 _POLL_INTERVAL = 2.0
 _POLL_TIMEOUT = 120
 
-_TERMINAL_ERROR_STATUSES = {"Error", "Task not found", "Request Moderated",
-                            "Content Moderated"}
+_TERMINAL_ERROR_STATUSES = {
+    "Error",
+    "Task not found",
+    "Request Moderated",
+    "Content Moderated",
+}
 
 
 def get_bfl_api_key():
@@ -55,7 +64,8 @@ def get_bfl_api_key():
         raise ConfigError(
             "BFL_API_KEY environment variable not set.\n"
             "Set it with: export BFL_API_KEY='your-api-key'\n"
-            "Get a key at: https://api.bfl.ai/")
+            "Get a key at: https://api.bfl.ai/"
+        )
     return key
 
 
@@ -76,11 +86,13 @@ def _poll_result(polling_url, api_key):
     headers = {"x-key": api_key}
     start = time.time()
     while True:
-        rsp = safe_request("GET", polling_url, headers=headers,
-                           timeout=30, label="FLUX poll")
+        rsp = safe_request(
+            "GET", polling_url, headers=headers, timeout=30, label="FLUX poll"
+        )
         if rsp.status_code != 200:
             raise APIError(
-                f"FLUX poll failed (HTTP {rsp.status_code}): {rsp.text[:300]}")
+                f"FLUX poll failed (HTTP {rsp.status_code}): {rsp.text[:300]}"
+            )
         data = safe_json(rsp, "FLUX poll")
         status = data.get("status", "")
         if status == "Ready":
@@ -88,8 +100,7 @@ def _poll_result(polling_url, api_key):
         if status in _TERMINAL_ERROR_STATUSES:
             raise APIError(f"FLUX generation failed: {status}")
         if time.time() - start > _POLL_TIMEOUT:
-            raise APIError("FLUX generation timed out after "
-                           f"{_POLL_TIMEOUT}s")
+            raise APIError(f"FLUX generation timed out after {_POLL_TIMEOUT}s")
         time.sleep(_POLL_INTERVAL)
 
 
@@ -103,8 +114,8 @@ def generate_with_bfl(api_key, model, prompt, size, seed=None):
         width, height = int(width), int(height)
     except ValueError:
         raise APIError(
-            f"invalid size for FLUX: '{size}' (expected WxH pixels, "
-            "e.g. 1024x1024)") from None
+            f"invalid size for FLUX: '{size}' (expected WxH pixels, e.g. 1024x1024)"
+        ) from None
     body = {
         "prompt": prompt,
         "width": width,
@@ -117,11 +128,18 @@ def generate_with_bfl(api_key, model, prompt, size, seed=None):
         "x-key": api_key,
         "Content-Type": "application/json",
     }
-    rsp = safe_request("POST", f"{BFL_API_BASE}/{model}", headers=headers,
-                       json_data=body, timeout=30, label="FLUX generate")
+    rsp = safe_request(
+        "POST",
+        f"{BFL_API_BASE}/{model}",
+        headers=headers,
+        json_data=body,
+        timeout=30,
+        label="FLUX generate",
+    )
     if rsp.status_code != 200:
         raise APIError(
-            f"FLUX generate failed (HTTP {rsp.status_code}): {rsp.text[:300]}")
+            f"FLUX generate failed (HTTP {rsp.status_code}): {rsp.text[:300]}"
+        )
 
     data = safe_json(rsp, "FLUX generate")
     polling_url = data.get("polling_url")

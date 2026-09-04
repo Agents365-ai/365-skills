@@ -74,7 +74,9 @@ def _build_voices():
             vlist.append(v["id"])
             if v["id"] not in descriptions:
                 if v.get("style") and v.get("best_for"):
-                    descriptions[v["id"]] = f"{v['style']} — {v['best_for']} ({p['name']})"
+                    descriptions[v["id"]] = (
+                        f"{v['style']} — {v['best_for']} ({p['name']})"
+                    )
                 elif v.get("style"):
                     descriptions[v["id"]] = f"{v['style']} ({p['name']})"
         voices[p["id"]] = vlist
@@ -92,22 +94,27 @@ class BackendError(Exception):
     exit_code = 1
     retryable = False
 
+
 class UnknownBackendError(BackendError):
     code = "validation_failed"
     exit_code = 2
 
+
 class MissingPackageError(BackendError):
     code = "tool_missing"
     exit_code = 2  # fixable by the caller (install the package), not internal
+
     def __init__(self, message, package=None, install_cmd=None):
         super().__init__(message)
         self.package = package
         self.install_cmd = install_cmd
 
+
 class MissingEnvVarError(BackendError):
     code = "auth_missing_env"
     exit_code = 3
     retryable = False
+
     def __init__(self, message, var=None):
         super().__init__(message)
         self.var = var
@@ -132,13 +139,20 @@ def resolve_voice(backend):
     if pref:
         return pref, "config"
     defaults = {
-        "edge": "zh-CN-XiaoxiaoNeural", "azure": "zh-CN-XiaoxiaoNeural",
-        "cosyvoice": "longxiaochun_v3", "doubao": "BV001_streaming",
-        "tencent": "101001", "baidu": "0",
-        "minimax": "female-shaonv", "xunfei": "xiaoyan",
-        "elevenlabs": "21m00Tcm4TlvDq8ikWAM", "openai": "alloy",
+        "edge": "zh-CN-XiaoxiaoNeural",
+        "azure": "zh-CN-XiaoxiaoNeural",
+        "cosyvoice": "longxiaochun_v3",
+        "doubao": "BV001_streaming",
+        "tencent": "101001",
+        "baidu": "0",
+        "minimax": "female-shaonv",
+        "xunfei": "xiaoyan",
+        "elevenlabs": "21m00Tcm4TlvDq8ikWAM",
+        "openai": "alloy",
         "google": "en-US-Neural2-F",
-        "qwen": "Cherry", "stepfun": "cixingnansheng", "zhipu": "tongtong",
+        "qwen": "Cherry",
+        "stepfun": "cixingnansheng",
+        "zhipu": "tongtong",
     }
     return defaults.get(backend, "zh-CN-XiaoxiaoNeural"), "default"
 
@@ -183,16 +197,17 @@ def init_backend(name):
     except ImportError as e:
         raise MissingPackageError(
             f"'{pkg_name}' not installed. Run: {install_cmd}",
-            package=pkg_name, install_cmd=install_cmd,
+            package=pkg_name,
+            install_cmd=install_cmd,
         ) from e
     if info.get("env_any"):
         # Backends may offer alternative credential sets (e.g. v1 appid
         # vs v3 API key) — any one complete group is enough.
-        if not any(all(os.environ.get(var) for var in group)
-                   for group in info["env_any"]):
+        if not any(
+            all(os.environ.get(var) for var in group) for group in info["env_any"]
+        ):
             raise MissingEnvVarError(
-                "set one of: "
-                + " / ".join("+".join(g) for g in info["env_any"]),
+                "set one of: " + " / ".join("+".join(g) for g in info["env_any"]),
                 var=info["env_any"][0][0],
             )
     else:
@@ -216,17 +231,20 @@ def _build_config(name):
             # v3 API-key auth: no appid required.
             config["api_key"] = os.environ["VOLCENGINE_API_KEY"]
             config["resource_id"] = os.environ.get(
-                "VOLCENGINE_RESOURCE_ID", "seed-tts-2.0")
+                "VOLCENGINE_RESOURCE_ID", "seed-tts-2.0"
+            )
             config["endpoint"] = os.environ.get(
                 "VOLCENGINE_TTS_ENDPOINT",
-                "https://openspeech.bytedance.com/api/v3/tts/unidirectional")
+                "https://openspeech.bytedance.com/api/v3/tts/unidirectional",
+            )
         else:
             # v1 legacy auth: appid + access token.
             config["appid"] = os.environ["VOLCENGINE_APPID"]
             config["token"] = os.environ["VOLCENGINE_ACCESS_TOKEN"]
             config["cluster"] = os.environ.get("VOLCENGINE_CLUSTER", "volcano_tts")
             config["endpoint"] = os.environ.get(
-                "VOLCENGINE_TTS_ENDPOINT", "https://openspeech.bytedance.com/api/v1/tts")
+                "VOLCENGINE_TTS_ENDPOINT", "https://openspeech.bytedance.com/api/v1/tts"
+            )
     elif name == "cosyvoice":
         config["model"] = os.environ.get("COSYVOICE_MODEL", "cosyvoice-v3-flash")
     elif name == "tencent":
@@ -271,6 +289,7 @@ def _build_config(name):
 
 def get_synthesize_func(name):
     from importlib import import_module
+
     mod = import_module(BACKENDS[name]["module"], package=__package__)
     return mod.synthesize
 

@@ -28,6 +28,7 @@ def synthesize(chunks, config, output_file, output_format="wav"):
 
     # Convert rate string ("+5%") to Speed param (-2 to 2, default 0)
     import re as _re
+
     rate_match = _re.match(r"([+-]?\d+)%", speech_rate)
     speed = 0
     if rate_match:
@@ -63,22 +64,42 @@ def synthesize(chunks, config, output_file, output_format="wav"):
             # Resample to 48kHz mono for consistency
             normalized = part_file + ".norm.wav"
             result = subprocess.run(
-                ["ffmpeg", "-y", "-i", part_file,
-                 "-ar", "48000", "-ac", "1", normalized],
+                [
+                    "ffmpeg",
+                    "-y",
+                    "-i",
+                    part_file,
+                    "-ar",
+                    "48000",
+                    "-ac",
+                    "1",
+                    normalized,
+                ],
                 capture_output=True,
             )
             if result.returncode == 0:
                 os.replace(normalized, part_file)
 
             probe = subprocess.run(
-                ["ffprobe", "-v", "quiet", "-show_entries",
-                 "format=duration", "-of", "csv=p=0", part_file],
-                capture_output=True, text=True,
+                [
+                    "ffprobe",
+                    "-v",
+                    "quiet",
+                    "-show_entries",
+                    "format=duration",
+                    "-of",
+                    "csv=p=0",
+                    part_file,
+                ],
+                capture_output=True,
+                text=True,
             )
             chunk_duration = float(probe.stdout.strip()) if probe.stdout.strip() else 0
             accumulated_duration += chunk_duration
-            print(f"  Part {i + 1}/{len(chunks)} done "
-                  f"({len(text)} chars, {chunk_duration:.1f}s)")
+            print(
+                f"  Part {i + 1}/{len(chunks)} done "
+                f"({len(text)} chars, {chunk_duration:.1f}s)"
+            )
 
         except TencentCloudSDKException as e:
             raise RuntimeError(f"Tencent TTS error: {e}")
@@ -93,9 +114,22 @@ def synthesize(chunks, config, output_file, output_format="wav"):
             for pf in part_files:
                 f.write(f"file '{os.path.basename(pf)}'\n")
         result = subprocess.run(
-            ["ffmpeg", "-y", "-f", "concat", "-safe", "0",
-             "-i", concat_list, "-c", "copy", output_file],
-            capture_output=True, text=True, cwd=out_dir,
+            [
+                "ffmpeg",
+                "-y",
+                "-f",
+                "concat",
+                "-safe",
+                "0",
+                "-i",
+                concat_list,
+                "-c",
+                "copy",
+                output_file,
+            ],
+            capture_output=True,
+            text=True,
+            cwd=out_dir,
         )
         if result.returncode != 0:
             raise RuntimeError(f"FFmpeg concat failed: {result.stderr[:200]}")

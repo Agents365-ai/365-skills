@@ -18,6 +18,7 @@ when stdout is piped (the typical shell case), which would break the
 back-compat contract that workflow-production.md and SKILL.md rely on.
 Agents and orchestrators must opt in to JSON explicitly.
 """
+
 import argparse
 import os
 import sys
@@ -30,16 +31,22 @@ from tts.backends import user_prefs_get  # noqa: E402
 
 def build_parser():
     parser = argparse.ArgumentParser(
-        description=(__doc__ or "").split('\n\n')[0],
+        description=(__doc__ or "").split("\n\n")[0],
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument('keys', nargs='+', help='Nested key path, e.g. global tts rate')
-    parser.add_argument('--default', default='', help='Value to print if key is missing')
+    parser.add_argument("keys", nargs="+", help="Nested key path, e.g. global tts rate")
+    parser.add_argument(
+        "--default", default="", help="Value to print if key is missing"
+    )
     # Custom --format (no 'auto') so $(...) capture stays a bare value.
-    parser.add_argument('--format', choices=('json', 'prose'), default='prose',
-                        help="Output format. Default 'prose' prints the bare value "
-                             "(preserves shell $(...) capture). 'json' emits the "
-                             "standard cli_envelope shape on stdout.")
+    parser.add_argument(
+        "--format",
+        choices=("json", "prose"),
+        default="prose",
+        help="Output format. Default 'prose' prints the bare value "
+        "(preserves shell $(...) capture). 'json' emits the "
+        "standard cli_envelope shape on stdout.",
+    )
     return parser
 
 
@@ -52,16 +59,22 @@ def main():
     if used_default:
         val = args.default
 
-    if args.format == 'json':
-        sys.exit(cli_envelope.emit_success(args, {
-            "keys": args.keys,
-            "value": val,
-            "used_default": used_default,
-            "default": args.default,
-        }, started_at=started_at))
+    if args.format == "json":
+        sys.exit(
+            cli_envelope.emit_success(
+                args,
+                {
+                    "keys": args.keys,
+                    "value": val,
+                    "used_default": used_default,
+                    "default": args.default,
+                },
+                started_at=started_at,
+            )
+        )
     print(val)
     sys.exit(0)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

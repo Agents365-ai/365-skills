@@ -1,4 +1,5 @@
 """SRT subtitle and timing.json generation."""
+
 import json
 import re
 import subprocess
@@ -14,8 +15,8 @@ def format_time(seconds):
 
 
 # Punctuation sets for Chinese subtitle breaking
-STRONG_PUNCTS = set("。！？")     # Sentence-ending punctuation
-WEAK_PUNCTS = set("，；、：")      # Clause-separating punctuation
+STRONG_PUNCTS = set("。！？")  # Sentence-ending punctuation
+WEAK_PUNCTS = set("，；、：")  # Clause-separating punctuation
 ALL_PUNCTS = STRONG_PUNCTS | WEAK_PUNCTS
 
 
@@ -40,13 +41,19 @@ def write_srt(word_boundaries, output_path):
         if not entries:
             return
         text = "".join(e[0] for e in entries)
-        clean = re.sub(r"""^[，。！？、：；""''…—\s]+|[，。！？、：；""''…—\s]+$""", '', text.strip())
+        clean = re.sub(
+            r"""^[，。！？、：；""''…—\s]+|[，。！？、：；""''…—\s]+$""",
+            "",
+            text.strip(),
+        )
         if not clean:
             return
         start = entries[0][1]
         last = entries[-1]
         end = last[1] + last[2]
-        srt_lines.append(f"{subtitle_idx}\n{format_time(start)} --> {format_time(end)}\n{clean}\n\n")
+        srt_lines.append(
+            f"{subtitle_idx}\n{format_time(start)} --> {format_time(end)}\n{clean}\n\n"
+        )
         subtitle_idx += 1
 
     def find_last_punct_index(entries, punct_set):
@@ -83,8 +90,8 @@ def write_srt(word_boundaries, output_path):
 
             if break_idx >= 0 and break_idx > 0:
                 # Split: flush up to break_idx (inclusive), keep the rest
-                flush(buf[:break_idx + 1])
-                remaining = buf[break_idx + 1:]
+                flush(buf[: break_idx + 1])
+                remaining = buf[break_idx + 1 :]
                 buf = remaining
                 buf_text = "".join(e[0] for e in buf)
                 continue
@@ -109,26 +116,26 @@ def write_srt(word_boundaries, output_path):
 def write_timing(sections, total_duration, speech_rate, output_path):
     """Generate timing.json for Remotion sync."""
     timing_data = {
-        'total_duration': total_duration,
-        'fps': 30,
+        "total_duration": total_duration,
+        "fps": 30,
         # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
-        'total_frames': int(total_duration * 30),
-        'speech_rate': speech_rate,
-        'sections': [
+        "total_frames": int(total_duration * 30),
+        "speech_rate": speech_rate,
+        "sections": [
             {
-                'name': s['name'],
-                'label': s.get('label', s['name']),
-                'start_time': round(s['start_time'], 3),
-                'end_time': round(s['end_time'], 3),
-                'duration': round(s['duration'], 3),
+                "name": s["name"],
+                "label": s.get("label", s["name"]),
+                "start_time": round(s["start_time"], 3),
+                "end_time": round(s["end_time"], 3),
+                "duration": round(s["duration"], 3),
                 # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
-                'start_frame': int(s['start_time'] * 30),
+                "start_frame": int(s["start_time"] * 30),
                 # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
-                'duration_frames': int(s['duration'] * 30),
-                'is_silent': s.get('is_silent', False)
+                "duration_frames": int(s["duration"] * 30),
+                "is_silent": s.get("is_silent", False),
             }
             for s in sections
-        ]
+        ],
     }
 
     # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
@@ -137,18 +144,33 @@ def write_timing(sections, total_duration, speech_rate, output_path):
 
     print(f"\nTiming: {output_path}")
     print("\nSection times:")
-    for s in timing_data['sections']:
-        print(f"  {s['name']}: {s['start_time']:.1f}s - {s['end_time']:.1f}s ({s['duration']:.1f}s)")
-    print(f"\nTotal duration: {total_duration:.1f}s ({timing_data['total_frames']} frames @ 30fps)")
+    for s in timing_data["sections"]:
+        print(
+            f"  {s['name']}: {s['start_time']:.1f}s - {s['end_time']:.1f}s ({s['duration']:.1f}s)"
+        )
+    print(
+        f"\nTotal duration: {total_duration:.1f}s ({timing_data['total_frames']} frames @ 30fps)"
+    )
 
 
 def ffprobe_duration(wav_path):
     """Return WAV duration in seconds via ffprobe, or None if probe fails."""
     try:
         result = subprocess.run(
-            ['ffprobe', '-v', 'quiet', '-show_entries', 'format=duration',
-             '-of', 'csv=p=0', wav_path],
-            capture_output=True, text=True, check=True)
+            [
+                "ffprobe",
+                "-v",
+                "quiet",
+                "-show_entries",
+                "format=duration",
+                "-of",
+                "csv=p=0",
+                wav_path,
+            ],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
         return float(result.stdout.strip())
     except (subprocess.CalledProcessError, ValueError, FileNotFoundError):
         return None
@@ -173,30 +195,34 @@ def reconcile_timing_with_wav(timing_path, wav_path, drift_threshold=0.5):
         print(f"Warning: ffprobe failed on {wav_path}; timing.json left unchanged")
         return 1.0, None
     # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
-    with open(timing_path, encoding='utf-8') as f:
+    with open(timing_path, encoding="utf-8") as f:
         # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
         timing = json.load(f)
-    reported = timing['total_duration']
+    reported = timing["total_duration"]
     drift = real - reported
     if abs(drift) < drift_threshold:
-        print(f"Timing OK: ffprobe {real:.2f}s vs reported {reported:.2f}s (drift {drift:+.2f}s)")
+        print(
+            f"Timing OK: ffprobe {real:.2f}s vs reported {reported:.2f}s (drift {drift:+.2f}s)"
+        )
         return 1.0, real
     scale = real / reported
-    fps = timing.get('fps', 30)
-    for s in timing['sections']:
-        s['start_time'] = round(s['start_time'] * scale, 3)
-        s['end_time'] = round(s['end_time'] * scale, 3)
-        s['duration'] = round(s['duration'] * scale, 3)
+    fps = timing.get("fps", 30)
+    for s in timing["sections"]:
+        s["start_time"] = round(s["start_time"] * scale, 3)
+        s["end_time"] = round(s["end_time"] * scale, 3)
+        s["duration"] = round(s["duration"] * scale, 3)
         # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
-        s['start_frame'] = int(s['start_time'] * fps)
+        s["start_frame"] = int(s["start_time"] * fps)
         # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
-        s['duration_frames'] = int(s['duration'] * fps)
-    timing['total_duration'] = real
+        s["duration_frames"] = int(s["duration"] * fps)
+    timing["total_duration"] = real
     # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
-    timing['total_frames'] = int(real * fps)
+    timing["total_frames"] = int(real * fps)
     # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
-    with open(timing_path, 'w', encoding='utf-8') as f:
+    with open(timing_path, "w", encoding="utf-8") as f:
         json.dump(timing, f, indent=2, ensure_ascii=False)
-    print(f"Timing rescaled: scale={scale:.4f}  reported {reported:.2f}s -> actual {real:.2f}s  (drift {drift:+.2f}s)")
+    print(
+        f"Timing rescaled: scale={scale:.4f}  reported {reported:.2f}s -> actual {real:.2f}s  (drift {drift:+.2f}s)"
+    )
     print(f"  -> {timing['total_frames']} frames @ {fps}fps")
     return scale, real

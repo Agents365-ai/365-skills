@@ -3,21 +3,39 @@ export { Scale4K, FullBleedLayout, PaddedLayout } from "./layouts";
 
 // Animations
 export {
-  useEntrance, useExit, useCounter, useBarFill, getPresentation,
-  useFloat, usePulse, useGradientShift, useOpacityWave,
-  useTextReveal, useCharReveal, staggerDelay,
-  useDrawOn, useStaggeredDrawOn,
+  useEntrance,
+  useExit,
+  useCounter,
+  useBarFill,
+  getPresentation,
+  useFloat,
+  usePulse,
+  useGradientShift,
+  useOpacityWave,
+  useTextReveal,
+  useCharReveal,
+  staggerDelay,
+  useDrawOn,
+  useStaggeredDrawOn,
 } from "./animations";
 
 // Animated backgrounds
 export {
-  MovingGradient, FloatingShapes, GridPattern, GlowOrb, AccentLine,
+  MovingGradient,
+  FloatingShapes,
+  GridPattern,
+  GlowOrb,
+  AccentLine,
 } from "./AnimatedBackground";
 
 // Section layout presets
 export {
-  SplitLayout, StatHighlight, ZigzagCards,
-  CenteredShowcase, MetricsRow, StepProgress,
+  SplitLayout,
+  StatHighlight,
+  ZigzagCards,
+  CenteredShowcase,
+  MetricsRow,
+  StepProgress,
 } from "./SectionLayouts";
 
 // Content components

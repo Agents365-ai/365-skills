@@ -23,7 +23,9 @@ function formatLineRange(finding) {
 
 function pushFinding(lines, finding) {
   const lineSuffix = formatLineRange(finding);
-  lines.push(`- [${finding.severity}] ${finding.title} (${finding.file}${lineSuffix})`);
+  lines.push(
+    `- [${finding.severity}] ${finding.title} (${finding.file}${lineSuffix})`,
+  );
   lines.push(`  ${finding.body}`);
   if (finding.recommendation) {
     lines.push(`  Recommendation: ${finding.recommendation}`);
@@ -50,21 +52,44 @@ export function validateReviewResultShape(data) {
 }
 
 function normalizeReviewFinding(finding, index) {
-  const source = finding && typeof finding === "object" && !Array.isArray(finding) ? finding : {};
-  const lineStart = Number.isInteger(source.line_start) && source.line_start > 0 ? source.line_start : null;
+  const source =
+    finding && typeof finding === "object" && !Array.isArray(finding)
+      ? finding
+      : {};
+  const lineStart =
+    Number.isInteger(source.line_start) && source.line_start > 0
+      ? source.line_start
+      : null;
   const lineEnd =
-    Number.isInteger(source.line_end) && source.line_end > 0 && (!lineStart || source.line_end >= lineStart)
+    Number.isInteger(source.line_end) &&
+    source.line_end > 0 &&
+    (!lineStart || source.line_end >= lineStart)
       ? source.line_end
       : lineStart;
 
   return {
-    severity: typeof source.severity === "string" && source.severity.trim() ? source.severity.trim() : "low",
-    title: typeof source.title === "string" && source.title.trim() ? source.title.trim() : `Finding ${index + 1}`,
-    body: typeof source.body === "string" && source.body.trim() ? source.body.trim() : "No details provided.",
-    file: typeof source.file === "string" && source.file.trim() ? source.file.trim() : "unknown",
+    severity:
+      typeof source.severity === "string" && source.severity.trim()
+        ? source.severity.trim()
+        : "low",
+    title:
+      typeof source.title === "string" && source.title.trim()
+        ? source.title.trim()
+        : `Finding ${index + 1}`,
+    body:
+      typeof source.body === "string" && source.body.trim()
+        ? source.body.trim()
+        : "No details provided.",
+    file:
+      typeof source.file === "string" && source.file.trim()
+        ? source.file.trim()
+        : "unknown",
     line_start: lineStart,
     line_end: lineEnd,
-    recommendation: typeof source.recommendation === "string" ? source.recommendation.trim() : ""
+    recommendation:
+      typeof source.recommendation === "string"
+        ? source.recommendation.trim()
+        : "",
   };
 }
 
@@ -72,10 +97,12 @@ export function normalizeReviewResultData(data) {
   return {
     verdict: data.verdict.trim(),
     summary: data.summary.trim(),
-    findings: data.findings.map((finding, index) => normalizeReviewFinding(finding, index)),
+    findings: data.findings.map((finding, index) =>
+      normalizeReviewFinding(finding, index),
+    ),
     next_steps: data.next_steps
       .filter((step) => typeof step === "string" && step.trim())
-      .map((step) => step.trim())
+      .map((step) => step.trim()),
   };
 }
 
@@ -84,10 +111,7 @@ function isStructuredReviewStoredResult(storedJob) {
   if (!result || typeof result !== "object" || Array.isArray(result)) {
     return false;
   }
-  return (
-    Object.hasOwn(result, "result") ||
-    Object.hasOwn(result, "parseError")
-  );
+  return Object.hasOwn(result, "result") || Object.hasOwn(result, "parseError");
 }
 
 function formatJobLine(job) {
@@ -117,7 +141,9 @@ function formatPiResumeCommand(job) {
 
 function appendActiveJobsTable(lines, jobs) {
   lines.push("Active jobs:");
-  lines.push("| Job | Kind | Status | Phase | Elapsed | Pi Session ID | Summary | Actions |");
+  lines.push(
+    "| Job | Kind | Status | Phase | Elapsed | Pi Session ID | Summary | Actions |",
+  );
   lines.push("| --- | --- | --- | --- | --- | --- | --- | --- |");
   for (const job of jobs) {
     const actions = [`/pi:status ${job.id}`];
@@ -125,7 +151,7 @@ function appendActiveJobsTable(lines, jobs) {
       actions.push(`/pi:cancel ${job.id}`);
     }
     lines.push(
-      `| ${escapeMarkdownCell(job.id)} | ${escapeMarkdownCell(job.kindLabel)} | ${escapeMarkdownCell(job.status)} | ${escapeMarkdownCell(job.phase ?? "")} | ${escapeMarkdownCell(job.elapsed ?? "")} | ${escapeMarkdownCell(job.piSessionId ?? "")} | ${escapeMarkdownCell(job.summary ?? "")} | ${actions.map((action) => `\`${action}\``).join("<br>")} |`
+      `| ${escapeMarkdownCell(job.id)} | ${escapeMarkdownCell(job.kindLabel)} | ${escapeMarkdownCell(job.status)} | ${escapeMarkdownCell(job.phase ?? "")} | ${escapeMarkdownCell(job.elapsed ?? "")} | ${escapeMarkdownCell(job.piSessionId ?? "")} | ${escapeMarkdownCell(job.summary ?? "")} | ${actions.map((action) => `\`${action}\``).join("<br>")} |`,
     );
   }
 }
@@ -154,13 +180,26 @@ function pushJobDetails(lines, job, options = {}) {
   if (job.logFile && options.showLog) {
     lines.push(`  Log: ${job.logFile}`);
   }
-  if ((job.status === "queued" || job.status === "running") && options.showCancelHint) {
+  if (
+    (job.status === "queued" || job.status === "running") &&
+    options.showCancelHint
+  ) {
     lines.push(`  Cancel: /pi:cancel ${job.id}`);
   }
-  if (job.status !== "queued" && job.status !== "running" && options.showResultHint) {
+  if (
+    job.status !== "queued" &&
+    job.status !== "running" &&
+    options.showResultHint
+  ) {
     lines.push(`  Result: /pi:result ${job.id}`);
   }
-  if (job.status !== "queued" && job.status !== "running" && job.jobClass === "task" && job.write && options.showReviewHint) {
+  if (
+    job.status !== "queued" &&
+    job.status !== "running" &&
+    job.jobClass === "task" &&
+    job.write &&
+    options.showReviewHint
+  ) {
     lines.push("  Review changes: /pi:review --wait");
     lines.push("  Stricter review: /pi:adversarial-review --wait");
   }
@@ -191,7 +230,7 @@ export function renderSetupReport(report) {
     "",
     "Checks:",
     `- node: ${report.node.detail}`,
-    `- pi: ${report.pi.detail}`
+    `- pi: ${report.pi.detail}`,
   ];
 
   if (report.pi.version) {
@@ -209,24 +248,29 @@ export function renderSetupReport(report) {
   lines.push(
     fallbackModels.length > 0
       ? `- fallback models: ${fallbackModels.join(", ")}`
-      : "- fallback models: none (set PI_PLUGIN_FALLBACK_MODELS=model1,model2 to auto-retry failed runs on another model)"
+      : "- fallback models: none (set PI_PLUGIN_FALLBACK_MODELS=model1,model2 to auto-retry failed runs on another model)",
   );
 
   if (report.subagents) {
     if (report.subagents.installed) {
-      const names = report.subagents.agentNames.length > 0
-        ? report.subagents.agentNames.join(", ")
-        : "scout, researcher, planner, worker, reviewer, context-builder, oracle, delegate";
-      lines.push(`- pi-subagents: installed (${report.subagents.agentCount} agents: ${names})`);
+      const names =
+        report.subagents.agentNames.length > 0
+          ? report.subagents.agentNames.join(", ")
+          : "scout, researcher, planner, worker, reviewer, context-builder, oracle, delegate";
+      lines.push(
+        `- pi-subagents: installed (${report.subagents.agentCount} agents: ${names})`,
+      );
     } else {
-      lines.push("- pi-subagents: not installed (run `pi install npm:pi-subagents` to enable parallel subagents)");
+      lines.push(
+        "- pi-subagents: not installed (run `pi install npm:pi-subagents` to enable parallel subagents)",
+      );
     }
   }
 
   lines.push(
     `- session runtime: ${report.sessionRuntime.label}`,
     `- review gate: ${report.reviewGateEnabled ? "enabled" : "disabled"}`,
-    ""
+    "",
   );
 
   if (report.actionsTaken.length > 0) {
@@ -276,9 +320,14 @@ export function renderOutFileSummary(execution, outFile) {
   }
   if (findings) {
     lines.push(summarizeSeverityCounts(findings));
-    const sorted = [...findings].sort((left, right) => severityRank(left.severity) - severityRank(right.severity));
+    const sorted = [...findings].sort(
+      (left, right) =>
+        severityRank(left.severity) - severityRank(right.severity),
+    );
     for (const finding of sorted) {
-      lines.push(`- [${finding.severity}] ${finding.title} (${finding.file}${formatLineRange(finding)})`);
+      lines.push(
+        `- [${finding.severity}] ${finding.title} (${finding.file}${formatLineRange(finding)})`,
+      );
     }
   } else if (execution.summary) {
     lines.push(execution.summary);
@@ -294,14 +343,24 @@ export function renderReviewResult(parsedResult, meta) {
       "",
       "Pi did not return valid structured JSON.",
       "",
-      `- Parse error: ${parsedResult.parseError}`
+      `- Parse error: ${parsedResult.parseError}`,
     ];
 
     if (parsedResult.rawOutput) {
-      lines.push("", "Raw final message:", "", "```text", parsedResult.rawOutput, "```");
+      lines.push(
+        "",
+        "Raw final message:",
+        "",
+        "```text",
+        parsedResult.rawOutput,
+        "```",
+      );
     }
 
-    appendReasoningSection(lines, meta.reasoningSummary ?? parsedResult.reasoningSummary);
+    appendReasoningSection(
+      lines,
+      meta.reasoningSummary ?? parsedResult.reasoningSummary,
+    );
 
     return `${lines.join("\n").trimEnd()}\n`;
   }
@@ -314,20 +373,32 @@ export function renderReviewResult(parsedResult, meta) {
       `Target: ${meta.targetLabel}`,
       "Pi returned JSON with an unexpected review shape.",
       "",
-      `- Validation error: ${validationError}`
+      `- Validation error: ${validationError}`,
     ];
 
     if (parsedResult.rawOutput) {
-      lines.push("", "Raw final message:", "", "```text", parsedResult.rawOutput, "```");
+      lines.push(
+        "",
+        "Raw final message:",
+        "",
+        "```text",
+        parsedResult.rawOutput,
+        "```",
+      );
     }
 
-    appendReasoningSection(lines, meta.reasoningSummary ?? parsedResult.reasoningSummary);
+    appendReasoningSection(
+      lines,
+      meta.reasoningSummary ?? parsedResult.reasoningSummary,
+    );
 
     return `${lines.join("\n").trimEnd()}\n`;
   }
 
   const data = normalizeReviewResultData(parsedResult.parsed);
-  const findings = [...data.findings].sort((left, right) => severityRank(left.severity) - severityRank(right.severity));
+  const findings = [...data.findings].sort(
+    (left, right) => severityRank(left.severity) - severityRank(right.severity),
+  );
   const lines = [
     `# Pi ${meta.reviewLabel}`,
     "",
@@ -335,7 +406,7 @@ export function renderReviewResult(parsedResult, meta) {
     `Verdict: ${data.verdict}`,
     "",
     data.summary,
-    ""
+    "",
   ];
 
   if (findings.length === 0) {
@@ -361,10 +432,14 @@ export function renderReviewResult(parsedResult, meta) {
 
 function pushPanelFinding(lines, finding) {
   const lineSuffix = formatLineRange(finding);
-  lines.push(`- [${finding.severity}] ${finding.title} (${finding.file}${lineSuffix}) — found by: ${finding.foundBy.join(", ")}`);
+  lines.push(
+    `- [${finding.severity}] ${finding.title} (${finding.file}${lineSuffix}) — found by: ${finding.foundBy.join(", ")}`,
+  );
   lines.push(`  ${finding.body}`);
   if (finding.alsoReportedAs.length > 0) {
-    lines.push(`  Also reported as: ${finding.alsoReportedAs.map((title) => `"${title}"`).join(", ")}`);
+    lines.push(
+      `  Also reported as: ${finding.alsoReportedAs.map((title) => `"${title}"`).join(", ")}`,
+    );
   }
   if (finding.recommendation) {
     lines.push(`  Recommendation: ${finding.recommendation}`);
@@ -379,12 +454,14 @@ export function renderPanelReviewResult(panel, meta) {
     `# Pi Panel ${meta.reviewLabel}`,
     "",
     `Target: ${meta.targetLabel}`,
-    `Models: ${okCount}/${panel.members.length} succeeded`
+    `Models: ${okCount}/${panel.members.length} succeeded`,
   ];
 
   for (const member of panel.members) {
     if (member.ok) {
-      lines.push(`- ${member.model}: ok (${member.findingCount} finding${member.findingCount === 1 ? "" : "s"})`);
+      lines.push(
+        `- ${member.model}: ok (${member.findingCount} finding${member.findingCount === 1 ? "" : "s"})`,
+      );
       if (member.summary) {
         lines.push(`  ${member.summary}`);
       }
@@ -401,8 +478,12 @@ export function renderPanelReviewResult(panel, meta) {
 
   lines.push(`Verdict: ${panel.verdict}`, "");
 
-  const consensus = panel.findings.filter((finding) => finding.foundBy.length >= 2);
-  const singleSource = panel.findings.filter((finding) => finding.foundBy.length === 1);
+  const consensus = panel.findings.filter(
+    (finding) => finding.foundBy.length >= 2,
+  );
+  const singleSource = panel.findings.filter(
+    (finding) => finding.foundBy.length === 1,
+  );
 
   if (panel.findings.length === 0) {
     lines.push("No material findings from any model.");
@@ -443,15 +524,19 @@ export function renderShardedReviewResult(sharded, meta) {
     `# Pi Sharded ${meta.reviewLabel}`,
     "",
     `Target: ${meta.targetLabel}`,
-    `Sharded across ${sharded.shards.length} review jobs: ${okCount}/${sharded.shards.length} succeeded`
+    `Sharded across ${sharded.shards.length} review jobs: ${okCount}/${sharded.shards.length} succeeded`,
   ];
 
   for (const shard of sharded.shards) {
     const fileList = shard.files.join(", ");
     if (shard.ok) {
-      lines.push(`- shard ${shard.index + 1} (${fileList}): ok (${shard.findingCount} finding${shard.findingCount === 1 ? "" : "s"})`);
+      lines.push(
+        `- shard ${shard.index + 1} (${fileList}): ok (${shard.findingCount} finding${shard.findingCount === 1 ? "" : "s"})`,
+      );
     } else {
-      lines.push(`- shard ${shard.index + 1} (${fileList}): failed — ${shard.failure}`);
+      lines.push(
+        `- shard ${shard.index + 1} (${fileList}): failed — ${shard.failure}`,
+      );
     }
   }
   lines.push("");
@@ -495,7 +580,7 @@ export function renderRaceResult(race, meta) {
     `Task: ${meta.taskSummary}`,
     race.write
       ? "Mode: write — each racer ran in an isolated git worktree created from HEAD"
-      : "Mode: read-only — racers analyzed the same working tree"
+      : "Mode: read-only — racers analyzed the same working tree",
   ];
   if (race.dirtyWarning) {
     lines.push(`Warning: ${race.dirtyWarning}`);
@@ -515,7 +600,14 @@ export function renderRaceResult(race, meta) {
       if (racer.patchEmpty || !racer.patchFile) {
         lines.push("Patch: no file changes.", "");
       } else {
-        lines.push("Patch:", "```text", racer.patchStat, "```", `Apply with: git apply ${racer.patchFile}`, "");
+        lines.push(
+          "Patch:",
+          "```text",
+          racer.patchStat,
+          "```",
+          `Apply with: git apply ${racer.patchFile}`,
+          "",
+        );
       }
     }
     if (racer.piSessionId) {
@@ -526,21 +618,28 @@ export function renderRaceResult(race, meta) {
   if (okCount === 0) {
     lines.push("All racers failed.");
   } else if (race.write) {
-    lines.push("Pick a winner: review each patch, then apply exactly one with `git apply <patch>`.");
+    lines.push(
+      "Pick a winner: review each patch, then apply exactly one with `git apply <patch>`.",
+    );
   } else {
-    lines.push("Pick a winner: compare the answers above; agreement across models is a strong signal.");
+    lines.push(
+      "Pick a winner: compare the answers above; agreement across models is a strong signal.",
+    );
   }
 
   return `${lines.join("\n").trimEnd()}\n`;
 }
 
 export function renderTaskResult(parsedResult, _meta) {
-  const rawOutput = typeof parsedResult?.rawOutput === "string" ? parsedResult.rawOutput : "";
+  const rawOutput =
+    typeof parsedResult?.rawOutput === "string" ? parsedResult.rawOutput : "";
   if (rawOutput) {
     return rawOutput.endsWith("\n") ? rawOutput : `${rawOutput}\n`;
   }
 
-  const message = String(parsedResult?.failureMessage ?? "").trim() || "Pi did not return a final message.";
+  const message =
+    String(parsedResult?.failureMessage ?? "").trim() ||
+    "Pi did not return a final message.";
   return `${message}\n`;
 }
 
@@ -550,7 +649,7 @@ export function renderStatusReport(report) {
     "",
     `Session runtime: ${report.sessionRuntime.label}`,
     `Review gate: ${report.config.stopReviewGate ? "enabled" : "disabled"}`,
-    ""
+    "",
   ];
 
   if (report.running.length > 0) {
@@ -560,7 +659,7 @@ export function renderStatusReport(report) {
     for (const job of report.running) {
       pushJobDetails(lines, job, {
         showElapsed: true,
-        showLog: true
+        showLog: true,
       });
     }
     lines.push("");
@@ -570,7 +669,7 @@ export function renderStatusReport(report) {
     lines.push("Latest finished:");
     pushJobDetails(lines, report.latestFinished, {
       showDuration: true,
-      showLog: report.latestFinished.status === "failed"
+      showLog: report.latestFinished.status === "failed",
     });
     lines.push("");
   }
@@ -580,7 +679,7 @@ export function renderStatusReport(report) {
     for (const job of report.recent) {
       pushJobDetails(lines, job, {
         showDuration: true,
-        showLog: job.status === "failed"
+        showLog: job.status === "failed",
       });
     }
     lines.push("");
@@ -590,7 +689,9 @@ export function renderStatusReport(report) {
 
   if (report.needsReview) {
     lines.push("The stop-time review gate is enabled.");
-    lines.push("Ending the session will trigger a fresh Pi adversarial review and block if it finds issues.");
+    lines.push(
+      "Ending the session will trigger a fresh Pi adversarial review and block if it finds issues.",
+    );
   }
 
   return `${lines.join("\n").trimEnd()}\n`;
@@ -604,7 +705,7 @@ export function renderJobStatusReport(job) {
     showLog: true,
     showCancelHint: true,
     showResultHint: true,
-    showReviewHint: true
+    showReviewHint: true,
   });
   return `${lines.join("\n").trimEnd()}\n`;
 }
@@ -613,7 +714,9 @@ export function renderStoredJobResult(job, storedJob) {
   const piSessionId = storedJob?.piSessionId ?? job.piSessionId ?? null;
   const resumeCommand = piSessionId ? `pi --session ${piSessionId}` : null;
   if (isStructuredReviewStoredResult(storedJob) && storedJob?.rendered) {
-    const output = storedJob.rendered.endsWith("\n") ? storedJob.rendered : `${storedJob.rendered}\n`;
+    const output = storedJob.rendered.endsWith("\n")
+      ? storedJob.rendered
+      : `${storedJob.rendered}\n`;
     if (!piSessionId) {
       return output;
     }
@@ -621,8 +724,10 @@ export function renderStoredJobResult(job, storedJob) {
   }
 
   const rawOutput =
-    (typeof storedJob?.result?.rawOutput === "string" && storedJob.result.rawOutput) ||
-    (typeof storedJob?.result?.pi?.stdout === "string" && storedJob.result.pi.stdout) ||
+    (typeof storedJob?.result?.rawOutput === "string" &&
+      storedJob.result.rawOutput) ||
+    (typeof storedJob?.result?.pi?.stdout === "string" &&
+      storedJob.result.pi.stdout) ||
     "";
   if (rawOutput) {
     const output = rawOutput.endsWith("\n") ? rawOutput : `${rawOutput}\n`;
@@ -633,7 +738,9 @@ export function renderStoredJobResult(job, storedJob) {
   }
 
   if (storedJob?.rendered) {
-    const output = storedJob.rendered.endsWith("\n") ? storedJob.rendered : `${storedJob.rendered}\n`;
+    const output = storedJob.rendered.endsWith("\n")
+      ? storedJob.rendered
+      : `${storedJob.rendered}\n`;
     if (!piSessionId) {
       return output;
     }
@@ -644,7 +751,7 @@ export function renderStoredJobResult(job, storedJob) {
     `# ${job.title ?? "Pi Result"}`,
     "",
     `Job: ${job.id}`,
-    `Status: ${job.status}`
+    `Status: ${job.status}`,
   ];
 
   if (piSessionId) {
@@ -668,12 +775,7 @@ export function renderStoredJobResult(job, storedJob) {
 }
 
 export function renderCancelReport(job) {
-  const lines = [
-    "# Pi Cancel",
-    "",
-    `Cancelled ${job.id}.`,
-    ""
-  ];
+  const lines = ["# Pi Cancel", "", `Cancelled ${job.id}.`, ""];
 
   if (job.title) {
     lines.push(`- Title: ${job.title}`);

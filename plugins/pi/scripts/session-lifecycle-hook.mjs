@@ -33,7 +33,11 @@ function appendEnvVar(name, value) {
   if (!process.env.CLAUDE_ENV_FILE || value == null || value === "") {
     return;
   }
-  fs.appendFileSync(process.env.CLAUDE_ENV_FILE, `export ${name}=${shellEscape(value)}\n`, "utf8");
+  fs.appendFileSync(
+    process.env.CLAUDE_ENV_FILE,
+    `export ${name}=${shellEscape(value)}\n`,
+    "utf8",
+  );
 }
 
 function cleanupSessionJobs(cwd, sessionId) {
@@ -68,8 +72,11 @@ function cleanupSessionJobs(cwd, sessionId) {
   const previousJobs = state.jobs;
   saveState(
     workspaceRoot,
-    { ...state, jobs: previousJobs.filter((job) => job.sessionId !== sessionId) },
-    previousJobs
+    {
+      ...state,
+      jobs: previousJobs.filter((job) => job.sessionId !== sessionId),
+    },
+    previousJobs,
   );
 }
 
@@ -98,6 +105,8 @@ async function main() {
 }
 
 main().catch((error) => {
-  process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
+  process.stderr.write(
+    `${error instanceof Error ? error.message : String(error)}\n`,
+  );
   process.exitCode = 1;
 });

@@ -13,6 +13,7 @@ Application per platform:
   minimax -> inline pinyin annotations 字(zi4)   (apply_phonemes_minimax)
   others  -> silently ignored
 """
+
 import json
 
 
@@ -38,12 +39,31 @@ def pinyin_to_sapi(pinyin):
     syllables ("hang2" -> "hang 2").
     """
     tone_map = {
-        'ā': ('a', '1'), 'á': ('a', '2'), 'ǎ': ('a', '3'), 'à': ('a', '4'),
-        'ē': ('e', '1'), 'é': ('e', '2'), 'ě': ('e', '3'), 'è': ('e', '4'),
-        'ī': ('i', '1'), 'í': ('i', '2'), 'ǐ': ('i', '3'), 'ì': ('i', '4'),
-        'ō': ('o', '1'), 'ó': ('o', '2'), 'ǒ': ('o', '3'), 'ò': ('o', '4'),
-        'ū': ('u', '1'), 'ú': ('u', '2'), 'ǔ': ('u', '3'), 'ù': ('u', '4'),
-        'ǖ': ('v', '1'), 'ǘ': ('v', '2'), 'ǚ': ('v', '3'), 'ǜ': ('v', '4'), 'ü': ('v', '5'),
+        "ā": ("a", "1"),
+        "á": ("a", "2"),
+        "ǎ": ("a", "3"),
+        "à": ("a", "4"),
+        "ē": ("e", "1"),
+        "é": ("e", "2"),
+        "ě": ("e", "3"),
+        "è": ("e", "4"),
+        "ī": ("i", "1"),
+        "í": ("i", "2"),
+        "ǐ": ("i", "3"),
+        "ì": ("i", "4"),
+        "ō": ("o", "1"),
+        "ó": ("o", "2"),
+        "ǒ": ("o", "3"),
+        "ò": ("o", "4"),
+        "ū": ("u", "1"),
+        "ú": ("u", "2"),
+        "ǔ": ("u", "3"),
+        "ù": ("u", "4"),
+        "ǖ": ("v", "1"),
+        "ǘ": ("v", "2"),
+        "ǚ": ("v", "3"),
+        "ǜ": ("v", "4"),
+        "ü": ("v", "5"),
     }
 
     syllables = pinyin.split()
@@ -53,8 +73,8 @@ def pinyin_to_sapi(pinyin):
         if syllable and syllable[-1].isdigit():
             result.append(f"{syllable[:-1]} {syllable[-1]}")
             continue
-        tone = '5'
-        converted = ''
+        tone = "5"
+        converted = ""
         for char in syllable:
             if char in tone_map:
                 base, t = tone_map[char]
@@ -64,7 +84,7 @@ def pinyin_to_sapi(pinyin):
                 converted += char
         result.append(f"{converted} {tone}")
 
-    return ' '.join(result)
+    return " ".join(result)
 
 
 def apply_phonemes(text, phoneme_dict):
@@ -118,7 +138,8 @@ def apply_phonemes_minimax(text, phoneme_dict):
         placeholder = f"__PHM_{i}__"
         annotated = "".join(
             f"{char}({pinyin_to_sapi(syl).replace(' ', '')})"
-            for char, syl in zip(word, syllables))
+            for char, syl in zip(word, syllables)
+        )
         placeholders[placeholder] = annotated
         result = result.replace(word, placeholder)
 

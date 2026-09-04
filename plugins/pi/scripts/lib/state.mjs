@@ -20,9 +20,9 @@ export function defaultState() {
   return {
     version: STATE_VERSION,
     config: {
-      stopReviewGate: false
+      stopReviewGate: false,
     },
-    jobs: []
+    jobs: [],
   };
 }
 
@@ -36,10 +36,17 @@ export function resolveStateDir(cwd) {
   }
 
   const slugSource = path.basename(workspaceRoot) || "workspace";
-  const slug = slugSource.replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/^-+|-+$/g, "") || "workspace";
-  const hash = createHash("sha256").update(canonicalWorkspaceRoot).digest("hex").slice(0, 16);
+  const slug =
+    slugSource.replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/^-+|-+$/g, "") ||
+    "workspace";
+  const hash = createHash("sha256")
+    .update(canonicalWorkspaceRoot)
+    .digest("hex")
+    .slice(0, 16);
   const pluginDataDir = process.env[PLUGIN_DATA_ENV];
-  const stateRoot = pluginDataDir ? path.join(pluginDataDir, "state") : FALLBACK_STATE_ROOT_DIR;
+  const stateRoot = pluginDataDir
+    ? path.join(pluginDataDir, "state")
+    : FALLBACK_STATE_ROOT_DIR;
   return path.join(stateRoot, `${slug}-${hash}`);
 }
 
@@ -68,9 +75,9 @@ export function loadState(cwd) {
       ...parsed,
       config: {
         ...defaultState().config,
-        ...(parsed.config ?? {})
+        ...(parsed.config ?? {}),
       },
-      jobs: Array.isArray(parsed.jobs) ? parsed.jobs : []
+      jobs: Array.isArray(parsed.jobs) ? parsed.jobs : [],
     };
   } catch {
     return defaultState();
@@ -79,7 +86,9 @@ export function loadState(cwd) {
 
 function pruneJobs(jobs) {
   return [...jobs]
-    .sort((left, right) => String(right.updatedAt ?? "").localeCompare(String(left.updatedAt ?? "")))
+    .sort((left, right) =>
+      String(right.updatedAt ?? "").localeCompare(String(left.updatedAt ?? "")),
+    )
     .slice(0, MAX_JOBS);
 }
 
@@ -102,9 +111,9 @@ export function saveState(cwd, state, previousJobs = state.jobs) {
     version: STATE_VERSION,
     config: {
       ...defaultState().config,
-      ...(state.config ?? {})
+      ...(state.config ?? {}),
     },
-    jobs: nextJobs
+    jobs: nextJobs,
   };
 
   const retainedIds = new Set(nextJobs.map((job) => job.id));
@@ -116,7 +125,11 @@ export function saveState(cwd, state, previousJobs = state.jobs) {
     removeFileIfExists(job.logFile);
   }
 
-  fs.writeFileSync(resolveStateFile(cwd), `${JSON.stringify(nextState, null, 2)}\n`, "utf8");
+  fs.writeFileSync(
+    resolveStateFile(cwd),
+    `${JSON.stringify(nextState, null, 2)}\n`,
+    "utf8",
+  );
   return nextState;
 }
 
@@ -140,14 +153,14 @@ export function upsertJob(cwd, jobPatch) {
       state.jobs.unshift({
         createdAt: timestamp,
         updatedAt: timestamp,
-        ...jobPatch
+        ...jobPatch,
       });
       return;
     }
     state.jobs[existingIndex] = {
       ...state.jobs[existingIndex],
       ...jobPatch,
-      updatedAt: timestamp
+      updatedAt: timestamp,
     };
   });
 }
@@ -160,7 +173,7 @@ export function setConfig(cwd, key, value) {
   return updateState(cwd, (state) => {
     state.config = {
       ...state.config,
-      [key]: value
+      [key]: value,
     };
   });
 }
@@ -180,7 +193,9 @@ export function readJobFile(jobFile) {
   try {
     return JSON.parse(fs.readFileSync(jobFile, "utf8"));
   } catch (error) {
-    throw new Error(`Failed to read job file ${jobFile}: ${error instanceof Error ? error.message : String(error)}`);
+    throw new Error(
+      `Failed to read job file ${jobFile}: ${error instanceof Error ? error.message : String(error)}`,
+    );
   }
 }
 

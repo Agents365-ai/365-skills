@@ -24,23 +24,24 @@ Error code vocabulary (suite-wide; extend as needed)
   confirmation_required  destructive op invoked without --yes        (exit 3)
   internal_error         catch-all for unexpected exceptions         (exit 1)
 """
+
 import json
 import sys
 import time
 import uuid
 
 ERROR_CODES = {
-    "input_not_found":       {"retryable": False, "exit": 1},
-    "input_invalid":         {"retryable": False, "exit": 1},
-    "validation_failed":     {"retryable": False, "exit": 1},
-    "auth_missing_env":      {"retryable": False, "exit": 2},
-    "tool_missing":          {"retryable": False, "exit": 2},
-    "backend_failed":        {"retryable": True,  "exit": 1},
-    "ffmpeg_failed":         {"retryable": False, "exit": 1},
-    "processing_failed":     {"retryable": False, "exit": 1},
-    "render_failed":         {"retryable": False, "exit": 1},
+    "input_not_found": {"retryable": False, "exit": 1},
+    "input_invalid": {"retryable": False, "exit": 1},
+    "validation_failed": {"retryable": False, "exit": 1},
+    "auth_missing_env": {"retryable": False, "exit": 2},
+    "tool_missing": {"retryable": False, "exit": 2},
+    "backend_failed": {"retryable": True, "exit": 1},
+    "ffmpeg_failed": {"retryable": False, "exit": 1},
+    "processing_failed": {"retryable": False, "exit": 1},
+    "render_failed": {"retryable": False, "exit": 1},
     "confirmation_required": {"retryable": False, "exit": 3},
-    "internal_error":        {"retryable": False, "exit": 1},
+    "internal_error": {"retryable": False, "exit": 1},
 }
 
 SCHEMA_VERSION = "1.0.0"
@@ -90,8 +91,17 @@ def emit_success(args, data, *, meta=None, started_at=None, exit_code=0):
     return exit_code
 
 
-def emit_error(args, code, message, *, field=None, retryable=None,
-               extra=None, started_at=None, meta=None):
+def emit_error(
+    args,
+    code,
+    message,
+    *,
+    field=None,
+    retryable=None,
+    extra=None,
+    started_at=None,
+    meta=None,
+):
     """Emit the failure envelope (JSON mode) or a prose error line (prose mode).
 
     Returns the exit code associated with `code`. Caller pattern:

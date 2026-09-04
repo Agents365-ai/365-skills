@@ -41,7 +41,9 @@ def synthesize(chunks, config, output_file, output_format="wav"):
                         # edge-tts >= 7 defaults to SentenceBoundary and
                         # needs the boundary kwarg for per-word events.
                         communicate = edge_tts.Communicate(
-                            chunk, voice=voice, rate=speech_rate,
+                            chunk,
+                            voice=voice,
+                            rate=speech_rate,
                             boundary="WordBoundary",
                         )
                     except TypeError:
@@ -57,12 +59,14 @@ def synthesize(chunks, config, output_file, output_format="wav"):
                         elif event["type"] == "WordBoundary":
                             # offset/duration are 100-ns ticks, per chunk;
                             # accumulated_duration makes offsets absolute.
-                            chunk_words.append({
-                                "text": event.get("text", ""),
-                                "offset": accumulated_duration
-                                          + event.get("offset", 0) / 10_000_000,
-                                "duration": event.get("duration", 0) / 10_000_000,
-                            })
+                            chunk_words.append(
+                                {
+                                    "text": event.get("text", ""),
+                                    "offset": accumulated_duration
+                                    + event.get("offset", 0) / 10_000_000,
+                                    "duration": event.get("duration", 0) / 10_000_000,
+                                }
+                            )
 
                     if not audio_data:
                         raise RuntimeError("No audio data received")
@@ -70,9 +74,19 @@ def synthesize(chunks, config, output_file, output_format="wav"):
                     with open(mp3_file, "wb") as f:
                         f.write(bytes(audio_data))
                     conv = subprocess.run(
-                        ["ffmpeg", "-y", "-i", mp3_file,
-                         "-ar", "48000", "-ac", "1", part_file],
-                        capture_output=True, text=True,
+                        [
+                            "ffmpeg",
+                            "-y",
+                            "-i",
+                            mp3_file,
+                            "-ar",
+                            "48000",
+                            "-ac",
+                            "1",
+                            part_file,
+                        ],
+                        capture_output=True,
+                        text=True,
                     )
                     if conv.returncode != 0:
                         raise RuntimeError(
@@ -82,15 +96,28 @@ def synthesize(chunks, config, output_file, output_format="wav"):
                         os.remove(mp3_file)
 
                     probe = subprocess.run(
-                        ["ffprobe", "-v", "quiet", "-show_entries",
-                         "format=duration", "-of", "csv=p=0", part_file],
-                        capture_output=True, text=True,
+                        [
+                            "ffprobe",
+                            "-v",
+                            "quiet",
+                            "-show_entries",
+                            "format=duration",
+                            "-of",
+                            "csv=p=0",
+                            part_file,
+                        ],
+                        capture_output=True,
+                        text=True,
                     )
-                    chunk_duration = float(probe.stdout.strip()) if probe.stdout.strip() else 0
+                    chunk_duration = (
+                        float(probe.stdout.strip()) if probe.stdout.strip() else 0
+                    )
                     word_boundaries.extend(chunk_words)
                     accumulated_duration += chunk_duration
-                    print(f"  Part {i + 1}/{len(chunks)} done "
-                          f"({len(chunk)} chars, {chunk_duration:.1f}s)")
+                    print(
+                        f"  Part {i + 1}/{len(chunks)} done "
+                        f"({len(chunk)} chars, {chunk_duration:.1f}s)"
+                    )
                     break
                 except Exception as e:
                     print(f"  Part {i + 1} attempt {attempt}/3 failed: {e}")
@@ -112,9 +139,22 @@ def synthesize(chunks, config, output_file, output_format="wav"):
                 for pf in part_files:
                     f.write(f"file '{os.path.basename(pf)}'\n")
             result = subprocess.run(
-                ["ffmpeg", "-y", "-f", "concat", "-safe", "0",
-                 "-i", concat_list, "-c", "copy", output_file],
-                capture_output=True, text=True, cwd=out_dir,
+                [
+                    "ffmpeg",
+                    "-y",
+                    "-f",
+                    "concat",
+                    "-safe",
+                    "0",
+                    "-i",
+                    concat_list,
+                    "-c",
+                    "copy",
+                    output_file,
+                ],
+                capture_output=True,
+                text=True,
+                cwd=out_dir,
             )
             if result.returncode != 0:
                 raise RuntimeError(f"FFmpeg concat failed: {result.stderr[:200]}")

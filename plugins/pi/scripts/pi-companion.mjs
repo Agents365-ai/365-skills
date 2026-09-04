@@ -18,7 +18,7 @@ import {
   parseStructuredOutput,
   readOutputSchema,
   runAppServerReview,
-  runAppServerTurn
+  runAppServerTurn,
 } from "./lib/pi.mjs";
 import { readStdinIfPiped } from "./lib/fs.mjs";
 import {
@@ -31,10 +31,14 @@ import {
   getWorkingTreeState,
   isAncestor,
   removeRaceWorktree,
-  resolveReviewTarget
+  resolveReviewTarget,
 } from "./lib/git.mjs";
 import { readReviewCache, writeReviewCache } from "./lib/review-cache.mjs";
-import { binaryAvailable, runCommand, terminateProcessTree } from "./lib/process.mjs";
+import {
+  binaryAvailable,
+  runCommand,
+  terminateProcessTree,
+} from "./lib/process.mjs";
 import { loadPromptTemplate, interpolateTemplate } from "./lib/prompts.mjs";
 import {
   generateJobId,
@@ -43,7 +47,7 @@ import {
   resolveJobsDir,
   setConfig,
   upsertJob,
-  writeJobFile
+  writeJobFile,
 } from "./lib/state.mjs";
 import {
   buildSingleJobSnapshot,
@@ -51,7 +55,7 @@ import {
   readStoredJob,
   resolveCancelableJob,
   resolveResultJob,
-  sortJobsNewestFirst
+  sortJobsNewestFirst,
 } from "./lib/job-control.mjs";
 import {
   appendLogLine,
@@ -61,7 +65,7 @@ import {
   createProgressReporter,
   nowIso,
   runTrackedJob,
-  SESSION_ID_ENV
+  SESSION_ID_ENV,
 } from "./lib/tracked-jobs.mjs";
 import { resolveWorkspaceRoot } from "./lib/workspace.mjs";
 import {
@@ -77,20 +81,37 @@ import {
   renderSetupReport,
   renderStatusReport,
   renderTaskResult,
-  validateReviewResultShape
+  validateReviewResultShape,
 } from "./lib/render.mjs";
 import { mergePanelReviews, parseModelList } from "./lib/panel.mjs";
-import { buildModelChain, describeFallback, runWithModelFallback } from "./lib/fallback.mjs";
+import {
+  buildModelChain,
+  describeFallback,
+  runWithModelFallback,
+} from "./lib/fallback.mjs";
 import { buildRacerLabels, buildRaceWorktreePath } from "./lib/race.mjs";
 import { mergeShardReviews, splitFilesIntoShards } from "./lib/shard.mjs";
 
 const ROOT_DIR = path.resolve(fileURLToPath(new URL("..", import.meta.url)));
-const REVIEW_SCHEMA = path.join(ROOT_DIR, "schemas", "review-output.schema.json");
+const REVIEW_SCHEMA = path.join(
+  ROOT_DIR,
+  "schemas",
+  "review-output.schema.json",
+);
 const DEFAULT_STATUS_WAIT_TIMEOUT_MS = 240000;
 const DEFAULT_STATUS_POLL_INTERVAL_MS = 2000;
-const VALID_REASONING_EFFORTS = new Set(["off", "minimal", "low", "medium", "high", "xhigh", "max"]);
+const VALID_REASONING_EFFORTS = new Set([
+  "off",
+  "minimal",
+  "low",
+  "medium",
+  "high",
+  "xhigh",
+  "max",
+]);
 const EFFORT_ALIASES = new Map([["none", "off"]]);
-const STOP_REVIEW_TASK_MARKER = "Run a stop-gate review of the previous Claude turn.";
+const STOP_REVIEW_TASK_MARKER =
+  "Run a stop-gate review of the previous Claude turn.";
 
 // Model selection is delegated to pi by default. The plugin only forces a
 // specific model when the user pins one explicitly via --model on the slash
@@ -98,10 +119,13 @@ const STOP_REVIEW_TASK_MARKER = "Run a stop-gate review of the previous Claude t
 // configured for (any provider pi supports: DeepSeek, OpenAI, Anthropic,
 // Google, Ollama, LM Studio, or any OpenAI-compatible endpoint).
 const ENV_REVIEW_MODEL = process.env.PI_PLUGIN_REVIEW_MODEL?.trim() || null;
-const ENV_ADVERSARIAL_REVIEW_MODEL = process.env.PI_PLUGIN_ADVERSARIAL_REVIEW_MODEL?.trim() || null;
+const ENV_ADVERSARIAL_REVIEW_MODEL =
+  process.env.PI_PLUGIN_ADVERSARIAL_REVIEW_MODEL?.trim() || null;
 // Optional comma-separated fallback chain: when a Pi run fails, the same
 // request is retried with the next model in this list.
-const ENV_FALLBACK_MODELS = parseModelList(process.env.PI_PLUGIN_FALLBACK_MODELS);
+const ENV_FALLBACK_MODELS = parseModelList(
+  process.env.PI_PLUGIN_FALLBACK_MODELS,
+);
 
 function printUsage() {
   console.log(
@@ -113,8 +137,8 @@ function printUsage() {
       "  node scripts/pi-companion.mjs task [--background] [--write] [--resume-last|--resume|--fresh] [--model <model>|--race <m1,m2,...>] [--effort <off|minimal|low|medium|high|xhigh|max>] [--out-file <path>] [prompt]",
       "  node scripts/pi-companion.mjs status [job-id] [--all] [--json]",
       "  node scripts/pi-companion.mjs result [job-id] [--json] [--out-file <path>]",
-      "  node scripts/pi-companion.mjs cancel [job-id] [--json]"
-    ].join("\n")
+      "  node scripts/pi-companion.mjs cancel [job-id] [--json]",
+    ].join("\n"),
   );
 }
 
@@ -162,7 +186,7 @@ function normalizeReasoningEffort(effort) {
   const resolved = EFFORT_ALIASES.get(normalized) ?? normalized;
   if (!VALID_REASONING_EFFORTS.has(resolved)) {
     throw new Error(
-      `Unsupported reasoning effort "${effort}". Use one of: off, minimal, low, medium, high, xhigh, max (alias: none -> off).`
+      `Unsupported reasoning effort "${effort}". Use one of: off, minimal, low, medium, high, xhigh, max (alias: none -> off).`,
     );
   }
   return resolved;
@@ -184,8 +208,8 @@ function parseCommandInput(argv, config = {}) {
     ...config,
     aliasMap: {
       C: "cwd",
-      ...(config.aliasMap ?? {})
-    }
+      ...(config.aliasMap ?? {}),
+    },
   });
 }
 
@@ -202,7 +226,9 @@ function sleep(ms) {
 }
 
 function shorten(text, limit = 96) {
-  const normalized = String(text ?? "").trim().replace(/\s+/g, " ");
+  const normalized = String(text ?? "")
+    .trim()
+    .replace(/\s+/g, " ");
   if (!normalized) {
     return "";
   }
@@ -233,23 +259,31 @@ async function buildSetupReport(cwd, actionsTaken = []) {
   if (piStatus.available) {
     const listResult = runCommand("pi", ["--list-models"], { cwd });
     if (listResult.status === 0 && listResult.stdout.trim()) {
-      availableModels = listResult.stdout.trim().split("\n").filter(Boolean).slice(0, 10);
+      availableModels = listResult.stdout
+        .trim()
+        .split("\n")
+        .filter(Boolean)
+        .slice(0, 10);
     }
   }
 
   const nextSteps = [];
   if (!piStatus.available) {
-    nextSteps.push("Install Pi with `npm install -g --ignore-scripts @earendil-works/pi-coding-agent`.");
+    nextSteps.push(
+      "Install Pi with `npm install -g --ignore-scripts @earendil-works/pi-coding-agent`.",
+    );
   } else if (piStatus.versionWarning) {
     nextSteps.push(piStatus.versionWarning);
   }
   if (piStatus.available && !modelsStatus.available) {
     nextSteps.push(
-      "Set a provider API key (e.g. `export DEEPSEEK_API_KEY=...`), run `/login` inside pi, or write `~/.pi/agent/models.json` per pi docs."
+      "Set a provider API key (e.g. `export DEEPSEEK_API_KEY=...`), run `/login` inside pi, or write `~/.pi/agent/models.json` per pi docs.",
     );
   }
   if (piStatus.available && modelsStatus.available && !config.stopReviewGate) {
-    nextSteps.push("Optional: run `/pi:setup --enable-review-gate` to require a fresh review before stop.");
+    nextSteps.push(
+      "Optional: run `/pi:setup --enable-review-gate` to require a fresh review before stop.",
+    );
   }
 
   return {
@@ -263,18 +297,20 @@ async function buildSetupReport(cwd, actionsTaken = []) {
     sessionRuntime: getSessionRuntimeStatus(process.env, workspaceRoot),
     reviewGateEnabled: Boolean(config.stopReviewGate),
     actionsTaken,
-    nextSteps
+    nextSteps,
   };
 }
 
 async function handleSetup(argv) {
   const { options } = parseCommandInput(argv, {
     valueOptions: ["cwd"],
-    booleanOptions: ["json", "enable-review-gate", "disable-review-gate"]
+    booleanOptions: ["json", "enable-review-gate", "disable-review-gate"],
   });
 
   if (options["enable-review-gate"] && options["disable-review-gate"]) {
-    throw new Error("Choose either --enable-review-gate or --disable-review-gate.");
+    throw new Error(
+      "Choose either --enable-review-gate or --disable-review-gate.",
+    );
   }
 
   const cwd = resolveCommandCwd(options);
@@ -283,26 +319,34 @@ async function handleSetup(argv) {
 
   if (options["enable-review-gate"]) {
     setConfig(workspaceRoot, "stopReviewGate", true);
-    actionsTaken.push(`Enabled the stop-time review gate for ${workspaceRoot}.`);
+    actionsTaken.push(
+      `Enabled the stop-time review gate for ${workspaceRoot}.`,
+    );
   } else if (options["disable-review-gate"]) {
     setConfig(workspaceRoot, "stopReviewGate", false);
-    actionsTaken.push(`Disabled the stop-time review gate for ${workspaceRoot}.`);
+    actionsTaken.push(
+      `Disabled the stop-time review gate for ${workspaceRoot}.`,
+    );
   }
 
   const finalReport = await buildSetupReport(cwd, actionsTaken);
-  outputResult(options.json ? finalReport : renderSetupReport(finalReport), options.json);
+  outputResult(
+    options.json ? finalReport : renderSetupReport(finalReport),
+    options.json,
+  );
 }
 
 function buildReviewPrompt(templateName, context, focusText) {
   const template = loadPromptTemplate(ROOT_DIR, templateName);
   const schema = JSON.stringify(readOutputSchema(REVIEW_SCHEMA), null, 2);
   return interpolateTemplate(template, {
-    REVIEW_KIND: templateName === "adversarial-review" ? "Adversarial Review" : "Review",
+    REVIEW_KIND:
+      templateName === "adversarial-review" ? "Adversarial Review" : "Review",
     TARGET_LABEL: context.target.label,
     USER_FOCUS: focusText || "No extra focus provided.",
     REVIEW_COLLECTION_GUIDANCE: context.collectionGuidance,
     REVIEW_INPUT: context.content,
-    REVIEW_SCHEMA: schema
+    REVIEW_SCHEMA: schema,
   });
 }
 
@@ -316,7 +360,7 @@ function ensurePiAvailable(cwd) {
 function validateRegularReviewRequest(_target, focusText) {
   if (focusText.trim()) {
     throw new Error(
-      `\`/pi:review\` does not accept custom focus text. Retry with \`/pi:adversarial-review ${focusText.trim()}\` to ask for focused review.`
+      `\`/pi:review\` does not accept custom focus text. Retry with \`/pi:adversarial-review ${focusText.trim()}\` to ask for focused review.`,
     );
   }
 }
@@ -348,14 +392,20 @@ function findLatestResumableTaskJob(jobs) {
         job.jobClass === "task" &&
         job.piSessionId &&
         job.status !== "queued" &&
-        job.status !== "running"
+        job.status !== "running",
     ) ?? null
   );
 }
 
 async function waitForSingleJobSnapshot(cwd, reference, options = {}) {
-  const timeoutMs = Math.max(0, Number(options.timeoutMs) || DEFAULT_STATUS_WAIT_TIMEOUT_MS);
-  const pollIntervalMs = Math.max(100, Number(options.pollIntervalMs) || DEFAULT_STATUS_POLL_INTERVAL_MS);
+  const timeoutMs = Math.max(
+    0,
+    Number(options.timeoutMs) || DEFAULT_STATUS_WAIT_TIMEOUT_MS,
+  );
+  const pollIntervalMs = Math.max(
+    100,
+    Number(options.pollIntervalMs) || DEFAULT_STATUS_POLL_INTERVAL_MS,
+  );
   const deadline = Date.now() + timeoutMs;
   let snapshot = buildSingleJobSnapshot(cwd, reference);
 
@@ -367,17 +417,25 @@ async function waitForSingleJobSnapshot(cwd, reference, options = {}) {
   return {
     ...snapshot,
     waitTimedOut: isActiveJobStatus(snapshot.job.status),
-    timeoutMs
+    timeoutMs,
   };
 }
 
 function resolveLatestTrackedTaskSession(cwd, options = {}) {
   const workspaceRoot = resolveWorkspaceRoot(cwd);
-  const jobs = sortJobsNewestFirst(listJobs(workspaceRoot)).filter((job) => job.id !== options.excludeJobId);
+  const jobs = sortJobsNewestFirst(listJobs(workspaceRoot)).filter(
+    (job) => job.id !== options.excludeJobId,
+  );
   const visibleJobs = filterJobsForCurrentClaudeSession(jobs);
-  const activeTask = visibleJobs.find((job) => job.jobClass === "task" && (job.status === "queued" || job.status === "running"));
+  const activeTask = visibleJobs.find(
+    (job) =>
+      job.jobClass === "task" &&
+      (job.status === "queued" || job.status === "running"),
+  );
   if (activeTask) {
-    throw new Error(`Task ${activeTask.id} is still running. Use /pi:status before continuing it.`);
+    throw new Error(
+      `Task ${activeTask.id} is still running. Use /pi:status before continuing it.`,
+    );
   }
 
   const trackedTask = findLatestResumableTaskJob(visibleJobs);
@@ -394,7 +452,7 @@ function prepareReviewRun(request) {
 
   const target = resolveReviewTarget(request.cwd, {
     base: request.base,
-    scope: request.scope
+    scope: request.scope,
   });
   const focusText = request.focusText?.trim() ?? "";
   const reviewName = request.reviewName ?? "Review";
@@ -421,7 +479,9 @@ async function finishSingleReview(request, prep) {
   // request.model: explicit --model on the slash command. Highest priority.
   // ENV_*_REVIEW_MODEL: opt-in pin via env var.
   // null: defer to pi's own configured default model.
-  const envDefault = isAdversarial ? ENV_ADVERSARIAL_REVIEW_MODEL : ENV_REVIEW_MODEL;
+  const envDefault = isAdversarial
+    ? ENV_ADVERSARIAL_REVIEW_MODEL
+    : ENV_REVIEW_MODEL;
   const model = request.model ?? envDefault ?? null;
 
   const { result, attempts } = await runWithModelFallback(
@@ -432,15 +492,15 @@ async function finishSingleReview(request, prep) {
         model: attemptModel,
         effort: request.effort,
         threadName: `Pi ${reviewName}`,
-        onProgress: request.onProgress
+        onProgress: request.onProgress,
       }),
-    request.onProgress
+    request.onProgress,
   );
   const fallbackNote = describeFallback(attempts);
 
   const parsed = parseStructuredOutput(result.reviewText, {
     status: result.status,
-    failureMessage: result.error?.message ?? result.stderr
+    failureMessage: result.error?.message ?? result.stderr,
   });
 
   const payload = {
@@ -451,25 +511,25 @@ async function finishSingleReview(request, prep) {
     context: {
       repoRoot: context.repoRoot,
       branch: context.branch,
-      summary: context.summary
+      summary: context.summary,
     },
     pi: {
       status: result.status,
       stderr: result.stderr,
       stdout: result.reviewText,
-      reasoning: result.reasoningSummary
+      reasoning: result.reasoningSummary,
     },
     result: parsed.parsed,
     rawOutput: parsed.rawOutput,
     parseError: parsed.parseError,
     reasoningSummary: result.reasoningSummary,
-    ...(fallbackNote ? { modelAttempts: attempts } : {})
+    ...(fallbackNote ? { modelAttempts: attempts } : {}),
   };
 
   let rendered = renderReviewResult(parsed, {
     reviewLabel: reviewName,
     targetLabel: context.target.label,
-    reasoningSummary: result.reasoningSummary
+    reasoningSummary: result.reasoningSummary,
   });
   if (fallbackNote) {
     rendered = `${rendered}\n${fallbackNote}\n`;
@@ -482,10 +542,12 @@ async function finishSingleReview(request, prep) {
     payload,
     rendered,
     summary:
-      parsed.parsed?.summary ?? parsed.parseError ?? firstMeaningfulLine(result.reviewText, `${reviewName} finished.`),
+      parsed.parsed?.summary ??
+      parsed.parseError ??
+      firstMeaningfulLine(result.reviewText, `${reviewName} finished.`),
     jobTitle: `Pi ${reviewName}`,
     jobClass: "review",
-    targetLabel: context.target.label
+    targetLabel: context.target.label,
   };
 }
 
@@ -495,7 +557,9 @@ function prefixModelProgress(onProgress, model) {
   }
   return (eventOrMessage) => {
     const event =
-      eventOrMessage && typeof eventOrMessage === "object" && !Array.isArray(eventOrMessage)
+      eventOrMessage &&
+      typeof eventOrMessage === "object" &&
+      !Array.isArray(eventOrMessage)
         ? eventOrMessage
         : { message: String(eventOrMessage ?? "") };
     onProgress({
@@ -504,7 +568,7 @@ function prefixModelProgress(onProgress, model) {
       // Per-model session ids live in the panel payload; a single job-level
       // resume pointer would be misleading.
       piSessionId: null,
-      piSessionFile: null
+      piSessionFile: null,
     });
   };
 }
@@ -516,11 +580,11 @@ async function runPanelMemberReview(prep, request, model) {
       model,
       effort: request.effort,
       threadName: `Pi ${prep.reviewName} [${model}]`,
-      onProgress: prefixModelProgress(request.onProgress, model)
+      onProgress: prefixModelProgress(request.onProgress, model),
     });
     const parsed = parseStructuredOutput(result.reviewText, {
       status: result.status,
-      failureMessage: result.error?.message ?? result.stderr
+      failureMessage: result.error?.message ?? result.stderr,
     });
 
     let normalized = null;
@@ -538,13 +602,18 @@ async function runPanelMemberReview(prep, request, model) {
       failure = `invalid structured output: ${parsed.parseError}`;
     }
 
-    return { model, normalized, failure, piSessionId: result.piSessionId ?? null };
+    return {
+      model,
+      normalized,
+      failure,
+      piSessionId: result.piSessionId ?? null,
+    };
   } catch (error) {
     return {
       model,
       normalized: null,
       failure: error instanceof Error ? error.message : String(error),
-      piSessionId: null
+      piSessionId: null,
     };
   }
 }
@@ -553,8 +622,12 @@ async function executePanelReviewRun(request) {
   const prep = prepareReviewRun(request);
   const { target, reviewName, context } = prep;
 
-  const runs = await Promise.all(request.models.map((model) => runPanelMemberReview(prep, request, model)));
-  const merged = mergePanelReviews(runs.map((run) => ({ model: run.model, parsed: run.normalized })));
+  const runs = await Promise.all(
+    request.models.map((model) => runPanelMemberReview(prep, request, model)),
+  );
+  const merged = mergePanelReviews(
+    runs.map((run) => ({ model: run.model, parsed: run.normalized })),
+  );
 
   const members = runs.map((run) => ({
     model: run.model,
@@ -562,10 +635,12 @@ async function executePanelReviewRun(request) {
     findingCount: run.normalized ? run.normalized.findings.length : null,
     summary: run.normalized?.summary ?? null,
     failure: run.failure,
-    piSessionId: run.piSessionId
+    piSessionId: run.piSessionId,
   }));
   const okCount = members.filter((member) => member.ok).length;
-  const consensusCount = merged.findings.filter((finding) => finding.foundBy.length >= 2).length;
+  const consensusCount = merged.findings.filter(
+    (finding) => finding.foundBy.length >= 2,
+  ).length;
   const singleCount = merged.findings.length - consensusCount;
 
   const payload = {
@@ -575,9 +650,9 @@ async function executePanelReviewRun(request) {
     context: {
       repoRoot: context.repoRoot,
       branch: context.branch,
-      summary: context.summary
+      summary: context.summary,
     },
-    result: merged
+    result: merged,
   };
 
   return {
@@ -587,22 +662,36 @@ async function executePanelReviewRun(request) {
     payload,
     rendered: renderPanelReviewResult(
       { ...merged, members },
-      { reviewLabel: reviewName, targetLabel: context.target.label }
+      { reviewLabel: reviewName, targetLabel: context.target.label },
     ),
     summary: `Panel ${reviewName.toLowerCase()}: ${okCount}/${members.length} models ok, ${consensusCount} consensus + ${singleCount} single-model finding${merged.findings.length === 1 ? "" : "s"}`,
     jobTitle: `Pi Panel ${reviewName}`,
     jobClass: "review",
-    targetLabel: context.target.label
+    targetLabel: context.target.label,
   };
 }
 
-async function runShardReview(request, prep, shardFiles, shardIndex, shardTotal) {
+async function runShardReview(
+  request,
+  prep,
+  shardFiles,
+  shardIndex,
+  shardTotal,
+) {
   const templateName = prep.isAdversarial ? "adversarial-review" : "review";
   const label = `shard ${shardIndex + 1}/${shardTotal}`;
   try {
-    const scopedContext = collectReviewContext(request.cwd, prep.target, { files: shardFiles });
-    const prompt = buildReviewPrompt(templateName, scopedContext, request.focusText?.trim() ?? "");
-    const envDefault = prep.isAdversarial ? ENV_ADVERSARIAL_REVIEW_MODEL : ENV_REVIEW_MODEL;
+    const scopedContext = collectReviewContext(request.cwd, prep.target, {
+      files: shardFiles,
+    });
+    const prompt = buildReviewPrompt(
+      templateName,
+      scopedContext,
+      request.focusText?.trim() ?? "",
+    );
+    const envDefault = prep.isAdversarial
+      ? ENV_ADVERSARIAL_REVIEW_MODEL
+      : ENV_REVIEW_MODEL;
     const model = request.model ?? envDefault ?? null;
 
     const { result } = await runWithModelFallback(
@@ -613,13 +702,13 @@ async function runShardReview(request, prep, shardFiles, shardIndex, shardTotal)
           model: attemptModel,
           effort: request.effort,
           threadName: `Pi ${prep.reviewName} [${label}]`,
-          onProgress: prefixModelProgress(request.onProgress, label)
+          onProgress: prefixModelProgress(request.onProgress, label),
         }),
-      request.onProgress
+      request.onProgress,
     );
     const parsed = parseStructuredOutput(result.reviewText, {
       status: result.status,
-      failureMessage: result.error?.message ?? result.stderr
+      failureMessage: result.error?.message ?? result.stderr,
     });
 
     let normalized = null;
@@ -637,13 +726,18 @@ async function runShardReview(request, prep, shardFiles, shardIndex, shardTotal)
       failure = `invalid structured output: ${parsed.parseError}`;
     }
 
-    return { files: shardFiles, normalized, failure, piSessionId: result.piSessionId ?? null };
+    return {
+      files: shardFiles,
+      normalized,
+      failure,
+      piSessionId: result.piSessionId ?? null,
+    };
   } catch (error) {
     return {
       files: shardFiles,
       normalized: null,
       failure: error instanceof Error ? error.message : String(error),
-      piSessionId: null
+      piSessionId: null,
     };
   }
 }
@@ -661,9 +755,14 @@ async function executeShardedReviewRun(request) {
     return finishSingleReview(request, prep);
   }
 
-  const shardFileGroups = splitFilesIntoShards(context.changedFiles, request.shards);
+  const shardFileGroups = splitFilesIntoShards(
+    context.changedFiles,
+    request.shards,
+  );
   const runs = await Promise.all(
-    shardFileGroups.map((shardFiles, index) => runShardReview(request, prep, shardFiles, index, shardFileGroups.length))
+    shardFileGroups.map((shardFiles, index) =>
+      runShardReview(request, prep, shardFiles, index, shardFileGroups.length),
+    ),
   );
   const merged = mergeShardReviews(runs.map((run) => run.normalized));
 
@@ -673,7 +772,7 @@ async function executeShardedReviewRun(request) {
     ok: Boolean(run.normalized),
     findingCount: run.normalized ? run.normalized.findings.length : null,
     failure: run.failure,
-    piSessionId: run.piSessionId
+    piSessionId: run.piSessionId,
   }));
   const okCount = shards.filter((shard) => shard.ok).length;
 
@@ -684,9 +783,9 @@ async function executeShardedReviewRun(request) {
     context: {
       repoRoot: context.repoRoot,
       branch: context.branch,
-      summary: context.summary
+      summary: context.summary,
     },
-    result: merged
+    result: merged,
   };
 
   return {
@@ -696,12 +795,12 @@ async function executeShardedReviewRun(request) {
     payload,
     rendered: renderShardedReviewResult(
       { ...merged, shards },
-      { reviewLabel: reviewName, targetLabel: context.target.label }
+      { reviewLabel: reviewName, targetLabel: context.target.label },
     ),
     summary: `Sharded ${reviewName.toLowerCase()} across ${shards.length} jobs: ${okCount}/${shards.length} ok, ${merged.findings.length} finding${merged.findings.length === 1 ? "" : "s"}`,
     jobTitle: `Pi Sharded ${reviewName}`,
     jobClass: "review",
-    targetLabel: context.target.label
+    targetLabel: context.target.label,
   };
 }
 
@@ -711,10 +810,17 @@ async function runRacer(request, racer, context) {
   try {
     let runCwd = request.cwd;
     if (context.write) {
-      worktreePath = buildRaceWorktreePath(os.tmpdir(), request.jobId ?? `adhoc-${process.pid}`, racer.slug);
+      worktreePath = buildRaceWorktreePath(
+        os.tmpdir(),
+        request.jobId ?? `adhoc-${process.pid}`,
+        racer.slug,
+      );
       fs.mkdirSync(path.dirname(worktreePath), { recursive: true });
       addRaceWorktree(context.repoRoot, worktreePath);
-      onProgress?.({ message: `Racer worktree ready at ${worktreePath}.`, phase: "starting" });
+      onProgress?.({
+        message: `Racer worktree ready at ${worktreePath}.`,
+        phase: "starting",
+      });
       runCwd = worktreePath;
     }
 
@@ -725,20 +831,26 @@ async function runRacer(request, racer, context) {
       sandbox: context.write ? null : "read-only",
       onProgress,
       persistThread: true,
-      threadName: `Pi Race [${racer.model}]`
+      threadName: `Pi Race [${racer.model}]`,
     });
 
     const patch =
-      context.write && result.status === 0 && worktreePath ? captureWorktreePatch(worktreePath) : null;
+      context.write && result.status === 0 && worktreePath
+        ? captureWorktreePatch(worktreePath)
+        : null;
 
     return {
       model: racer.model,
       slug: racer.slug,
       ok: result.status === 0,
-      finalMessage: typeof result.finalMessage === "string" ? result.finalMessage : "",
-      failure: result.status === 0 ? null : (result.error?.message ?? result.stderr ?? "Run failed."),
+      finalMessage:
+        typeof result.finalMessage === "string" ? result.finalMessage : "",
+      failure:
+        result.status === 0
+          ? null
+          : (result.error?.message ?? result.stderr ?? "Run failed."),
       piSessionId: result.piSessionId ?? null,
-      patch
+      patch,
     };
   } catch (error) {
     return {
@@ -748,7 +860,7 @@ async function runRacer(request, racer, context) {
       finalMessage: "",
       failure: error instanceof Error ? error.message : String(error),
       piSessionId: null,
-      patch: null
+      patch: null,
     };
   } finally {
     if (worktreePath) {
@@ -774,12 +886,15 @@ async function executeRaceRun(request) {
   if (write) {
     context.repoRoot = ensureGitRepository(request.cwd);
     if (getWorkingTreeState(context.repoRoot).isDirty) {
-      dirtyWarning = "Working tree has uncommitted changes; racers start from HEAD and cannot see them.";
+      dirtyWarning =
+        "Working tree has uncommitted changes; racers start from HEAD and cannot see them.";
       request.onProgress?.({ message: dirtyWarning, phase: "starting" });
     }
   }
 
-  const results = await Promise.all(racers.map((racer) => runRacer(request, racer, context)));
+  const results = await Promise.all(
+    racers.map((racer) => runRacer(request, racer, context)),
+  );
 
   const workspaceRoot = resolveWorkspaceRoot(request.cwd);
   const jobsDir = resolveJobsDir(workspaceRoot);
@@ -788,7 +903,10 @@ async function executeRaceRun(request) {
   const racersPayload = results.map((result) => {
     let patchFile = null;
     if (result.patch && !result.patch.isEmpty) {
-      patchFile = path.join(jobsDir, `${request.jobId ?? "race"}-${result.slug}.patch`);
+      patchFile = path.join(
+        jobsDir,
+        `${request.jobId ?? "race"}-${result.slug}.patch`,
+      );
       fs.writeFileSync(patchFile, result.patch.patch, "utf8");
     }
     return {
@@ -799,14 +917,14 @@ async function executeRaceRun(request) {
       finalMessage: result.finalMessage,
       patchFile,
       patchStat: result.patch?.stat ?? null,
-      patchEmpty: result.patch ? result.patch.isEmpty : null
+      patchEmpty: result.patch ? result.patch.isEmpty : null,
     };
   });
 
   const okCount = racersPayload.filter((racer) => racer.ok).length;
   const rendered = renderRaceResult(
     { write, dirtyWarning, racers: racersPayload },
-    { taskSummary: shorten(request.prompt) }
+    { taskSummary: shorten(request.prompt) },
   );
 
   return {
@@ -818,7 +936,7 @@ async function executeRaceRun(request) {
     summary: `Race: ${okCount}/${racersPayload.length} models ok`,
     jobTitle: "Pi Race",
     jobClass: "task",
-    write
+    write,
   };
 }
 
@@ -832,22 +950,26 @@ async function executeTaskRun(request) {
 
   const taskMetadata = buildTaskRunMetadata({
     prompt: request.prompt,
-    resumeLast: request.resumeLast
+    resumeLast: request.resumeLast,
   });
 
   let resumeSessionId = null;
   if (request.resumeLast) {
     const latest = resolveLatestTrackedTaskSession(workspaceRoot, {
-      excludeJobId: request.jobId
+      excludeJobId: request.jobId,
     });
     if (!latest) {
-      throw new Error("No previous Pi task session was found for this repository.");
+      throw new Error(
+        "No previous Pi task session was found for this repository.",
+      );
     }
     resumeSessionId = latest;
   }
 
   if (!request.prompt && !resumeSessionId) {
-    throw new Error("Provide a prompt, a prompt file, piped stdin, or use --resume-last.");
+    throw new Error(
+      "Provide a prompt, a prompt file, piped stdin, or use --resume-last.",
+    );
   }
 
   const { result, attempts } = await runWithModelFallback(
@@ -862,25 +984,30 @@ async function executeTaskRun(request) {
         sandbox: request.write ? null : "read-only",
         onProgress: request.onProgress,
         persistThread: true,
-        threadName: resumeSessionId ? null : buildPersistentTaskThreadName(request.prompt || DEFAULT_CONTINUE_PROMPT)
+        threadName: resumeSessionId
+          ? null
+          : buildPersistentTaskThreadName(
+              request.prompt || DEFAULT_CONTINUE_PROMPT,
+            ),
       }),
-    request.onProgress
+    request.onProgress,
   );
   const fallbackNote = describeFallback(attempts);
 
-  const rawOutput = typeof result.finalMessage === "string" ? result.finalMessage : "";
+  const rawOutput =
+    typeof result.finalMessage === "string" ? result.finalMessage : "";
   const failureMessage = result.error?.message ?? result.stderr ?? "";
   let rendered = renderTaskResult(
     {
       rawOutput,
       failureMessage,
-      reasoningSummary: result.reasoningSummary
+      reasoningSummary: result.reasoningSummary,
     },
     {
       title: taskMetadata.title,
       jobId: request.jobId ?? null,
-      write: Boolean(request.write)
-    }
+      write: Boolean(request.write),
+    },
   );
   if (fallbackNote) {
     rendered = `${rendered}\n${fallbackNote}\n`;
@@ -892,7 +1019,7 @@ async function executeTaskRun(request) {
     rawOutput,
     touchedFiles: result.touchedFiles,
     reasoningSummary: result.reasoningSummary,
-    ...(fallbackNote ? { modelAttempts: attempts } : {})
+    ...(fallbackNote ? { modelAttempts: attempts } : {}),
   };
 
   return {
@@ -901,10 +1028,13 @@ async function executeTaskRun(request) {
     piSessionFile: result.piSessionFile,
     payload,
     rendered,
-    summary: firstMeaningfulLine(rawOutput, firstMeaningfulLine(failureMessage, `${taskMetadata.title} finished.`)),
+    summary: firstMeaningfulLine(
+      rawOutput,
+      firstMeaningfulLine(failureMessage, `${taskMetadata.title} finished.`),
+    ),
     jobTitle: taskMetadata.title,
     jobClass: "task",
-    write: Boolean(request.write)
+    write: Boolean(request.write),
   };
 }
 
@@ -912,21 +1042,25 @@ function buildReviewJobMetadata(reviewName, target) {
   return {
     kind: reviewName === "Adversarial Review" ? "adversarial-review" : "review",
     title: reviewName === "Review" ? "Pi Review" : `Pi ${reviewName}`,
-    summary: `${reviewName} ${target.label}`
+    summary: `${reviewName} ${target.label}`,
   };
 }
 
-function buildTaskRunMetadata({ prompt, resumeLast = false, raceModels = null }) {
+function buildTaskRunMetadata({
+  prompt,
+  resumeLast = false,
+  raceModels = null,
+}) {
   if (Array.isArray(raceModels) && raceModels.length >= 2) {
     return {
       title: "Pi Race",
-      summary: `Race (${raceModels.length} models): ${shorten(prompt || "Task")}`
+      summary: `Race (${raceModels.length} models): ${shorten(prompt || "Task")}`,
     };
   }
   if (!resumeLast && String(prompt ?? "").includes(STOP_REVIEW_TASK_MARKER)) {
     return {
       title: "Pi Stop Gate Review",
-      summary: "Stop-gate review of previous Claude turn"
+      summary: "Stop-gate review of previous Claude turn",
     };
   }
 
@@ -934,7 +1068,7 @@ function buildTaskRunMetadata({ prompt, resumeLast = false, raceModels = null })
   const fallbackSummary = resumeLast ? DEFAULT_CONTINUE_PROMPT : "Task";
   return {
     title,
-    summary: shorten(prompt || fallbackSummary)
+    summary: shorten(prompt || fallbackSummary),
   };
 }
 
@@ -949,7 +1083,15 @@ function getJobKindLabel(kind, jobClass) {
   return jobClass === "review" ? "review" : "rescue";
 }
 
-function createCompanionJob({ prefix, kind, title, workspaceRoot, jobClass, summary, write = false }) {
+function createCompanionJob({
+  prefix,
+  kind,
+  title,
+  workspaceRoot,
+  jobClass,
+  summary,
+  write = false,
+}) {
   return createJobRecord({
     id: generateJobId(prefix),
     kind,
@@ -958,19 +1100,20 @@ function createCompanionJob({ prefix, kind, title, workspaceRoot, jobClass, summ
     workspaceRoot,
     jobClass,
     summary,
-    write
+    write,
   });
 }
 
 function createTrackedProgress(job, options = {}) {
-  const logFile = options.logFile ?? createJobLogFile(job.workspaceRoot, job.id, job.title);
+  const logFile =
+    options.logFile ?? createJobLogFile(job.workspaceRoot, job.id, job.title);
   return {
     logFile,
     progress: createProgressReporter({
       stderr: Boolean(options.stderr),
       logFile,
-      onEvent: createJobProgressUpdater(job.workspaceRoot, job.id)
-    })
+      onEvent: createJobProgressUpdater(job.workspaceRoot, job.id),
+    }),
   };
 }
 
@@ -982,11 +1125,20 @@ function buildTaskJob(workspaceRoot, taskMetadata, write) {
     workspaceRoot,
     jobClass: "task",
     summary: taskMetadata.summary,
-    write
+    write,
   });
 }
 
-function buildTaskRequest({ cwd, model, effort, prompt, write, resumeLast, jobId, raceModels = null }) {
+function buildTaskRequest({
+  cwd,
+  model,
+  effort,
+  prompt,
+  write,
+  resumeLast,
+  jobId,
+  raceModels = null,
+}) {
   return {
     cwd,
     model,
@@ -995,7 +1147,7 @@ function buildTaskRequest({ cwd, model, effort, prompt, write, resumeLast, jobId
     write,
     resumeLast,
     jobId,
-    raceModels
+    raceModels,
   };
 }
 
@@ -1010,23 +1162,30 @@ function readTaskPrompt(cwd, options, positionals) {
 
 function requireTaskRequest(prompt, resumeLast) {
   if (!prompt && !resumeLast) {
-    throw new Error("Provide a prompt, a prompt file, piped stdin, or use --resume-last.");
+    throw new Error(
+      "Provide a prompt, a prompt file, piped stdin, or use --resume-last.",
+    );
   }
 }
 
 async function runForegroundCommand(job, runner, options = {}) {
   const { logFile, progress } = createTrackedProgress(job, {
     logFile: options.logFile,
-    stderr: !options.json
+    stderr: !options.json,
   });
-  const execution = await runTrackedJob(job, () => runner(progress), { logFile });
+  const execution = await runTrackedJob(job, () => runner(progress), {
+    logFile,
+  });
   if (options.outFile && !options.json) {
     // Write the full output to a file and relay only a short summary, so a
     // large review/task does not consume the caller's context.
     fs.writeFileSync(options.outFile, execution.rendered);
     process.stdout.write(renderOutFileSummary(execution, options.outFile));
   } else {
-    outputResult(options.json ? execution.payload : execution.rendered, options.json);
+    outputResult(
+      options.json ? execution.payload : execution.rendered,
+      options.json,
+    );
   }
   if (execution.exitStatus !== 0) {
     process.exitCode = execution.exitStatus;
@@ -1036,13 +1195,17 @@ async function runForegroundCommand(job, runner, options = {}) {
 
 function spawnDetachedTaskWorker(cwd, jobId) {
   const scriptPath = path.join(ROOT_DIR, "scripts", "pi-companion.mjs");
-  const child = spawn(process.execPath, [scriptPath, "task-worker", "--cwd", cwd, "--job-id", jobId], {
-    cwd,
-    env: process.env,
-    detached: true,
-    stdio: "ignore",
-    windowsHide: true
-  });
+  const child = spawn(
+    process.execPath,
+    [scriptPath, "task-worker", "--cwd", cwd, "--job-id", jobId],
+    {
+      cwd,
+      env: process.env,
+      detached: true,
+      stdio: "ignore",
+      windowsHide: true,
+    },
+  );
   child.unref();
   return child;
 }
@@ -1058,7 +1221,7 @@ function enqueueBackgroundTask(cwd, job, request) {
     phase: "queued",
     pid: child.pid ?? null,
     logFile,
-    request
+    request,
   };
   writeJobFile(job.workspaceRoot, job.id, queuedRecord);
   upsertJob(job.workspaceRoot, queuedRecord);
@@ -1069,9 +1232,9 @@ function enqueueBackgroundTask(cwd, job, request) {
       status: "queued",
       title: job.title,
       summary: job.summary,
-      logFile
+      logFile,
     },
-    logFile
+    logFile,
   };
 }
 
@@ -1090,17 +1253,28 @@ function maybeUpdateReviewCache(workspaceRoot, cwd, execution) {
 
 async function handleReviewCommand(argv, config) {
   const { options, positionals } = parseCommandInput(argv, {
-    valueOptions: ["base", "scope", "model", "models", "shards", "effort", "cwd", "out-file"],
+    valueOptions: [
+      "base",
+      "scope",
+      "model",
+      "models",
+      "shards",
+      "effort",
+      "cwd",
+      "out-file",
+    ],
     booleanOptions: ["json", "incremental"],
     aliasMap: {
-      m: "model"
-    }
+      m: "model",
+    },
   });
 
   const cwd = resolveCommandCwd(options);
   const workspaceRoot = resolveCommandWorkspace(options);
   const focusText = positionals.join(" ").trim();
-  const outFile = options["out-file"] ? path.resolve(cwd, options["out-file"]) : null;
+  const outFile = options["out-file"]
+    ? path.resolve(cwd, options["out-file"])
+    : null;
 
   const incremental = Boolean(options.incremental);
   if (incremental && options.base) {
@@ -1116,7 +1290,7 @@ async function handleReviewCommand(argv, config) {
     const cachedSha = readReviewCache(workspaceRoot, branch);
     if (cachedSha && cachedSha === headSha) {
       process.stdout.write(
-        `No new commits to review since the last review on ${branch} (${headSha.slice(0, 9)}).\n`
+        `No new commits to review since the last review on ${branch} (${headSha.slice(0, 9)}).\n`,
       );
       return;
     }
@@ -1127,27 +1301,35 @@ async function handleReviewCommand(argv, config) {
     } else {
       // No cache yet, or the cached sha is no longer an ancestor of HEAD
       // (rebase, history rewrite, or a branch switch) — fall back to a full review.
-      process.stderr.write(`No valid review cache for ${branch}; running a full review.\n`);
+      process.stderr.write(
+        `No valid review cache for ${branch}; running a full review.\n`,
+      );
     }
   }
 
   const target = resolveReviewTarget(cwd, {
     base: reviewBase,
-    scope: reviewScope
+    scope: reviewScope,
   });
 
   config.validateRequest?.(target, focusText);
 
   const panelModels = parseModelList(options.models);
   if (panelModels.length > 0 && options.model) {
-    throw new Error("Choose either --model <one> or --models <m1,m2,...>, not both.");
+    throw new Error(
+      "Choose either --model <one> or --models <m1,m2,...>, not both.",
+    );
   }
   const shardCount = normalizeShardCount(options.shards);
   if (shardCount && panelModels.length > 0) {
-    throw new Error("Choose either --shards <N> or --models <m1,m2,...>, not both.");
+    throw new Error(
+      "Choose either --shards <N> or --models <m1,m2,...>, not both.",
+    );
   }
   // A single --models entry is just a model pin; the panel needs 2+.
-  const singleModel = normalizeRequestedModel(options.model) ?? (panelModels.length === 1 ? panelModels[0] : null);
+  const singleModel =
+    normalizeRequestedModel(options.model) ??
+    (panelModels.length === 1 ? panelModels[0] : null);
   const effort = normalizeReasoningEffort(options.effort);
 
   const metadata = buildReviewJobMetadata(config.reviewName, target);
@@ -1159,7 +1341,7 @@ async function handleReviewCommand(argv, config) {
       title: `Pi Panel ${config.reviewName}`,
       workspaceRoot,
       jobClass: "review",
-      summary: `Panel (${panelModels.length} models) ${metadata.summary}`
+      summary: `Panel (${panelModels.length} models) ${metadata.summary}`,
     });
     const execution = await runForegroundCommand(
       job,
@@ -1172,9 +1354,9 @@ async function handleReviewCommand(argv, config) {
           effort,
           focusText,
           reviewName: config.reviewName,
-          onProgress: progress
+          onProgress: progress,
         }),
-      { json: options.json, outFile }
+      { json: options.json, outFile },
     );
     maybeUpdateReviewCache(workspaceRoot, cwd, execution);
     return;
@@ -1187,7 +1369,7 @@ async function handleReviewCommand(argv, config) {
       title: `Pi Sharded ${config.reviewName}`,
       workspaceRoot,
       jobClass: "review",
-      summary: `Sharded (${shardCount} jobs) ${metadata.summary}`
+      summary: `Sharded (${shardCount} jobs) ${metadata.summary}`,
     });
     const execution = await runForegroundCommand(
       job,
@@ -1201,9 +1383,9 @@ async function handleReviewCommand(argv, config) {
           effort,
           focusText,
           reviewName: config.reviewName,
-          onProgress: progress
+          onProgress: progress,
         }),
-      { json: options.json, outFile }
+      { json: options.json, outFile },
     );
     maybeUpdateReviewCache(workspaceRoot, cwd, execution);
     return;
@@ -1215,7 +1397,7 @@ async function handleReviewCommand(argv, config) {
     title: metadata.title,
     workspaceRoot,
     jobClass: "review",
-    summary: metadata.summary
+    summary: metadata.summary,
   });
   const execution = await runForegroundCommand(
     job,
@@ -1228,9 +1410,9 @@ async function handleReviewCommand(argv, config) {
         effort,
         focusText,
         reviewName: config.reviewName,
-        onProgress: progress
+        onProgress: progress,
       }),
-    { json: options.json, outFile }
+    { json: options.json, outFile },
   );
   maybeUpdateReviewCache(workspaceRoot, cwd, execution);
 }
@@ -1238,28 +1420,41 @@ async function handleReviewCommand(argv, config) {
 async function handleReview(argv) {
   return handleReviewCommand(argv, {
     reviewName: "Review",
-    validateRequest: validateRegularReviewRequest
+    validateRequest: validateRegularReviewRequest,
   });
 }
 
 async function handleTask(argv) {
   const { options, positionals } = parseCommandInput(argv, {
     valueOptions: ["model", "effort", "cwd", "prompt-file", "race", "out-file"],
-    booleanOptions: ["json", "write", "resume-last", "resume", "fresh", "background"],
+    booleanOptions: [
+      "json",
+      "write",
+      "resume-last",
+      "resume",
+      "fresh",
+      "background",
+    ],
     aliasMap: {
-      m: "model"
-    }
+      m: "model",
+    },
   });
 
   const cwd = resolveCommandCwd(options);
   const workspaceRoot = resolveCommandWorkspace(options);
-  const outFile = options["out-file"] ? path.resolve(cwd, options["out-file"]) : null;
+  const outFile = options["out-file"]
+    ? path.resolve(cwd, options["out-file"])
+    : null;
   const raceList = parseModelList(options.race);
   if (raceList.length > 0 && options.model) {
-    throw new Error("Choose either --model <one> or --race <m1,m2,...>, not both.");
+    throw new Error(
+      "Choose either --model <one> or --race <m1,m2,...>, not both.",
+    );
   }
   // A single --race entry is just a model pin; a race needs 2+.
-  const model = normalizeRequestedModel(options.model) ?? (raceList.length === 1 ? raceList[0] : null);
+  const model =
+    normalizeRequestedModel(options.model) ??
+    (raceList.length === 1 ? raceList[0] : null);
   const raceModels = raceList.length >= 2 ? raceList : null;
   const effort = normalizeReasoningEffort(options.effort);
   const prompt = readTaskPrompt(cwd, options, positionals);
@@ -1270,13 +1465,15 @@ async function handleTask(argv) {
     throw new Error("Choose either --resume/--resume-last or --fresh.");
   }
   if (raceModels && resumeLast) {
-    throw new Error("--race starts fresh racer sessions; it cannot be combined with --resume/--resume-last.");
+    throw new Error(
+      "--race starts fresh racer sessions; it cannot be combined with --resume/--resume-last.",
+    );
   }
   const write = Boolean(options.write);
   const taskMetadata = buildTaskRunMetadata({
     prompt,
     resumeLast,
-    raceModels
+    raceModels,
   });
 
   if (options.background) {
@@ -1292,7 +1489,7 @@ async function handleTask(argv) {
       write,
       resumeLast,
       jobId: job.id,
-      raceModels
+      raceModels,
     });
     const { payload } = enqueueBackgroundTask(cwd, job, request);
     outputCommandResult(payload, renderQueuedTaskLaunch(payload), options.json);
@@ -1312,15 +1509,15 @@ async function handleTask(argv) {
         resumeLast,
         jobId: job.id,
         raceModels,
-        onProgress: progress
+        onProgress: progress,
       }),
-    { json: options.json, outFile }
+    { json: options.json, outFile },
   );
 }
 
 async function handleTaskWorker(argv) {
   const { options } = parseCommandInput(argv, {
-    valueOptions: ["cwd", "job-id"]
+    valueOptions: ["cwd", "job-id"],
   });
 
   if (!options["job-id"]) {
@@ -1335,37 +1532,39 @@ async function handleTaskWorker(argv) {
 
   const request = storedJob.request;
   if (!request || typeof request !== "object") {
-    throw new Error(`Stored job ${options["job-id"]} is missing its task request payload.`);
+    throw new Error(
+      `Stored job ${options["job-id"]} is missing its task request payload.`,
+    );
   }
 
   const { logFile, progress } = createTrackedProgress(
     {
       ...storedJob,
-      workspaceRoot
+      workspaceRoot,
     },
     {
-      logFile: storedJob.logFile ?? null
-    }
+      logFile: storedJob.logFile ?? null,
+    },
   );
   await runTrackedJob(
     {
       ...storedJob,
       workspaceRoot,
-      logFile
+      logFile,
     },
     () =>
       executeTaskRun({
         ...request,
-        onProgress: progress
+        onProgress: progress,
       }),
-    { logFile }
+    { logFile },
   );
 }
 
 async function handleStatus(argv) {
   const { options, positionals } = parseCommandInput(argv, {
     valueOptions: ["cwd", "timeout-ms", "poll-interval-ms"],
-    booleanOptions: ["json", "all", "wait"]
+    booleanOptions: ["json", "all", "wait"],
   });
 
   const cwd = resolveCommandCwd(options);
@@ -1374,10 +1573,14 @@ async function handleStatus(argv) {
     const snapshot = options.wait
       ? await waitForSingleJobSnapshot(cwd, reference, {
           timeoutMs: options["timeout-ms"],
-          pollIntervalMs: options["poll-interval-ms"]
+          pollIntervalMs: options["poll-interval-ms"],
         })
       : buildSingleJobSnapshot(cwd, reference);
-    outputCommandResult(snapshot, renderJobStatusReport(snapshot.job), options.json);
+    outputCommandResult(
+      snapshot,
+      renderJobStatusReport(snapshot.job),
+      options.json,
+    );
     return;
   }
 
@@ -1392,17 +1595,19 @@ async function handleStatus(argv) {
 function handleResult(argv) {
   const { options, positionals } = parseCommandInput(argv, {
     valueOptions: ["cwd", "out-file"],
-    booleanOptions: ["json"]
+    booleanOptions: ["json"],
   });
 
   const cwd = resolveCommandCwd(options);
-  const outFile = options["out-file"] ? path.resolve(cwd, options["out-file"]) : null;
+  const outFile = options["out-file"]
+    ? path.resolve(cwd, options["out-file"])
+    : null;
   const reference = positionals[0] ?? "";
   const { workspaceRoot, job } = resolveResultJob(cwd, reference);
   const storedJob = readStoredJob(workspaceRoot, job.id);
   const payload = {
     job,
-    storedJob
+    storedJob,
   };
   const rendered = renderStoredJobResult(job, storedJob);
 
@@ -1410,7 +1615,9 @@ function handleResult(argv) {
     // Write the stored full result to a file and relay only a short summary,
     // so fetching a large background result does not flood the caller's context.
     fs.writeFileSync(outFile, rendered);
-    process.stdout.write(renderOutFileSummary({ summary: job.summary }, outFile));
+    process.stdout.write(
+      renderOutFileSummary({ summary: job.summary }, outFile),
+    );
   } else {
     outputCommandResult(payload, rendered, options.json);
   }
@@ -1419,12 +1626,14 @@ function handleResult(argv) {
 function handleTaskResumeCandidate(argv) {
   const { options } = parseCommandInput(argv, {
     valueOptions: ["cwd"],
-    booleanOptions: ["json"]
+    booleanOptions: ["json"],
   });
 
   const workspaceRoot = resolveCommandWorkspace(options);
   const sessionId = getCurrentClaudeSessionId();
-  const jobs = filterJobsForCurrentClaudeSession(sortJobsNewestFirst(listJobs(workspaceRoot)));
+  const jobs = filterJobsForCurrentClaudeSession(
+    sortJobsNewestFirst(listJobs(workspaceRoot)),
+  );
   const candidate = findLatestResumableTaskJob(jobs);
 
   const payload = {
@@ -1441,8 +1650,8 @@ function handleTaskResumeCandidate(argv) {
             piSessionId: candidate.piSessionId,
             piSessionFile: candidate.piSessionFile ?? null,
             completedAt: candidate.completedAt ?? null,
-            updatedAt: candidate.updatedAt ?? null
-          }
+            updatedAt: candidate.updatedAt ?? null,
+          },
   };
 
   const rendered = candidate
@@ -1454,12 +1663,14 @@ function handleTaskResumeCandidate(argv) {
 async function handleCancel(argv) {
   const { options, positionals } = parseCommandInput(argv, {
     valueOptions: ["cwd"],
-    booleanOptions: ["json"]
+    booleanOptions: ["json"],
   });
 
   const cwd = resolveCommandCwd(options);
   const reference = positionals[0] ?? "";
-  const { workspaceRoot, job } = resolveCancelableJob(cwd, reference, { env: process.env });
+  const { workspaceRoot, job } = resolveCancelableJob(cwd, reference, {
+    env: process.env,
+  });
   const existing = readStoredJob(workspaceRoot, job.id) ?? {};
 
   const terminate = terminateProcessTree(job.pid ?? Number.NaN);
@@ -1468,7 +1679,7 @@ async function handleCancel(argv) {
       job.logFile,
       terminate.delivered
         ? `Sent SIGTERM to worker pid ${job.pid}.`
-        : `Worker pid ${job.pid} was no longer running.`
+        : `Worker pid ${job.pid} was no longer running.`,
     );
   }
   appendLogLine(job.logFile, "Cancelled by user.");
@@ -1480,13 +1691,13 @@ async function handleCancel(argv) {
     phase: "cancelled",
     pid: null,
     completedAt,
-    errorMessage: "Cancelled by user."
+    errorMessage: "Cancelled by user.",
   };
 
   writeJobFile(workspaceRoot, job.id, {
     ...existing,
     ...nextJob,
-    cancelledAt: completedAt
+    cancelledAt: completedAt,
   });
   upsertJob(workspaceRoot, {
     id: job.id,
@@ -1494,14 +1705,14 @@ async function handleCancel(argv) {
     phase: "cancelled",
     pid: null,
     errorMessage: "Cancelled by user.",
-    completedAt
+    completedAt,
   });
 
   const payload = {
     jobId: job.id,
     status: "cancelled",
     title: job.title,
-    workerSignalled: terminate.delivered
+    workerSignalled: terminate.delivered,
   };
 
   outputCommandResult(payload, renderCancelReport(nextJob), options.json);
@@ -1523,7 +1734,7 @@ async function main() {
       break;
     case "adversarial-review":
       await handleReviewCommand(argv, {
-        reviewName: "Adversarial Review"
+        reviewName: "Adversarial Review",
       });
       break;
     case "task":

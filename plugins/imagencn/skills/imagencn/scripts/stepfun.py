@@ -23,8 +23,10 @@ class StepFunProvider(OpenAICompatibleProvider):
 
     # pi-lens-ignore: python-mutable-class-attr
     SIZES = {
-        "1:1": "1024x1024", "1:1-small": "512x512",
-        "16:9": "1280x800", "9:16": "800x1280",
+        "1:1": "1024x1024",
+        "1:1-small": "512x512",
+        "16:9": "1280x800",
+        "9:16": "800x1280",
     }
 
     default_size = "1024x1024"

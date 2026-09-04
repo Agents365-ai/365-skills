@@ -61,7 +61,9 @@ def load_phoneme_dicts(input_file, phoneme_file=None):
             with open(template_path, encoding="utf-8") as f:
                 template_data = {
                     # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
-                    k: v for k, v in json.load(f).items() if not k.startswith("_")
+                    k: v
+                    for k, v in json.load(f).items()
+                    if not k.startswith("_")
                 }
             # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
             with open(global_path, encoding="utf-8") as f:

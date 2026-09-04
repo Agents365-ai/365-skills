@@ -18,6 +18,7 @@ The in-place rewrite is exempt from the suite's --yes gate (same rationale
 as verify_output.py auto-fix): timing.json is a regenerable artifact, the
 original is preserved in timing.json.bak, and --dry-run previews the result.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -36,9 +37,19 @@ import cli_envelope  # noqa: E402
 
 def ffprobe_duration(wav_path: Path) -> float:
     result = subprocess.run(
-        ["ffprobe", "-v", "quiet", "-show_entries", "format=duration",
-         "-of", "csv=p=0", str(wav_path)],
-        capture_output=True, text=True, check=True,
+        [
+            "ffprobe",
+            "-v",
+            "quiet",
+            "-show_entries",
+            "format=duration",
+            "-of",
+            "csv=p=0",
+            str(wav_path),
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
     )
     # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
     return float(result.stdout.strip())
@@ -76,13 +87,19 @@ def build_srt_index(entries):
     return concat, offsets
 
 
-def find_all_in_srt(key: str, concat: str, offsets, entries, start_idx: int, end_idx: int):
+def find_all_in_srt(
+    key: str, concat: str, offsets, entries, start_idx: int, end_idx: int
+):
     """Return all (entry_index, start_time, matched_length) matches for key within [start_idx, end_idx]."""
     matches = []
     if len(key) < 4 or start_idx >= len(entries) or end_idx <= start_idx:
         return matches
     search_from = offsets[start_idx]
-    search_to = offsets[min(end_idx, len(entries) - 1)] if end_idx < len(entries) else len(concat)
+    search_to = (
+        offsets[min(end_idx, len(entries) - 1)]
+        if end_idx < len(entries)
+        else len(concat)
+    )
 
     pos = concat.find(key, search_from)
     while pos != -1 and pos < search_to:
@@ -171,7 +188,9 @@ def find_real_section_starts(script_sections, entries, concat, offsets, real_dur
         else:
             start_time = None
             matched = False
-        real_starts.append({"name": sec["name"], "start_time": start_time, "matched": matched})
+        real_starts.append(
+            {"name": sec["name"], "start_time": start_time, "matched": matched}
+        )
 
     # Trailing silent sections (empty content, e.g. [SECTION:outro]) never
     # appear in the SRT. Anchor them to the end of the audio — the
@@ -179,8 +198,11 @@ def find_real_section_starts(script_sections, entries, concat, offsets, real_dur
     # monotonic clamp would then collapse the previous section's window
     # to the 0.2s minimum, squeezing all of its slides together.
     idx = len(script_sections)
-    while idx > 0 and not script_sections[idx - 1]["first_text"] \
-            and real_starts[idx - 1]["start_time"] is None:
+    while (
+        idx > 0
+        and not script_sections[idx - 1]["first_text"]
+        and real_starts[idx - 1]["start_time"] is None
+    ):
         real_starts[idx - 1]["start_time"] = real_duration
         idx -= 1
 
@@ -228,8 +250,17 @@ def map_slides_to_sections(slides, script_sections, real_starts, real_duration):
     return mappings, using_explicit
 
 
-def pick_monotonic_matches(slides, slide_indices, keys_list, entries, concat, offsets,
-                           sec_start, sec_end, orig_starts):
+def pick_monotonic_matches(
+    slides,
+    slide_indices,
+    keys_list,
+    entries,
+    concat,
+    offsets,
+    sec_start,
+    sec_end,
+    orig_starts,
+):
     """For slides in one section, pick a monotonic sequence of SRT matches."""
     start_idx = find_section_entry_index(sec_start, entries)
     end_idx = find_section_entry_index(sec_end, entries)
@@ -242,7 +273,9 @@ def pick_monotonic_matches(slides, slide_indices, keys_list, entries, concat, of
     for i, slide_idx in enumerate(slide_indices):
         cands = []
         for key in keys_list[slide_idx]:
-            cands.extend(find_all_in_srt(key, concat, offsets, entries, start_idx, end_idx))
+            cands.extend(
+                find_all_in_srt(key, concat, offsets, entries, start_idx, end_idx)
+            )
         # Deduplicate and keep earliest per srt_idx.
         seen = set()
         unique = []
@@ -270,8 +303,9 @@ def pick_monotonic_matches(slides, slide_indices, keys_list, entries, concat, of
     return chosen
 
 
-def distribute_section_time_across_slides(slides, slide_indices, sec_start, sec_end,
-                                           already_matched):
+def distribute_section_time_across_slides(
+    slides, slide_indices, sec_start, sec_end, already_matched
+):
     """Fill unmatched slides in a section proportionally around matched anchors."""
     n = len(slide_indices)
     starts: list[float | None] = [None] * n
@@ -283,7 +317,9 @@ def distribute_section_time_across_slides(slides, slide_indices, sec_start, sec_
 
     # Forward fill: between matched anchors, distribute proportionally.
     # First, assign original durations.
-    orig_durs = [max(0.01, slides[slide_indices[i]].get("duration", 1.0)) for i in range(n)]
+    orig_durs = [
+        max(0.01, slides[slide_indices[i]].get("duration", 1.0)) for i in range(n)
+    ]
 
     # If first slides are unmatched, distribute from sec_start to first match.
     i = 0
@@ -303,7 +339,11 @@ def distribute_section_time_across_slides(slides, slide_indices, sec_start, sec_
     prev_matched = i if i < n and starts[i] is not None else None
     for j in range(i + 1, n):
         if starts[j] is not None:
-            if prev_matched is not None and starts[j] is not None and starts[prev_matched] is not None:
+            if (
+                prev_matched is not None
+                and starts[j] is not None
+                and starts[prev_matched] is not None
+            ):
                 available = (starts[j] or 0.0) - (starts[prev_matched] or 0.0)
                 total_orig = sum(orig_durs[k] for k in range(prev_matched, j))
                 scale = available / total_orig if total_orig > 0 else 0
@@ -367,7 +407,9 @@ def align_timing(video_dir: Path, dry_run: bool = False):
         raise ValueError("podcast.txt has no [SECTION:name] markers")
 
     # --- Step 1: initial section anchors from first_text matching ---
-    real_starts = find_real_section_starts(script_sections, entries, concat, offsets, real_duration)
+    real_starts = find_real_section_starts(
+        script_sections, entries, concat, offsets, real_duration
+    )
 
     # Pre-compute search keys and original starts.
     keys_list = [build_search_keys(s) for s in slides]
@@ -380,8 +422,12 @@ def align_timing(video_dir: Path, dry_run: bool = False):
     using_explicit = 0
 
     for iteration in range(2):
-        section_ends = [real_starts[i + 1]["start_time"] if i + 1 < len(real_starts) else real_duration
-                        for i in range(len(real_starts))]
+        section_ends = [
+            real_starts[i + 1]["start_time"]
+            if i + 1 < len(real_starts)
+            else real_duration
+            for i in range(len(real_starts))
+        ]
 
         slide_to_section, using_explicit = map_slides_to_sections(
             slides, script_sections, real_starts, real_duration
@@ -392,7 +438,9 @@ def align_timing(video_dir: Path, dry_run: bool = False):
         matched_flags = [False] * len(slides)
 
         for sec_idx, sec in enumerate(script_sections):
-            slide_indices = [i for i, s_idx in enumerate(slide_to_section) if s_idx == sec_idx]
+            slide_indices = [
+                i for i, s_idx in enumerate(slide_to_section) if s_idx == sec_idx
+            ]
             if not slide_indices:
                 continue
 
@@ -400,8 +448,15 @@ def align_timing(video_dir: Path, dry_run: bool = False):
             sec_end = section_ends[sec_idx]
 
             chosen = pick_monotonic_matches(
-                slides, slide_indices, keys_list, entries, concat, offsets,
-                sec_start, sec_end, orig_starts
+                slides,
+                slide_indices,
+                keys_list,
+                entries,
+                concat,
+                offsets,
+                sec_start,
+                sec_end,
+                orig_starts,
             )
 
             # Refine section start from the first SLIDE's real match (not any slide).
@@ -415,8 +470,14 @@ def align_timing(video_dir: Path, dry_run: bool = False):
                 sec_start = 0.0
             elif first_match is not None:
                 new_start = first_match[1]
-                prev_end = real_starts[sec_idx - 1]["start_time"] if sec_idx > 0 else 0.0
-                next_start = real_starts[sec_idx + 1]["start_time"] if sec_idx + 1 < len(real_starts) else real_duration
+                prev_end = (
+                    real_starts[sec_idx - 1]["start_time"] if sec_idx > 0 else 0.0
+                )
+                next_start = (
+                    real_starts[sec_idx + 1]["start_time"]
+                    if sec_idx + 1 < len(real_starts)
+                    else real_duration
+                )
                 lower_bound = prev_end + 0.2
                 upper_bound = next_start - 0.2
 
@@ -426,7 +487,10 @@ def align_timing(video_dir: Path, dry_run: bool = False):
                         real_starts[sec_idx]["start_time"] = new_start
                         sec_start = new_start
                 else:
-                    if abs(new_start - sec_start) > 0.5 and lower_bound <= new_start <= upper_bound:
+                    if (
+                        abs(new_start - sec_start) > 0.5
+                        and lower_bound <= new_start <= upper_bound
+                    ):
                         real_starts[sec_idx]["start_time"] = new_start
                         sec_start = new_start
 
@@ -490,23 +554,31 @@ def align_timing(video_dir: Path, dry_run: bool = False):
             f"  [{sec_name}] {slide['start_time']:7.2f}s - {slide['end_time']:7.2f}s  "
             f"({source}) {label}"[:120]
         )
-        slide_report.append({
-            "section": sec_name,
-            "start": slide["start_time"],
-            "end": slide["end_time"],
-            "source": source,
-            "label": str(label)[:60],
-        })
+        slide_report.append(
+            {
+                "section": sec_name,
+                "start": slide["start_time"],
+                "end": slide["end_time"],
+                "source": source,
+                "label": str(label)[:60],
+            }
+        )
 
     written = False
     if not dry_run:
         if not backup_path.exists():
             backup_path.write_text(
                 # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
-                json.dumps(json.loads(timing_path.read_text(encoding="utf-8")), indent=2, ensure_ascii=False),
+                json.dumps(
+                    json.loads(timing_path.read_text(encoding="utf-8")),
+                    indent=2,
+                    ensure_ascii=False,
+                ),
                 encoding="utf-8",
             )
-        timing_path.write_text(json.dumps(timing, indent=2, ensure_ascii=False), encoding="utf-8")
+        timing_path.write_text(
+            json.dumps(timing, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
         written = True
         print(f"\n✅ Aligned timing.json written. Original backed up to {backup_path}")
     else:
@@ -532,8 +604,11 @@ def build_parser():
         prog="align_timing_from_srt.py",
     )
     parser.add_argument("video_dir", help="Path to videos/<name> directory")
-    parser.add_argument("--dry-run", action="store_true",
-                        help="Print report without writing timing.json")
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Print report without writing timing.json",
+    )
     cli_envelope.add_format_arg(parser)
     return parser
 
@@ -545,7 +620,8 @@ def main():
 
     if shutil.which("ffprobe") is None:
         return cli_envelope.emit_error(
-            args, "tool_missing",
+            args,
+            "tool_missing",
             "ffprobe not found on PATH; install ffmpeg to read audio duration.",
             started_at=started_at,
         )
@@ -557,18 +633,24 @@ def main():
     try:
         result = align_timing(video_dir, dry_run=args.dry_run)
     except FileNotFoundError as exc:
-        return cli_envelope.emit_error(args, "input_not_found", str(exc),
-                                       started_at=started_at)
+        return cli_envelope.emit_error(
+            args, "input_not_found", str(exc), started_at=started_at
+        )
     except (ValueError, json.JSONDecodeError) as exc:
-        return cli_envelope.emit_error(args, "input_invalid", str(exc),
-                                       started_at=started_at)
+        return cli_envelope.emit_error(
+            args, "input_invalid", str(exc), started_at=started_at
+        )
     except subprocess.CalledProcessError as exc:
-        return cli_envelope.emit_error(args, "ffmpeg_failed",
-                                       f"ffprobe failed on podcast_audio.wav: {exc}",
-                                       started_at=started_at)
+        return cli_envelope.emit_error(
+            args,
+            "ffmpeg_failed",
+            f"ffprobe failed on podcast_audio.wav: {exc}",
+            started_at=started_at,
+        )
     except Exception as exc:
-        return cli_envelope.emit_error(args, "internal_error", str(exc),
-                                       started_at=started_at)
+        return cli_envelope.emit_error(
+            args, "internal_error", str(exc), started_at=started_at
+        )
     finally:
         sys.stdout = sys.__stdout__
 

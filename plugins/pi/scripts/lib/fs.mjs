@@ -14,7 +14,9 @@ export function readJsonFile(filePath) {
   try {
     return JSON.parse(fs.readFileSync(filePath, "utf8"));
   } catch (error) {
-    throw new Error(`Failed to read JSON file ${filePath}: ${error instanceof Error ? error.message : String(error)}`);
+    throw new Error(
+      `Failed to read JSON file ${filePath}: ${error instanceof Error ? error.message : String(error)}`,
+    );
   }
 }
 

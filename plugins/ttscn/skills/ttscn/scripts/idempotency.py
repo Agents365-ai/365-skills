@@ -63,7 +63,9 @@ def store(idempotency_key, result):
     _ensure_cache_dir()
     entry = {
         "cached_at": time.time(),
-        "idempotency_key_hash": hashlib.sha256(idempotency_key.encode()).hexdigest()[:16],
+        "idempotency_key_hash": hashlib.sha256(idempotency_key.encode()).hexdigest()[
+            :16
+        ],
         "result": result,
     }
     path = _key_path(idempotency_key)

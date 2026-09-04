@@ -6,10 +6,10 @@ import type { LucideIcon } from "lucide-react";
  * Examples: "arrow-right" → "ArrowRight", "rocket" → "Rocket", "cpu" → "Cpu"
  */
 function toPascalCase(name: string): string {
-  return name
-    .split("-")
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join("");
+ return name
+  .split("-")
+  .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+  .join("");
 }
 
 /**
@@ -17,15 +17,15 @@ function toPascalCase(name: string): string {
  * Returns undefined if not found.
  */
 export function getLucideIcon(name: string): LucideIcon | undefined {
-  const pascalName = toPascalCase(name);
-  const icon = (LucideIcons as Record<string, unknown>)[pascalName];
-  if (typeof icon === "function") {
-    return icon as LucideIcon;
-  }
-  return undefined;
+ const pascalName = toPascalCase(name);
+ const icon = (LucideIcons as Record<string, unknown>)[pascalName];
+ if (typeof icon === "function") {
+  return icon as LucideIcon;
+ }
+ return undefined;
 }
 
 export const isEmoji = (s: string): boolean => {
-  if (s.length > 4) return false;
-  return /\p{Emoji}/u.test(s);
+ if (s.length > 4) return false;
+ return /\p{Emoji}/u.test(s);
 };

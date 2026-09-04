@@ -49,7 +49,10 @@ const SectionComponent = ({
   props: VideoProps;
 }) => {
   const { opacity, translateY, scale } = useEntrance(props.enableAnimations);
-  const animStyle = { opacity, transform: `translateY(${translateY}px) scale(${scale})` };
+  const animStyle = {
+    opacity,
+    transform: `translateY(${translateY}px) scale(${scale})`,
+  };
   const v = props.orientation === "vertical";
   // Vertical uses more padding top/bottom, less left/right
   // Bottom padding reserves space for burned-in subtitles (100px safe zone)
@@ -67,16 +70,25 @@ const SectionComponent = ({
       return (
         <FullBleedLayout bg={props.backgroundColor}>
           {/* Decorative radial gradient */}
-          <div style={{
-            position: "absolute", inset: 0,
-            background: `radial-gradient(ellipse at 50% 40%, ${props.primaryColor}12 0%, transparent 70%)`,
-          }} />
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: `radial-gradient(ellipse at 50% 40%, ${props.primaryColor}12 0%, transparent 70%)`,
+            }}
+          />
           {/* Decorative circle */}
-          <div style={{
-            position: "absolute", top: -120, right: -80,
-            width: 400, height: 400, borderRadius: "50%",
-            background: `${props.primaryColor}08`,
-          }} />
+          <div
+            style={{
+              position: "absolute",
+              top: -120,
+              right: -80,
+              width: 400,
+              height: 400,
+              borderRadius: "50%",
+              background: `${props.primaryColor}08`,
+            }}
+          />
           <div
             style={{
               position: "absolute",
@@ -141,16 +153,43 @@ const SectionComponent = ({
             >
               今天的内容
             </h2>
-            <p style={{ fontSize: v ? 34 : 30, color: props.textColor, opacity: 0.5, marginBottom: v ? 24 : 20, textAlign: "center" }}>
+            <p
+              style={{
+                fontSize: v ? 34 : 30,
+                color: props.textColor,
+                opacity: 0.5,
+                marginBottom: v ? 24 : 20,
+                textAlign: "center",
+              }}
+            >
               Section description here
             </p>
-            <div style={{ display: "flex", flexDirection: "column", gap: v ? 24 : 20, width: "100%", maxWidth: v ? undefined : 900 }}>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: v ? 24 : 20,
+                width: "100%",
+                maxWidth: v ? undefined : 900,
+              }}
+            >
               {[
                 { icon: "lightbulb", title: "要点一", description: "说明文字" },
                 { icon: "target", title: "要点二", description: "说明文字" },
-                { icon: "check-circle", title: "要点三", description: "说明文字" },
+                {
+                  icon: "check-circle",
+                  title: "要点三",
+                  description: "说明文字",
+                },
               ].map((item, i) => (
-                <IconCard key={i} props={props} icon={item.icon} title={item.title} description={item.description} delay={i * 6} />
+                <IconCard
+                  key={i}
+                  props={props}
+                  icon={item.icon}
+                  title={item.title}
+                  description={item.description}
+                  delay={i * 6}
+                />
               ))}
             </div>
           </div>
@@ -231,15 +270,35 @@ const SectionComponent = ({
             >
               感谢观看
             </h2>
-            <div style={{ display: "flex", gap: v ? 56 : 40, flexDirection: v ? "column" : "row" }}>
+            <div
+              style={{
+                display: "flex",
+                gap: v ? 56 : 40,
+                flexDirection: v ? "column" : "row",
+              }}
+            >
               {[
                 { icon: "thumbs-up", text: "点赞" },
                 { icon: "star", text: "收藏" },
                 { icon: "bell", text: "关注" },
               ].map((item, i) => (
                 <div key={i} style={{ textAlign: "center" }}>
-                  <Icon name={item.icon} size={v ? 80 : 64} color={props.accentColor} animate="bounce" delay={i * 10} />
-                  <div style={{ fontSize: v ? 32 : 26, color: "rgba(0,0,0,0.5)", marginTop: 10 }}>{item.text}</div>
+                  <Icon
+                    name={item.icon}
+                    size={v ? 80 : 64}
+                    color={props.accentColor}
+                    animate="bounce"
+                    delay={i * 10}
+                  />
+                  <div
+                    style={{
+                      fontSize: v ? 32 : 26,
+                      color: "rgba(0,0,0,0.5)",
+                      marginTop: 10,
+                    }}
+                  >
+                    {item.text}
+                  </div>
                 </div>
               ))}
             </div>
@@ -258,7 +317,10 @@ const SectionComponent = ({
 
     default:
       return (
-        <PaddedLayout bg={props.backgroundColor} orientation={props.orientation}>
+        <PaddedLayout
+          bg={props.backgroundColor}
+          orientation={props.orientation}
+        >
           <div
             style={{
               position: "absolute",
@@ -280,16 +342,29 @@ const SectionComponent = ({
             >
               {section.name}
             </h2>
-            <p style={{ fontSize: v ? 34 : 30, color: props.textColor, opacity: 0.5, marginTop: 12, marginBottom: 20, textAlign: "center" }}>
+            <p
+              style={{
+                fontSize: v ? 34 : 30,
+                color: props.textColor,
+                opacity: 0.5,
+                marginTop: 12,
+                marginBottom: 20,
+                textAlign: "center",
+              }}
+            >
               Section description here
             </p>
-            <div style={{
-              background: `linear-gradient(135deg, ${props.primaryColor}06, ${props.accentColor}06)`,
-              borderRadius: 24, padding: v ? "40px 44px" : "40px 56px",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.03), 0 8px 32px rgba(0,0,0,0.05)",
-              border: `1px solid ${props.primaryColor}10`,
-              width: "100%",
-            }}>
+            <div
+              style={{
+                background: `linear-gradient(135deg, ${props.primaryColor}06, ${props.accentColor}06)`,
+                borderRadius: 24,
+                padding: v ? "40px 44px" : "40px 56px",
+                boxShadow:
+                  "0 2px 8px rgba(0,0,0,0.03), 0 8px 32px rgba(0,0,0,0.05)",
+                border: `1px solid ${props.primaryColor}10`,
+                width: "100%",
+              }}
+            >
               <p
                 style={{
                   fontSize: props.bodySize,
@@ -325,7 +400,9 @@ export const Video = (props: VideoProps) => {
   );
   const transitionCount = Math.max(0, renderSections.length - 1);
   const effectiveTransitionFrames =
-    props.transitionType !== "none" && transitionFrames > 0 ? transitionFrames : 0;
+    props.transitionType !== "none" && transitionFrames > 0
+      ? transitionFrames
+      : 0;
   const trailingSilentCount = renderSections.filter((s) => s.is_silent).length;
   const silentBudget = trailingSilentCount * SILENT_FRAMES;
 
@@ -351,13 +428,19 @@ export const Video = (props: VideoProps) => {
     }
     return {
       ...s,
-      duration_frames: Math.max(15, Math.round(s.duration_frames * scaleFactor)),
+      duration_frames: Math.max(
+        15,
+        Math.round(s.duration_frames * scaleFactor),
+      ),
     };
   });
 
   // Absorb rounding error so the total matches exactly. Land it on the last
   // non-silent section — a silent section's fixed floor must not swallow it.
-  const scaledTotal = compensatedSections.reduce((sum, s) => sum + s.duration_frames, 0);
+  const scaledTotal = compensatedSections.reduce(
+    (sum, s) => sum + s.duration_frames,
+    0,
+  );
   const diff = targetTotal - scaledTotal;
   if (diff !== 0) {
     let absorbed = false;
@@ -381,15 +464,21 @@ export const Video = (props: VideoProps) => {
         <TransitionSeries>
           {compensatedSections.map((section, i) => (
             <React.Fragment key={section.name}>
-              <TransitionSeries.Sequence durationInFrames={section.duration_frames}>
+              <TransitionSeries.Sequence
+                durationInFrames={section.duration_frames}
+              >
                 <SectionComponent section={section} props={props} />
               </TransitionSeries.Sequence>
-              {i < renderSections.length - 1 && transitionFrames > 0 && props.transitionType !== "none" && (
-                <TransitionSeries.Transition
-                  presentation={getPresentation(props.transitionType)}
-                  timing={linearTiming({ durationInFrames: transitionFrames })}
-                />
-              )}
+              {i < renderSections.length - 1 &&
+                transitionFrames > 0 &&
+                props.transitionType !== "none" && (
+                  <TransitionSeries.Transition
+                    presentation={getPresentation(props.transitionType)}
+                    timing={linearTiming({
+                      durationInFrames: transitionFrames,
+                    })}
+                  />
+                )}
             </React.Fragment>
           ))}
         </TransitionSeries>

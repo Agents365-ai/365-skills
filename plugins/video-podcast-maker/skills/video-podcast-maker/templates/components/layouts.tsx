@@ -15,8 +15,17 @@ export const Scale4K = ({
   const w = isVertical ? 1080 : 1920;
   const h = isVertical ? 1920 : 1080;
   return (
-    <AbsoluteFill style={{ transform: "scale(2)", transformOrigin: "top left" }}>
-      <div style={{ width: w, height: h, position: "relative", overflow: "hidden" }}>
+    <AbsoluteFill
+      style={{ transform: "scale(2)", transformOrigin: "top left" }}
+    >
+      <div
+        style={{
+          width: w,
+          height: h,
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
         {children}
       </div>
     </AbsoluteFill>
@@ -33,7 +42,9 @@ export const FullBleedLayout = ({
   bg?: string;
   style?: React.CSSProperties;
 }) => (
-  <AbsoluteFill style={{ backgroundColor: bg || "#FFFFFF", padding: 0, ...style }}>
+  <AbsoluteFill
+    style={{ backgroundColor: bg || "#FFFFFF", padding: 0, ...style }}
+  >
     {children}
   </AbsoluteFill>
 );
@@ -53,7 +64,9 @@ export const PaddedLayout = ({
 }) => {
   const padding = orientation === "vertical" ? "20px 24px" : "20px 30px";
   return (
-    <AbsoluteFill style={{ backgroundColor: bg || "#FFFFFF", padding, ...style }}>
+    <AbsoluteFill
+      style={{ backgroundColor: bg || "#FFFFFF", padding, ...style }}
+    >
       {children}
     </AbsoluteFill>
   );

@@ -58,7 +58,11 @@ function addAlternateTitle(entry, title) {
   if (!normalized || normalized === normalizeTitle(entry.title)) {
     return;
   }
-  if (!entry.alsoReportedAs.some((existing) => normalizeTitle(existing) === normalized)) {
+  if (
+    !entry.alsoReportedAs.some(
+      (existing) => normalizeTitle(existing) === normalized,
+    )
+  ) {
     entry.alsoReportedAs.push(title);
   }
 }
@@ -70,7 +74,10 @@ function mergeFindingInto(entry, finding, model) {
   // Widen the matched range so later near-duplicates also merge into this entry.
   if (finding.line_start && entry.line_start) {
     entry.line_start = Math.min(entry.line_start, finding.line_start);
-    entry.line_end = Math.max(entry.line_end ?? entry.line_start, finding.line_end ?? finding.line_start);
+    entry.line_end = Math.max(
+      entry.line_end ?? entry.line_start,
+      finding.line_end ?? finding.line_start,
+    );
   } else if (finding.line_start && !entry.line_start) {
     entry.line_start = finding.line_start;
     entry.line_end = finding.line_end ?? finding.line_start;
@@ -124,9 +131,11 @@ export function mergePanelReviews(runs) {
   });
 
   return {
-    verdict: succeeded.some((run) => run.parsed.verdict === "needs-attention") ? "needs-attention" : "approve",
+    verdict: succeeded.some((run) => run.parsed.verdict === "needs-attention")
+      ? "needs-attention"
+      : "approve",
     findings,
     next_steps: nextSteps,
-    modelCount: succeeded.length
+    modelCount: succeeded.length,
   };
 }

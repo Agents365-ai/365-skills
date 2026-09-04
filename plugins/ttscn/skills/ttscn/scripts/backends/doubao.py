@@ -28,10 +28,14 @@ def _parse_frontend_words(frontend_json, base_offset):
         return []
     try:
         words = json.loads(frontend_json).get("words") or []
-        return [{"text": w["word"],
-                 "offset": base_offset + float(w["start_time"]),
-                 "duration": float(w["end_time"]) - float(w["start_time"])}
-                for w in words]
+        return [
+            {
+                "text": w["word"],
+                "offset": base_offset + float(w["start_time"]),
+                "duration": float(w["end_time"]) - float(w["start_time"]),
+            }
+            for w in words
+        ]
     except (ValueError, KeyError, TypeError):
         return []
 
@@ -49,9 +53,13 @@ def _parse_v3_words(sentence, base_offset):
             end = float(w["endTime"])
         except (KeyError, TypeError, ValueError):
             continue
-        out.append({"text": w.get("word", ""),
-                    "offset": base_offset + start,
-                    "duration": end - start})
+        out.append(
+            {
+                "text": w.get("word", ""),
+                "offset": base_offset + start,
+                "duration": end - start,
+            }
+        )
     return out
 
 
@@ -59,14 +67,12 @@ def _normalize_part(part_file):
     """Normalize a raw part to 48kHz mono WAV in place."""
     normalized = part_file + ".norm.wav"
     norm_result = subprocess.run(
-        ["ffmpeg", "-y", "-i", part_file,
-         "-ar", "48000", "-ac", "1", normalized],
+        ["ffmpeg", "-y", "-i", part_file, "-ar", "48000", "-ac", "1", normalized],
         capture_output=True,
     )
     if norm_result.returncode != 0:
         raise RuntimeError(
-            f"ffmpeg normalization failed: "
-            f"{norm_result.stderr.decode()[:200]}"
+            f"ffmpeg normalization failed: {norm_result.stderr.decode()[:200]}"
         )
     os.replace(normalized, part_file)
 
@@ -74,9 +80,18 @@ def _normalize_part(part_file):
 def _probe_duration(part_file):
     """Return the WAV duration in seconds via ffprobe."""
     probe = subprocess.run(
-        ["ffprobe", "-v", "quiet", "-show_entries",
-         "format=duration", "-of", "csv=p=0", part_file],
-        capture_output=True, text=True,
+        [
+            "ffprobe",
+            "-v",
+            "quiet",
+            "-show_entries",
+            "format=duration",
+            "-of",
+            "csv=p=0",
+            part_file,
+        ],
+        capture_output=True,
+        text=True,
     )
     # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
     return float(probe.stdout.strip()) if probe.stdout.strip() else 0.0
@@ -94,9 +109,22 @@ def _assemble_output(part_files, output_file):
         for pf in part_files:
             f.write(f"file '{os.path.basename(pf)}'\n")
     result = subprocess.run(
-        ["ffmpeg", "-y", "-f", "concat", "-safe", "0",
-         "-i", concat_list, "-c", "copy", output_file],
-        capture_output=True, text=True, cwd=out_dir,
+        [
+            "ffmpeg",
+            "-y",
+            "-f",
+            "concat",
+            "-safe",
+            "0",
+            "-i",
+            concat_list,
+            "-c",
+            "copy",
+            output_file,
+        ],
+        capture_output=True,
+        text=True,
+        cwd=out_dir,
     )
     if result.returncode != 0:
         raise RuntimeError(f"FFmpeg concat failed: {result.stderr[:200]}")
@@ -124,9 +152,7 @@ def synthesize(chunks, config, output_file, output_format="wav"):
     token = config["token"]
     cluster = config.get("cluster", "volcano_tts")
     voice = config.get("voice", "BV001_streaming")
-    endpoint = config.get(
-        "endpoint", "https://openspeech.bytedance.com/api/v1/tts"
-    )
+    endpoint = config.get("endpoint", "https://openspeech.bytedance.com/api/v1/tts")
     speech_rate = config.get("speech_rate", "+5%")
 
     rate_match = re.match(r"([+-]?\d+)%", speech_rate)
@@ -177,7 +203,9 @@ def synthesize(chunks, config, output_file, output_format="wav"):
                     },
                 }
 
-                resp = requests.post(endpoint, headers=headers, json=payload, timeout=timeout_sec)
+                resp = requests.post(
+                    endpoint, headers=headers, json=payload, timeout=timeout_sec
+                )
                 resp.raise_for_status()
                 data = resp.json()
 
@@ -196,12 +224,17 @@ def synthesize(chunks, config, output_file, output_format="wav"):
 
                 _normalize_part(part_file)
                 chunk_duration = _probe_duration(part_file)
-                word_boundaries.extend(_parse_frontend_words(
-                    (data.get("addition") or {}).get("frontend"),
-                    accumulated_duration))
+                word_boundaries.extend(
+                    _parse_frontend_words(
+                        (data.get("addition") or {}).get("frontend"),
+                        accumulated_duration,
+                    )
+                )
                 accumulated_duration += chunk_duration
-                print(f"  Part {i + 1}/{len(chunks)} done "
-                      f"({len(chunk)} chars, {chunk_duration:.1f}s)")
+                print(
+                    f"  Part {i + 1}/{len(chunks)} done "
+                    f"({len(chunk)} chars, {chunk_duration:.1f}s)"
+                )
                 break
             except Exception as e:
                 print(f"  Part {i + 1} attempt {attempt}/3 failed: {e}")
@@ -284,8 +317,11 @@ def _synthesize_v3(chunks, config, output_file):
                 }
 
                 resp = requests.post(
-                    endpoint, headers=headers, json=payload,
-                    timeout=timeout_sec, stream=True,
+                    endpoint,
+                    headers=headers,
+                    json=payload,
+                    timeout=timeout_sec,
+                    stream=True,
                 )
                 resp.raise_for_status()
 
@@ -308,8 +344,9 @@ def _synthesize_v3(chunks, config, output_file):
                     if msg.get("data"):
                         audio_bytes += base64.b64decode(msg["data"])
                     if msg.get("sentence"):
-                        chunk_boundaries.extend(_parse_v3_words(
-                            msg["sentence"], accumulated_duration))
+                        chunk_boundaries.extend(
+                            _parse_v3_words(msg["sentence"], accumulated_duration)
+                        )
 
                 if not audio_bytes:
                     raise RuntimeError("Doubao v3 returned empty audio")
@@ -320,8 +357,10 @@ def _synthesize_v3(chunks, config, output_file):
                 chunk_duration = _probe_duration(part_file)
                 word_boundaries.extend(chunk_boundaries)
                 accumulated_duration += chunk_duration
-                print(f"  Part {i + 1}/{len(chunks)} done "
-                      f"({len(chunk)} chars, {chunk_duration:.1f}s)")
+                print(
+                    f"  Part {i + 1}/{len(chunks)} done "
+                    f"({len(chunk)} chars, {chunk_duration:.1f}s)"
+                )
                 break
             except Exception as e:
                 print(f"  Part {i + 1} attempt {attempt}/3 failed: {e}")

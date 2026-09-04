@@ -62,9 +62,17 @@ DEFAULT_BACKEND = "edge"
 
 # Compact fields for default JSON list (keep agent token cost low)
 _COMPACT_FIELDS = [
-    "id", "name", "provider", "cost", "cost_per_10k",
-    "voices_count", "max_chars", "max_duration_display",
-    "supports_ssml", "supports_clone", "tags",
+    "id",
+    "name",
+    "provider",
+    "cost",
+    "cost_per_10k",
+    "voices_count",
+    "max_chars",
+    "max_duration_display",
+    "supports_ssml",
+    "supports_clone",
+    "tags",
 ]
 
 # ── Text chunking ─────────────────────────────────────────────────────────
@@ -89,13 +97,14 @@ def _hard_split(sentence, max_chars):
         if len(buf) >= budget and buf.rfind("[") <= buf.rfind("]"):
             cut = -1
             for j in range(len(buf) - 1, max(-1, len(buf) - lookback - 1), -1):
-                if buf[j] in _SOFT_PUNCT and \
-                        buf.rfind("[", 0, j + 1) <= buf.rfind("]", 0, j + 1):
+                if buf[j] in _SOFT_PUNCT and buf.rfind("[", 0, j + 1) <= buf.rfind(
+                    "]", 0, j + 1
+                ):
                     cut = j
                     break
             if cut >= 0:
-                pieces.append(buf[:cut + 1])
-                buf = buf[cut + 1:]
+                pieces.append(buf[: cut + 1])
+                buf = buf[cut + 1 :]
             else:
                 pieces.append(buf + "，")
                 buf = ""
@@ -146,23 +155,27 @@ def _prepare_chunks(backend, text, max_chars, phoneme_dict):
             # against max_chars — post-chunk annotation could push a chunk
             # past MiniMax's limit.
             prepared = apply_phonemes_minimax(prepared, phoneme_dict)
-        chunks = [restore_pauses(c)
-                  for c in chunk_text(prepared, max_chars)]
+        chunks = [restore_pauses(c) for c in chunk_text(prepared, max_chars)]
         if backend == "minimax":
             chunks = [render_markers(c, "minimax") for c in chunks]
             # Sound tags are only understood by speech-2.8 models — on older
             # models MiniMax reads "(chuckle)" aloud, so strip them instead.
-            if not os.environ.get("MINIMAX_MODEL", "speech-2.8-hd").startswith("speech-2.8"):
+            if not os.environ.get("MINIMAX_MODEL", "speech-2.8-hd").startswith(
+                "speech-2.8"
+            ):
                 if any(SOUND_TAG_RE.search(c) for c in chunks):
-                    print("warning: sound tags stripped — set "
-                          "MINIMAX_MODEL=speech-2.8-hd to voice them",
-                          file=sys.stderr)
+                    print(
+                        "warning: sound tags stripped — set "
+                        "MINIMAX_MODEL=speech-2.8-hd to voice them",
+                        file=sys.stderr,
+                    )
                 chunks = [SOUND_TAG_RE.sub("", c) for c in chunks]
         return chunks
     return chunk_text(strip_markers(text), max_chars)
 
 
 # ── Formatting ────────────────────────────────────────────────────────────
+
 
 def _resolve_voice_name(backend, voice_id):
     desc = VOICE_DESCRIPTIONS.get(voice_id, voice_id)
@@ -192,7 +205,9 @@ def _backend_json(name, compact=False):
         "setup_label": info.get("setup_label", ""),
         "tags": info.get("tags", []),
         "env_vars": info["env"],
-        "pip_install": info.get("import", ("", "", ""))[2] if isinstance(info.get("import"), tuple) else "",
+        "pip_install": info.get("import", ("", "", ""))[2]
+        if isinstance(info.get("import"), tuple)
+        else "",
         "get_key_url": info.get("get_key_url", ""),
         "voices": [
             {"id": v, "description": VOICE_DESCRIPTIONS.get(v, "")}
@@ -231,8 +246,8 @@ def _list_text(args_fields=None):
         print(f"      Max chars:     {info['max_chars']} / chunk")
         print(f"      Max duration:  ~{info['max_duration_sec']}s / chunk")
         print(f"      SSML:          {'✅ yes' if info['supports_ssml'] else '❌ no'}")
-        if info.get('supports_clone'):
-            print(f"      Clone:         ✅ yes — {info.get('clone_detail','')}")
+        if info.get("supports_clone"):
+            print(f"      Clone:         ✅ yes — {info.get('clone_detail', '')}")
         else:
             print("      Clone:         ❌ no")
         envs = ", ".join(info["env"]) if info["env"] else "none required"
@@ -260,6 +275,7 @@ def _list_text(args_fields=None):
 
 # ── Schema subcommand ─────────────────────────────────────────────────────
 
+
 def _handle_schema(args):
     path = args.path
     full = getattr(args, "full", False)
@@ -269,16 +285,20 @@ def _handle_schema(args):
         if hasattr(args, "fields") and args.fields:
             fset = set(args.fields.split(","))
             data["backends"] = [
-                {k: v for k, v in b.items() if k in fset}
-                for b in data["backends"]
+                {k: v for k, v in b.items() if k in fset} for b in data["backends"]
             ]
         emit_success(data)
 
     if path.startswith("backends."):
         bid = path.split(".", 1)[1]
         if bid not in BACKENDS:
-            emit_error("validation_failed", f"Unknown backend: {bid}",
-                       field="path", retryable=False, exit_code=EXIT_VALIDATION)
+            emit_error(
+                "validation_failed",
+                f"Unknown backend: {bid}",
+                field="path",
+                retryable=False,
+                exit_code=EXIT_VALIDATION,
+            )
         data = _backend_json(bid, compact=not full)
         if hasattr(args, "fields") and args.fields:
             fset = set(args.fields.split(","))
@@ -298,41 +318,74 @@ def _handle_schema(args):
         emit_success({"tags": TAGS})
 
     if path == "version":
-        emit_success({"version": VERSION, "schema_version": SCHEMA_VERSION,
-                       "providers_updated": _get_providers_updated()})
+        emit_success(
+            {
+                "version": VERSION,
+                "schema_version": SCHEMA_VERSION,
+                "providers_updated": _get_providers_updated(),
+            }
+        )
 
-    emit_error("validation_failed",
-               f"Unknown schema path: {path}. Use: backends, backends.<id>, voices, tags, version",
-               field="path", retryable=False, exit_code=EXIT_VALIDATION)
+    emit_error(
+        "validation_failed",
+        f"Unknown schema path: {path}. Use: backends, backends.<id>, voices, tags, version",
+        field="path",
+        retryable=False,
+        exit_code=EXIT_VALIDATION,
+    )
 
 
 def _ensure_mp3(output_file, started_at):
     """Transcode output_file to MP3 in place if it isn't MP3 already."""
     import subprocess
+
     probe = subprocess.run(
-        ["ffprobe", "-v", "quiet", "-show_entries", "format=format_name",
-         "-of", "csv=p=0", output_file],
-        capture_output=True, text=True,
+        [
+            "ffprobe",
+            "-v",
+            "quiet",
+            "-show_entries",
+            "format=format_name",
+            "-of",
+            "csv=p=0",
+            output_file,
+        ],
+        capture_output=True,
+        text=True,
     )
     if "mp3" in probe.stdout:
         return
     tmp_file = output_file + ".transcode.mp3"
     conv = subprocess.run(
-        ["ffmpeg", "-y", "-i", output_file,
-         "-codec:a", "libmp3lame", "-qscale:a", "2", tmp_file],
-        capture_output=True, text=True,
+        [
+            "ffmpeg",
+            "-y",
+            "-i",
+            output_file,
+            "-codec:a",
+            "libmp3lame",
+            "-qscale:a",
+            "2",
+            tmp_file,
+        ],
+        capture_output=True,
+        text=True,
     )
     if conv.returncode != 0:
-        emit_error("backend_error",
-                   f"MP3 transcode failed: {conv.stderr[-200:]}",
-                   retryable=False, exit_code=EXIT_BACKEND,
-                   started_at=started_at)
+        emit_error(
+            "backend_error",
+            f"MP3 transcode failed: {conv.stderr[-200:]}",
+            retryable=False,
+            exit_code=EXIT_BACKEND,
+            started_at=started_at,
+        )
     os.replace(tmp_file, output_file)
 
 
 def _get_providers_updated():
     try:
         import json
+
         # data/ sits at the skill root, one level above scripts/
         _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         _path = os.path.join(_ROOT, "data", "providers.json")
@@ -343,6 +396,7 @@ def _get_providers_updated():
 
 
 # ── CLI ───────────────────────────────────────────────────────────────────
+
 
 def build_parser():
     parser = argparse.ArgumentParser(
@@ -371,41 +425,70 @@ Examples:
     parser.add_argument("text", nargs="?", help="Text to synthesize (inline)")
     parser.add_argument("--input", "-i", help="Read text from file")
 
-    parser.add_argument("output", nargs="?", default=None, help="Output audio file path")
+    parser.add_argument(
+        "output", nargs="?", default=None, help="Output audio file path"
+    )
 
     # Backend & voice
-    parser.add_argument("--platform", "-p", choices=list(BACKENDS.keys()),
-                        help="TTS backend (default: edge)")
+    parser.add_argument(
+        "--platform",
+        "-p",
+        choices=list(BACKENDS.keys()),
+        help="TTS backend (default: edge)",
+    )
     parser.add_argument("--voice", "-v", help="Voice name")
     parser.add_argument("--rate", "-r", help="Speech rate, e.g. '+5%%', '-10%%'")
-    parser.add_argument("--phonemes",
-                        help="JSON file mapping words to pinyin for polyphonic "
-                             "disambiguation, e.g. {\"行长\": \"hang2 zhang3\"} "
-                             "(azure/minimax only; ignored elsewhere)")
+    parser.add_argument(
+        "--phonemes",
+        help="JSON file mapping words to pinyin for polyphonic "
+        'disambiguation, e.g. {"行长": "hang2 zhang3"} '
+        "(azure/minimax only; ignored elsewhere)",
+    )
 
     # Output format
-    parser.add_argument("--format", "-f", choices=["wav", "mp3", "json"], default=None,
-                        help="Audio format: wav or mp3. ('json' is a deprecated "
-                             "alias for --json; kept for compatibility)")
-    parser.add_argument("--json", action="store_true",
-                        help="Emit the machine-readable JSON envelope on stdout "
-                             "(works with any --format; default when piped)")
+    parser.add_argument(
+        "--format",
+        "-f",
+        choices=["wav", "mp3", "json"],
+        default=None,
+        help="Audio format: wav or mp3. ('json' is a deprecated "
+        "alias for --json; kept for compatibility)",
+    )
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Emit the machine-readable JSON envelope on stdout "
+        "(works with any --format; default when piped)",
+    )
 
     # Idempotency
-    parser.add_argument("--idempotency-key",
-                        help="Idempotency key — retried calls with same key return cached result")
+    parser.add_argument(
+        "--idempotency-key",
+        help="Idempotency key — retried calls with same key return cached result",
+    )
 
     # Agent compatibility (no-ops — ttscn never prompts interactively)
-    parser.add_argument("--yes", "--no-input", action="store_true", dest="no_input",
-                        help="Skip confirmation prompts (no-op, accepted for agent compatibility)")
+    parser.add_argument(
+        "--yes",
+        "--no-input",
+        action="store_true",
+        dest="no_input",
+        help="Skip confirmation prompts (no-op, accepted for agent compatibility)",
+    )
 
     # Info / preview
     parser.add_argument("--list", action="store_true", help="List backends and voices")
-    parser.add_argument("--fields", help="Filter --list output: comma-separated field names (json only)")
-    parser.add_argument("--full", action="store_true",
-                        help="Show all fields in --list/schema JSON (default: compact)")
-    parser.add_argument("--dry-run", action="store_true",
-                        help="Preview synthesis without API call")
+    parser.add_argument(
+        "--fields", help="Filter --list output: comma-separated field names (json only)"
+    )
+    parser.add_argument(
+        "--full",
+        action="store_true",
+        help="Show all fields in --list/schema JSON (default: compact)",
+    )
+    parser.add_argument(
+        "--dry-run", action="store_true", help="Preview synthesis without API call"
+    )
 
     return parser
 
@@ -449,6 +532,7 @@ def _resolve_backend_config(args):
 
     # Named cloned voice? Substitute the platform voice_id (see clone.py).
     from clone import resolve_cloned_voice
+
     cloned = resolve_cloned_voice(backend, voice)
     if cloned:
         voice, voice_src = cloned["voice_id"], "cloned:" + voice
@@ -483,18 +567,26 @@ def _with_extension(output_file, ext):
 
 # ── Main ──────────────────────────────────────────────────────────────────
 
+
 def main():
     if len(sys.argv) > 1 and sys.argv[1] == "clone":
         from clone import handle_clone
+
         handle_clone(sys.argv[2:])
         return
 
     if len(sys.argv) > 1 and sys.argv[1] == "schema":
         sp = argparse.ArgumentParser(description="Query provider registry as JSON")
-        sp.add_argument("path", nargs="?", default="backends",
-                        help="Resource: backends, backends.<id>, voices, tags, version")
+        sp.add_argument(
+            "path",
+            nargs="?",
+            default="backends",
+            help="Resource: backends, backends.<id>, voices, tags, version",
+        )
         sp.add_argument("--fields", help="Comma-separated field filter")
-        sp.add_argument("--full", action="store_true", help="Show all fields (default: compact)")
+        sp.add_argument(
+            "--full", action="store_true", help="Show all fields (default: compact)"
+        )
         _handle_schema(sp.parse_args(sys.argv[2:]))
         return
 
@@ -533,17 +625,25 @@ def _run(args, started_at, json_mode=False):
         # `--input f out.wav`: the lone positional is the output path.
         args.output, args.text = args.text, None
     if args.input and args.text:
-        emit_error("validation_failed",
-                   "Provide either --input or inline text, not both",
-                   field="text", retryable=False,
-                   exit_code=EXIT_VALIDATION, started_at=started_at)
+        emit_error(
+            "validation_failed",
+            "Provide either --input or inline text, not both",
+            field="text",
+            retryable=False,
+            exit_code=EXIT_VALIDATION,
+            started_at=started_at,
+        )
 
     if args.input:
         if not os.path.exists(args.input):
-            emit_error("input_not_found",
-                       f"Input file not found: {args.input}",
-                       field="input", retryable=False,
-                       exit_code=EXIT_VALIDATION, started_at=started_at)
+            emit_error(
+                "input_not_found",
+                f"Input file not found: {args.input}",
+                field="input",
+                retryable=False,
+                exit_code=EXIT_VALIDATION,
+                started_at=started_at,
+            )
         # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
         with open(args.input, encoding="utf-8") as f:
             text = f.read().strip()
@@ -551,17 +651,27 @@ def _run(args, started_at, json_mode=False):
         text = args.text
     else:
         if json_mode:
-            emit_error("input_empty", "No text provided for synthesis",
-                       field="text", retryable=False,
-                       exit_code=EXIT_VALIDATION, started_at=started_at)
+            emit_error(
+                "input_empty",
+                "No text provided for synthesis",
+                field="text",
+                retryable=False,
+                exit_code=EXIT_VALIDATION,
+                started_at=started_at,
+            )
         else:
             build_parser().print_help()
             sys.exit(EXIT_VALIDATION)
 
     if not text:
-        emit_error("input_empty", "Empty text input",
-                   field="text", retryable=False,
-                   exit_code=EXIT_VALIDATION, started_at=started_at)
+        emit_error(
+            "input_empty",
+            "Empty text input",
+            field="text",
+            retryable=False,
+            exit_code=EXIT_VALIDATION,
+            started_at=started_at,
+        )
 
     # ── Idempotency check ────────────────────────────────────────────────
     idem_key = getattr(args, "idempotency_key", None)
@@ -572,24 +682,31 @@ def _run(args, started_at, json_mode=False):
             if cached_file and not os.path.exists(cached_file):
                 # Cached metadata is worthless if the audio was deleted —
                 # fall through and synthesize again.
-                print(f"idempotency hit: {idem_key[:20]} — but {cached_file} no longer exists; "
-                      "re-synthesizing",
-                      file=_diag)
+                print(
+                    f"idempotency hit: {idem_key[:20]} — but {cached_file} no longer exists; "
+                    "re-synthesizing",
+                    file=_diag,
+                )
             else:
                 cached = dict(cached, cached=True)
-                print(f"idempotency hit: {idem_key[:20]} — returning cached result",
-                      file=_diag)
+                print(
+                    f"idempotency hit: {idem_key[:20]} — returning cached result",
+                    file=_diag,
+                )
                 if json_mode:
                     emit_success(cached, started_at=started_at)
                 else:
                     print("\nDone! (cached)")
                     print("  Output:   {}".format(cached.get("output_file", "")))
-                    print("  Duration: {:.1f}s".format(cached.get("duration_seconds", 0)))
+                    print(
+                        "  Duration: {:.1f}s".format(cached.get("duration_seconds", 0))
+                    )
                 return
 
     # ── Resolve backend/voice/rate ────────────────────────────────────────
-    backend, backend_src, voice, voice_src, rate, rate_src = \
-        _resolve_backend_config(args)
+    backend, backend_src, voice, voice_src, rate, rate_src = _resolve_backend_config(
+        args
+    )
 
     output_fmt = _resolve_audio_format(args)
 
@@ -618,17 +735,25 @@ def _run(args, started_at, json_mode=False):
     phoneme_dict = {}
     if args.phonemes:
         if not os.path.exists(args.phonemes):
-            emit_error("input_not_found",
-                       f"Phonemes file not found: {args.phonemes}",
-                       field="phonemes", retryable=False,
-                       exit_code=EXIT_VALIDATION, started_at=started_at)
+            emit_error(
+                "input_not_found",
+                f"Phonemes file not found: {args.phonemes}",
+                field="phonemes",
+                retryable=False,
+                exit_code=EXIT_VALIDATION,
+                started_at=started_at,
+            )
         try:
             phoneme_dict = load_phonemes(args.phonemes)
         except ValueError as e:
-            emit_error("validation_failed",
-                       f"Invalid phonemes file: {e}",
-                       field="phonemes", retryable=False,
-                       exit_code=EXIT_VALIDATION, started_at=started_at)
+            emit_error(
+                "validation_failed",
+                f"Invalid phonemes file: {e}",
+                field="phonemes",
+                retryable=False,
+                exit_code=EXIT_VALIDATION,
+                started_at=started_at,
+            )
 
     chunks = _prepare_chunks(backend, text, max_chars, phoneme_dict)
 
@@ -666,9 +791,20 @@ def _run(args, started_at, json_mode=False):
             print(f"  Chinese chars:  {cn}", file=_diag)
             print(f"  English words:  {en}", file=_diag)
             print(f"  Total chars:    {len(text)}", file=_diag)
-            print(f"  Chunks:         {len(chunks)} (max {max_chars} chars/chunk)", file=_diag)
-            print(f"  Est. duration:  {est_duration:.0f}s ({est_duration / 60:.1f} min)", file=_diag)
-            print("  SSML:           {}".format("yes" if BACKENDS[backend]["supports_ssml"] else "no"), file=_diag)
+            print(
+                f"  Chunks:         {len(chunks)} (max {max_chars} chars/chunk)",
+                file=_diag,
+            )
+            print(
+                f"  Est. duration:  {est_duration:.0f}s ({est_duration / 60:.1f} min)",
+                file=_diag,
+            )
+            print(
+                "  SSML:           {}".format(
+                    "yes" if BACKENDS[backend]["supports_ssml"] else "no"
+                ),
+                file=_diag,
+            )
             print("  API call:       not made", file=_diag)
         return
 
@@ -676,18 +812,34 @@ def _run(args, started_at, json_mode=False):
     try:
         config = init_backend(backend)
     except MissingPackageError as e:
-        emit_error("tool_missing", str(e),
-                   retryable=False, backend=backend,
-                   extra={"install_cmd": e.install_cmd},
-                   exit_code=EXIT_VALIDATION, started_at=started_at)
+        emit_error(
+            "tool_missing",
+            str(e),
+            retryable=False,
+            backend=backend,
+            extra={"install_cmd": e.install_cmd},
+            exit_code=EXIT_VALIDATION,
+            started_at=started_at,
+        )
     except MissingEnvVarError as e:
-        emit_error("auth_missing_env", str(e),
-                   retryable=False, field=e.var, backend=backend,
-                   exit_code=EXIT_AUTH, started_at=started_at)
+        emit_error(
+            "auth_missing_env",
+            str(e),
+            retryable=False,
+            field=e.var,
+            backend=backend,
+            exit_code=EXIT_AUTH,
+            started_at=started_at,
+        )
     except BackendError as e:
-        emit_error("internal_error", str(e),
-                   retryable=False, backend=backend,
-                   exit_code=EXIT_INTERNAL, started_at=started_at)
+        emit_error(
+            "internal_error",
+            str(e),
+            retryable=False,
+            backend=backend,
+            exit_code=EXIT_INTERNAL,
+            started_at=started_at,
+        )
 
     config["voice"] = voice
     config["speech_rate"] = rate
@@ -696,16 +848,22 @@ def _run(args, started_at, json_mode=False):
         config["phoneme_dict"] = phoneme_dict
 
     # ── Synthesize ────────────────────────────────────────────────────────
-    print(f"Split into {len(chunks)} chunk(s) (max {max_chars} chars/chunk)\n",
-          file=_diag)
+    print(
+        f"Split into {len(chunks)} chunk(s) (max {max_chars} chars/chunk)\n", file=_diag
+    )
 
     synthesize = get_synthesize_func(backend)
     try:
         synth_result = synthesize(chunks, config, output_file, output_format=output_fmt)
     except Exception as e:
-        emit_error("backend_error", f"Synthesis failed: {e}",
-                   retryable=True, backend=backend,
-                   exit_code=EXIT_BACKEND, started_at=started_at)
+        emit_error(
+            "backend_error",
+            f"Synthesis failed: {e}",
+            retryable=True,
+            backend=backend,
+            exit_code=EXIT_BACKEND,
+            started_at=started_at,
+        )
 
     # Adapters MAY return (duration, word_boundaries) — edge/azure do —
     # or a bare duration float like every other platform.
@@ -719,9 +877,14 @@ def _run(args, started_at, json_mode=False):
         _ensure_mp3(output_file, started_at)
 
     if not output_file or not Path(output_file).exists():
-        emit_error("backend_error", f"Synthesis reported success but output file is missing: {output_file}",
-                   retryable=True, backend=backend,
-                   exit_code=EXIT_BACKEND, started_at=started_at)
+        emit_error(
+            "backend_error",
+            f"Synthesis reported success but output file is missing: {output_file}",
+            retryable=True,
+            backend=backend,
+            exit_code=EXIT_BACKEND,
+            started_at=started_at,
+        )
     file_size = Path(output_file).stat().st_size
     elapsed = time.time() - started_at
 
@@ -741,9 +904,11 @@ def _run(args, started_at, json_mode=False):
     if word_boundaries:
         # Native per-word timings, absolute within the output file.
         result["word_boundaries"] = [
-            {"text": w["text"],
-             "offset_sec": round(w["offset"], 3),
-             "duration_sec": round(w["duration"], 3)}
+            {
+                "text": w["text"],
+                "offset_sec": round(w["offset"], 3),
+                "duration_sec": round(w["duration"], 3),
+            }
             for w in word_boundaries
         ]
 
@@ -754,7 +919,11 @@ def _run(args, started_at, json_mode=False):
     if json_mode:
         emit_success(result, started_at=started_at)
     else:
-        size_str = f"{file_size / 1024:.1f} KB" if file_size < 1024 * 1024 else f"{file_size / 1024 / 1024:.1f} MB"
+        size_str = (
+            f"{file_size / 1024:.1f} KB"
+            if file_size < 1024 * 1024
+            else f"{file_size / 1024 / 1024:.1f} MB"
+        )
         print("\nDone!")
         print(f"  Output:   {output_file} ({size_str})")
         print(f"  Duration: {duration:.1f}s ({duration / 60:.1f} min)")

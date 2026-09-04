@@ -13,7 +13,15 @@ const DEFAULT_CONTINUE_PROMPT =
 
 const REVIEW_TOOLS = ["read", "grep", "find", "ls"];
 
-const VALID_THINKING_LEVELS = new Set(["off", "minimal", "low", "medium", "high", "xhigh", "max"]);
+const VALID_THINKING_LEVELS = new Set([
+  "off",
+  "minimal",
+  "low",
+  "medium",
+  "high",
+  "xhigh",
+  "max",
+]);
 
 function cleanPiStderr(stderr) {
   return stderr
@@ -24,7 +32,9 @@ function cleanPiStderr(stderr) {
 }
 
 function shorten(text, limit = 72) {
-  const normalized = String(text ?? "").trim().replace(/\s+/g, " ");
+  const normalized = String(text ?? "")
+    .trim()
+    .replace(/\s+/g, " ");
   if (!normalized) {
     return "";
   }
@@ -36,7 +46,7 @@ function shorten(text, limit = 72) {
 
 function looksLikeVerificationCommand(command) {
   return /\b(test|tests|lint|build|typecheck|type-check|check|verify|validate|pytest|jest|vitest|cargo test|npm test|pnpm test|yarn test|go test|mvn test|gradle test|tsc|eslint|ruff)\b/i.test(
-    command
+    command,
   );
 }
 
@@ -46,7 +56,9 @@ function buildTaskThreadName(prompt) {
 }
 
 function normalizeReasoningText(text) {
-  return String(text ?? "").replace(/\s+/g, " ").trim();
+  return String(text ?? "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function mergeReasoningSections(existingSections, nextSections) {
@@ -81,7 +93,7 @@ function emitLogEvent(onProgress, options = {}) {
     phase: options.phase ?? null,
     stderrMessage: options.stderrMessage ?? null,
     logTitle: options.logTitle ?? null,
-    logBody: options.logBody ?? null
+    logBody: options.logBody ?? null,
   });
 }
 
@@ -100,7 +112,10 @@ function extractAssistantThinking(message) {
     return [];
   }
   return message.content
-    .filter((block) => block?.type === "thinking" && typeof block.thinking === "string")
+    .filter(
+      (block) =>
+        block?.type === "thinking" && typeof block.thinking === "string",
+    )
     .map((block) => normalizeReasoningText(block.thinking))
     .filter(Boolean);
 }
@@ -110,32 +125,36 @@ function describeToolStart(toolName, args) {
     const command = String(args?.command ?? "");
     return {
       message: `Running command: ${shorten(command, 96)}`,
-      phase: looksLikeVerificationCommand(command) ? "verifying" : "running"
+      phase: looksLikeVerificationCommand(command) ? "verifying" : "running",
     };
   }
   if (toolName === "edit" || toolName === "write") {
-    const filePath = String(args?.path ?? args?.file_path ?? args?.target ?? "");
+    const filePath = String(
+      args?.path ?? args?.file_path ?? args?.target ?? "",
+    );
     return {
-      message: filePath ? `Applying file change: ${filePath}` : "Applying file change.",
-      phase: "editing"
+      message: filePath
+        ? `Applying file change: ${filePath}`
+        : "Applying file change.",
+      phase: "editing",
     };
   }
   if (toolName === "read") {
     const filePath = String(args?.path ?? args?.file_path ?? "");
     return {
       message: filePath ? `Reading file: ${filePath}` : "Reading file.",
-      phase: "investigating"
+      phase: "investigating",
     };
   }
   if (toolName === "grep" || toolName === "find" || toolName === "ls") {
     return {
       message: `Running tool: ${toolName}.`,
-      phase: "investigating"
+      phase: "investigating",
     };
   }
   return {
     message: `Calling tool: ${toolName}.`,
-    phase: "investigating"
+    phase: "investigating",
   };
 }
 
@@ -143,24 +162,31 @@ function describeToolEnd(toolName, args, result, isError) {
   if (toolName === "bash") {
     const command = String(args?.command ?? "");
     const exitCode = result?.details?.exitCode;
-    const exitText = typeof exitCode === "number" ? `exit ${exitCode}` : isError ? "error" : "ok";
+    const exitText =
+      typeof exitCode === "number"
+        ? `exit ${exitCode}`
+        : isError
+          ? "error"
+          : "ok";
     return {
       message: `Command completed: ${shorten(command, 96)} (${exitText})`,
-      phase: looksLikeVerificationCommand(command) ? "verifying" : "running"
+      phase: looksLikeVerificationCommand(command) ? "verifying" : "running",
     };
   }
   if (toolName === "edit" || toolName === "write") {
-    const filePath = String(args?.path ?? args?.file_path ?? args?.target ?? "");
+    const filePath = String(
+      args?.path ?? args?.file_path ?? args?.target ?? "",
+    );
     return {
       message: isError
         ? `File change failed${filePath ? `: ${filePath}` : ""}.`
         : `File changes ${filePath ? `applied: ${filePath}` : "applied"}.`,
-      phase: "editing"
+      phase: "editing",
     };
   }
   return {
     message: `Tool ${toolName} ${isError ? "failed" : "completed"}.`,
-    phase: "investigating"
+    phase: "investigating",
   };
 }
 
@@ -171,7 +197,9 @@ function recordToolForResult(state, toolName, args, result, isError) {
       state.fileChanges.push({
         type: "fileChange",
         status: isError ? "failed" : "completed",
-        changes: [{ path: String(filePath), status: isError ? "failed" : "applied" }]
+        changes: [
+          { path: String(filePath), status: isError ? "failed" : "applied" },
+        ],
       });
     }
     return;
@@ -181,7 +209,7 @@ function recordToolForResult(state, toolName, args, result, isError) {
       type: "commandExecution",
       command: String(args?.command ?? ""),
       status: isError ? "failed" : "completed",
-      exitCode: result?.details?.exitCode ?? null
+      exitCode: result?.details?.exitCode ?? null,
     });
   }
 }
@@ -210,7 +238,7 @@ function createTurnCaptureState(options = {}) {
     fileChanges: [],
     commandExecutions: [],
     completed: false,
-    onProgress: options.onProgress ?? null
+    onProgress: options.onProgress ?? null,
   };
 }
 
@@ -228,9 +256,20 @@ function handlePiEvent(state, event) {
       return;
     }
     case "tool_execution_end": {
-      const description = describeToolEnd(event.toolName, event.args, event.result, Boolean(event.isError));
+      const description = describeToolEnd(
+        event.toolName,
+        event.args,
+        event.result,
+        Boolean(event.isError),
+      );
       emitProgress(state.onProgress, description.message, description.phase);
-      recordToolForResult(state, event.toolName, event.args, event.result, Boolean(event.isError));
+      recordToolForResult(
+        state,
+        event.toolName,
+        event.args,
+        event.result,
+        Boolean(event.isError),
+      );
       return;
     }
     case "message_end": {
@@ -242,15 +281,18 @@ function handlePiEvent(state, event) {
           message: `Assistant message captured: ${shorten(text, 96)}`,
           phase: "finalizing",
           logTitle: "Assistant message",
-          logBody: text
+          logBody: text,
         });
       }
       if (thinking.length > 0) {
-        state.reasoningSummary = mergeReasoningSections(state.reasoningSummary, thinking);
+        state.reasoningSummary = mergeReasoningSections(
+          state.reasoningSummary,
+          thinking,
+        );
         emitLogEvent(state.onProgress, {
           message: `Reasoning summary captured: ${shorten(thinking[0], 96)}`,
           logTitle: "Reasoning summary",
-          logBody: thinking.map((section) => `- ${section}`).join("\n")
+          logBody: thinking.map((section) => `- ${section}`).join("\n"),
         });
       }
       return;
@@ -259,23 +301,35 @@ function handlePiEvent(state, event) {
       emitProgress(
         state.onProgress,
         `Pi auto-retrying after transient error (attempt ${event.attempt}/${event.maxAttempts}).`,
-        null
+        null,
       );
       return;
     case "auto_retry_end":
       if (event.success === false) {
         state.error = { message: event.finalError ?? "auto-retry exhausted" };
-        emitProgress(state.onProgress, `Pi error: ${state.error.message}`, "failed");
+        emitProgress(
+          state.onProgress,
+          `Pi error: ${state.error.message}`,
+          "failed",
+        );
       }
       return;
     case "compaction_start":
-      emitProgress(state.onProgress, `Compaction (${event.reason}) started.`, null);
+      emitProgress(
+        state.onProgress,
+        `Compaction (${event.reason}) started.`,
+        null,
+      );
       return;
     case "compaction_end":
       if (event.aborted) {
         emitProgress(state.onProgress, "Compaction aborted.", null);
       } else if (event.errorMessage) {
-        emitProgress(state.onProgress, `Compaction failed: ${event.errorMessage}`, null);
+        emitProgress(
+          state.onProgress,
+          `Compaction failed: ${event.errorMessage}`,
+          null,
+        );
       } else {
         emitProgress(state.onProgress, "Compaction completed.", null);
       }
@@ -290,7 +344,11 @@ function handlePiEvent(state, event) {
 }
 
 function declineExtensionUi(client, request) {
-  if (request.method === "select" || request.method === "input" || request.method === "editor") {
+  if (
+    request.method === "select" ||
+    request.method === "input" ||
+    request.method === "editor"
+  ) {
     client.respondToUi(request.id, { cancelled: true });
     return;
   }
@@ -338,7 +396,7 @@ function buildSpawnArgs(options = {}) {
 async function withPiRpc(cwd, options, fn) {
   const client = new PiRpcClient(cwd, {
     spawnArgs: buildSpawnArgs(options),
-    env: options.env ?? process.env
+    env: options.env ?? process.env,
   });
   client.setUiHandler((request) => declineExtensionUi(client, request));
   try {
@@ -357,10 +415,15 @@ async function runPiAgentRun(client, prompt, options = {}) {
     const initialState = await client.getState();
     if (initialState?.sessionId) {
       state.sessionId = initialState.sessionId;
-      emitProgress(options.onProgress, `Session ready (${state.sessionId}).`, "starting", {
-        piSessionId: state.sessionId,
-        piSessionFile: initialState.sessionFile ?? null
-      });
+      emitProgress(
+        options.onProgress,
+        `Session ready (${state.sessionId}).`,
+        "starting",
+        {
+          piSessionId: state.sessionId,
+          piSessionFile: initialState.sessionFile ?? null,
+        },
+      );
       state.sessionFile = initialState.sessionFile ?? null;
     }
   } catch {
@@ -387,7 +450,7 @@ async function runPiAgentRun(client, prompt, options = {}) {
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
       process.stderr.write(
-        `[pi] note: thinking level "${options.effort}" requested but pi rejected it (${msg}). The configured model may not support thinking.\n`
+        `[pi] note: thinking level "${options.effort}" requested but pi rejected it (${msg}). The configured model may not support thinking.\n`,
       );
     }
   }
@@ -426,7 +489,9 @@ async function runPiAgentRun(client, prompt, options = {}) {
     // return). Node ≥15 terminates the process on unhandled rejection.
     detachHandler();
     agentEndResolve();
-    state.error = { message: error instanceof Error ? error.message : String(error) };
+    state.error = {
+      message: error instanceof Error ? error.message : String(error),
+    };
     state.completed = false;
     state.finalTurn = { id: "rejected", status: "failed" };
     return state;
@@ -440,7 +505,9 @@ async function runPiAgentRun(client, prompt, options = {}) {
 
   if (!state.completed) {
     const exitErrorMessage =
-      client.exitError instanceof Error ? client.exitError.message : "pi exited before agent_end";
+      client.exitError instanceof Error
+        ? client.exitError.message
+        : "pi exited before agent_end";
     state.error = state.error ?? { message: exitErrorMessage };
     state.finalTurn = { id: "interrupted", status: "failed" };
     return state;
@@ -450,7 +517,9 @@ async function runPiAgentRun(client, prompt, options = {}) {
   // session info. Skip if pi already tore down its stdin pipe; otherwise the
   // silent catch would shadow the streamed message_end capture with an empty
   // value if the RPC happens to succeed against a half-closed pipe.
-  const stdinAlive = Boolean(client.proc?.stdin && !client.proc.stdin.destroyed && !client.closed);
+  const stdinAlive = Boolean(
+    client.proc?.stdin && !client.proc.stdin.destroyed && !client.closed,
+  );
   if (stdinAlive) {
     try {
       const final = await client.getLastAssistantText();
@@ -476,7 +545,7 @@ async function runPiAgentRun(client, prompt, options = {}) {
 
   state.finalTurn = {
     id: "single-turn",
-    status: state.error ? "failed" : "completed"
+    status: state.error ? "failed" : "completed",
   };
   return state;
 }
@@ -503,7 +572,7 @@ export function getPiAvailability(cwd) {
   if (!versionStatus.available) {
     return {
       available: false,
-      detail: `pi CLI is not installed. Install with \`npm install -g --ignore-scripts @earendil-works/pi-coding-agent\`. (${versionStatus.detail})`
+      detail: `pi CLI is not installed. Install with \`npm install -g --ignore-scripts @earendil-works/pi-coding-agent\`. (${versionStatus.detail})`,
     };
   }
 
@@ -518,7 +587,7 @@ export function getPiAvailability(cwd) {
     available: true,
     detail: versionStatus.detail,
     version,
-    versionWarning
+    versionWarning,
   };
 }
 
@@ -537,7 +606,8 @@ export function getPiModelsStatus(env = process.env) {
     envHints.push("GOOGLE_API_KEY");
   }
 
-  const piDir = env.PI_CODING_AGENT_DIR || path.join(os.homedir(), ".pi", "agent");
+  const piDir =
+    env.PI_CODING_AGENT_DIR || path.join(os.homedir(), ".pi", "agent");
   const modelsPath = path.join(piDir, "models.json");
   let modelsFileExists = false;
   let providerCount = 0;
@@ -574,18 +644,20 @@ export function getPiModelsStatus(env = process.env) {
       modelsFileExists,
       providerCount,
       authProviderCount,
-      envHints
+      envHints,
     };
   }
 
   const detailParts = [];
   if (authProviderCount > 0) {
     detailParts.push(
-      `${authProviderCount} credential${authProviderCount === 1 ? "" : "s"} in ${authPath}`
+      `${authProviderCount} credential${authProviderCount === 1 ? "" : "s"} in ${authPath}`,
     );
   }
   if (providerCount > 0) {
-    detailParts.push(`${providerCount} provider${providerCount === 1 ? "" : "s"} in ${modelsPath}`);
+    detailParts.push(
+      `${providerCount} provider${providerCount === 1 ? "" : "s"} in ${modelsPath}`,
+    );
   }
   if (envHints.length > 0) {
     detailParts.push(`env keys: ${envHints.join(", ")}`);
@@ -598,15 +670,28 @@ export function getPiModelsStatus(env = process.env) {
     modelsFileExists,
     providerCount,
     authProviderCount,
-    envHints
+    envHints,
   };
 }
 
 export function getPiSubagentsStatus() {
   // pi-subagents can be installed via `pi install npm:pi-subagents` (preferred)
   // or manually cloned to the extensions directory. Check both.
-  const npmDir = path.join(os.homedir(), ".pi", "agent", "npm", "node_modules", "pi-subagents");
-  const legacyDir = path.join(os.homedir(), ".pi", "agent", "extensions", "subagent");
+  const npmDir = path.join(
+    os.homedir(),
+    ".pi",
+    "agent",
+    "npm",
+    "node_modules",
+    "pi-subagents",
+  );
+  const legacyDir = path.join(
+    os.homedir(),
+    ".pi",
+    "agent",
+    "extensions",
+    "subagent",
+  );
 
   let subagentDir = null;
   if (fs.existsSync(npmDir)) {
@@ -635,9 +720,10 @@ export function getPiSubagentsStatus() {
   const builtinAgentsDir = path.join(subagentDir, "agents");
   if (fs.existsSync(builtinAgentsDir)) {
     try {
-      agentNames = fs.readdirSync(builtinAgentsDir)
-        .filter(f => f.endsWith(".md"))
-        .map(f => f.replace(/\.md$/, ""));
+      agentNames = fs
+        .readdirSync(builtinAgentsDir)
+        .filter((f) => f.endsWith(".md"))
+        .map((f) => f.replace(/\.md$/, ""));
     } catch {
       // directory unreadable — skip
     }
@@ -655,14 +741,16 @@ export function getPiSubagentsStatus() {
           if (f.endsWith(".md")) allNames.add(f.replace(/\.md$/, ""));
         }
       }
-    } catch { /* skip */ }
+    } catch {
+      /* skip */
+    }
   }
 
   return {
     installed: true,
     agentCount: allNames.size,
     agentNames: [...allNames].sort(),
-    config
+    config,
   };
 }
 
@@ -674,9 +762,10 @@ export function buildSubagentsContextBlock() {
   const status = getPiSubagentsStatus();
   if (!status.installed) return "";
 
-  const agents = status.agentNames.length > 0
-    ? status.agentNames.join(", ")
-    : "scout, researcher, planner, worker, reviewer, context-builder, oracle, delegate";
+  const agents =
+    status.agentNames.length > 0
+      ? status.agentNames.join(", ")
+      : "scout, researcher, planner, worker, reviewer, context-builder, oracle, delegate";
 
   return [
     "",
@@ -686,16 +775,19 @@ export function buildSubagentsContextBlock() {
     "If this task has clearly separable independent workstreams, use subagent({ tasks: [...] }) to parallelize.",
     "For sequential dependencies, use subagent({ chain: [...] }).",
     "</available_pi_subagents>",
-    ""
+    "",
   ].join("\n");
 }
 
-export function getSessionRuntimeStatus(_env = process.env, _cwd = process.cwd()) {
+export function getSessionRuntimeStatus(
+  _env = process.env,
+  _cwd = process.cwd(),
+) {
   return {
     mode: "direct",
     label: "direct startup",
     detail:
-      "Each Pi command spawns a dedicated pi --mode rpc subprocess. There is no shared runtime to attach to."
+      "Each Pi command spawns a dedicated pi --mode rpc subprocess. There is no shared runtime to attach to.",
   };
 }
 
@@ -704,7 +796,8 @@ export async function interruptAppServerTurn(_cwd, _options = {}) {
     attempted: false,
     interrupted: false,
     transport: null,
-    detail: "Pi has no shared runtime; cancellation is delivered by terminating the worker process."
+    detail:
+      "Pi has no shared runtime; cancellation is delivered by terminating the worker process.",
   };
 }
 
@@ -722,14 +815,18 @@ export async function runAppServerReview(cwd, options = {}) {
       sandbox: "read-only",
       disableExtensions: true,
       disablePromptTemplates: true,
-      model: options.model
+      model: options.model,
     },
     async (client) => {
-      emitProgress(options.onProgress, "Starting Pi review session.", "starting");
+      emitProgress(
+        options.onProgress,
+        "Starting Pi review session.",
+        "starting",
+      );
       const state = await runPiAgentRun(client, options.prompt, {
         onProgress: options.onProgress,
         effort: options.effort,
-        sessionName: options.threadName
+        sessionName: options.threadName,
       });
 
       return {
@@ -740,9 +837,9 @@ export async function runAppServerReview(cwd, options = {}) {
         reasoningSummary: state.reasoningSummary,
         turn: state.finalTurn,
         error: state.error,
-        stderr: cleanPiStderr(client.stderr)
+        stderr: cleanPiStderr(client.stderr),
       };
-    }
+    },
   );
 }
 
@@ -764,19 +861,23 @@ export async function runAppServerTurn(cwd, options = {}) {
       resumeSession: options.resumeSessionId ?? null,
       noSession: false,
       sandbox: options.sandbox ?? null,
-      model: options.model
+      model: options.model,
     },
     async (client) => {
       emitProgress(
         options.onProgress,
-        options.resumeSessionId ? `Resuming session ${options.resumeSessionId}.` : "Starting Pi task session.",
-        "starting"
+        options.resumeSessionId
+          ? `Resuming session ${options.resumeSessionId}.`
+          : "Starting Pi task session.",
+        "starting",
       );
 
       const state = await runPiAgentRun(client, prompt, {
         onProgress: options.onProgress,
         effort: options.effort,
-        sessionName: options.persistThread ? options.threadName : options.threadName ?? null
+        sessionName: options.persistThread
+          ? options.threadName
+          : (options.threadName ?? null),
       });
 
       return {
@@ -790,9 +891,9 @@ export async function runAppServerTurn(cwd, options = {}) {
         stderr: cleanPiStderr(client.stderr),
         fileChanges: state.fileChanges,
         touchedFiles: collectTouchedFiles(state.fileChanges),
-        commandExecutions: state.commandExecutions
+        commandExecutions: state.commandExecutions,
       };
-    }
+    },
   );
 }
 
@@ -804,14 +905,18 @@ export function parseStructuredOutput(rawOutput, fallback = {}) {
   if (!rawOutput) {
     return {
       parsed: null,
-      parseError: fallback.failureMessage ?? "Pi did not return a final structured message.",
+      parseError:
+        fallback.failureMessage ??
+        "Pi did not return a final structured message.",
       rawOutput: rawOutput ?? "",
-      ...fallback
+      ...fallback,
     };
   }
 
   const trimmed = rawOutput.trim();
-  const fenced = trimmed.match(/```json\s*([\s\S]*?)```/i) ?? trimmed.match(/```\s*([\s\S]*?)```/);
+  const fenced =
+    trimmed.match(/```json\s*([\s\S]*?)```/i) ??
+    trimmed.match(/```\s*([\s\S]*?)```/);
   const candidate = fenced ? fenced[1].trim() : trimmed;
 
   try {
@@ -819,14 +924,14 @@ export function parseStructuredOutput(rawOutput, fallback = {}) {
       parsed: JSON.parse(candidate),
       parseError: null,
       rawOutput,
-      ...fallback
+      ...fallback,
     };
   } catch (error) {
     return {
       parsed: null,
       parseError: error.message,
       rawOutput,
-      ...fallback
+      ...fallback,
     };
   }
 }

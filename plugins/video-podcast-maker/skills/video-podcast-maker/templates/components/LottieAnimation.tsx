@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
-import { staticFile, cancelRender, continueRender, delayRender } from "remotion";
+import {
+  staticFile,
+  cancelRender,
+  continueRender,
+  delayRender,
+} from "remotion";
 import { Lottie } from "@remotion/lottie";
 import type { LottieAnimationData } from "@remotion/lottie";
 import type { CSSProperties } from "react";
@@ -60,9 +65,10 @@ export const LottieAnimation = ({
 
     try {
       // Determine if src is a URL or a staticFile path
-      const url = src.startsWith("http://") || src.startsWith("https://")
-        ? src
-        : staticFile(src);
+      const url =
+        src.startsWith("http://") || src.startsWith("https://")
+          ? src
+          : staticFile(src);
 
       const response = await fetch(url);
       const json = await response.json();
@@ -86,7 +92,10 @@ export const LottieAnimation = ({
     alignItems: "center",
     justifyContent: "center",
     ...(enableEntrance
-      ? { opacity: entrance.opacity, transform: `translateY(${entrance.translateY}px)` }
+      ? {
+          opacity: entrance.opacity,
+          transform: `translateY(${entrance.translateY}px)`,
+        }
       : {}),
     ...style,
   };

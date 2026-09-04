@@ -49,6 +49,7 @@ MINIMAX_BASE = os.environ.get("MINIMAX_API_BASE", "https://api.minimax.io/v1")
 
 # ── Named-voice store (~/.ttscn.json "cloned_voices") ───────────────────────
 
+
 def _load_config():
     try:
         with open(USER_CONFIG, encoding="utf-8") as f:
@@ -65,8 +66,7 @@ def _save_voices(voices):
             json.dump(config, f, ensure_ascii=False, indent=2)
             f.write("\n")
     except OSError as e:
-        emit_error("internal_error", f"cannot write {USER_CONFIG}: {e}",
-                   exit_code=1)
+        emit_error("internal_error", f"cannot write {USER_CONFIG}: {e}", exit_code=1)
 
 
 def load_voices():
@@ -87,6 +87,7 @@ def resolve_cloned_voice(backend, voice):
 
 # ── MiniMax ─────────────────────────────────────────────────────────────────
 
+
 def _minimax_voice_id(name):
     """Derive an API-legal voice_id: 8-256 chars, starts with a letter,
     [A-Za-z0-9_-], must not end in - or _."""
@@ -104,8 +105,11 @@ def minimax_create(audio, name, voice_id=None):
     api_key = os.environ.get("MINIMAX_API_KEY")
     if not api_key:
         emit_error(
-            "auth_missing_env", "MINIMAX_API_KEY not set",
-            backend="minimax", exit_code=EXIT_AUTH)
+            "auth_missing_env",
+            "MINIMAX_API_KEY not set",
+            backend="minimax",
+            exit_code=EXIT_AUTH,
+        )
     headers = {"Authorization": f"Bearer {api_key}"}
 
     # Reference audio: local file preferred; URLs are downloaded first.
@@ -117,41 +121,65 @@ def minimax_create(audio, name, voice_id=None):
     else:
         if not os.path.isfile(audio):
             emit_error(
-                "input_not_found", f"Audio file not found: {audio}",
-                field="audio", exit_code=EXIT_VALIDATION)
+                "input_not_found",
+                f"Audio file not found: {audio}",
+                field="audio",
+                exit_code=EXIT_VALIDATION,
+            )
         try:
             with open(audio, "rb") as f:
                 content = f.read()
         except OSError as e:
             emit_error(
-                "input_not_found", f"Cannot read audio file {audio}: {e}",
-                field="audio", exit_code=EXIT_VALIDATION)
+                "input_not_found",
+                f"Cannot read audio file {audio}: {e}",
+                field="audio",
+                exit_code=EXIT_VALIDATION,
+            )
         filename = os.path.basename(audio)
 
     print("  Uploading reference audio ...", file=sys.stderr)
-    r = requests.post(f"{MINIMAX_BASE}/files/upload", headers=headers,
-                      data={"purpose": "voice_clone"},
-                      files={"file": (filename, content)}, timeout=300)
+    r = requests.post(
+        f"{MINIMAX_BASE}/files/upload",
+        headers=headers,
+        data={"purpose": "voice_clone"},
+        files={"file": (filename, content)},
+        timeout=300,
+    )
     if r.status_code != 200:
         emit_error(
-            "backend_error", f"MiniMax upload failed {r.status_code}: {r.text[:300]}",
-            backend="minimax", retryable=True, exit_code=EXIT_BACKEND)
+            "backend_error",
+            f"MiniMax upload failed {r.status_code}: {r.text[:300]}",
+            backend="minimax",
+            retryable=True,
+            exit_code=EXIT_BACKEND,
+        )
     body = r.json()
     file_id = (body.get("file") or {}).get("file_id")
     if not file_id:
         emit_error(
-            "backend_error", f"MiniMax upload returned no file_id: {json.dumps(body)[:300]}",
-            backend="minimax", exit_code=EXIT_BACKEND)
+            "backend_error",
+            f"MiniMax upload returned no file_id: {json.dumps(body)[:300]}",
+            backend="minimax",
+            exit_code=EXIT_BACKEND,
+        )
 
     vid = voice_id or _minimax_voice_id(name)
     print(f"  Creating clone '{vid}' ...", file=sys.stderr)
-    r = requests.post(f"{MINIMAX_BASE}/voice_clone",
-                      headers={**headers, "Content-Type": "application/json"},
-                      json={"file_id": file_id, "voice_id": vid}, timeout=300)
+    r = requests.post(
+        f"{MINIMAX_BASE}/voice_clone",
+        headers={**headers, "Content-Type": "application/json"},
+        json={"file_id": file_id, "voice_id": vid},
+        timeout=300,
+    )
     if r.status_code != 200:
         emit_error(
-            "backend_error", f"MiniMax voice_clone failed {r.status_code}: {r.text[:300]}",
-            backend="minimax", retryable=True, exit_code=EXIT_BACKEND)
+            "backend_error",
+            f"MiniMax voice_clone failed {r.status_code}: {r.text[:300]}",
+            backend="minimax",
+            retryable=True,
+            exit_code=EXIT_BACKEND,
+        )
     body = r.json()
     status = (body.get("base_resp") or {}).get("status_code", 0)
     if status != 0:
@@ -159,18 +187,22 @@ def minimax_create(audio, name, voice_id=None):
             "backend_error",
             f"MiniMax voice_clone error {status}: "
             f"{(body.get('base_resp') or {}).get('status_msg', 'unknown')}",
-            backend="minimax", exit_code=EXIT_BACKEND)
+            backend="minimax",
+            exit_code=EXIT_BACKEND,
+        )
 
     return {
-        "platform": "minimax", "voice_id": vid,
+        "platform": "minimax",
+        "voice_id": vid,
         "created": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "source": audio,
         "note": "temporary until first real synthesis — deleted if not used "
-                "within 7 days (global site) / 48h (China site) of creation",
+        "within 7 days (global site) / 48h (China site) of creation",
     }
 
 
 # ── CosyVoice (DashScope enrollment) ────────────────────────────────────────
+
 
 def _cosyvoice_prefix(name):
     """Enrollment prefix: lowercase letters + digits, <10 chars."""
@@ -181,21 +213,29 @@ def cosyvoice_create(audio, name, target_model):
     """Enroll a CosyVoice clone from a public audio URL. Returns record."""
     if not os.environ.get("DASHSCOPE_API_KEY"):
         emit_error(
-            "auth_missing_env", "DASHSCOPE_API_KEY not set",
-            backend="cosyvoice", exit_code=EXIT_AUTH)
+            "auth_missing_env",
+            "DASHSCOPE_API_KEY not set",
+            backend="cosyvoice",
+            exit_code=EXIT_AUTH,
+        )
     if not re.match(r"https?://", audio):
         emit_error(
             "validation_failed",
             "CosyVoice enrollment requires a PUBLIC http(s) URL for --audio "
             "(DashScope does not accept local files; host the sample, e.g. on "
             "OSS, and pass its URL). 10-20s WAV/MP3/M4A, >=16kHz, <=10MB.",
-            field="audio", exit_code=EXIT_VALIDATION)
+            field="audio",
+            exit_code=EXIT_VALIDATION,
+        )
     try:
         from dashscope.audio.tts_v2 import VoiceEnrollmentService
     except ImportError:
         emit_error(
-            "tool_missing", "'dashscope' not installed. Run: pip install dashscope",
-            backend="cosyvoice", exit_code=EXIT_VALIDATION)
+            "tool_missing",
+            "'dashscope' not installed. Run: pip install dashscope",
+            backend="cosyvoice",
+            exit_code=EXIT_VALIDATION,
+        )
 
     print(f"  Enrolling voice (target_model={target_model}) ...", file=sys.stderr)
     service = VoiceEnrollmentService()
@@ -207,11 +247,16 @@ def cosyvoice_create(audio, name, target_model):
         )
     except Exception as e:
         emit_error(
-            "backend_error", f"DashScope enrollment failed: {e}",
-            backend="cosyvoice", retryable=True, exit_code=EXIT_BACKEND)
+            "backend_error",
+            f"DashScope enrollment failed: {e}",
+            backend="cosyvoice",
+            retryable=True,
+            exit_code=EXIT_BACKEND,
+        )
 
     return {
-        "platform": "cosyvoice", "voice_id": voice_id,
+        "platform": "cosyvoice",
+        "voice_id": voice_id,
         "target_model": target_model,
         "created": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "source": audio,
@@ -221,33 +266,53 @@ def cosyvoice_create(audio, name, target_model):
 
 def cosyvoice_delete_remote(voice_id):
     from dashscope.audio.tts_v2 import VoiceEnrollmentService
+
     VoiceEnrollmentService().delete_voice(voice_id)
 
 
 # ── CLI ─────────────────────────────────────────────────────────────────────
 
+
 def build_clone_parser():
     p = argparse.ArgumentParser(
         prog="tts.py clone",
         description="Create and manage cloned voices (minimax / cosyvoice). "
-                    "Clone only your own voice or one you are authorized to use.")
+        "Clone only your own voice or one you are authorized to use.",
+    )
     sub = p.add_subparsers(dest="action", required=True, metavar="<action>")
 
     sp = sub.add_parser("create", help="Clone a voice from reference audio")
     sp.add_argument("--platform", required=True, choices=CLONE_PLATFORMS)
-    sp.add_argument("--audio", required=True,
-                    help="Reference audio: local file or URL for minimax; "
-                         "public URL only for cosyvoice (10-20s recommended)")
-    sp.add_argument("--name", required=True,
-                    help="Local name to store the voice under (use as --voice later)")
-    sp.add_argument("--voice-id", dest="voice_id",
-                    help="minimax only: explicit voice_id (8-256 chars, starts "
-                         "with a letter; default: derived from --name)")
-    sp.add_argument("--target-model", dest="target_model",
-                    help="cosyvoice only: enrollment model, must match the model "
-                         "used at synthesis (default: $COSYVOICE_MODEL or cosyvoice-v3-flash)")
-    sp.add_argument("--yes", "--no-input", action="store_true", dest="yes",
-                    help="Confirm paid clone creation (required for minimax)")
+    sp.add_argument(
+        "--audio",
+        required=True,
+        help="Reference audio: local file or URL for minimax; "
+        "public URL only for cosyvoice (10-20s recommended)",
+    )
+    sp.add_argument(
+        "--name",
+        required=True,
+        help="Local name to store the voice under (use as --voice later)",
+    )
+    sp.add_argument(
+        "--voice-id",
+        dest="voice_id",
+        help="minimax only: explicit voice_id (8-256 chars, starts "
+        "with a letter; default: derived from --name)",
+    )
+    sp.add_argument(
+        "--target-model",
+        dest="target_model",
+        help="cosyvoice only: enrollment model, must match the model "
+        "used at synthesis (default: $COSYVOICE_MODEL or cosyvoice-v3-flash)",
+    )
+    sp.add_argument(
+        "--yes",
+        "--no-input",
+        action="store_true",
+        dest="yes",
+        help="Confirm paid clone creation (required for minimax)",
+    )
     sp.add_argument("--format", choices=("json", "text"), default=None)
 
     sp = sub.add_parser("list", help="List locally stored cloned voices")
@@ -256,8 +321,11 @@ def build_clone_parser():
 
     sp = sub.add_parser("delete", help="Remove a stored voice (local by default)")
     sp.add_argument("--name", required=True)
-    sp.add_argument("--remote", action="store_true",
-                    help="Also delete on the platform (cosyvoice only)")
+    sp.add_argument(
+        "--remote",
+        action="store_true",
+        help="Also delete on the platform (cosyvoice only)",
+    )
     sp.add_argument("--format", choices=("json", "text"), default=None)
 
     return p
@@ -271,47 +339,71 @@ def handle_clone(argv):
 
     if args.action == "create":
         if args.name in voices:
-            emit_error("validation_failed",
-                       f"Name '{args.name}' already exists "
-                       f"(voice_id {voices[args.name].get('voice_id')}). "
-                       "Delete it first or pick another name.",
-                       field="name", exit_code=EXIT_VALIDATION, started_at=started_at)
+            emit_error(
+                "validation_failed",
+                f"Name '{args.name}' already exists "
+                f"(voice_id {voices[args.name].get('voice_id')}). "
+                "Delete it first or pick another name.",
+                field="name",
+                exit_code=EXIT_VALIDATION,
+                started_at=started_at,
+            )
         if args.platform == "minimax":
             if not args.yes:
-                emit_error("confirmation_required",
-                           "MiniMax voice cloning is PAID (~$1.5/voice on the "
-                           "global site; ~9.9 RMB on first use on the China site). "
-                           "A new clone is temporary — use it in a real synthesis "
-                           "within 7 days (global) / 48h (China site) or it is "
-                           "deleted. Re-run with --yes to confirm.",
-                           exit_code=EXIT_VALIDATION, started_at=started_at)
+                emit_error(
+                    "confirmation_required",
+                    "MiniMax voice cloning is PAID (~$1.5/voice on the "
+                    "global site; ~9.9 RMB on first use on the China site). "
+                    "A new clone is temporary — use it in a real synthesis "
+                    "within 7 days (global) / 48h (China site) or it is "
+                    "deleted. Re-run with --yes to confirm.",
+                    exit_code=EXIT_VALIDATION,
+                    started_at=started_at,
+                )
             record = minimax_create(args.audio, args.name, args.voice_id)
         else:
-            target_model = (args.target_model
-                            or os.environ.get("COSYVOICE_MODEL", "cosyvoice-v3-flash"))
+            target_model = args.target_model or os.environ.get(
+                "COSYVOICE_MODEL", "cosyvoice-v3-flash"
+            )
             record = cosyvoice_create(args.audio, args.name, target_model)
 
         voices[args.name] = record
         _save_voices(voices)
-        print(f"  ✓ Cloned voice stored as '{args.name}' -> {record['voice_id']}",
-              file=sys.stderr)
-        print(f"  Use it: tts.py \"text\" out.wav --platform {args.platform} "
-              f"--voice {args.name}", file=sys.stderr)
+        print(
+            f"  ✓ Cloned voice stored as '{args.name}' -> {record['voice_id']}",
+            file=sys.stderr,
+        )
+        print(
+            f'  Use it: tts.py "text" out.wav --platform {args.platform} '
+            f"--voice {args.name}",
+            file=sys.stderr,
+        )
         emit_success({"name": args.name, **record}, started_at=started_at)
 
     if args.action == "list":
-        items = {n: r for n, r in voices.items()
-                 if not args.platform or r.get("platform") == args.platform}
+        items = {
+            n: r
+            for n, r in voices.items()
+            if not args.platform or r.get("platform") == args.platform
+        }
         for n, r in items.items():
-            print(f"  {n:<20} {r.get('platform', '?'):<10} {r.get('voice_id', '?')}"
-                  f"  ({r.get('created', '?')})", file=sys.stderr)
+            print(
+                f"  {n:<20} {r.get('platform', '?'):<10} {r.get('voice_id', '?')}"
+                f"  ({r.get('created', '?')})",
+                file=sys.stderr,
+            )
         emit_success({"voices": items, "count": len(items)}, started_at=started_at)
 
     if args.action == "delete":
         rec = voices.get(args.name)
         if not rec:
-            emit_error("validation_failed", f"No stored voice named '{args.name}'",
-                       field="name", exit_code=EXIT_VALIDATION, started_at=started_at)
+            emit_error(
+                "validation_failed",
+                f"No stored voice named '{args.name}'",
+                field="name",
+                exit_code=EXIT_VALIDATION,
+                started_at=started_at,
+            )
         remote_deleted = False
         if args.remote:
             if rec.get("platform") == "cosyvoice":
@@ -319,16 +411,28 @@ def handle_clone(argv):
                     cosyvoice_delete_remote(rec["voice_id"])
                     remote_deleted = True
                 except Exception as e:
-                    emit_error("backend_error",
-                               f"Remote delete failed (local record kept): {e}",
-                               backend="cosyvoice", retryable=True,
-                               exit_code=EXIT_BACKEND, started_at=started_at)
+                    emit_error(
+                        "backend_error",
+                        f"Remote delete failed (local record kept): {e}",
+                        backend="cosyvoice",
+                        retryable=True,
+                        exit_code=EXIT_BACKEND,
+                        started_at=started_at,
+                    )
             else:
-                print("  MiniMax remote delete is not implemented in this CLI — "
-                      "never-used clones expire on their own (7 days global / "
-                      "48h China site); removing local record only.",
-                      file=sys.stderr)
+                print(
+                    "  MiniMax remote delete is not implemented in this CLI — "
+                    "never-used clones expire on their own (7 days global / "
+                    "48h China site); removing local record only.",
+                    file=sys.stderr,
+                )
         del voices[args.name]
         _save_voices(voices)
-        emit_success({"deleted": args.name, "remote_deleted": remote_deleted,
-                      "voice_id": rec.get("voice_id")}, started_at=started_at)
+        emit_success(
+            {
+                "deleted": args.name,
+                "remote_deleted": remote_deleted,
+                "voice_id": rec.get("voice_id"),
+            },
+            started_at=started_at,
+        )

@@ -20,6 +20,7 @@ def synthesize(chunks, config, output_file, output_format="wav"):
 
     # Convert rate string to Baidu spd (0-15, default 5)
     import re as _re
+
     rate_match = _re.match(r"([+-]?\d+)%", speech_rate)
     spd = 5
     if rate_match:
@@ -41,11 +42,16 @@ def synthesize(chunks, config, output_file, output_format="wav"):
         part_files.append(part_file)
 
         result = client.synthesis(
-            text, "zh", 1,
+            text,
+            "zh",
+            1,
             {
-                "vol": 10, "per": voice_per, "spd": spd,
-                "pit": 5, "aue": 3 if audio_format == "mp3" else 6,
-            }
+                "vol": 10,
+                "per": voice_per,
+                "spd": spd,
+                "pit": 5,
+                "aue": 3 if audio_format == "mp3" else 6,
+            },
         )
 
         if isinstance(result, dict):
@@ -61,8 +67,7 @@ def synthesize(chunks, config, output_file, output_format="wav"):
         # Resample to 48kHz mono WAV for consistency
         wav_file = part_file.replace(f".{ext}", ".wav")
         probe_result = subprocess.run(
-            ["ffmpeg", "-y", "-i", part_file,
-             "-ar", "48000", "-ac", "1", wav_file],
+            ["ffmpeg", "-y", "-i", part_file, "-ar", "48000", "-ac", "1", wav_file],
             capture_output=True,
         )
         if probe_result.returncode == 0 and wav_file != part_file:
@@ -74,15 +79,26 @@ def synthesize(chunks, config, output_file, output_format="wav"):
             pass
 
         probe = subprocess.run(
-            ["ffprobe", "-v", "quiet", "-show_entries",
-             "format=duration", "-of", "csv=p=0", part_file],
-            capture_output=True, text=True,
+            [
+                "ffprobe",
+                "-v",
+                "quiet",
+                "-show_entries",
+                "format=duration",
+                "-of",
+                "csv=p=0",
+                part_file,
+            ],
+            capture_output=True,
+            text=True,
         )
         # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
         chunk_duration = float(probe.stdout.strip()) if probe.stdout.strip() else 0
         accumulated_duration += chunk_duration
-        print(f"  Part {i + 1}/{len(chunks)} done "
-              f"({len(text)} chars, {chunk_duration:.1f}s)")
+        print(
+            f"  Part {i + 1}/{len(chunks)} done "
+            f"({len(text)} chars, {chunk_duration:.1f}s)"
+        )
 
     # Write final output
     if len(part_files) == 1:
@@ -98,9 +114,22 @@ def synthesize(chunks, config, output_file, output_format="wav"):
             for pf in part_files:
                 f.write(f"file '{os.path.basename(pf)}'\n")
         result = subprocess.run(
-            ["ffmpeg", "-y", "-f", "concat", "-safe", "0",
-             "-i", concat_list, "-c", "copy", output_file],
-            capture_output=True, text=True, cwd=out_dir,
+            [
+                "ffmpeg",
+                "-y",
+                "-f",
+                "concat",
+                "-safe",
+                "0",
+                "-i",
+                concat_list,
+                "-c",
+                "copy",
+                output_file,
+            ],
+            capture_output=True,
+            text=True,
+            cwd=out_dir,
         )
         if result.returncode != 0:
             raise RuntimeError(f"FFmpeg concat failed: {result.stderr[:200]}")

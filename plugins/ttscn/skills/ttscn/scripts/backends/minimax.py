@@ -24,12 +24,16 @@ def _parse_subtitles(entries, base_offset):
     per-char estimation fallback.
     """
     try:
-        return [{"text": w["word"],
-                 "offset": base_offset + float(w["time_begin"]) / 1000.0,
-                 "duration": (float(w["time_end"]) - float(w["time_begin"])) / 1000.0}
-                for s in entries
-                for w in (s.get("timestamped_words") or [])
-                if not _ENGINE_TOKEN.match(w["word"])]
+        return [
+            {
+                "text": w["word"],
+                "offset": base_offset + float(w["time_begin"]) / 1000.0,
+                "duration": (float(w["time_end"]) - float(w["time_begin"])) / 1000.0,
+            }
+            for s in entries
+            for w in (s.get("timestamped_words") or [])
+            if not _ENGINE_TOKEN.match(w["word"])
+        ]
     except (KeyError, TypeError, ValueError, AttributeError):
         return []
 
@@ -52,6 +56,7 @@ def synthesize(chunks, config, output_file, output_format="wav"):
 
     # Convert rate string to speed (0.5 - 2.0, default 1.0)
     import re as _re
+
     rate_match = _re.match(r"([+-]?\d+)%", speech_rate)
     speed = 1.0
     if rate_match:
@@ -77,25 +82,27 @@ def synthesize(chunks, config, output_file, output_format="wav"):
         part_file = os.path.join(out_dir, f".tts_part_{i:04d}.mp3")
         part_files.append(part_file)
 
-        payload = json.dumps({
-            "model": model,
-            "text": text,
-            "voice_setting": {
-                "voice_id": voice_id,
-                "speed": speed,
-                "vol": 1.0,
-                "pitch": 0,
-            },
-            "audio_setting": {
-                "format": "mp3",
-                "sample_rate": 32000,
-                "bitrate": 128000,
-                "channel": 1,
-            },
-            "language_boost": "Chinese",
-            "subtitle_enable": True,
-            "subtitle_type": "word",
-        })
+        payload = json.dumps(
+            {
+                "model": model,
+                "text": text,
+                "voice_setting": {
+                    "voice_id": voice_id,
+                    "speed": speed,
+                    "vol": 1.0,
+                    "pitch": 0,
+                },
+                "audio_setting": {
+                    "format": "mp3",
+                    "sample_rate": 32000,
+                    "bitrate": 128000,
+                    "channel": 1,
+                },
+                "language_boost": "Chinese",
+                "subtitle_enable": True,
+                "subtitle_type": "word",
+            }
+        )
         if group_id:
             # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
             payload_dict = json.loads(payload)
@@ -135,8 +142,7 @@ def synthesize(chunks, config, output_file, output_format="wav"):
         # Convert to 48kHz mono WAV
         wav_file = part_file.replace(".mp3", ".wav")
         conv_result = subprocess.run(
-            ["ffmpeg", "-y", "-i", part_file,
-             "-ar", "48000", "-ac", "1", wav_file],
+            ["ffmpeg", "-y", "-i", part_file, "-ar", "48000", "-ac", "1", wav_file],
             capture_output=True,
         )
         if conv_result.returncode == 0:
@@ -148,9 +154,18 @@ def synthesize(chunks, config, output_file, output_format="wav"):
             wav_file = part_file  # keep mp3
 
         probe = subprocess.run(
-            ["ffprobe", "-v", "quiet", "-show_entries",
-             "format=duration", "-of", "csv=p=0", wav_file],
-            capture_output=True, text=True,
+            [
+                "ffprobe",
+                "-v",
+                "quiet",
+                "-show_entries",
+                "format=duration",
+                "-of",
+                "csv=p=0",
+                wav_file,
+            ],
+            capture_output=True,
+            text=True,
         )
         # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
         chunk_duration = float(probe.stdout.strip()) if probe.stdout.strip() else 0
@@ -160,12 +175,15 @@ def synthesize(chunks, config, output_file, output_format="wav"):
             try:
                 sub = requests.get(subtitle_url, timeout=30)
                 word_boundaries.extend(
-                    _parse_subtitles(sub.json(), accumulated_duration))
+                    _parse_subtitles(sub.json(), accumulated_duration)
+                )
             except Exception:
                 pass
         accumulated_duration += chunk_duration
-        print(f"  Part {i + 1}/{len(chunks)} done "
-              f"({len(text)} chars, {chunk_duration:.1f}s)")
+        print(
+            f"  Part {i + 1}/{len(chunks)} done "
+            f"({len(text)} chars, {chunk_duration:.1f}s)"
+        )
 
     # Write final output
     wav_part_files = [f for f in part_files if os.path.exists(f)]
@@ -178,9 +196,22 @@ def synthesize(chunks, config, output_file, output_format="wav"):
             for pf in wav_part_files:
                 f.write(f"file '{os.path.basename(pf)}'\n")
         result = subprocess.run(
-            ["ffmpeg", "-y", "-f", "concat", "-safe", "0",
-             "-i", concat_list, "-c", "copy", output_file],
-            capture_output=True, text=True, cwd=out_dir,
+            [
+                "ffmpeg",
+                "-y",
+                "-f",
+                "concat",
+                "-safe",
+                "0",
+                "-i",
+                concat_list,
+                "-c",
+                "copy",
+                output_file,
+            ],
+            capture_output=True,
+            text=True,
+            cwd=out_dir,
         )
         if result.returncode != 0:
             raise RuntimeError(f"FFmpeg concat failed: {result.stderr[:200]}")

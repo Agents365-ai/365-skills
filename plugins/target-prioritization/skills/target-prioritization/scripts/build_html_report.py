@@ -12,6 +12,7 @@ Output is a single .html file with no external dependencies:
 - Per-gene cards: rationale, evidence chips, full dossier grid,
   score-component bars, and links to UniProt
 """
+
 import argparse
 import csv
 import html
@@ -19,149 +20,153 @@ import re
 from pathlib import Path
 
 TIER_COLOR = {
-    "Tier-1-priority":      "#10b981",
-    "Tier-2-candidate":     "#3b82f6",
-    "Tier-3-watchlist":     "#f59e0b",
-    "Tier-4-deprioritized": "#94a3b8",
+  "Tier-1-priority": "#10b981",
+  "Tier-2-candidate": "#3b82f6",
+  "Tier-3-watchlist": "#f59e0b",
+  "Tier-4-deprioritized": "#94a3b8",
 }
 
 
 def md_inline_to_html(s: str) -> str:
-    """Convert a small subset of markdown (escape, **bold**, *italic*, paragraphs)."""
-    s = html.escape(s)
-    s = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", s)
-    s = re.sub(r"(?<!\*)\*([^*]+?)\*(?!\*)", r"<em>\1</em>", s)
-    s = re.sub(r"\n\n+", "</p><p>", s)
-    return f"<p>{s}</p>"
+  """Convert a small subset of markdown (escape, **bold**, *italic*, paragraphs)."""
+  s = html.escape(s)
+  s = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", s)
+  s = re.sub(r"(?<!\*)\*([^*]+?)\*(?!\*)", r"<em>\1</em>", s)
+  s = re.sub(r"\n\n+", "</p><p>", s)
+  return f"<p>{s}</p>"
 
 
 def parse_report_md(md_text: str):
-    """Extract executive summary and per-gene {rationale, next_step} from the md report."""
-    exec_summary_md = ""
-    m = re.search(r"## Executive summary\n\n(.*?)\n\n## Per-gene dossier", md_text, re.DOTALL)
-    if m:
-        exec_summary_md = m.group(1).strip()
-        # If the placeholder is still present, blank it out so the HTML doesn't show it.
-        if "TO BE FILLED BY CLAUDE" in exec_summary_md:
-            exec_summary_md = "<em>Executive summary not yet written — fill the slot in targets_report.md and re-run.</em>"
+  """Extract executive summary and per-gene {rationale, next_step} from the md report."""
+  exec_summary_md = ""
+  m = re.search(
+    r"## Executive summary\n\n(.*?)\n\n## Per-gene dossier", md_text, re.DOTALL
+  )
+  if m:
+    exec_summary_md = m.group(1).strip()
+    # If the placeholder is still present, blank it out so the HTML doesn't show it.
+    if "TO BE FILLED BY CLAUDE" in exec_summary_md:
+      exec_summary_md = "<em>Executive summary not yet written — fill the slot in targets_report.md and re-run.</em>"
 
-    rationales = {}
-    for block in re.split(r"\n---\n", md_text):
-        h = re.search(r"### ([A-Z0-9\-]+)\s+—\s+composite\s+([0-9.]+)\s+\(([^)]+)\)", block)
-        if not h:
-            continue
-        gene = h.group(1)
-        rat = re.search(r"\*\*Rationale\*\*:\s+(.*?)\n\n\*\*Suggested next step\*\*", block, re.DOTALL)
-        nxt = re.search(r"\*\*Suggested next step\*\*:\s+(.*?)(?:\n\n|$)", block, re.DOTALL)
-        r_txt = (rat.group(1).strip() if rat else "")
-        n_txt = (nxt.group(1).strip() if nxt else "")
-        if "TO BE FILLED BY CLAUDE" in r_txt:
-            r_txt = ""
-        if "TO BE FILLED BY CLAUDE" in n_txt:
-            n_txt = ""
-        rationales[gene] = {"rationale": r_txt, "next_step": n_txt}
-    return exec_summary_md, rationales
+  rationales = {}
+  for block in re.split(r"\n---\n", md_text):
+    h = re.search(r"### ([A-Z0-9\-]+)\s+—\s+composite\s+([0-9.]+)\s+\(([^)]+)\)", block)
+    if not h:
+      continue
+    gene = h.group(1)
+    rat = re.search(
+      r"\*\*Rationale\*\*:\s+(.*?)\n\n\*\*Suggested next step\*\*", block, re.DOTALL
+    )
+    nxt = re.search(r"\*\*Suggested next step\*\*:\s+(.*?)(?:\n\n|$)", block, re.DOTALL)
+    r_txt = rat.group(1).strip() if rat else ""
+    n_txt = nxt.group(1).strip() if nxt else ""
+    if "TO BE FILLED BY CLAUDE" in r_txt:
+      r_txt = ""
+    if "TO BE FILLED BY CLAUDE" in n_txt:
+      n_txt = ""
+    rationales[gene] = {"rationale": r_txt, "next_step": n_txt}
+  return exec_summary_md, rationales
 
 
 def fmt(v, decimals=None):
-    if v is None or v == "" or v == "None":
-        return "—"
-    if decimals is not None:
-        try:
-            return f"{float(v):.{decimals}f}"
-        except ValueError:
-            return v
-    return v
+  if v is None or v == "" or v == "None":
+    return "—"
+  if decimals is not None:
+    try:
+      return f"{float(v):.{decimals}f}"
+    except ValueError:
+      return v
+  return v
 
 
 def bool_badge(v) -> str:
-    if str(v).lower() == "true":
-        return '<span class="badge badge-yes">yes</span>'
-    return '<span class="badge badge-no">no</span>'
+  if str(v).lower() == "true":
+    return '<span class="badge badge-yes">yes</span>'
+  return '<span class="badge badge-no">no</span>'
 
 
 def bar(val, max_val=1.0, color="#3b82f6") -> str:
-    try:
-        v = float(val)
-    except (ValueError, TypeError):
-        return "—"
-    pct = max(0, min(100, 100 * v / max_val))
-    return (
-        f'<div class="bar"><div class="bar-fill" style="width:{pct:.0f}%;background:{color};"></div>'
-        f'<span class="bar-label">{v:.2f}</span></div>'
-    )
+  try:
+    v = float(val)
+  except (ValueError, TypeError):
+    return "—"
+  pct = max(0, min(100, 100 * v / max_val))
+  return (
+    f'<div class="bar"><div class="bar-fill" style="width:{pct:.0f}%;background:{color};"></div>'
+    f'<span class="bar-label">{v:.2f}</span></div>'
+  )
 
 
 def render_card(row, rationales):
-    gene = row["gene"]
-    tier = row["tier"]
-    rat = rationales.get(gene, {}).get("rationale", "")
-    nxt = rationales.get(gene, {}).get("next_step", "")
-    color = TIER_COLOR.get(tier, "#64748b")
-    # Escape CSV-sourced values before interpolating into HTML attributes/content.
-    # `gene` is also used in the URL fragment and `id` attribute; html.escape with
-    # the default quote=True handles both content and attribute contexts.
-    gene_html = html.escape(gene)
-    uniprot_html = html.escape(row["uniprot_id"] or "")
+  gene = row["gene"]
+  tier = row["tier"]
+  rat = rationales.get(gene, {}).get("rationale", "")
+  nxt = rationales.get(gene, {}).get("next_step", "")
+  color = TIER_COLOR.get(tier, "#64748b")
+  # Escape CSV-sourced values before interpolating into HTML attributes/content.
+  # `gene` is also used in the URL fragment and `id` attribute; html.escape with
+  # the default quote=True handles both content and attribute contexts.
+  gene_html = html.escape(gene)
+  uniprot_html = html.escape(row["uniprot_id"] or "")
 
-    def cell(label, value):
-        return f"<div class='kv'><div class='kv-k'>{label}</div><div class='kv-v'>{value}</div></div>"
+  def cell(label, value):
+    return f"<div class='kv'><div class='kv-k'>{label}</div><div class='kv-v'>{value}</div></div>"
 
-    chips = []
-    if row["is_surface"] == "True":
-        chips.append('<span class="chip chip-surface">surface</span>')
-    if row["is_secreted"] == "True":
-        chips.append('<span class="chip chip-secreted">secreted</span>')
-    if row["is_mhc"] == "True":
-        chips.append('<span class="chip chip-mhc">MHC</span>')
-    if row["has_transmembrane"] == "True":
-        chips.append('<span class="chip chip-tm">TM</span>')
-    if row["is_focus_disease_associated"] == "True":
-        chips.append('<span class="chip chip-focus">focus-disease</span>')
-    if row["any_focus_disease_drug"] == "True":
-        chips.append('<span class="chip chip-drug">approved drug</span>')
-    chips_html = " ".join(chips)
+  chips = []
+  if row["is_surface"] == "True":
+    chips.append('<span class="chip chip-surface">surface</span>')
+  if row["is_secreted"] == "True":
+    chips.append('<span class="chip chip-secreted">secreted</span>')
+  if row["is_mhc"] == "True":
+    chips.append('<span class="chip chip-mhc">MHC</span>')
+  if row["has_transmembrane"] == "True":
+    chips.append('<span class="chip chip-tm">TM</span>')
+  if row["is_focus_disease_associated"] == "True":
+    chips.append('<span class="chip chip-focus">focus-disease</span>')
+  if row["any_focus_disease_drug"] == "True":
+    chips.append('<span class="chip chip-drug">approved drug</span>')
+  chips_html = " ".join(chips)
 
-    focus_drugs = row["focus_disease_drugs"] or "—"
-    focus_traits = row["focus_disease_traits"] or "—"
+  focus_drugs = row["focus_disease_drugs"] or "—"
+  focus_traits = row["focus_disease_traits"] or "—"
 
-    breakdown_keys = [
-        ("Druggability",         "druggability"),
-        ("Disease genetics",     "disease_genetics"),
-        ("Tractability",         "tractability"),
-        ("Tissue specificity",   "tissue_specificity"),
-        ("Cell context",         "cell_context_score"),
-        ("Essentiality",         "essentiality_score"),
-        ("Safety constraint",    "safety_constraint_score"),
-        ("Expression (DE)",      "expression"),
-        ("Novelty",              "novelty"),
-        ("Over-studied penalty", "over_studied_penalty"),
-    ]
-    breakdown_rows = "".join(
-        f"<tr><td>{label}</td><td>{bar(row[k])}</td></tr>" for label, k in breakdown_keys
-    )
+  breakdown_keys = [
+    ("Druggability", "druggability"),
+    ("Disease genetics", "disease_genetics"),
+    ("Tractability", "tractability"),
+    ("Tissue specificity", "tissue_specificity"),
+    ("Cell context", "cell_context_score"),
+    ("Essentiality", "essentiality_score"),
+    ("Safety constraint", "safety_constraint_score"),
+    ("Expression (DE)", "expression"),
+    ("Novelty", "novelty"),
+    ("Over-studied penalty", "over_studied_penalty"),
+  ]
+  breakdown_rows = "".join(
+    f"<tr><td>{label}</td><td>{bar(row[k])}</td></tr>" for label, k in breakdown_keys
+  )
 
-    chembl_top = row["chembl_top_compounds"] or "—"
-    chembl = (
-        f"target={fmt(row['chembl_target_id'])} · "
-        f"best pIC50={fmt(row['chembl_best_pchembl'])} · "
-        f"best IC50 nM={fmt(row['chembl_best_ic50_nm'])}"
-    )
+  chembl_top = row["chembl_top_compounds"] or "—"
+  chembl = (
+    f"target={fmt(row['chembl_target_id'])} · "
+    f"best pIC50={fmt(row['chembl_best_pchembl'])} · "
+    f"best IC50 nM={fmt(row['chembl_best_ic50_nm'])}"
+  )
 
-    pct_ess = ""
-    if row["depmap_pct_essential"]:
-        try:
-            pct_ess = f"{float(row['depmap_pct_essential']) * 100:.1f}"
-        except ValueError:
-            pct_ess = row["depmap_pct_essential"]
-    pct_ess = pct_ess or "—"
+  pct_ess = ""
+  if row["depmap_pct_essential"]:
+    try:
+      pct_ess = f"{float(row['depmap_pct_essential']) * 100:.1f}"
+    except ValueError:
+      pct_ess = row["depmap_pct_essential"]
+  pct_ess = pct_ess or "—"
 
-    return f"""
+  return f"""
     <article class="card" data-gene="{gene_html}" data-tier="{tier}" id="g-{gene_html}">
       <header class="card-head" style="border-left-color:{color}">
         <div>
-          <h2>{gene_html} <span class="composite">composite {fmt(row['composite_score'], 3)}</span></h2>
-          <div class="card-sub">{html.escape(row['protein_name'])} · <a href="https://www.uniprot.org/uniprotkb/{uniprot_html}" target="_blank" rel="noopener">{uniprot_html}</a></div>
+          <h2>{gene_html} <span class="composite">composite {fmt(row["composite_score"], 3)}</span></h2>
+          <div class="card-sub">{html.escape(row["protein_name"])} · <a href="https://www.uniprot.org/uniprotkb/{uniprot_html}" target="_blank" rel="noopener">{uniprot_html}</a></div>
           <div class="chips">{chips_html}</div>
         </div>
         <div class="tier-badge" style="background:{color}">{tier}</div>
@@ -170,13 +175,13 @@ def render_card(row, rationales):
       <div class="card-body">
         <section class="rationale">
           <h3>Rationale</h3>
-          <p>{html.escape(rat) or '<em>not yet written</em>'}</p>
+          <p>{html.escape(rat) or "<em>not yet written</em>"}</p>
           <h3>Suggested next step</h3>
-          <p>{html.escape(nxt) or '<em>not yet written</em>'}</p>
+          <p>{html.escape(nxt) or "<em>not yet written</em>"}</p>
         </section>
 
         <section class="grid">
-          {cell("Localization", html.escape(row['subcellular_location']) or "—")}
+          {cell("Localization", html.escape(row["subcellular_location"]) or "—")}
           {cell("Druggability", f"approved={row['approved_drug_count']} · max_phase={row['highest_clinical_phase']} · focus_disease_drug={bool_badge(row['any_focus_disease_drug'])}")}
           {cell("Focus-disease drugs", html.escape(focus_drugs))}
           {cell("Tractability", f"sm_mol={fmt(row['tractability_small_molecule'])} · Ab={fmt(row['tractability_antibody'])}")}
@@ -185,7 +190,7 @@ def render_card(row, rationales):
           {cell("PubMed", f"total={row['pubmed_total']} · focus_disease={row['pubmed_focus_disease']} · cell_context={row['pubmed_cell_context']} · maturity={row['maturity_tag']}")}
           {cell("HPA tissue", f"{row['hpa_tissue_specificity_tag']} · top={html.escape(row['hpa_tissue_top_types']) or '—'}")}
           {cell("HPA single-cell", f"{row['hpa_cell_specificity_tag']} · top={html.escape(row['hpa_cell_top_types']) or '—'} · focus_hits={html.escape(row['hpa_focus_cell_hits']) or '—'}")}
-          {cell("HPA cluster", html.escape(row['hpa_expression_cluster']) or "—")}
+          {cell("HPA cluster", html.escape(row["hpa_expression_cluster"]) or "—")}
           {cell("HPA pathology", f"n_prog_cancers={row['hpa_n_prognostic_cancers']} · {row['hpa_cancer_specificity']}")}
           {cell("DepMap CRISPR", f"n={row['depmap_n_screens']} · mean_effect={fmt(row['depmap_mean_gene_effect'], 3)} · %essential={pct_ess}")}
           {cell("gnomAD constraint", f"LOEUF={fmt(row['loeuf'], 3)} · oe_lof={fmt(row['constraint_oe_lof'], 3)} · top_decile={bool_badge(row['constraint_top_decile'])}")}
@@ -203,37 +208,37 @@ def render_card(row, rationales):
 
 
 def render_summary_row(r):
-    color = TIER_COLOR.get(r["tier"], "#64748b")
-    gene_html = html.escape(r["gene"])
-    flags = []
-    if r["is_surface"] == "True":
-        flags.append("S")
-    if r["is_secreted"] == "True":
-        flags.append("Sec")
-    if r["is_mhc"] == "True":
-        flags.append("MHC")
-    flags_str = "/".join(flags) or "—"
-    tier_short = (
-        r["tier"]
-        .replace("Tier-", "T")
-        .replace("-priority", "")
-        .replace("-candidate", "")
-        .replace("-watchlist", "")
-        .replace("-deprioritized", "")
-    )
-    return f"""
-      <tr data-tier="{r['tier']}">
+  color = TIER_COLOR.get(r["tier"], "#64748b")
+  gene_html = html.escape(r["gene"])
+  flags = []
+  if r["is_surface"] == "True":
+    flags.append("S")
+  if r["is_secreted"] == "True":
+    flags.append("Sec")
+  if r["is_mhc"] == "True":
+    flags.append("MHC")
+  flags_str = "/".join(flags) or "—"
+  tier_short = (
+    r["tier"]
+    .replace("Tier-", "T")
+    .replace("-priority", "")
+    .replace("-candidate", "")
+    .replace("-watchlist", "")
+    .replace("-deprioritized", "")
+  )
+  return f"""
+      <tr data-tier="{r["tier"]}">
         <td><a href="#g-{gene_html}">{gene_html}</a></td>
-        <td data-sort="{r['composite_score']}">{fmt(r['composite_score'], 3)}</td>
+        <td data-sort="{r["composite_score"]}">{fmt(r["composite_score"], 3)}</td>
         <td><span class="tier-pill" style="background:{color}">{tier_short}</span></td>
         <td>{flags_str}</td>
-        <td data-sort="{r['druggability']}">{fmt(r['druggability'], 2)}</td>
-        <td data-sort="{r['disease_genetics']}">{fmt(r['disease_genetics'], 2)}</td>
-        <td data-sort="{r['cell_context_score']}">{fmt(r['cell_context_score'], 2)}</td>
-        <td data-sort="{r['safety_constraint_score']}">{fmt(r['safety_constraint_score'], 2)}</td>
-        <td>{r['maturity_tag']}</td>
-        <td>{fmt(r['highest_clinical_phase'])}</td>
-        <td>{fmt(r['chembl_best_pchembl'])}</td>
+        <td data-sort="{r["druggability"]}">{fmt(r["druggability"], 2)}</td>
+        <td data-sort="{r["disease_genetics"]}">{fmt(r["disease_genetics"], 2)}</td>
+        <td data-sort="{r["cell_context_score"]}">{fmt(r["cell_context_score"], 2)}</td>
+        <td data-sort="{r["safety_constraint_score"]}">{fmt(r["safety_constraint_score"], 2)}</td>
+        <td>{r["maturity_tag"]}</td>
+        <td>{fmt(r["highest_clinical_phase"])}</td>
+        <td>{fmt(r["chembl_best_pchembl"])}</td>
       </tr>
     """
 
@@ -373,35 +378,39 @@ document.querySelectorAll(".filter-btn").forEach(btn => {
 
 
 def build(report_dir: Path, title: str, subtitle: str) -> Path:
-    csv_path = report_dir / "targets_summary.csv"
-    md_path = report_dir / "targets_report.md"
-    out_path = report_dir / "targets_report.html"
+  csv_path = report_dir / "targets_summary.csv"
+  md_path = report_dir / "targets_report.md"
+  out_path = report_dir / "targets_report.html"
 
-    if not csv_path.exists():
-        raise SystemExit(f"missing: {csv_path}")
-    if not md_path.exists():
-        raise SystemExit(f"missing: {md_path}")
+  if not csv_path.exists():
+    raise SystemExit(f"missing: {csv_path}")
+  if not md_path.exists():
+    raise SystemExit(f"missing: {md_path}")
 
-    try:
-        rows = list(csv.DictReader(open(csv_path)))
-    except OSError as e:
-        raise SystemExit(f"cannot read {csv_path}: {e}")
-    exec_md, rationales = parse_report_md(md_path.read_text())
-    exec_html = md_inline_to_html(exec_md) if exec_md else "<p><em>No executive summary written.</em></p>"
+  try:
+    rows = list(csv.DictReader(open(csv_path)))
+  except OSError as e:
+    raise SystemExit(f"cannot read {csv_path}: {e}")
+  exec_md, rationales = parse_report_md(md_path.read_text())
+  exec_html = (
+    md_inline_to_html(exec_md)
+    if exec_md
+    else "<p><em>No executive summary written.</em></p>"
+  )
 
-    tier_counts = {}
-    for r in rows:
-        tier_counts[r["tier"]] = tier_counts.get(r["tier"], 0) + 1
-    tier_pills = " ".join(
-        f'<span class="tier-pill" style="background:{TIER_COLOR.get(t, "#64748b")}">'
-        f'{t.replace("Tier-", "T").split("-")[0]}: {n}</span>'
-        for t, n in sorted(tier_counts.items())
-    )
+  tier_counts = {}
+  for r in rows:
+    tier_counts[r["tier"]] = tier_counts.get(r["tier"], 0) + 1
+  tier_pills = " ".join(
+    f'<span class="tier-pill" style="background:{TIER_COLOR.get(t, "#64748b")}">'
+    f"{t.replace('Tier-', 'T').split('-')[0]}: {n}</span>"
+    for t, n in sorted(tier_counts.items())
+  )
 
-    summary_rows = "\n".join(render_summary_row(r) for r in rows)
-    cards_html = "\n".join(render_card(r, rationales) for r in rows)
+  summary_rows = "\n".join(render_summary_row(r) for r in rows)
+  cards_html = "\n".join(render_card(r, rationales) for r in rows)
 
-    page = f"""<!doctype html>
+  page = f"""<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -461,30 +470,39 @@ def build(report_dir: Path, title: str, subtitle: str) -> Path:
 </html>
 """
 
-    out_path.write_text(page)
-    return out_path
+  out_path.write_text(page)
+  return out_path
 
 
 def main():
-    ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--report-dir", required=True,
-                    help="Directory containing targets_summary.csv and targets_report.md")
-    ap.add_argument("--title", default="Target Prioritization Report",
-                    help="Page title (default: 'Target Prioritization Report')")
-    ap.add_argument("--subtitle", default="",
-                    help="Optional subtitle shown under the H1 (e.g. cohort / contrast description)")
-    args = ap.parse_args()
+  ap = argparse.ArgumentParser(description=__doc__)
+  ap.add_argument(
+    "--report-dir",
+    required=True,
+    help="Directory containing targets_summary.csv and targets_report.md",
+  )
+  ap.add_argument(
+    "--title",
+    default="Target Prioritization Report",
+    help="Page title (default: 'Target Prioritization Report')",
+  )
+  ap.add_argument(
+    "--subtitle",
+    default="",
+    help="Optional subtitle shown under the H1 (e.g. cohort / contrast description)",
+  )
+  args = ap.parse_args()
 
-    report_dir = Path(args.report_dir).expanduser().resolve()
-    try:
-        n_rows = sum(1 for _ in csv.DictReader(open(report_dir / "targets_summary.csv")))
-    except OSError as e:
-        raise SystemExit(f"cannot read {report_dir / 'targets_summary.csv'}: {e}")
-    subtitle = args.subtitle or f"{n_rows} genes · sorted by composite score"
+  report_dir = Path(args.report_dir).expanduser().resolve()
+  try:
+    n_rows = sum(1 for _ in csv.DictReader(open(report_dir / "targets_summary.csv")))
+  except OSError as e:
+    raise SystemExit(f"cannot read {report_dir / 'targets_summary.csv'}: {e}")
+  subtitle = args.subtitle or f"{n_rows} genes · sorted by composite score"
 
-    out_path = build(report_dir, args.title, subtitle)
-    print(f"build_html_report: wrote {out_path}  ({out_path.stat().st_size:,} bytes)")
+  out_path = build(report_dir, args.title, subtitle)
+  print(f"build_html_report: wrote {out_path}  ({out_path.stat().st_size:,} bytes)")
 
 
 if __name__ == "__main__":
-    main()
+  main()
