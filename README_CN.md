@@ -1,17 +1,17 @@
 # 365 Skills
 
-[Agents365-ai](https://github.com/Agents365-ai) 出品的生产级 Claude Code 技能集合。
+[Agents365-ai](https://github.com/Agents365-ai) 出品，面向各类 AI 编码智能体的生产级技能集合。与 Agent 无关，兼容 Claude Code、Cursor、Copilot、OpenClaw 等。
 
 [English](README.md) | 中文
 
 ## 安装
 
 ```bash
-# Claude Code 插件市场
-/plugin marketplace add Agents365-ai/365-skills
-
-# 任意 Agent 工具（Claude Code、Cursor、Copilot 等）
+# 任意 Agent 工具（Claude Code、Cursor、Copilot 等）—— Agent 无关
 npx skills add Agents365-ai/365-skills -g
+
+# Claude Code 插件市场（可选）
+/plugin marketplace add Agents365-ai/365-skills
 ```
 
 ## 可用插件
@@ -62,9 +62,11 @@ npx skills add Agents365-ai/365-skills -g
 | `bangumi-frames` | B 站番剧帧与角色整理 —— 下载番剧/UP 主视频（或本地文件），抽取场景切换关键帧，拆分风景与角色裁剪，按 CCIP 身份聚类或通过参考文件夹提取单个角色；可选 OCR+LaMa 去字幕/水印 |
 | `yt2bb` | YouTube 视频搬运至 B 站 —— yt-dlp 下载、whisper 转写、生成中英双语 SRT 字幕并用 ffmpeg 硬编码 |
 
-## 安装插件
+## 单独安装插件
 
-```
+与 Agent 无关的安装方式：`npx skills add Agents365-ai/365-skills` 后选择对应技能。Claude Code 插件路径：
+
+```bash
 /plugin install drawio
 ```
 
@@ -79,33 +81,6 @@ git add plugins/drawio && git commit -m "chore: sync drawio-skill"
 ```
 
 多数源仓库现已转为私有；对这部分插件而言，本 marketplace 是唯一分发渠道。
-
-## 源仓库
-
-每个插件都对应一个独立的 skill 仓库 —— 与具体插件相关的 bug 请到对应仓库提交 issue（私有仓库仅协作者可提 issue）：
-
-| 插件 | 源仓库 |
-| --- | --- |
-| `agent-native-design` | [Agents365-ai/agent-native-design](https://github.com/Agents365-ai/agent-native-design) |
-| `drawio` | [Agents365-ai/drawio-skill](https://github.com/Agents365-ai/drawio-skill) |
-| `scholar-deep-research` | [Agents365-ai/scholar-deep-research](https://github.com/Agents365-ai/scholar-deep-research) |
-| `journal-abbrev` | [Agents365-ai/journal-abbrev](https://github.com/Agents365-ai/journal-abbrev) |
-| `video-podcast-maker` | [Agents365-ai/video-podcast-maker](https://github.com/Agents365-ai/video-podcast-maker) |
-| `obsidian-organizer` | [Agents365-ai/obsidian-organizer](https://github.com/Agents365-ai/obsidian-organizer) |
-| `asta` | Agents365-ai/asta-skill（私有） |
-| `bangumi-frames` | Agents365-ai/bangumi-frames（私有） |
-| `excalidraw` | Agents365-ai/excalidraw-skill（私有） |
-| `imagencn` | Agents365-ai/imagencn（私有） |
-| `mermaid` | Agents365-ai/mermaid-skill（私有） |
-| `paper-fetch` | Agents365-ai/paper-fetch（私有） |
-| `pi-plugin-cc` | Agents365-ai/pi-plugin-cc（私有） |
-| `plantuml` | Agents365-ai/plantuml-skill（私有） |
-| `semanticscholar` | Agents365-ai/semanticscholar-skill（私有） |
-| `target-prioritization` | Agents365-ai/target-prioritization（私有） |
-| `tldraw` | Agents365-ai/tldraw-skill（私有） |
-| `ttscn` | Agents365-ai/ttscn（私有） |
-| `videogencn` | 仅通过本仓库分发 |
-| `yt2bb` | Agents365-ai/yt2bb（私有） |
 
 ## 微信交流群
 
@@ -150,8 +125,3 @@ git add plugins/drawio && git commit -m "chore: sync drawio-skill"
 
 - Bilibili: <https://space.bilibili.com/441831884>
 - GitHub: <https://github.com/Agents365-ai>
-
-## 其他资源
-
-- [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) —— 社区维护的科研类 skill 合集
-- [anthropics/life-sciences](https://github.com/anthropics/life-sciences) —— Anthropic 官方的生命科学 skills
