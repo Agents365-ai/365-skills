@@ -18,10 +18,7 @@ export const ComparisonCard = ({
   const leftAnim = useEntrance(props.enableAnimations, delay + 5, "snappy");
   const rightAnim = useEntrance(props.enableAnimations, delay + 10, "snappy");
 
-  const cardStyle = (
-    side: typeof left,
-    highlighted: boolean,
-  ): React.CSSProperties => ({
+  const cardStyle = (highlighted: boolean): React.CSSProperties => ({
     flex: v ? undefined : 1,
     width: v ? "100%" : undefined,
     background: highlighted
@@ -69,7 +66,7 @@ export const ComparisonCard = ({
           )}
           <div
             style={{
-              ...cardStyle(side, !!side.highlight),
+              ...cardStyle(!!side.highlight),
               opacity: a.opacity,
               transform: `translateY(${a.translateY}px)`,
             }}

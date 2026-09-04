@@ -59,7 +59,7 @@ def synthesize(chunks, config, output_file, output_format="wav"):
         region=config.get("region", "eastasia"),
     )
     voice = config.get("voice", "zh-CN-XiaoxiaoNeural")
-    speech_config.SpeechSynthesisVoiceName = voice
+    setattr(speech_config, "SpeechSynthesisVoiceName", voice)
     speech_rate = config.get("speech_rate", "+5%")
 
     out_dir = os.path.dirname(output_file) or "."
