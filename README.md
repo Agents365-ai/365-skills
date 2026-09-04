@@ -1,17 +1,17 @@
 # 365 Skills
 
-Production-grade Claude Code skills by [Agents365-ai](https://github.com/Agents365-ai).
+Production-grade skills for AI coding agents by [Agents365-ai](https://github.com/Agents365-ai). Agent-agnostic, works with Claude Code, Cursor, Copilot, OpenClaw & more.
 
 English | [中文](README_CN.md)
 
 ## Install
 
 ```bash
-# Claude Code plugin marketplace
-/plugin marketplace add Agents365-ai/365-skills
-
-# Any agent (Claude Code, Cursor, Copilot, etc.)
+# Any agent (Claude Code, Cursor, Copilot, etc.) — agent-agnostic
 npx skills add Agents365-ai/365-skills -g
+
+# Claude Code plugin marketplace (optional)
+/plugin marketplace add Agents365-ai/365-skills
 ```
 
 ## Available plugins
@@ -62,9 +62,11 @@ npx skills add Agents365-ai/365-skills -g
 | `bangumi-frames` | Bilibili anime frame & character organizer — download a bangumi/UP video (or local file), extract scene-change keyframes, split scenery vs character crops, cluster by CCIP identity or pull one character via a reference folder; optional OCR+LaMa subtitle/watermark removal |
 | `yt2bb` | Repurpose YouTube videos for Bilibili — download via yt-dlp, transcribe with whisper, generate bilingual (English-Chinese) SRT subtitles, hardcode them with ffmpeg |
 
-## Install plugins
+## Install individual plugins
 
-```
+Agent-agnostic install: `npx skills add Agents365-ai/365-skills` and pick the skill. Claude Code plugin path:
+
+```bash
 /plugin install drawio
 ```
 
@@ -79,33 +81,6 @@ git add plugins/drawio && git commit -m "chore: sync drawio-skill"
 ```
 
 Most source repos are now private; for those plugins this marketplace is the only distribution channel.
-
-## Source repos
-
-Each plugin mirrors a standalone skill repo — file issues there for plugin-specific bugs (private repos accept issues from collaborators only):
-
-| Plugin | Source |
-| --- | --- |
-| `agent-native-design` | [Agents365-ai/agent-native-design](https://github.com/Agents365-ai/agent-native-design) |
-| `drawio` | [Agents365-ai/drawio-skill](https://github.com/Agents365-ai/drawio-skill) |
-| `scholar-deep-research` | [Agents365-ai/scholar-deep-research](https://github.com/Agents365-ai/scholar-deep-research) |
-| `journal-abbrev` | [Agents365-ai/journal-abbrev](https://github.com/Agents365-ai/journal-abbrev) |
-| `video-podcast-maker` | [Agents365-ai/video-podcast-maker](https://github.com/Agents365-ai/video-podcast-maker) |
-| `obsidian-organizer` | [Agents365-ai/obsidian-organizer](https://github.com/Agents365-ai/obsidian-organizer) |
-| `asta` | Agents365-ai/asta-skill (private) |
-| `bangumi-frames` | Agents365-ai/bangumi-frames (private) |
-| `excalidraw` | Agents365-ai/excalidraw-skill (private) |
-| `imagencn` | Agents365-ai/imagencn (private) |
-| `mermaid` | Agents365-ai/mermaid-skill (private) |
-| `paper-fetch` | Agents365-ai/paper-fetch (private) |
-| `pi-plugin-cc` | Agents365-ai/pi-plugin-cc (private) |
-| `plantuml` | Agents365-ai/plantuml-skill (private) |
-| `semanticscholar` | Agents365-ai/semanticscholar-skill (private) |
-| `target-prioritization` | Agents365-ai/target-prioritization (private) |
-| `tldraw` | Agents365-ai/tldraw-skill (private) |
-| `ttscn` | Agents365-ai/ttscn (private) |
-| `videogencn` | distributed via this repo only |
-| `yt2bb` | Agents365-ai/yt2bb (private) |
 
 ## Support
 
