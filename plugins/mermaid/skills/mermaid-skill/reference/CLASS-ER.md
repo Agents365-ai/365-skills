@@ -28,7 +28,7 @@ classDiagram
 ### Visibility Modifiers
 
 | Symbol | Meaning |
-|--------|---------|
+| -------- | --------- |
 | `+` | Public |
 | `-` | Private |
 | `#` | Protected |
@@ -37,7 +37,7 @@ classDiagram
 ### Relationships
 
 | Syntax | Type | Meaning |
-|--------|------|---------|
+| -------- | ------ | --------- |
 | `<\|--` | Inheritance | extends |
 | `*--` | Composition | owns (lifecycle) |
 | `o--` | Aggregation | has (independent) |
@@ -55,7 +55,7 @@ classDiagram
 ```
 
 | Notation | Meaning |
-|----------|---------|
+| ---------- | --------- |
 | `1` | Exactly one |
 | `0..1` | Zero or one |
 | `*` | Many |
@@ -98,7 +98,7 @@ erDiagram
 ### Relationship Notation
 
 | Left | Right | Meaning |
-|------|-------|---------|
+| ------ | ------- | --------- |
 | `\|\|` | `\|\|` | One to one |
 | `\|\|` | `o{` | One to zero or many |
 | `\|\|` | `\|{` | One to one or many |

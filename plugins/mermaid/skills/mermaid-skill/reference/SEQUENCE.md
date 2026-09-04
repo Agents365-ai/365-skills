@@ -20,6 +20,7 @@ sequenceDiagram
 ## Participants
 
 Declare in desired left-to-right order:
+
 ```mermaid
 sequenceDiagram
   participant A as Alice
@@ -33,7 +34,7 @@ sequenceDiagram
 ## Arrow Types
 
 | Syntax | Style | Use for |
-|--------|-------|---------|
+| -------- | ------- | --------- |
 | `->>` | Solid arrow | Sync request |
 | `-->>` | Dashed arrow | Response |
 | `-x` | Solid with X | Async (fire & forget) |
@@ -52,6 +53,7 @@ sequenceDiagram
 ```
 
 Or explicit:
+
 ```mermaid
 sequenceDiagram
   C->>S: request

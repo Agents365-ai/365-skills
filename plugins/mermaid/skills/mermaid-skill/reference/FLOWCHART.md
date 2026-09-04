@@ -19,7 +19,7 @@ flowchart TD
 ## Direction
 
 | Keyword | Direction |
-|---------|-----------|
+| --------- | ----------- |
 | `TD` / `TB` | Top to bottom |
 | `LR` | Left to right |
 | `RL` | Right to left |
@@ -28,7 +28,7 @@ flowchart TD
 ## Node Shapes
 
 | Syntax | Shape | Use for |
-|--------|-------|---------|
+| -------- | ------- | --------- |
 | `[text]` | Rectangle | Default nodes |
 | `(text)` | Rounded rectangle | Processes |
 | `{text}` | Diamond | Decisions |
@@ -37,11 +37,12 @@ flowchart TD
 | `((text))` | Circle | Start/end points |
 | `>text]` | Flag | Async events |
 | `{{text}}` | Hexagon | Preparation steps |
+| `A@{ shape: datastore, label: "DB" }` | Datastore (v11.15+) | Data persistence (top/bottom borders only) |
 
 ## Arrow Types
 
 | Syntax | Style | Use for |
-|--------|-------|---------|
+| -------- | ------- | --------- |
 | `-->` | Arrow | Normal flow |
 | `---` | Line | Connection (no direction) |
 | `-.->` | Dashed arrow | Optional/async |
@@ -79,6 +80,7 @@ flowchart TD
 ## Special Characters
 
 Wrap in quotes for special characters:
+
 ```mermaid
 flowchart LR
   A["Node: with colon"]
