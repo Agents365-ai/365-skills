@@ -223,7 +223,10 @@ def fetch_one(gene: str) -> dict:
         for s in tissue.get("screens") or []:
             ge = s.get("geneEffect")
             if isinstance(ge, (int, float)):
-                effects.append(float(ge))
+                try:
+                    effects.append(float(ge))
+                except (TypeError, ValueError):
+                    continue
     if effects:
         out["depmap_n_screens"] = len(effects)
         out["depmap_n_tissues"] = len(tissues)

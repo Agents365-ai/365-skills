@@ -7,12 +7,19 @@ Wan (通义万相), PixVerse (爱诗), Kling (可灵), Vidu, HappyHorse.
 import os
 import sys
 from pathlib import Path
-from typing import Optional
 
-from providers.base import (VideoProvider, GenerationRequest, pick_size,
-                            safe_json, safe_request, validate_media_file,
-                            encode_image_to_data_uri,
-                            ConfigError, InputError, APIError)
+from providers.base import (
+    APIError,
+    ConfigError,
+    GenerationRequest,
+    InputError,
+    VideoProvider,
+    encode_image_to_data_uri,
+    pick_size,
+    safe_json,
+    safe_request,
+    validate_media_file,
+)
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -143,6 +150,7 @@ class BailianProvider(VideoProvider):
             "key": key,
             "success_action_status": "200",
         }
+        # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
         with open(path, "rb") as f:
             upload_rsp = safe_request("POST", data["upload_host"], data=form,
                                       files={"file": (Path(path).name, f)},
@@ -225,8 +233,8 @@ class BailianProvider(VideoProvider):
     # ------------------------------------------------------------------
 
     def build_body(self, req: GenerationRequest,
-                   image_url: Optional[str], last_url: Optional[str],
-                   refs: list[tuple[Optional[str], str]]) -> dict:
+                   image_url: str | None, last_url: str | None,
+                   refs: list[tuple[str | None, str]]) -> dict:
         family = self._family(req.model)
         inp: dict = {"prompt": req.prompt}
         params: dict = {"duration": req.duration, "watermark": False}
@@ -332,7 +340,7 @@ class BailianProvider(VideoProvider):
         return safe_request("GET", f"{self.api_base}/tasks/{task_id}",
                            headers=headers, label="Bailian poll")
 
-    def _parse_poll_response(self, rsp) -> tuple[str, Optional[str], str]:
+    def _parse_poll_response(self, rsp) -> tuple[str, str | None, str]:
         output = safe_json(rsp, "Bailian poll").get("output", {})
         status = output.get("task_status", "UNKNOWN")
         video_url = output.get("video_url")

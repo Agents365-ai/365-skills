@@ -91,6 +91,8 @@ def fetch_one(gene: str) -> dict:
     if not target:
         return out
     tid = target.get("target_chembl_id")
+    if not tid:
+        return out
     out["chembl_target_id"] = tid
     out["chembl_target_name"] = target.get("pref_name")
     compounds = fetch_top_compounds(tid)

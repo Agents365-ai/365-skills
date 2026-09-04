@@ -22,7 +22,11 @@ FETCHERS = [
 
 def read_gene_list(path: Path, gene_col: str, top: int) -> list[str]:
     genes: list[str] = []
-    with open(path, encoding="utf-8") as f:
+    try:
+        fh = open(path, encoding="utf-8")
+    except OSError as e:
+        sys.exit(f"orchestrate: cannot read {path}: {e}")
+    with fh as f:
         first = f.readline().strip()
         delim = "," if "," in first else ("\t" if "\t" in first else None)
         if delim is None:

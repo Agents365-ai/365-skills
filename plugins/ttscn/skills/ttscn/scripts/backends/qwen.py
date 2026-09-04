@@ -39,10 +39,14 @@ def synthesize(chunks, config, output_file, output_format="wav"):
 
         for attempt in range(1, 4):
             try:
-                resp = dashscope.MultiModalConversation.call(
-                    model=model, text=chunk, voice=voice, stream=False,
-                    language_type=language_type, instructions=instructions,
-                )
+                call_kwargs: dict = {
+                    "model": model, "text": chunk, "voice": voice, "stream": False,
+                }
+                if language_type:
+                    call_kwargs["language_type"] = language_type
+                if instructions:
+                    call_kwargs["instructions"] = instructions
+                resp = dashscope.MultiModalConversation.call(**call_kwargs)
                 if not isinstance(resp, MultiModalConversationResponse):
                     raise RuntimeError("Qwen-TTS returned a stream unexpectedly")
                 if resp.status_code != 200:
@@ -99,6 +103,7 @@ def synthesize(chunks, config, output_file, output_format="wav"):
         os.replace(part_files[0], output_file)
     else:
         concat_list = os.path.join(out_dir, ".tts_concat.txt")
+        # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
         with open(concat_list, "w", encoding="utf-8") as f:
             for pf in part_files:
                 f.write(f"file '{os.path.basename(pf)}'\n")
@@ -109,9 +114,11 @@ def synthesize(chunks, config, output_file, output_format="wav"):
         )
         if result.returncode != 0:
             raise RuntimeError(f"FFmpeg concat failed: {result.stderr[:200]}")
+        # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
         os.remove(concat_list)
         for pf in part_files:
             if os.path.exists(pf):
+                # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
                 os.remove(pf)
 
     return accumulated_duration

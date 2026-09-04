@@ -3,31 +3,54 @@
 # Edit and re-run aggregate.py to re-score without re-fetching APIs.
 
 weights:
-  druggability_score:       0.20   # approved drugs, OpenTargets tractability
-  disease_genetics_score:   0.15   # OpenTargets associated diseases (incl. GWAS-derived signal), with focus-disease bonus
-  tractability_bonus:       0.15   # surface or secreted protein vs intracellular
-  tissue_specificity:       0.10   # HPA tissue specificity tag → therapeutic-window safety
-  cell_context_score:       0.10   # HPA single-cell nCPM rank in FOCUS_CELL_TYPES → efficacy in target population
-  essentiality_score:       0.10   # DepMap CRISPR % essential (selective sweet spot, pan-essential capped)
-  safety_constraint_score:  0.05   # gnomAD LOEUF — high LOEUF = LoF tolerated in humans → safer to inhibit
-  expression_score:         0.10   # from input DE table (mean expression in the contrast)
-  novelty_bonus:            0.05   # moderately studied genes preferred over uncharted / over-studied
-  over_studied_penalty:     0.10   # subtracted if pubmed total > cap
+  # approved drugs, OpenTargets tractability
+  druggability_score: 0.20
+  # OpenTargets associated diseases (incl. GWAS-derived signal),
+  # with focus-disease bonus
+  disease_genetics_score: 0.15
+  # surface or secreted protein vs intracellular
+  tractability_bonus: 0.15
+  # HPA tissue specificity tag -> therapeutic-window safety
+  tissue_specificity: 0.10
+  # HPA single-cell nCPM rank in FOCUS_CELL_TYPES -> efficacy
+  cell_context_score: 0.10
+  # DepMap CRISPR % essential (selective sweet spot, pan-essential capped)
+  essentiality_score: 0.10
+  # gnomAD LOEUF - high LOEUF = LoF tolerated in humans -> safer to inhibit
+  safety_constraint_score: 0.05
+  # from input DE table (mean expression in the contrast)
+  expression_score: 0.10
+  # moderately studied genes preferred over uncharted / over-studied
+  novelty_bonus: 0.05
+  # subtracted if pubmed total > cap
+  over_studied_penalty: 0.10
 
 caps:
-  pubmed_total_for_maturity: 100    # above this, over_studied_penalty kicks in
-  pubmed_well_studied_floor: 5      # below this, novelty_bonus deflates (no evidence at all is bad)
+  # above this, over_studied_penalty kicks in
+  pubmed_total_for_maturity: 100
+  # below this, novelty_bonus deflates (no evidence at all is bad)
+  pubmed_well_studied_floor: 5
 
 flags:
-  focus_disease_assoc_bonus: 0.5    # added to disease_genetics_score if the gene is OT-associated with the focus disease
-  approved_drug_bonus:       0.7    # raises druggability_score floor to this if any approved drug
-  surface_protein_bonus:     1.0    # tractability_bonus value if surface
-  secreted_protein_bonus:    0.8    # tractability_bonus value if secreted
-  intracellular_default:     0.3    # tractability_bonus value if intracellular only
+  # added to disease_genetics_score if the gene is OT-associated
+  # with the focus disease
+  focus_disease_assoc_bonus: 0.5
+  # raises druggability_score floor to this if any approved drug
+  approved_drug_bonus: 0.7
+  # tractability_bonus value if surface
+  surface_protein_bonus: 1.0
+  # tractability_bonus value if secreted
+  secreted_protein_bonus: 0.8
+  # tractability_bonus value if intracellular only
+  intracellular_default: 0.3
 
-# Focus-disease + focus-cell-type + cell-context terms are configured in code, not here:
-# - edit FOCUS_DISEASE_TERMS in scripts/fetch_opentargets.py + scripts/aggregate.py
-# - edit FOCUS_CELL_TYPES in scripts/aggregate.py (must match HPA's exact cell-type strings)
+# Focus-disease + focus-cell-type + cell-context terms are configured in
+# code, not here:
+# - edit FOCUS_DISEASE_TERMS in scripts/fetch_opentargets.py +
+#   scripts/aggregate.py
+# - edit FOCUS_CELL_TYPES in scripts/aggregate.py (must match HPA's exact
+#   cell-type strings)
 # - edit CONTEXTS in scripts/fetch_pubmed.py
-# Default terms target an autoimmunity (IBD) + T-cell example; see those files for
-# alternative configurations (oncology, neurodegeneration, metabolic, ...).
+# Default terms target an autoimmunity (IBD) + T-cell example; see those
+# files for alternative configurations (oncology, neurodegeneration,
+# metabolic, ...).

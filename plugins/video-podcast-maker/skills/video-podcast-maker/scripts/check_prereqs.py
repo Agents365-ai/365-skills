@@ -83,7 +83,7 @@ def check_prereqs(env=None):
 
 def build_parser():
     parser = argparse.ArgumentParser(
-        description=__doc__.split("\n\n")[0],
+        description=(__doc__ or "").split("\n\n")[0],
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     cli_envelope.add_format_arg(parser)

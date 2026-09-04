@@ -168,7 +168,7 @@ ACTIONS = {
 def build_parser():
     p = argparse.ArgumentParser(
         prog='cli.py',
-        description=__doc__.split("\n\n")[0],
+        description=(__doc__ or "").split("\n\n")[0],
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="Run 'cli.py <resource> --help' for resource-level help, "
                "or 'cli.py schema' to list all methods.",

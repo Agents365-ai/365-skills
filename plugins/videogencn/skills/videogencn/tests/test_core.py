@@ -5,6 +5,7 @@ These tests use mocked requests so no real API keys or network calls are needed.
 Run with: python -m pytest skills/videogencn/tests/ -v
 """
 
+# pyright: reportMissingImports=false
 import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch

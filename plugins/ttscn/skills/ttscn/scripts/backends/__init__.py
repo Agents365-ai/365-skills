@@ -15,8 +15,11 @@ def _load_providers():
     """Load provider data from providers.json."""
     if not os.path.exists(_PROVIDERS_JSON):
         raise FileNotFoundError(f"providers.json not found at {_PROVIDERS_JSON}")
-    with open(_PROVIDERS_JSON, encoding="utf-8") as f:
-        return json.load(f)
+    try:
+        with open(_PROVIDERS_JSON, encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, json.JSONDecodeError) as e:
+        raise SystemExit(f"backends: cannot read {_PROVIDERS_JSON}: {e}") from e
 
 
 _PROVIDERS = _load_providers()
@@ -162,6 +165,7 @@ def _load_pref(key):
                 if key in obj:
                     return obj[key]
             except (json.JSONDecodeError, OSError):
+                # pi-lens-ignore: python-empty-except
                 pass
     return None
 

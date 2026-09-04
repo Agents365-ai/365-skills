@@ -84,6 +84,7 @@ def load_manifest(video_dir):
 def save_manifest(video_dir, manifest):
     path = manifest_path(video_dir)
     path.parent.mkdir(parents=True, exist_ok=True)
+    # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
     with open(path, "w", encoding="utf-8") as f:
         json.dump(manifest, f, ensure_ascii=False, indent=2)
         f.write("\n")
@@ -109,7 +110,7 @@ def validate_manifest(video_dir):
     assets = manifest.get("assets")
 
     seen_ids = set()
-    for i, a in enumerate(assets):
+    for i, a in enumerate(assets or []):
         if not isinstance(a, dict):
             errors.append(f"assets[{i}]: not an object")
             continue
@@ -159,9 +160,9 @@ def cmd_init(args, started_at):
     if created:
         save_manifest(video_dir, {"schema_version": SCHEMA_VERSION, "assets": []})
     manifest, err = load_manifest(video_dir)
-    if err:
-        return cli_envelope.emit_error(args, "input_invalid", err, started_at=started_at)
-    count = len(manifest["assets"])
+    if err or manifest is None:
+        return cli_envelope.emit_error(args, "input_invalid", err or "manifest not loadable", started_at=started_at)
+    count = len(manifest.get("assets") or [])
     if not cli_envelope.use_json(args):
         state = "created" if created else f"already exists ({count} assets)"
         print(f"Manifest {state}: {path}")

@@ -30,7 +30,7 @@ from tts.backends import user_prefs_get  # noqa: E402
 
 def build_parser():
     parser = argparse.ArgumentParser(
-        description=__doc__.split('\n\n')[0],
+        description=(__doc__ or "").split('\n\n')[0],
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument('keys', nargs='+', help='Nested key path, e.g. global tts rate')

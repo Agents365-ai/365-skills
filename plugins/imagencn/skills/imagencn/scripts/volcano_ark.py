@@ -18,12 +18,14 @@ class ArkProvider(OpenAICompatibleProvider):
     api_base = "https://ark.cn-beijing.volces.com/api/v3/images/generations"
     default_model = "doubao-seedream-5-0-260128"
 
+    # pi-lens-ignore: python-mutable-class-attr
     models = {
         "doubao-seedream-5-0-260128",
         "doubao-seedream-4-5-251128",
         "doubao-seedream-4-0-250828",
     }
 
+    # pi-lens-ignore: python-mutable-class-attr
     SIZES = {
         "1:1": "2048x2048", "16:9": "2848x1600", "9:16": "1600x2848",
         "4:3": "2304x1728", "3:4": "1728x2304", "3:2": "2496x1664",

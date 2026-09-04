@@ -60,9 +60,13 @@ def _load_config():
 def _save_voices(voices):
     config = _load_config()
     config["cloned_voices"] = voices
-    with open(USER_CONFIG, "w", encoding="utf-8") as f:
-        json.dump(config, f, ensure_ascii=False, indent=2)
-        f.write("\n")
+    try:
+        with open(USER_CONFIG, "w", encoding="utf-8") as f:
+            json.dump(config, f, ensure_ascii=False, indent=2)
+            f.write("\n")
+    except OSError as e:
+        emit_error("internal_error", f"cannot write {USER_CONFIG}: {e}",
+                   exit_code=1)
 
 
 def load_voices():
@@ -115,8 +119,13 @@ def minimax_create(audio, name, voice_id=None):
             emit_error(
                 "input_not_found", f"Audio file not found: {audio}",
                 field="audio", exit_code=EXIT_VALIDATION)
-        with open(audio, "rb") as f:
-            content = f.read()
+        try:
+            with open(audio, "rb") as f:
+                content = f.read()
+        except OSError as e:
+            emit_error(
+                "input_not_found", f"Cannot read audio file {audio}: {e}",
+                field="audio", exit_code=EXIT_VALIDATION)
         filename = os.path.basename(audio)
 
     print("  Uploading reference audio ...", file=sys.stderr)

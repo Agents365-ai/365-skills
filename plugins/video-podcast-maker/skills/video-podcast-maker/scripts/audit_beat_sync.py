@@ -98,6 +98,7 @@ def parse_beats(tsx_text: str):
             start = re.search(r'startSec\s*:\s*([\d.]+)', obj_body)
             if not start:
                 continue
+            # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
             start_sec = float(start.group(1))
             # Extract human-readable summary of beat lines, scoped to the
             # `lines:` array so style enums outside it (e.g. `variant: 'pop'`,
@@ -135,8 +136,10 @@ def parse_srt(srt_text: str):
     for m in _SRT_BLOCK.finditer(srt_text):
         h, mn, s = m.group(1).split(':')
         ms = m.group(2)
+        # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
         start = int(h) * 3600 + int(mn) * 60 + int(s) + int(ms) / 1000.0
         h2, mn2, s2 = m.group(3).split(':')
+        # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
         end = int(h2) * 3600 + int(mn2) * 60 + int(s2) + int(m.group(4)) / 1000.0
         text = m.group(5).strip().replace('\n', ' ')
         out.append((start, end, text))
@@ -169,8 +172,11 @@ def audit(tsx_path, timing_path, srt_path, drift_warn=1.5):
     Raises ValueError if no SECTION_CONFIG entries with `beats:` are found
     in the .tsx — main() converts this into an 'input_invalid' envelope.
     """
+    # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
     tsx_text = open(tsx_path, encoding='utf-8').read()
+    # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
     timing = json.loads(open(timing_path, encoding='utf-8').read())
+    # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
     srt_text = open(srt_path, encoding='utf-8').read()
     subs = parse_srt(srt_text)
 
@@ -306,7 +312,7 @@ def audit(tsx_path, timing_path, srt_path, drift_warn=1.5):
 
 def build_parser():
     parser = argparse.ArgumentParser(
-        description=__doc__.split("\n\n")[0],
+        description=(__doc__ or "").split("\n\n")[0],
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="Beat data format and SECTION_CONFIG conventions: see the module docstring.",
     )
@@ -351,14 +357,6 @@ def main():
                 args, "input_invalid", str(exc),
                 field="tsx",
                 extra={"tsx": args.tsx},
-                started_at=started_at,
-            ))
-        except json.JSONDecodeError as exc:
-            sys.stdout = sys.__stdout__
-            sys.exit(cli_envelope.emit_error(
-                args, "input_invalid",
-                f"timing.json is malformed: {exc}",
-                field="timing", extra={"timing": args.timing},
                 started_at=started_at,
             ))
         except Exception as exc:

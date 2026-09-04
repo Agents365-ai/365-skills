@@ -692,7 +692,7 @@ def verify(video_dir, strict=False, do_auto_fix=True):
 
     # Asset manifest (Step 5) — only checked when a manifest exists;
     # text-only videos have none and that is valid.
-    from assets import validate_manifest
+    from assets import validate_manifest  # pyright: ignore[reportAttributeAccessIssue]
 
     m_errors, m_warnings, m_manifest = validate_manifest(video_dir)
     if m_manifest is not None or m_errors:

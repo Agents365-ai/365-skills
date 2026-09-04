@@ -33,15 +33,21 @@ except ImportError:
     print("Error: 'requests' not installed. Run: pip install requests", file=sys.stderr)
     sys.exit(1)
 
-from providers import get_provider, detect_provider, list_providers, register_providers
+from providers import detect_provider, get_provider, list_providers, register_providers
 from providers.base import (
-    GenerationRequest, VideoGenError, ConfigError, InputError, APIError,
-    TaskFailedError, TaskTimeoutError,
-    safe_request, emit_success, emit_error, emit_progress,
-    stdout_is_tty, resolve_format, SCHEMA_VERSION,
+    APIError,
+    ConfigError,
+    GenerationRequest,
+    InputError,
+    TaskFailedError,
+    TaskTimeoutError,
+    VideoGenError,
+    emit_error,
+    emit_progress,
+    emit_success,
+    resolve_format,
 )
 from providers.base import safe_request as _safe_request
-
 
 # ---------------------------------------------------------------------------
 # Shared utilities
@@ -130,6 +136,7 @@ def _load_models_json() -> dict:
     ]
     for p in candidates:
         if p.exists():
+            # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
             return json.loads(p.read_text())
     return {}
 
@@ -205,6 +212,7 @@ def _estimate_cost(req: GenerationRequest, provider_name: str) -> dict:
                                 "currency": "USD",
                             }
                         except (ValueError, IndexError):
+                            # pi-lens-ignore: python-empty-except
                             pass
                     elif price and price != "—":
                         try:
@@ -212,6 +220,7 @@ def _estimate_cost(req: GenerationRequest, provider_name: str) -> dict:
                             return {"min": round(v * req.duration, 3),
                                     "max": round(v * req.duration, 3), "currency": "USD"}
                         except ValueError:
+                            # pi-lens-ignore: python-empty-except
                             pass
                     break
             break

@@ -51,7 +51,9 @@ def load_timing(input_dir):
     Errors propagate so main() can route them through the envelope.
     """
     path = os.path.join(input_dir, 'timing.json')
+    # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
     with open(path, encoding='utf-8') as f:
+        # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
         return json.load(f)
 
 
@@ -63,6 +65,7 @@ def load_script(input_dir):
     path = os.path.join(input_dir, 'podcast.txt')
     if not os.path.exists(path):
         return {}
+    # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
     with open(path, encoding='utf-8') as f:
         text = f.read()
 
@@ -172,6 +175,7 @@ def generate_timing(section, output_dir):
     }
 
     path = os.path.join(output_dir, 'short_timing.json')
+    # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
     with open(path, 'w', encoding='utf-8') as f:
         json.dump(short_timing, f, indent=2, ensure_ascii=False)
 
@@ -200,6 +204,7 @@ def generate_composition_stub(section, video_title, output_dir, short_timing, se
         "fps": FPS,
     }
     info_path = os.path.join(output_dir, 'short_info.json')
+    # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
     with open(info_path, 'w', encoding='utf-8') as f:
         json.dump(info, f, indent=2, ensure_ascii=False)
 
@@ -220,6 +225,7 @@ def generate_composition_stub(section, video_title, output_dir, short_timing, se
 />
 '''
     snippet_path = os.path.join(output_dir, 'register_snippet.tsx')
+    # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
     with open(snippet_path, 'w', encoding='utf-8') as f:
         f.write(snippet)
 
@@ -339,6 +345,7 @@ def _run(args, started_at):
         print(f"  All sections: {result['all_sections']}")
         sys.exit(cli_envelope.emit_success(args, result, started_at=started_at))
 
+    # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
     os.makedirs(shorts_dir, exist_ok=True)
     print(f"Generating shorts for {len(qualifying)} sections:\n")
 
@@ -351,6 +358,7 @@ def _run(args, started_at):
         print(f"  [{name}] {duration:.1f}s ({frames} frames)")
 
         output_dir = os.path.join(shorts_dir, name)
+        # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
         os.makedirs(output_dir, exist_ok=True)
 
         # 1. Extract audio

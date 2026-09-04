@@ -201,6 +201,7 @@ def _run(args, started_at):
     print(f"Speech rate: {SPEECH_RATE} [from {rate_source}]")
 
     # --- Read input ---
+    # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
     os.makedirs(args.output_dir, exist_ok=True)
 
     if not os.path.exists(args.input):
@@ -210,6 +211,7 @@ def _run(args, started_at):
             field="input", started_at=started_at,
         ))
 
+    # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
     with open(args.input, encoding="utf-8") as f:
         text = f.read().strip()
 
@@ -307,7 +309,9 @@ def _run(args, started_at):
         est_duration = cn_chars / 4.0 + en_words / 3.0
         rate_match = re.match(r'([+-]?\d+)%', SPEECH_RATE)
         if rate_match:
+            # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
             est_duration /= 1.0 + int(rate_match.group(1)) / 100.0
+        # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
         est_frames = int(est_duration * 30)
         non_silent = [s for s in sections if not s.get('is_silent')]
         chunks = chunk_text(clean_text, MAX_CHARS)
@@ -358,6 +362,7 @@ def _run(args, started_at):
         # ttscn consumes phonemes as a file — write the merged dict
         # (global + project + inline) next to the audio parts.
         phonemes_path = os.path.join(args.output_dir, "phonemes_resolved.json")
+        # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
         with open(phonemes_path, "w", encoding="utf-8") as f:
             json.dump(phoneme_dict, f, ensure_ascii=False, indent=2)
         config['phonemes_path'] = phonemes_path
@@ -387,6 +392,7 @@ def _run(args, started_at):
     print("\nConcatenating audio...")
     concat_list = os.path.join(args.output_dir, "concat_list.txt")
     output_wav = os.path.join(args.output_dir, "podcast_audio.wav")
+    # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
     with open(concat_list, "w", encoding="utf-8") as f:
         for pf in part_files:
             f.write(f"file '{os.path.basename(pf)}'\n")

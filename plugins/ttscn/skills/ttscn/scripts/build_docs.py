@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Build docs/providers.html and docs/providers.md from data/providers.json."""
 
+import html as html_lib
 import json
 from pathlib import Path
 
@@ -17,8 +18,11 @@ PAGES_MD = PAGES_DIR / "providers.md"
 
 
 def load_data():
-    with open(DATA_FILE, encoding="utf-8") as f:
-        return json.load(f)
+    try:
+        with open(DATA_FILE, encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, ValueError) as e:
+        raise SystemExit(f"build_docs: cannot read {DATA_FILE}: {e}")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -62,6 +66,7 @@ def build_html(data):
         bid = p["id"]
         tags_html = " ".join(_tag_badge(t, tags_meta) for t in p.get("tags", []))
         clone_str = p["clone_detail"] if p["supports_clone"] else "—"
+        clone_str = html_lib.escape(clone_str)
         ssml_icon = _bool_icon(p["supports_ssml"])
         clone_icon = _bool_icon(p["supports_clone"])
         cost_class = "free" if p.get("cost_tier") == "free" else ""

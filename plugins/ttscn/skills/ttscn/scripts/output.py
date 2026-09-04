@@ -16,6 +16,7 @@ import json
 import os
 import sys
 import time
+from typing import NoReturn
 
 SCHEMA_VERSION = "1.2.0"  # semver — bump on envelope/contract changes
 
@@ -93,13 +94,13 @@ def error(code, message, retryable=False, field=None, backend=None,
     return envelope(False, error=err, started_at=started_at)
 
 
-def emit_success(data=None, started_at=None, **extra):
+def emit_success(data=None, started_at=None, **extra) -> NoReturn:
     print(success(data, started_at=started_at, **extra), file=_REAL_STDOUT)
     sys.exit(0)
 
 
 def emit_error(code, message, retryable=False, field=None, backend=None,
-               started_at=None, exit_code=1, **extra):
+               started_at=None, exit_code=1, **extra) -> NoReturn:
     # Human-readable on stderr
     print(f"Error [{code}]: {message}", file=sys.stderr)
     if field:

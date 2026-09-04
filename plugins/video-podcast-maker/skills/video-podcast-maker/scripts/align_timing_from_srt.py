@@ -40,6 +40,7 @@ def ffprobe_duration(wav_path: Path) -> float:
          "-of", "csv=p=0", str(wav_path)],
         capture_output=True, text=True, check=True,
     )
+    # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
     return float(result.stdout.strip())
 
 
@@ -255,14 +256,15 @@ def pick_monotonic_matches(slides, slide_indices, keys_list, entries, concat, of
         candidates.append(unique[:10])  # limit search space
 
     # Greedy monotonic pick is usually enough within one section.
-    chosen = [None] * n
+    chosen: list[tuple[int, float] | None] = [None] * n
     last_time = sec_start
     for i in range(n):
         valid = [(idx, t) for idx, t in candidates[i] if t >= last_time + 0.1]
         if valid:
             # Pick the earliest valid candidate.
-            chosen[i] = min(valid, key=lambda x: x[1])
-            last_time = chosen[i][1]
+            best = min(valid, key=lambda x: x[1])
+            chosen[i] = best
+            last_time = best[1]
         else:
             chosen[i] = None
     return chosen
@@ -272,7 +274,7 @@ def distribute_section_time_across_slides(slides, slide_indices, sec_start, sec_
                                            already_matched):
     """Fill unmatched slides in a section proportionally around matched anchors."""
     n = len(slide_indices)
-    starts = [None] * n
+    starts: list[float | None] = [None] * n
 
     # Lock in matched positions.
     for i, m in enumerate(already_matched):
@@ -301,11 +303,11 @@ def distribute_section_time_across_slides(slides, slide_indices, sec_start, sec_
     prev_matched = i if i < n and starts[i] is not None else None
     for j in range(i + 1, n):
         if starts[j] is not None:
-            if prev_matched is not None:
-                available = starts[j] - starts[prev_matched]
+            if prev_matched is not None and starts[j] is not None and starts[prev_matched] is not None:
+                available = (starts[j] or 0.0) - (starts[prev_matched] or 0.0)
                 total_orig = sum(orig_durs[k] for k in range(prev_matched, j))
                 scale = available / total_orig if total_orig > 0 else 0
-                t = starts[prev_matched]
+                t = starts[prev_matched] or 0.0
                 for k in range(prev_matched + 1, j):
                     t += orig_durs[k] * scale
                     starts[k] = t
@@ -316,7 +318,7 @@ def distribute_section_time_across_slides(slides, slide_indices, sec_start, sec_
         available = sec_end - starts[prev_matched]
         total_orig = sum(orig_durs[k] for k in range(prev_matched, n))
         scale = available / total_orig if total_orig > 0 else 0
-        t = starts[prev_matched]
+        t = starts[prev_matched] or 0.0
         for k in range(prev_matched + 1, n):
             t += orig_durs[k] * scale
             starts[k] = t
@@ -350,6 +352,7 @@ def align_timing(video_dir: Path, dry_run: bool = False):
         if not p.exists():
             raise FileNotFoundError(f"{p.name} not found: {p}")
 
+    # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
     timing = json.loads(timing_path.read_text(encoding="utf-8"))
     slides = timing.get("sections", timing.get("slides", []))
     if not slides:
@@ -461,10 +464,13 @@ def align_timing(video_dir: Path, dry_run: bool = False):
         slides[i]["start_time"] = round(start, 3)
         slides[i]["end_time"] = round(end, 3)
         slides[i]["duration"] = round(dur, 3)
+        # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
         slides[i]["start_frame"] = int(start * fps)
+        # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
         slides[i]["duration_frames"] = int(dur * fps)
 
     timing["total_duration"] = round(real_duration, 3)
+    # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
     timing["total_frames"] = int(real_duration * fps)
 
     # --- Report (human-readable; goes to stderr in JSON mode) ---
@@ -496,6 +502,7 @@ def align_timing(video_dir: Path, dry_run: bool = False):
     if not dry_run:
         if not backup_path.exists():
             backup_path.write_text(
+                # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
                 json.dumps(json.loads(timing_path.read_text(encoding="utf-8")), indent=2, ensure_ascii=False),
                 encoding="utf-8",
             )
@@ -521,7 +528,7 @@ def align_timing(video_dir: Path, dry_run: bool = False):
 
 def build_parser():
     parser = argparse.ArgumentParser(
-        description=__doc__.split("\n\n")[0],
+        description=(__doc__ or "").split("\n\n")[0],
         prog="align_timing_from_srt.py",
     )
     parser.add_argument("video_dir", help="Path to videos/<name> directory")

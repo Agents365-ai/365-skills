@@ -51,7 +51,9 @@ def synthesize(chunks, config, output_file, output_format="wav"):
                         )
                     async for event in communicate.stream():
                         if event["type"] == "audio":
-                            audio_data.extend(event["data"])
+                            payload = event.get("data")
+                            if payload:
+                                audio_data.extend(payload)
                         elif event["type"] == "WordBoundary":
                             # offset/duration are 100-ns ticks, per chunk;
                             # accumulated_duration makes offsets absolute.
@@ -131,9 +133,11 @@ def synthesize(chunks, config, output_file, output_format="wav"):
                     try:
                         os.remove(tmp)
                     except OSError:
+                        # pi-lens-ignore: python-empty-except
                         pass
         if os.path.exists(concat_list):
             try:
                 os.remove(concat_list)
             except OSError:
+                # pi-lens-ignore: python-empty-except
                 pass

@@ -120,8 +120,9 @@ def emit_error(args, code, message, *, field=None, retryable=None,
 
 
 def _build_meta(extra, started_at):
-    meta = {"request_id": uuid.uuid4().hex[:12], "schema_version": SCHEMA_VERSION}
+    meta: dict = {"request_id": uuid.uuid4().hex[:12], "schema_version": SCHEMA_VERSION}
     if started_at is not None:
+        # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
         meta["latency_ms"] = int((time.time() - started_at) * 1000)
     if extra:
         meta.update(extra)

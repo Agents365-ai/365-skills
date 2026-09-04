@@ -382,7 +382,10 @@ def build(report_dir: Path, title: str, subtitle: str) -> Path:
     if not md_path.exists():
         raise SystemExit(f"missing: {md_path}")
 
-    rows = list(csv.DictReader(open(csv_path)))
+    try:
+        rows = list(csv.DictReader(open(csv_path)))
+    except OSError as e:
+        raise SystemExit(f"cannot read {csv_path}: {e}")
     exec_md, rationales = parse_report_md(md_path.read_text())
     exec_html = md_inline_to_html(exec_md) if exec_md else "<p><em>No executive summary written.</em></p>"
 
@@ -473,7 +476,10 @@ def main():
     args = ap.parse_args()
 
     report_dir = Path(args.report_dir).expanduser().resolve()
-    n_rows = sum(1 for _ in csv.DictReader(open(report_dir / "targets_summary.csv")))
+    try:
+        n_rows = sum(1 for _ in csv.DictReader(open(report_dir / "targets_summary.csv")))
+    except OSError as e:
+        raise SystemExit(f"cannot read {report_dir / 'targets_summary.csv'}: {e}")
     subtitle = args.subtitle or f"{n_rows} genes · sorted by composite score"
 
     out_path = build(report_dir, args.title, subtitle)

@@ -198,6 +198,7 @@ def synthesize(chunks, config, output_dir, resume=False):
                     raise RuntimeError(
                         f"ffmpeg resample failed for part {i + 1}: "
                         f"{resample.stderr.strip()[-200:]}")
+                # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
                 os.remove(raw_file)
                 # Measure the actual resampled audio rather than trusting
                 # ttscn's reported duration_seconds — some platforms (e.g.
@@ -208,6 +209,7 @@ def synthesize(chunks, config, output_dir, resume=False):
                 if measured:
                     chunk_duration = measured
                 else:
+                    # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
                     chunk_duration = float(envelope['data'].get('duration_seconds') or 0)
                 if not chunk_duration:
                     raise RuntimeError(

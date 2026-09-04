@@ -141,7 +141,10 @@ def derive_disease_signal(ot_entry: dict) -> dict:
     max_any_score = 0.0
     for r in rows:
         name = (r.get("name") or "").lower()
-        score = float(r.get("score") or 0)
+        try:
+            score = float(r.get("score") or 0)
+        except (TypeError, ValueError):
+            score = 0.0
         max_any_score = max(max_any_score, score)
         if any(t in name for t in FOCUS_DISEASE_TERMS):
             focus_hits.append(r.get("name"))
@@ -270,6 +273,8 @@ def load_input_expr(csv_path: str) -> dict:
                 vals = []
                 for k in ("mean_g2", "mean_g1", "sample_mean_g2", "sample_mean_g1"):
                     v = row.get(k)
+                    if v is None:
+                        continue
                     try:
                         vals.append(float(v))
                     except (ValueError, TypeError):
@@ -293,7 +298,10 @@ def main():
     out_dir = Path(args.output_dir)
     weights = load_weights(Path(args.weights))
 
-    genes = json.loads((raw / "genes.json").read_text(encoding="utf-8"))
+    try:
+        genes = json.loads((raw / "genes.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError) as e:
+        sys.exit(f"aggregate: cannot read {raw / 'genes.json'}: {e}")
     uniprot = load_json(raw / "uniprot.json")
     ot      = load_json(raw / "opentargets.json")
     pubmed  = load_json(raw / "pubmed.json")
@@ -382,10 +390,13 @@ def main():
     # CSV
     csv_path = out_dir / "targets_summary.csv"
     if rows:
-        with open(csv_path, "w", newline="", encoding="utf-8") as f:
-            w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
-            w.writeheader()
-            w.writerows(rows)
+        try:
+            with open(csv_path, "w", newline="", encoding="utf-8") as f:
+                w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
+                w.writeheader()
+                w.writerows(rows)
+        except OSError as e:
+            sys.exit(f"aggregate: cannot write {csv_path}: {e}")
     print(f"aggregate: wrote {csv_path}")
 
     # Markdown skeleton (rationale slots left for Claude to fill)

@@ -544,6 +544,7 @@ def _run(args, started_at, json_mode=False):
                        f"Input file not found: {args.input}",
                        field="input", retryable=False,
                        exit_code=EXIT_VALIDATION, started_at=started_at)
+        # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
         with open(args.input, encoding="utf-8") as f:
             text = f.read().strip()
     elif args.text:
@@ -638,6 +639,7 @@ def _run(args, started_at, json_mode=False):
         est_duration = cn / 4.0 + en / 3.0
         rate_match = re.match(r"([+-]?\d+)%", rate)
         if rate_match:
+            # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
             est_duration /= 1.0 + int(rate_match.group(1)) / 100.0
 
         dry_run_data = {
@@ -716,6 +718,10 @@ def _run(args, started_at, json_mode=False):
     if output_fmt == "mp3":
         _ensure_mp3(output_file, started_at)
 
+    if not output_file or not Path(output_file).exists():
+        emit_error("backend_error", f"Synthesis reported success but output file is missing: {output_file}",
+                   retryable=True, backend=backend,
+                   exit_code=EXIT_BACKEND, started_at=started_at)
     file_size = Path(output_file).stat().st_size
     elapsed = time.time() - started_at
 
