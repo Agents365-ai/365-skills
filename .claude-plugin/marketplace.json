@@ -111,7 +111,7 @@
         "name": "Agents365-ai"
       },
       "repository": "https://github.com/Agents365-ai/ttscn",
-      "license": "CC-BY-NC-4.0",
+      "license": "MIT",
       "keywords": [
         "tts",
         "text-to-speech",
@@ -273,7 +273,7 @@
         "name": "Agents365-ai"
       },
       "repository": "https://github.com/Agents365-ai/target-prioritization",
-      "license": "PolyForm-NC-1.0.0",
+      "license": "MIT",
       "keywords": [
         "drug-discovery",
         "target-prioritization",
@@ -294,7 +294,7 @@
         "name": "Agents365-ai"
       },
       "repository": "https://github.com/Agents365-ai/pi-plugin-cc",
-      "license": "Apache-2.0",
+      "license": "MIT",
       "keywords": [
         "pi",
         "coding-agent",
@@ -315,7 +315,7 @@
         "name": "Agents365-ai"
       },
       "repository": "https://github.com/Agents365-ai/videogencn",
-      "license": "CC-BY-NC-4.0",
+      "license": "MIT",
       "keywords": [
         "video-generation",
         "text-to-video",
@@ -340,7 +340,7 @@
         "name": "Agents365-ai"
       },
       "repository": "https://github.com/Agents365-ai/assetseeker",
-      "license": "CC-BY-NC-4.0",
+      "license": "MIT",
       "keywords": [
         "assets",
         "stock-photos",
@@ -459,7 +459,7 @@
         "name": "Agents365-ai"
       },
       "repository": "https://github.com/Agents365-ai/obsidian-organizer",
-      "license": "CC-BY-NC-4.0",
+      "license": "MIT",
       "keywords": [
         "obsidian",
         "notes",
