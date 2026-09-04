@@ -125,8 +125,3 @@ git add plugins/drawio && git commit -m "chore: sync drawio-skill"
 
 - Bilibili: <https://space.bilibili.com/441831884>
 - GitHub: <https://github.com/Agents365-ai>
-
-## 其他资源
-
-- [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) —— 社区维护的科研类 skill 合集
-- [anthropics/life-sciences](https://github.com/anthropics/life-sciences) —— Anthropic 官方的生命科学 skills

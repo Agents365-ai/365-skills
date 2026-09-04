@@ -117,8 +117,3 @@ If this skill set is helpful, consider supporting the author:
 
 - Bilibili: <https://space.bilibili.com/441831884>
 - GitHub: <https://github.com/Agents365-ai>
-
-## Other resources
-
-- [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) — community collection of scientific-research skills
-- [anthropics/life-sciences](https://github.com/anthropics/life-sciences) — Anthropic's life-sciences skills
