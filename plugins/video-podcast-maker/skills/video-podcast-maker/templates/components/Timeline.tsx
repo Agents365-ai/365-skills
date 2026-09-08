@@ -4,9 +4,15 @@ import { useEntrance, useDrawOn, staggerDelay } from "./animations";
 
 // Animated SVG node circle that draws itself on
 const TimelineNode = ({
-  color, enabled, delay, size = 28,
+  color,
+  enabled,
+  delay,
+  size = 28,
 }: {
-  color: string; enabled: boolean; delay: number; size?: number;
+  color: string;
+  enabled: boolean;
+  delay: number;
+  size?: number;
 }) => {
   const r = size / 2;
   // Circle as SVG path (clockwise arc)
@@ -14,13 +20,14 @@ const TimelineNode = ({
   const draw = useDrawOn(circlePath, enabled, delay, 15, "snappy");
 
   return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ flexShrink: 0 }}>
+    <svg
+      width={size}
+      height={size}
+      viewBox={`0 0 ${size} ${size}`}
+      style={{ flexShrink: 0 }}
+    >
       {/* Glow background (always visible once drawn) */}
-      <circle
-        cx={r} cy={r} r={r}
-        fill={color}
-        opacity={draw.progress}
-      />
+      <circle cx={r} cy={r} r={r} fill={color} opacity={draw.progress} />
       {/* Draw-on ring */}
       <path
         d={circlePath}
@@ -37,15 +44,26 @@ const TimelineNode = ({
 
 // Animated SVG connector line between nodes
 const TimelineConnector = ({
-  color, enabled, delay, height,
+  color,
+  enabled,
+  delay,
+  height,
 }: {
-  color: string; enabled: boolean; delay: number; height: number;
+  color: string;
+  enabled: boolean;
+  delay: number;
+  height: number;
 }) => {
   const linePath = `M 1.5 0 L 1.5 ${height}`;
   const draw = useDrawOn(linePath, enabled, delay, 20, "gentle");
 
   return (
-    <svg width={3} height={height} viewBox={`0 0 3 ${height}`} style={{ flexShrink: 0 }}>
+    <svg
+      width={3}
+      height={height}
+      viewBox={`0 0 3 ${height}`}
+      style={{ flexShrink: 0 }}
+    >
       <path
         d={linePath}
         fill="none"
@@ -95,11 +113,22 @@ const TimelineItem = ({
   const itemDelay = staggerDelay(index, delay, 10);
   const a = useEntrance(props.enableAnimations, itemDelay, "snappy");
   return (
-    <div style={{
-      display: "flex", gap: 28, opacity: a.opacity,
-      transform: `translateY(${a.translateY}px)`,
-    }}>
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: 32 }}>
+    <div
+      style={{
+        display: "flex",
+        gap: 28,
+        opacity: a.opacity,
+        transform: `translateY(${a.translateY}px)`,
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          width: 32,
+        }}
+      >
         <TimelineNode
           color={props.primaryColor}
           enabled={props.enableAnimations}
@@ -114,9 +143,21 @@ const TimelineItem = ({
           />
         )}
       </div>
-      <div style={{ paddingBottom: !isLast ? 32 : 0, flex: 1 }}>
-        <div style={{ fontSize: 34, fontWeight: 700, color: props.primaryColor }}>{item.label}</div>
-        <div style={{ fontSize: 26, color: props.textColor, marginTop: 6, lineHeight: 1.5, opacity: 0.75 }}>
+      <div style={{ paddingBottom: isLast ? 0 : 32, flex: 1 }}>
+        <div
+          style={{ fontSize: 34, fontWeight: 700, color: props.primaryColor }}
+        >
+          {item.label}
+        </div>
+        <div
+          style={{
+            fontSize: 26,
+            color: props.textColor,
+            marginTop: 6,
+            lineHeight: 1.5,
+            opacity: 0.75,
+          }}
+        >
           {item.description}
         </div>
       </div>
@@ -136,11 +177,16 @@ export const Timeline = ({
   const connectorHeight = 32;
 
   return (
-    <div style={{
-      display: "flex", flexDirection: "column", gap: 0,
-      width: "100%", maxWidth: 700,
-      margin: "0 auto",
-    }}>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 0,
+        width: "100%",
+        maxWidth: 700,
+        margin: "0 auto",
+      }}
+    >
       {items.map((item, i) => (
         <TimelineItem
           key={i}

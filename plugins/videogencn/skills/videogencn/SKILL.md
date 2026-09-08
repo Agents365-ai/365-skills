@@ -1,10 +1,10 @@
 ---
 name: videogencn
-description: Use when generating video clips with Chinese video models — text-to-video (文生视频), image-to-video (图生视频), first/last-frame and reference-to-video across 4 platforms: Bailian (Wan/PixVerse/Kling/Vidu/HappyHorse), Jimeng (doubao-seedance), MiniMax (Hailuo), Hunyuan (hy-video)
+description: "Use when generating video clips with Chinese video models — text-to-video (文生视频), image-to-video (图生视频), first/last-frame and reference-to-video across 4 platforms: Bailian (Wan/PixVerse/Kling/Vidu/HappyHorse), Jimeng (doubao-seedance), MiniMax (Hailuo), Hunyuan (hy-video)"
 author: Agents365-ai
-version: 1.0.0
+version: 1.1.0
 created: 2026-07-05
-updated: 2026-07-08
+updated: 2026-08-08
 homepage: https://github.com/Agents365-ai/videogenCN
 metadata: {"openclaw":{"requires":{"bins":["python3"],"env":["DASHSCOPE_API_KEY"]},"primaryEnv":"DASHSCOPE_API_KEY","emoji":"🎬"}}
 ---
@@ -18,7 +18,7 @@ Generate short video clips using Chinese video models across four providers — 
 Four modes, auto-selected from inputs:
 
 | Mode | Inputs | Default model |
-|------|--------|---------------|
+| ------ | -------- | --------------- |
 | t2v 文生视频 | prompt only | `wan2.7-t2v-2026-04-25` (Bailian) |
 | i2v 图生视频 | prompt + `--image` | `wan2.6-i2v-flash` (Bailian) |
 | kf2v 首尾帧 | prompt + `--image` + `--last-frame` | `pixverse/pixverse-c1-kf2v` (Bailian) |
@@ -44,7 +44,7 @@ Local images: Wan/HappyHorse accept base64 data URIs directly; PixVerse/Kling/Vi
 #### 0.1 Analyze the raw input
 
 | Dimension | Check |
-|-----------|-------|
+| ----------- | ------- |
 | **Subject** | Who/what? Appearance, action, expression |
 | **Scene** | Where? Background, environment, atmosphere |
 | **Lighting** | Time of day? Light quality? (golden hour, neon, soft diffused, backlit) |
@@ -70,6 +70,7 @@ Present **3 variants** in a table:
 - **Variant 3**: 实用主义 — optimized for vertical short-video
 
 **Prompt writing rules:**
+
 - Write in Chinese; front-load subject + action (first 20 chars matter most)
 - Concrete visual nouns ("金色麦田") not abstract concepts ("丰收的感觉")
 - Describe motion explicitly ("缓缓推近", "随风飘动")
@@ -80,7 +81,7 @@ Present **3 variants** in a table:
 #### 0.3 User feedback loop
 
 | User says | Action |
-|-----------|--------|
+| ----------- | -------- |
 | "用第N个" / "N" | Use variant N as-is |
 | "更诗意" / "更浪漫" | Regenerate with poetic tone |
 | "更简洁" | Strip to essentials |
@@ -125,7 +126,7 @@ One API key (`DASHSCOPE_API_KEY`) covers 5 model families. Third-party models (P
 
 ### MiniMax 海螺 AI
 
-`MINIMAX_API_KEY` via `https://api.minimax.chat`. video-01: t2v/i2v, 6s at 720P. Prompt optimizer on by default (`--no-prompt-optimizer` to disable).
+`MINIMAX_API_KEY` via `https://api.minimax.chat`. MiniMax-H3 (Hailuo 3.0): t2v/i2v, 4-15s, 768P/1080P (2K via direct API), 24fps with native stereo audio. Legacy `video-01`: 6s at 720P, prompt optimizer on by default (`--no-prompt-optimizer` to disable). Host override: `MINIMAX_API_BASE` (e.g. `https://api.minimaxi.com` CN / `https://api.minimax.io` intl).
 
 ### Tencent Hunyuan 混元
 
@@ -134,13 +135,13 @@ One API key (`DASHSCOPE_API_KEY`) covers 5 model families. Third-party models (P
 ## Model Selection Guide
 
 | Use case | Model | Provider |
-|----------|-------|----------|
+| ---------- | ------- | ---------- |
 | Best quality t2v, multi-shot | `wan2.7-t2v-2026-04-25` | Bailian |
 | Fast action / combat | `pixverse/pixverse-c1-t2v` | Bailian |
 | Smart storyboard + audio | `kling/kling-v3-video-generation` | Bailian |
 | Long clips up to 16s + audio | `vidu/viduq3-pro_text2video` | Bailian |
 | Douyin/XHS short-video | `doubao-seedance-2-0-260128` | Jimeng |
-| Smooth motion, natural physics | `video-01` | MiniMax |
+| Smooth motion, natural physics | `MiniMax-H3` | MiniMax |
 | Animate an image (default) | `wan2.6-i2v-flash` | Bailian |
 | Transition between two frames | `pixverse/pixverse-c1-kf2v` | Bailian |
 | Character/subject consistency | `pixverse/pixverse-c1-r2v` | Bailian |
@@ -160,7 +161,7 @@ When the user wants to compare models, browse pricing, filter by features, or pi
 open docs/models.html
 ```
 
-The page supports filtering by provider, mode (文生/图生/首尾帧/参考生), and features (audio/camera/multi-shot), with pricing and capability comparison across all 22 models.
+The page supports filtering by provider, mode (文生/图生/首尾帧/参考生), and features (audio/camera/multi-shot), with pricing and capability comparison across all 24 models.
 
 ## Usage
 
@@ -206,7 +207,7 @@ python scripts/generate_video.py --list-models
 ## Options
 
 | Flag | Meaning | Default |
-|------|---------|---------|
+| ------ | --------- | --------- |
 | `--provider` | `bailian` / `jimeng` / `minimax` / `hunyuan` | auto-detect |
 | `-m/--model` | model name | auto by mode |
 | `-i/--image` | first-frame image (path/URL) → i2v | — |
@@ -238,12 +239,13 @@ pip install requests
 ## Environment Variables
 
 | Variable | Required | Provider | Purpose |
-|----------|----------|----------|---------|
-| `DASHSCOPE_API_KEY` | yes (Bailian) | Bailian | https://bailian.console.aliyun.com/ |
+| ---------- | ---------- | ---------- | --------- |
+| `DASHSCOPE_API_KEY` | yes (Bailian) | Bailian | <https://bailian.console.aliyun.com/> |
 | `DASHSCOPE_API_BASE` | no | Bailian | `cn` (default) / `sg` / `us` |
 | `DASHSCOPE_VIDEO_MODEL` | no | Bailian | default model override |
-| `ARK_API_KEY` | yes (Jimeng) | Jimeng | https://console.volcengine.com/ark/ |
-| `MINIMAX_API_KEY` | yes (MiniMax) | MiniMax | https://platform.minimax.io |
-| `HUNYUAN_API_KEY` | yes (Hunyuan) | Hunyuan | https://console.cloud.tencent.com/hunyuan |
+| `ARK_API_KEY` | yes (Jimeng) | Jimeng | <https://console.volcengine.com/ark/> |
+| `MINIMAX_API_KEY` | yes (MiniMax) | MiniMax | <https://platform.minimax.io> |
+| `MINIMAX_API_BASE` | no | MiniMax | API host override (CN: `https://api.minimaxi.com`, intl: `https://api.minimax.io`) |
+| `HUNYUAN_API_KEY` | yes (Hunyuan) | Hunyuan | <https://console.cloud.tencent.com/hunyuan> |
 
 Third-party Bailian models are **cn region only**.

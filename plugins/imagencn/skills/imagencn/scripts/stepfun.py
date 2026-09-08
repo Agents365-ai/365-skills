@@ -18,11 +18,15 @@ class StepFunProvider(OpenAICompatibleProvider):
     api_base = "https://api.stepfun.com/v1/images/generations"
     default_model = "step-2x-large"
 
+    # pi-lens-ignore: python-mutable-class-attr
     models = {"step-2x-large", "step-image-edit-2"}
 
+    # pi-lens-ignore: python-mutable-class-attr
     SIZES = {
-        "1:1": "1024x1024", "1:1-small": "512x512",
-        "16:9": "1280x800", "9:16": "800x1280",
+        "1:1": "1024x1024",
+        "1:1-small": "512x512",
+        "16:9": "1280x800",
+        "9:16": "800x1280",
     }
 
     default_size = "1024x1024"

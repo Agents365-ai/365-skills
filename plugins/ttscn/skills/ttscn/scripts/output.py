@@ -16,6 +16,7 @@ import json
 import os
 import sys
 import time
+from typing import NoReturn
 
 SCHEMA_VERSION = "1.2.0"  # semver — bump on envelope/contract changes
 
@@ -47,7 +48,7 @@ def _now_iso():
     return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
 
-VERSION = "1.8.0"  # tool version — single source of truth, imported by tts.py
+VERSION = "1.9.0"  # tool version — single source of truth, imported by tts.py
 
 
 def _get_version():
@@ -82,8 +83,9 @@ def success(data=None, started_at=None, **extra_meta):
     return envelope(True, data=data, started_at=started_at, meta=extra_meta)
 
 
-def error(code, message, retryable=False, field=None, backend=None,
-          started_at=None, **extra):
+def error(
+    code, message, retryable=False, field=None, backend=None, started_at=None, **extra
+):
     err = {"code": code, "message": message, "retryable": retryable}
     if field:
         err["field"] = field
@@ -93,13 +95,21 @@ def error(code, message, retryable=False, field=None, backend=None,
     return envelope(False, error=err, started_at=started_at)
 
 
-def emit_success(data=None, started_at=None, **extra):
+def emit_success(data=None, started_at=None, **extra) -> NoReturn:
     print(success(data, started_at=started_at, **extra), file=_REAL_STDOUT)
     sys.exit(0)
 
 
-def emit_error(code, message, retryable=False, field=None, backend=None,
-               started_at=None, exit_code=1, **extra):
+def emit_error(
+    code,
+    message,
+    retryable=False,
+    field=None,
+    backend=None,
+    started_at=None,
+    exit_code=1,
+    **extra,
+) -> NoReturn:
     # Human-readable on stderr
     print(f"Error [{code}]: {message}", file=sys.stderr)
     if field:
@@ -127,8 +137,7 @@ EXIT_BACKEND = 4
 def exit_for_error_code(code):
     if code in ("auth_missing_env", "auth_invalid"):
         return EXIT_AUTH
-    if code in ("validation_failed", "input_not_found", "input_empty",
-                "tool_missing"):
+    if code in ("validation_failed", "input_not_found", "input_empty", "tool_missing"):
         return EXIT_VALIDATION
     if code in ("backend_error", "backend_timeout", "backend_rate_limited"):
         return EXIT_BACKEND

@@ -25,6 +25,7 @@ Manifest schema (schema_version 1) — per-asset fields:
     license  provenance record (required when resolved; warning if absent)
     prompt / credit / cost_estimate / alpha / duration_s / fps   optional
 """
+
 import argparse
 import json
 import os
@@ -84,6 +85,7 @@ def load_manifest(video_dir):
 def save_manifest(video_dir, manifest):
     path = manifest_path(video_dir)
     path.parent.mkdir(parents=True, exist_ok=True)
+    # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
     with open(path, "w", encoding="utf-8") as f:
         json.dump(manifest, f, ensure_ascii=False, indent=2)
         f.write("\n")
@@ -105,11 +107,12 @@ def validate_manifest(video_dir):
     errors, warnings = [], []
     if manifest.get("schema_version") != SCHEMA_VERSION:
         errors.append(
-            f"schema_version {manifest.get('schema_version')!r} != {SCHEMA_VERSION}")
+            f"schema_version {manifest.get('schema_version')!r} != {SCHEMA_VERSION}"
+        )
     assets = manifest.get("assets")
 
     seen_ids = set()
-    for i, a in enumerate(assets):
+    for i, a in enumerate(assets or []):
         if not isinstance(a, dict):
             errors.append(f"assets[{i}]: not an object")
             continue
@@ -121,13 +124,21 @@ def validate_manifest(video_dir):
             if a["id"] in seen_ids:
                 errors.append(f"{label}: duplicate id")
             seen_ids.add(a["id"])
-        for field, allowed in (("type", TYPES), ("role", ROLES),
-                               ("source", SOURCES), ("status", STATUSES)):
+        for field, allowed in (
+            ("type", TYPES),
+            ("role", ROLES),
+            ("source", SOURCES),
+            ("status", STATUSES),
+        ):
             if a.get(field) and a[field] not in allowed:
                 errors.append(f"{label}: {field} '{a[field]}' not in {list(allowed)}")
 
         role, typ = a.get("role"), a.get("type")
-        if role in ROLE_TYPE_COMPAT and typ in TYPES and typ not in ROLE_TYPE_COMPAT[role]:
+        if (
+            role in ROLE_TYPE_COMPAT
+            and typ in TYPES
+            and typ not in ROLE_TYPE_COMPAT[role]
+        ):
             warnings.append(f"{label}: type '{typ}' is unusual for role '{role}'")
 
         if a.get("status") == "resolved":
@@ -148,69 +159,102 @@ def validate_manifest(video_dir):
 
 # ---- subcommands ------------------------------------------------------------
 
+
 def cmd_init(args, started_at):
     video_dir = Path(args.video_dir)
     if not video_dir.is_dir():
         return cli_envelope.emit_error(
-            args, "input_not_found", f"Video directory not found: {video_dir}",
-            started_at=started_at)
+            args,
+            "input_not_found",
+            f"Video directory not found: {video_dir}",
+            started_at=started_at,
+        )
     path = manifest_path(video_dir)
     created = not path.exists()
     if created:
         save_manifest(video_dir, {"schema_version": SCHEMA_VERSION, "assets": []})
     manifest, err = load_manifest(video_dir)
-    if err:
-        return cli_envelope.emit_error(args, "input_invalid", err, started_at=started_at)
-    count = len(manifest["assets"])
+    if err or manifest is None:
+        return cli_envelope.emit_error(
+            args, "input_invalid", err or "manifest not loadable", started_at=started_at
+        )
+    count = len(manifest.get("assets") or [])
     if not cli_envelope.use_json(args):
         state = "created" if created else f"already exists ({count} assets)"
         print(f"Manifest {state}: {path}")
-    return cli_envelope.emit_success(args, {
-        "manifest_path": str(path), "created": created, "asset_count": count,
-    }, started_at=started_at)
+    return cli_envelope.emit_success(
+        args,
+        {
+            "manifest_path": str(path),
+            "created": created,
+            "asset_count": count,
+        },
+        started_at=started_at,
+    )
 
 
 def cmd_add(args, started_at):
     video_dir = Path(args.video_dir)
     if not video_dir.is_dir():
         return cli_envelope.emit_error(
-            args, "input_not_found", f"Video directory not found: {video_dir}",
-            started_at=started_at)
+            args,
+            "input_not_found",
+            f"Video directory not found: {video_dir}",
+            started_at=started_at,
+        )
     if args.file and args.path:
         return cli_envelope.emit_error(
-            args, "input_invalid", "--file and --path are mutually exclusive",
-            started_at=started_at)
+            args,
+            "input_invalid",
+            "--file and --path are mutually exclusive",
+            started_at=started_at,
+        )
 
     manifest, err = load_manifest(video_dir)
     if err:
-        return cli_envelope.emit_error(args, "input_invalid", err, started_at=started_at)
+        return cli_envelope.emit_error(
+            args, "input_invalid", err, started_at=started_at
+        )
     if manifest is None:
         manifest = {"schema_version": SCHEMA_VERSION, "assets": []}
 
     existing = next((a for a in manifest["assets"] if a.get("id") == args.id), None)
     if existing and not args.replace:
         return cli_envelope.emit_error(
-            args, "validation_failed",
+            args,
+            "validation_failed",
             f"Asset id '{args.id}' already exists (use --replace to overwrite)",
-            field="id", started_at=started_at)
+            field="id",
+            started_at=started_at,
+        )
 
     if not re.match(r"^[A-Za-z0-9][A-Za-z0-9._-]*$", args.id or ""):
         return cli_envelope.emit_error(
-            args, "input_invalid",
+            args,
+            "input_invalid",
             f"Invalid asset id: {args.id!r} (allowed: letters, digits, . _ -)",
-            field="id", started_at=started_at)
+            field="id",
+            started_at=started_at,
+        )
 
     entry = {
-        "id": args.id, "section": args.section,
-        "type": args.type, "role": args.role, "source": args.source,
+        "id": args.id,
+        "section": args.section,
+        "type": args.type,
+        "role": args.role,
+        "source": args.source,
     }
 
     if args.file:
         src = Path(args.file)
         if not src.is_file():
             return cli_envelope.emit_error(
-                args, "input_not_found", f"File not found: {src}",
-                field="file", started_at=started_at)
+                args,
+                "input_not_found",
+                f"File not found: {src}",
+                field="file",
+                started_at=started_at,
+            )
         rel = f"assets/{args.id}{src.suffix.lower()}"
         dest = video_dir / rel
         dest.parent.mkdir(parents=True, exist_ok=True)
@@ -221,12 +265,20 @@ def cmd_add(args, started_at):
         target = (video_dir / args.path).resolve()
         if not str(target).startswith(str(video_dir.resolve()) + os.sep):
             return cli_envelope.emit_error(
-                args, "input_invalid", f"--path escapes the video directory: {args.path}",
-                field="path", started_at=started_at)
+                args,
+                "input_invalid",
+                f"--path escapes the video directory: {args.path}",
+                field="path",
+                started_at=started_at,
+            )
         if not target.is_file():
             return cli_envelope.emit_error(
-                args, "input_not_found", f"File not found under video dir: {args.path}",
-                field="path", started_at=started_at)
+                args,
+                "input_not_found",
+                f"File not found under video dir: {args.path}",
+                field="path",
+                started_at=started_at,
+            )
         entry["path"] = args.path
         entry["status"] = "resolved"
     else:
@@ -256,23 +308,35 @@ def cmd_add(args, started_at):
 
     if not cli_envelope.use_json(args):
         verb = "Replaced" if existing else "Added"
-        print(f"{verb} asset '{args.id}' ({entry['status']})"
-              + (f" -> {entry.get('path')}" if entry.get("path") else ""))
-    return cli_envelope.emit_success(args, {
-        "asset": entry, "replaced": bool(existing),
-        "asset_count": len(manifest["assets"]),
-    }, started_at=started_at)
+        print(
+            f"{verb} asset '{args.id}' ({entry['status']})"
+            + (f" -> {entry.get('path')}" if entry.get("path") else "")
+        )
+    return cli_envelope.emit_success(
+        args,
+        {
+            "asset": entry,
+            "replaced": bool(existing),
+            "asset_count": len(manifest["assets"]),
+        },
+        started_at=started_at,
+    )
 
 
 def cmd_list(args, started_at):
     if not os.path.isdir(args.video_dir):
         return cli_envelope.emit_error(
-            args, "input_not_found",
+            args,
+            "input_not_found",
             f"Video directory not found: {args.video_dir}",
-            field="video_dir", started_at=started_at)
+            field="video_dir",
+            started_at=started_at,
+        )
     manifest, err = load_manifest(args.video_dir)
     if err:
-        return cli_envelope.emit_error(args, "input_invalid", err, started_at=started_at)
+        return cli_envelope.emit_error(
+            args, "input_invalid", err, started_at=started_at
+        )
     assets = manifest["assets"] if manifest else []
     by_status = {}
     for a in assets:
@@ -281,14 +345,22 @@ def cmd_list(args, started_at):
         if manifest is None:
             print("No manifest (text-only video).")
         for a in assets:
-            print(f"  [{a.get('status', '?'):<22}] {a.get('id', '?'):<24} "
-                  f"{a.get('section', '?'):<14} {a.get('role', '?'):<10} "
-                  f"{a.get('source', '?'):<11} {a.get('path', '')}")
+            print(
+                f"  [{a.get('status', '?'):<22}] {a.get('id', '?'):<24} "
+                f"{a.get('section', '?'):<14} {a.get('role', '?'):<10} "
+                f"{a.get('source', '?'):<11} {a.get('path', '')}"
+            )
         print(f"{len(assets)} assets " + json.dumps(by_status, ensure_ascii=False))
-    return cli_envelope.emit_success(args, {
-        "manifest_exists": manifest is not None,
-        "assets": assets, "count": len(assets), "by_status": by_status,
-    }, started_at=started_at)
+    return cli_envelope.emit_success(
+        args,
+        {
+            "manifest_exists": manifest is not None,
+            "assets": assets,
+            "count": len(assets),
+            "by_status": by_status,
+        },
+        started_at=started_at,
+    )
 
 
 def cmd_validate(args, started_at):
@@ -301,27 +373,36 @@ def cmd_validate(args, started_at):
         for w in warnings:
             print(f"  ⚠ {w}")
         if manifest is not None and not errors:
-            print(f"Manifest valid ({len(manifest.get('assets', []))} assets, "
-                  f"{len(warnings)} warnings).")
+            print(
+                f"Manifest valid ({len(manifest.get('assets', []))} assets, "
+                f"{len(warnings)} warnings)."
+            )
     data = {
         "manifest_exists": manifest is not None,
-        "valid": not errors, "errors": errors, "warnings": warnings,
+        "valid": not errors,
+        "errors": errors,
+        "warnings": warnings,
         "asset_count": len(manifest.get("assets", [])) if manifest else 0,
     }
     if errors:
         return cli_envelope.emit_error(
-            args, "validation_failed",
-            f"{len(errors)} manifest error(s)", extra={"details": data},
-            started_at=started_at)
+            args,
+            "validation_failed",
+            f"{len(errors)} manifest error(s)",
+            extra={"details": data},
+            started_at=started_at,
+        )
     return cli_envelope.emit_success(args, data, started_at=started_at)
 
 
 # ---- parser ------------------------------------------------------------------
 
+
 def build_parser():
     p = argparse.ArgumentParser(
         prog="assets.py",
-        description="Manage the per-video asset manifest (assets/manifest.json).")
+        description="Manage the per-video asset manifest (assets/manifest.json).",
+    )
     sub = p.add_subparsers(dest="command", required=True, metavar="<command>")
 
     sp = sub.add_parser("init", help="Create assets/ + an empty manifest")
@@ -336,18 +417,30 @@ def build_parser():
     sp.add_argument("--role", required=True, choices=ROLES)
     sp.add_argument("--source", default="user", choices=SOURCES)
     sp.add_argument("--file", help="External file to copy into assets/ (user assets)")
-    sp.add_argument("--path", help="Path relative to video_dir of an already-placed file")
+    sp.add_argument(
+        "--path", help="Path relative to video_dir of an already-placed file"
+    )
     sp.add_argument("--license", help="License / provenance record")
     sp.add_argument("--prompt", help="Generation prompt (imagen/videogen/hyperframes)")
     sp.add_argument("--credit", help="Attribution URL or text")
-    sp.add_argument("--cost-estimate", dest="cost_estimate",
-                    help="Cost quote for paid generation (marks pending_confirmation)")
+    sp.add_argument(
+        "--cost-estimate",
+        dest="cost_estimate",
+        help="Cost quote for paid generation (marks pending_confirmation)",
+    )
     sp.add_argument("--alpha", action="store_true", help="Asset has an alpha channel")
-    sp.add_argument("--duration-s", dest="duration_s", type=float,
-                    help="Duration in seconds (video/overlay/audio)")
+    sp.add_argument(
+        "--duration-s",
+        dest="duration_s",
+        type=float,
+        help="Duration in seconds (video/overlay/audio)",
+    )
     sp.add_argument("--fps", type=int, help="Frame rate (overlay renders must be 30)")
-    sp.add_argument("--replace", action="store_true",
-                    help="Overwrite an existing entry with the same id")
+    sp.add_argument(
+        "--replace",
+        action="store_true",
+        help="Overwrite an existing entry with the same id",
+    )
     cli_envelope.add_format_arg(sp)
 
     sp = sub.add_parser("list", help="List assets with status counts")
@@ -364,15 +457,25 @@ def build_parser():
 def main():
     started_at = time.time()
     args = build_parser().parse_args()
-    handler = {"init": cmd_init, "add": cmd_add,
-               "list": cmd_list, "validate": cmd_validate}[args.command]
+    handler = {
+        "init": cmd_init,
+        "add": cmd_add,
+        "list": cmd_list,
+        "validate": cmd_validate,
+    }[args.command]
     try:
         sys.exit(handler(args, started_at))
     except SystemExit:
         raise
     except Exception as e:  # keep the envelope contract even on bugs
-        sys.exit(cli_envelope.emit_error(
-            args, "internal_error", f"{type(e).__name__}: {e}", started_at=started_at))
+        sys.exit(
+            cli_envelope.emit_error(
+                args,
+                "internal_error",
+                f"{type(e).__name__}: {e}",
+                started_at=started_at,
+            )
+        )
 
 
 if __name__ == "__main__":

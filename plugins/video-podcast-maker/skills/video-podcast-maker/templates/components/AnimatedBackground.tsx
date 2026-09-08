@@ -13,7 +13,12 @@
  */
 
 import { useCurrentFrame, useVideoConfig, interpolate, spring } from "remotion";
-import { useFloat, usePulse, useGradientShift, useOpacityWave } from "./animations";
+import {
+  useFloat,
+  usePulse,
+  useGradientShift,
+  useOpacityWave,
+} from "./animations";
 
 // --- Moving Gradient Background ---
 // Slowly rotating gradient that adds subtle motion to any section
@@ -35,7 +40,15 @@ export const MovingGradient = ({
       style={{
         position: "absolute",
         inset: 0,
-        background: `linear-gradient(${angle}deg, ${color1}${Math.round(opacity * 255).toString(16).padStart(2, "0")}, transparent 50%, ${color2}${Math.round(opacity * 255).toString(16).padStart(2, "0")})`,
+        background: `linear-gradient(${angle}deg, ${color1}${Math.round(
+          opacity * 255,
+        )
+          .toString(16)
+          .padStart(2, "0")}, transparent 50%, ${color2}${Math.round(
+          opacity * 255,
+        )
+          .toString(16)
+          .padStart(2, "0")})`,
         pointerEvents: "none",
       }}
     />
@@ -68,9 +81,22 @@ export const FloatingShapes = ({
   const configs = SHAPE_CONFIGS.slice(0, Math.min(count, SHAPE_CONFIGS.length));
 
   return (
-    <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none" }}>
+    <div
+      style={{
+        position: "absolute",
+        inset: 0,
+        overflow: "hidden",
+        pointerEvents: "none",
+      }}
+    >
       {configs.map((cfg, i) => (
-        <FloatingShape key={i} config={cfg} color={color} opacity={opacity} shape={shape} />
+        <FloatingShape
+          key={i}
+          config={cfg}
+          color={color}
+          opacity={opacity}
+          shape={shape}
+        />
       ))}
     </div>
   );
@@ -82,7 +108,7 @@ const FloatingShape = ({
   opacity,
   shape,
 }: {
-  config: typeof SHAPE_CONFIGS[0];
+  config: (typeof SHAPE_CONFIGS)[0];
   color: string;
   opacity: number;
   shape: "circle" | "hexagon" | "ring";
@@ -90,7 +116,8 @@ const FloatingShape = ({
   const { translateY, translateX } = useFloat(15, config.period, config.phase);
   const { scale } = usePulse(0.9, 1.1, config.period * 1.3, config.phase);
 
-  const borderRadius = shape === "circle" ? "50%" : shape === "hexagon" ? "25%" : "50%";
+  const borderRadius =
+    shape === "circle" ? "50%" : shape === "hexagon" ? "25%" : "50%";
   const bg = shape === "ring" ? "transparent" : color;
   const border = shape === "ring" ? `3px solid ${color}` : "none";
 
@@ -134,15 +161,23 @@ export const GridPattern = ({
     backgroundImage = `radial-gradient(circle, ${color} ${dotSize}px, transparent ${dotSize}px)`;
   } else if (variant === "lines") {
     backgroundImage = `
-      linear-gradient(${color}${Math.round(opacity * 255).toString(16).padStart(2, "0")} 1px, transparent 1px),
-      linear-gradient(90deg, ${color}${Math.round(opacity * 255).toString(16).padStart(2, "0")} 1px, transparent 1px)
+      linear-gradient(${color}${Math.round(opacity * 255)
+        .toString(16)
+        .padStart(2, "0")} 1px, transparent 1px),
+      linear-gradient(90deg, ${color}${Math.round(opacity * 255)
+        .toString(16)
+        .padStart(2, "0")} 1px, transparent 1px)
     `;
   } else {
     // crosses
     backgroundImage = `
       radial-gradient(circle, ${color} ${dotSize}px, transparent ${dotSize}px),
-      linear-gradient(${color}${Math.round(opacity * 255 * 0.5).toString(16).padStart(2, "0")} 1px, transparent 1px),
-      linear-gradient(90deg, ${color}${Math.round(opacity * 255 * 0.5).toString(16).padStart(2, "0")} 1px, transparent 1px)
+      linear-gradient(${color}${Math.round(opacity * 255 * 0.5)
+        .toString(16)
+        .padStart(2, "0")} 1px, transparent 1px),
+      linear-gradient(90deg, ${color}${Math.round(opacity * 255 * 0.5)
+        .toString(16)
+        .padStart(2, "0")} 1px, transparent 1px)
     `;
   }
 
@@ -152,7 +187,10 @@ export const GridPattern = ({
         position: "absolute",
         inset: 0,
         backgroundImage,
-        backgroundSize: variant === "dots" ? `${spacing}px ${spacing}px` : `${spacing}px ${spacing}px`,
+        backgroundSize:
+          variant === "dots"
+            ? `${spacing}px ${spacing}px`
+            : `${spacing}px ${spacing}px`,
         opacity: variant === "dots" ? opacity : 1,
         pointerEvents: "none",
       }}
@@ -216,10 +254,17 @@ export const AccentLine = ({
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const progress = spring({ frame, fps, delay, config: { damping: 200 }, durationInFrames: 30 });
+  const progress = spring({
+    frame,
+    fps,
+    delay,
+    config: { damping: 200 },
+    durationInFrames: 30,
+  });
 
   const scaleX = interpolate(progress, [0, 1], [0, 1]);
-  const top = position === "top" ? 0 : position === "center" ? "50%" : undefined;
+  const top =
+    position === "top" ? 0 : position === "center" ? "50%" : undefined;
   const bottom = position === "bottom" ? 0 : undefined;
 
   return (
@@ -239,4 +284,3 @@ export const AccentLine = ({
     />
   );
 };
-

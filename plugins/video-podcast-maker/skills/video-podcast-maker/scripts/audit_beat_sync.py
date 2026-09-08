@@ -29,24 +29,27 @@ Beat data format expected in the .tsx file:
 
 If your video uses different conventions, adapt the regexes near the top.
 """
+
 from __future__ import annotations
+
 import argparse
-import sys
-import re
 import json
 import os
+import re
+import sys
 import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import cli_envelope  # noqa: E402
 
-
 # Regex helpers -------------------------------------------------------------
 
 # Match: const HERO_BEATS: Beat[] = [ ... ]
 _BEATS_CONST = re.compile(
-    r'const\s+([A-Z][A-Z0-9_]*_BEATS)\s*[:=][^=]*=\s*\[(.*?)\n\]\s*$',
-    re.DOTALL | re.MULTILINE)
+    r"const\s+([A-Z][A-Z0-9_]*_BEATS)\s*[:=][^=]*=\s*\[(.*?)\n\]\s*$",
+    re.DOTALL | re.MULTILINE,
+)
+
 
 # Match a single beat object with balanced braces — beats may contain
 # nested object entries (e.g. the kinetic preset's `lines: [{ t: '...' }]`),
@@ -75,14 +78,15 @@ def _beat_objects(body):
         else:
             return
 
+
 # Match SECTION_CONFIG mapping: { hero: { beats: HERO_BEATS, ... }, ... }
 _SECTION_CONFIG = re.compile(
-    r'const\s+SECTION_CONFIG[^=]*=\s*\{(.*?)\n\}\s*$',
-    re.DOTALL | re.MULTILINE)
+    r"const\s+SECTION_CONFIG[^=]*=\s*\{(.*?)\n\}\s*$", re.DOTALL | re.MULTILINE
+)
 
 _CONFIG_ENTRY = re.compile(
-    r'(\w+)\s*:\s*\{\s*beats\s*:\s*([A-Z][A-Z0-9_]*_BEATS)',
-    re.DOTALL)
+    r"(\w+)\s*:\s*\{\s*beats\s*:\s*([A-Z][A-Z0-9_]*_BEATS)", re.DOTALL
+)
 
 
 def parse_beats(tsx_text: str):
@@ -95,9 +99,10 @@ def parse_beats(tsx_text: str):
         body = m.group(2)
         items = []
         for obj_body in _beat_objects(body):
-            start = re.search(r'startSec\s*:\s*([\d.]+)', obj_body)
+            start = re.search(r"startSec\s*:\s*([\d.]+)", obj_body)
             if not start:
                 continue
+            # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
             start_sec = float(start.group(1))
             # Extract human-readable summary of beat lines, scoped to the
             # `lines:` array so style enums outside it (e.g. `variant: 'pop'`,
@@ -106,11 +111,10 @@ def parse_beats(tsx_text: str):
             # and fall back to bare string-array entries.
             lm = re.search(r"lines\s*:\s*\[(.*?)\]", obj_body, re.DOTALL)
             arr_body = lm.group(1) if lm else ""
-            lines = (
-                re.findall(r"(?<![A-Za-z0-9_])t\s*:\s*['\"]([^'\"]+)['\"]", arr_body)
-                or re.findall(r"['\"]([^'\"]+)['\"]", arr_body)
-            )
-            summary = ' / '.join(lines)
+            lines = re.findall(
+                r"(?<![A-Za-z0-9_])t\s*:\s*['\"]([^'\"]+)['\"]", arr_body
+            ) or re.findall(r"['\"]([^'\"]+)['\"]", arr_body)
+            summary = " / ".join(lines)
             items.append((start_sec, summary))
         beats_arrays[beats_name] = items
 
@@ -125,20 +129,22 @@ def parse_beats(tsx_text: str):
 # SRT helpers ---------------------------------------------------------------
 
 _SRT_BLOCK = re.compile(
-    r'\d+\n(\d+:\d+:\d+),(\d+)\s*-->\s*(\d+:\d+:\d+),(\d+)\n(.+?)(?=\n\n|\Z)',
-    re.DOTALL)
+    r"\d+\n(\d+:\d+:\d+),(\d+)\s*-->\s*(\d+:\d+:\d+),(\d+)\n(.+?)(?=\n\n|\Z)", re.DOTALL
+)
 
 
 def parse_srt(srt_text: str):
     """Return list of (start_sec, end_sec, text) tuples."""
     out = []
     for m in _SRT_BLOCK.finditer(srt_text):
-        h, mn, s = m.group(1).split(':')
+        h, mn, s = m.group(1).split(":")
         ms = m.group(2)
+        # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
         start = int(h) * 3600 + int(mn) * 60 + int(s) + int(ms) / 1000.0
-        h2, mn2, s2 = m.group(3).split(':')
+        h2, mn2, s2 = m.group(3).split(":")
+        # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
         end = int(h2) * 3600 + int(mn2) * 60 + int(s2) + int(m.group(4)) / 1000.0
-        text = m.group(5).strip().replace('\n', ' ')
+        text = m.group(5).strip().replace("\n", " ")
         out.append((start, end, text))
     return out
 
@@ -150,18 +156,17 @@ def srt_overlap(subs, range_start, range_end):
         if en <= range_start or st >= range_end:
             continue
         parts.append(txt)
-    return ' / '.join(parts)
+    return " / ".join(parts)
 
 
 def _norm(s):
     """Normalize for beat-vs-narration comparison: lowercase, drop whitespace
     and punctuation (CJK + ASCII) so "故事" matches inside "每一个故事"."""
-    return re.sub(
-        r"[\s，。！？、：；""''“”‘’.,!?;:()\[\]（）·—\-]", '', s.lower()
-    )
+    return re.sub(r"[\s，。！？、：；" r"''“”‘’.,!?;:()\[\]（）·—\-]", "", s.lower())
 
 
 # Main ----------------------------------------------------------------------
+
 
 def audit(tsx_path, timing_path, srt_path, drift_warn=1.5):
     """Run the audit. Returns (issues_count, result_dict).
@@ -169,69 +174,84 @@ def audit(tsx_path, timing_path, srt_path, drift_warn=1.5):
     Raises ValueError if no SECTION_CONFIG entries with `beats:` are found
     in the .tsx — main() converts this into an 'input_invalid' envelope.
     """
-    tsx_text = open(tsx_path, 'r', encoding='utf-8').read()
-    timing = json.loads(open(timing_path, 'r', encoding='utf-8').read())
-    srt_text = open(srt_path, 'r', encoding='utf-8').read()
+    # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
+    tsx_text = open(tsx_path, encoding="utf-8").read()
+    # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
+    timing = json.loads(open(timing_path, encoding="utf-8").read())
+    # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
+    srt_text = open(srt_path, encoding="utf-8").read()
     subs = parse_srt(srt_text)
 
     name_to_beats, beats_arrays = parse_beats(tsx_text)
 
     if not name_to_beats:
-        raise ValueError(
-            f"No SECTION_CONFIG entries with `beats:` found in {tsx_path}"
-        )
+        raise ValueError(f"No SECTION_CONFIG entries with `beats:` found in {tsx_path}")
 
     # Header
     print(f"\nAudit: {os.path.basename(tsx_path)}")
-    print(f"  timing.json: {timing['total_duration']:.2f}s, {len(timing['sections'])} sections")
+    print(
+        f"  timing.json: {timing['total_duration']:.2f}s, {len(timing['sections'])} sections"
+    )
     print(f"  SRT: {len(subs)} subtitle entries")
-    print('=' * 100)
+    print("=" * 100)
 
     issues = 0
     section_records = []
-    for sec in timing['sections']:
-        name = sec['name']
+    for sec in timing["sections"]:
+        name = sec["name"]
         beats_name = name_to_beats.get(name)
         if not beats_name:
             print(f"\n[{name}] no beats array mapped (skipped)")
-            section_records.append({
-                "name": name, "beats_array": None,
-                "status": "no_mapping", "beats": [],
-            })
+            section_records.append(
+                {
+                    "name": name,
+                    "beats_array": None,
+                    "status": "no_mapping",
+                    "beats": [],
+                }
+            )
             issues += 1  # an unverified section must fail the gate, not pass silently
             continue
         items = beats_arrays.get(beats_name, [])
         if not items:
             print(f"\n[{name}] beats array '{beats_name}' empty or unparseable")
-            section_records.append({
-                "name": name, "beats_array": beats_name,
-                "status": "unparseable", "beats": [],
-            })
+            section_records.append(
+                {
+                    "name": name,
+                    "beats_array": beats_name,
+                    "status": "unparseable",
+                    "beats": [],
+                }
+            )
             issues += 1
             continue
-        sec_start = sec['start_time']
-        sec_end = sec['start_time'] + sec['duration']
+        sec_start = sec["start_time"]
+        sec_end = sec["start_time"] + sec["duration"]
         print(f"\n[{name}]  {sec_start:.2f}-{sec_end:.2f}s  ({len(items)} beats)")
         print(f"  {'BEAT-START':>10}  {'SHOWN':<32}  {'NARRATION (overlap)':<60}")
         beat_records = []
         items_sorted = sorted(items, key=lambda x: x[0])
         for i, (start_sec, shown) in enumerate(items_sorted):
             abs_start = sec_start + start_sec
-            next_start = sec_start + items_sorted[i + 1][0] if i + 1 < len(items_sorted) else sec_end
+            next_start = (
+                sec_start + items_sorted[i + 1][0]
+                if i + 1 < len(items_sorted)
+                else sec_end
+            )
             narration = srt_overlap(subs, abs_start, next_start)
-            shown_short = shown[:30] + '..' if len(shown) > 32 else shown
-            narr_short = narration[:58] + '..' if len(narration) > 60 else narration
+            shown_short = shown[:30] + ".." if len(shown) > 32 else shown
+            narr_short = narration[:58] + ".." if len(narration) > 60 else narration
             problems = []
             # Heuristic warning: beat starts too far from any SRT entry start
             nearest = min((abs(s - abs_start) for s, _, _ in subs), default=99)
             beat_ok = nearest <= drift_warn
             if not beat_ok:
-                problems.append(f'drift {nearest:.1f}s')
+                problems.append(f"drift {nearest:.1f}s")
             # Text check: a beat's shown text must appear (normalized substring)
             # in the narration overlapping its range. Skipped when the range has
             # no narration (music/gap) or the beat carries no text fragments.
             fragments = []
-            for frag in shown.split(' / '):
+            for frag in shown.split(" / "):
                 nf = _norm(frag)
                 if len(nf) >= 2:
                     fragments.append(nf)
@@ -243,59 +263,71 @@ def audit(tsx_path, timing_path, srt_path, drift_warn=1.5):
                 norm_narr = _norm(narration)
                 text_ok = all(nf in norm_narr for nf in fragments)
                 if not text_ok:
-                    problems.append('text mismatch')
+                    problems.append("text mismatch")
             if problems:
-                flag = ' ⚠ ' + ', '.join(problems)
+                flag = " ⚠ " + ", ".join(problems)
                 issues += 1
             else:
-                flag = ''
+                flag = ""
             print(f"  {abs_start:6.2f}s+0  {shown_short:<32}  {narr_short:<60}{flag}")
-            beat_records.append({
-                "start_sec_relative": round(start_sec, 2),
-                "start_sec_absolute": round(abs_start, 2),
-                "shown": shown,
-                "narration_overlap": narration,
-                "nearest_srt_distance_seconds": round(nearest, 2),
-                "ok": beat_ok,
-                "text_ok": text_ok,
-            })
-        section_records.append({
-            "name": name, "beats_array": beats_name,
-            "status": "audited", "beats": beat_records,
-        })
+            beat_records.append(
+                {
+                    "start_sec_relative": round(start_sec, 2),
+                    "start_sec_absolute": round(abs_start, 2),
+                    "shown": shown,
+                    "narration_overlap": narration,
+                    "nearest_srt_distance_seconds": round(nearest, 2),
+                    "ok": beat_ok,
+                    "text_ok": text_ok,
+                }
+            )
+        section_records.append(
+            {
+                "name": name,
+                "beats_array": beats_name,
+                "status": "audited",
+                "beats": beat_records,
+            }
+        )
 
-    print('\n' + '=' * 100)
-    no_mapping = sum(1 for r in section_records if r['status'] == 'no_mapping')
-    unparseable = sum(1 for r in section_records if r['status'] == 'unparseable')
-    drift_beats = sum(
-        1 for r in section_records for b in r['beats'] if not b['ok']
-    )
+    print("\n" + "=" * 100)
+    no_mapping = sum(1 for r in section_records if r["status"] == "no_mapping")
+    unparseable = sum(1 for r in section_records if r["status"] == "unparseable")
+    drift_beats = sum(1 for r in section_records for b in r["beats"] if not b["ok"])
     text_mismatches = sum(
-        1 for r in section_records for b in r['beats'] if not b['text_ok']
+        1 for r in section_records for b in r["beats"] if not b["text_ok"]
     )
     if issues:
-        print(f"⚠️  {issues} issue(s): {drift_beats} beat(s) > {drift_warn}s from an SRT"
-              f" boundary, {text_mismatches} beat(s) with text not in the narration,"
-              f" {no_mapping} section(s) with no beats mapping, {unparseable} unparseable array(s).")
+        print(
+            f"⚠️  {issues} issue(s): {drift_beats} beat(s) > {drift_warn}s from an SRT"
+            f" boundary, {text_mismatches} beat(s) with text not in the narration,"
+            f" {no_mapping} section(s) with no beats mapping, {unparseable} unparseable array(s)."
+        )
         print("   Consider adjusting their startSec to match a nearby SRT entry start.")
     else:
-        print(f"✅ All beats land within {drift_warn:.1f}s of an SRT boundary and the shown text matches narration.")
+        print(
+            f"✅ All beats land within {drift_warn:.1f}s of an SRT boundary and the shown text matches narration."
+        )
 
-    audited = [r for r in section_records if r['status'] == 'audited']
+    audited = [r for r in section_records if r["status"] == "audited"]
     result = {
         "tsx": tsx_path,
         "timing": timing_path,
         "srt": srt_path,
         "drift_threshold_seconds": drift_warn,
-        "total_duration_seconds": round(timing['total_duration'], 2),
+        "total_duration_seconds": round(timing["total_duration"], 2),
         "srt_entry_count": len(subs),
         "issues_count": issues,
         "summary": {
-            "sections_total": len(timing['sections']),
+            "sections_total": len(timing["sections"]),
             "sections_audited": len(audited),
-            "sections_skipped_no_mapping": sum(1 for r in section_records if r['status'] == 'no_mapping'),
-            "sections_unparseable": sum(1 for r in section_records if r['status'] == 'unparseable'),
-            "beats_audited": sum(len(r['beats']) for r in audited),
+            "sections_skipped_no_mapping": sum(
+                1 for r in section_records if r["status"] == "no_mapping"
+            ),
+            "sections_unparseable": sum(
+                1 for r in section_records if r["status"] == "unparseable"
+            ),
+            "beats_audited": sum(len(r["beats"]) for r in audited),
             "beats_with_drift": drift_beats,
             "beats_with_text_mismatch": text_mismatches,
         },
@@ -306,17 +338,30 @@ def audit(tsx_path, timing_path, srt_path, drift_warn=1.5):
 
 def build_parser():
     parser = argparse.ArgumentParser(
-        description=__doc__.split("\n\n")[0],
+        description=(__doc__ or "").split("\n\n")[0],
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="Beat data format and SECTION_CONFIG conventions: see the module docstring.",
     )
-    parser.add_argument('tsx', help='Path to the Remotion video.tsx file containing beat arrays')
-    parser.add_argument('timing', help='Path to timing.json (output of generate_tts.py)')
-    parser.add_argument('srt', nargs='?', default=None,
-                        help='Path to podcast_audio.srt (defaults to <timing.json dir>/podcast_audio.srt)')
-    parser.add_argument('--drift-warn', type=float, default=1.5, metavar='SECONDS',
-                        help='Drift threshold in seconds; beats more than this far from any '
-                             'SRT entry start are flagged (default: 1.5)')
+    parser.add_argument(
+        "tsx", help="Path to the Remotion video.tsx file containing beat arrays"
+    )
+    parser.add_argument(
+        "timing", help="Path to timing.json (output of generate_tts.py)"
+    )
+    parser.add_argument(
+        "srt",
+        nargs="?",
+        default=None,
+        help="Path to podcast_audio.srt (defaults to <timing.json dir>/podcast_audio.srt)",
+    )
+    parser.add_argument(
+        "--drift-warn",
+        type=float,
+        default=1.5,
+        metavar="SECONDS",
+        help="Drift threshold in seconds; beats more than this far from any "
+        "SRT entry start are flagged (default: 1.5)",
+    )
     cli_envelope.add_format_arg(parser)
     return parser
 
@@ -328,64 +373,77 @@ def main():
     if json_mode:
         sys.stdout = sys.stderr  # route audit table off stdout in JSON mode
     try:
-        srt = args.srt or os.path.join(os.path.dirname(args.timing), 'podcast_audio.srt')
+        srt = args.srt or os.path.join(
+            os.path.dirname(args.timing), "podcast_audio.srt"
+        )
         missing = [p for p in (args.tsx, args.timing, srt) if not os.path.exists(p)]
         if missing:
             for p in missing:
                 print(f"Not found: {p}", file=sys.stderr)
             sys.stdout = sys.__stdout__
-            sys.exit(cli_envelope.emit_error(
-                args, "input_not_found",
-                f"{len(missing)} required file(s) not found",
-                extra={"missing": missing,
-                       "tsx": args.tsx, "timing": args.timing, "srt": srt},
-                started_at=started_at,
-            ))
+            sys.exit(
+                cli_envelope.emit_error(
+                    args,
+                    "input_not_found",
+                    f"{len(missing)} required file(s) not found",
+                    extra={
+                        "missing": missing,
+                        "tsx": args.tsx,
+                        "timing": args.timing,
+                        "srt": srt,
+                    },
+                    started_at=started_at,
+                )
+            )
 
         try:
-            issues, result = audit(args.tsx, args.timing, srt, drift_warn=args.drift_warn)
+            issues, result = audit(
+                args.tsx, args.timing, srt, drift_warn=args.drift_warn
+            )
         except ValueError as exc:
             # parse_beats found no SECTION_CONFIG entries with `beats:`
             sys.stdout = sys.__stdout__
-            sys.exit(cli_envelope.emit_error(
-                args, "input_invalid", str(exc),
-                field="tsx",
-                extra={"tsx": args.tsx},
-                started_at=started_at,
-            ))
-        except json.JSONDecodeError as exc:
-            sys.stdout = sys.__stdout__
-            sys.exit(cli_envelope.emit_error(
-                args, "input_invalid",
-                f"timing.json is malformed: {exc}",
-                field="timing", extra={"timing": args.timing},
-                started_at=started_at,
-            ))
+            sys.exit(
+                cli_envelope.emit_error(
+                    args,
+                    "input_invalid",
+                    str(exc),
+                    field="tsx",
+                    extra={"tsx": args.tsx},
+                    started_at=started_at,
+                )
+            )
         except Exception as exc:
             # Truncated timing.json (missing total_duration/sections keys) and
             # other unexpected failures must produce an envelope, never a bare
             # traceback on empty stdout — agents can't route those.
             sys.stdout = sys.__stdout__
-            sys.exit(cli_envelope.emit_error(
-                args, "internal_error",
-                f"{type(exc).__name__}: {exc}",
-                extra={"tsx": args.tsx, "timing": args.timing, "srt": srt},
-                started_at=started_at,
-            ))
+            sys.exit(
+                cli_envelope.emit_error(
+                    args,
+                    "internal_error",
+                    f"{type(exc).__name__}: {exc}",
+                    extra={"tsx": args.tsx, "timing": args.timing, "srt": srt},
+                    started_at=started_at,
+                )
+            )
     finally:
         sys.stdout = sys.__stdout__
 
     if issues:
         # Audit completed; the *gate* failed — drift, text mismatch, or an
         # unmapped/unparseable section.
-        sys.exit(cli_envelope.emit_error(
-            args, "validation_failed",
-            f"{issues} beat-audit issue(s) (see summary)",
-            extra=result,
-            started_at=started_at,
-        ))
+        sys.exit(
+            cli_envelope.emit_error(
+                args,
+                "validation_failed",
+                f"{issues} beat-audit issue(s) (see summary)",
+                extra=result,
+                started_at=started_at,
+            )
+        )
     sys.exit(cli_envelope.emit_success(args, result, started_at=started_at))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -10,7 +10,13 @@
 
 import { AbsoluteFill } from "remotion";
 import { useEntrance, staggerDelay } from "./animations";
-import { MovingGradient, FloatingShapes, GlowOrb, GridPattern, AccentLine } from "./AnimatedBackground";
+import {
+  MovingGradient,
+  FloatingShapes,
+  GlowOrb,
+  GridPattern,
+  AccentLine,
+} from "./AnimatedBackground";
 import { Icon } from "./Icon";
 
 // Common prop types
@@ -46,14 +52,27 @@ export const SplitLayout = ({
 
   return (
     <AbsoluteFill style={{ backgroundColor: props.backgroundColor }}>
-      <MovingGradient color1={props.primaryColor} color2={props.accentColor} opacity={0.06} />
-      <FloatingShapes color={props.primaryColor} count={3} opacity={0.04} shape="ring" />
+      <MovingGradient
+        color1={props.primaryColor}
+        color2={props.accentColor}
+        opacity={0.06}
+      />
+      <FloatingShapes
+        color={props.primaryColor}
+        count={3}
+        opacity={0.04}
+        shape="ring"
+      />
       <div
         style={{
           position: "absolute",
           inset: 0,
           display: "flex",
-          flexDirection: v ? "column" : accent === "left" ? "row" : "row-reverse",
+          flexDirection: v
+            ? "column"
+            : accent === "left"
+              ? "row"
+              : "row-reverse",
           alignItems: "center",
           padding: v ? "80px 60px" : "60px 80px",
           gap: v ? 40 : 60,
@@ -165,7 +184,14 @@ export const StatHighlight = ({
             {value}
           </span>
           {unit && (
-            <span style={{ fontSize: 48, fontWeight: 600, color: props.primaryColor, opacity: 0.7 }}>
+            <span
+              style={{
+                fontSize: 48,
+                fontWeight: 600,
+                color: props.primaryColor,
+                opacity: 0.7,
+              }}
+            >
               {unit}
             </span>
           )}
@@ -210,11 +236,23 @@ export const ZigzagCards = ({
 }: {
   props: LayoutProps;
   title: string;
-  items: Array<{ icon: string; title: string; description: string; color?: string }>;
+  items: Array<{
+    icon: string;
+    title: string;
+    description: string;
+    color?: string;
+  }>;
 }) => {
   const v = props.orientation === "vertical";
   const titleAnim = useEntrance(props.enableAnimations);
-  const colors = ["#4f6ef7", "#22c55e", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"];
+  const colors = [
+    "#4f6ef7",
+    "#22c55e",
+    "#f59e0b",
+    "#ef4444",
+    "#8b5cf6",
+    "#ec4899",
+  ];
 
   return (
     <AbsoluteFill style={{ backgroundColor: props.backgroundColor }}>
@@ -302,8 +340,23 @@ const ZigzagCard = ({
     >
       <Icon name={item.icon} size={v ? 48 : 44} color={color} />
       <div style={{ flex: 1 }}>
-        <div style={{ fontSize: v ? 32 : 30, fontWeight: 700, color: props.textColor }}>{item.title}</div>
-        <div style={{ fontSize: v ? 24 : 22, color: props.textColor, opacity: 0.6, marginTop: 4 }}>
+        <div
+          style={{
+            fontSize: v ? 32 : 30,
+            fontWeight: 700,
+            color: props.textColor,
+          }}
+        >
+          {item.title}
+        </div>
+        <div
+          style={{
+            fontSize: v ? 24 : 22,
+            color: props.textColor,
+            opacity: 0.6,
+            marginTop: 4,
+          }}
+        >
           {item.description}
         </div>
       </div>
@@ -330,9 +383,28 @@ export const CenteredShowcase = ({
 
   return (
     <AbsoluteFill style={{ backgroundColor: props.backgroundColor }}>
-      <GlowOrb color={props.primaryColor} size={500} x="20%" y="50%" opacity={0.08} blur={100} />
-      <GlowOrb color={props.accentColor} size={400} x="80%" y="50%" opacity={0.06} blur={80} />
-      <AccentLine color={props.primaryColor} width={200} position="top" delay={5} />
+      <GlowOrb
+        color={props.primaryColor}
+        size={500}
+        x="20%"
+        y="50%"
+        opacity={0.08}
+        blur={100}
+      />
+      <GlowOrb
+        color={props.accentColor}
+        size={400}
+        x="80%"
+        y="50%"
+        opacity={0.06}
+        blur={80}
+      />
+      <AccentLine
+        color={props.primaryColor}
+        width={200}
+        position="top"
+        delay={5}
+      />
       <div
         style={{
           position: "absolute",
@@ -348,7 +420,12 @@ export const CenteredShowcase = ({
         }}
       >
         {icon && (
-          <Icon name={icon} size={72} color={props.primaryColor} animate="entrance" />
+          <Icon
+            name={icon}
+            size={72}
+            color={props.primaryColor}
+            animate="entrance"
+          />
         )}
         <h2
           style={{
@@ -375,7 +452,12 @@ export const CenteredShowcase = ({
           {body}
         </p>
       </div>
-      <AccentLine color={props.accentColor} width={160} position="bottom" delay={15} />
+      <AccentLine
+        color={props.accentColor}
+        width={160}
+        position="bottom"
+        delay={15}
+      />
     </AbsoluteFill>
   );
 };
@@ -391,7 +473,12 @@ export const MetricsRow = ({
 }: {
   props: LayoutProps;
   title?: string;
-  metrics: Array<{ value: string; label: string; icon?: string; color?: string }>;
+  metrics: Array<{
+    value: string;
+    label: string;
+    icon?: string;
+    color?: string;
+  }>;
 }) => {
   const v = props.orientation === "vertical";
   const titleAnim = useEntrance(props.enableAnimations);
@@ -399,7 +486,12 @@ export const MetricsRow = ({
 
   return (
     <AbsoluteFill style={{ backgroundColor: props.backgroundColor }}>
-      <MovingGradient color1={props.primaryColor} color2={props.accentColor} opacity={0.05} speed={0.2} />
+      <MovingGradient
+        color1={props.primaryColor}
+        color2={props.accentColor}
+        opacity={0.05}
+        speed={0.2}
+      />
       <div
         style={{
           position: "absolute",
@@ -429,7 +521,9 @@ export const MetricsRow = ({
           style={{
             display: "grid",
             gridTemplateColumns: v
-              ? metrics.length <= 2 ? "1fr" : "1fr 1fr"
+              ? metrics.length <= 2
+                ? "1fr"
+                : "1fr 1fr"
               : `repeat(${Math.min(metrics.length, 4)}, 1fr)`,
             gap: v ? 20 : 28,
           }}
@@ -521,11 +615,23 @@ export const StepProgress = ({
 }) => {
   const v = props.orientation === "vertical";
   const titleAnim = useEntrance(props.enableAnimations);
-  const colors = ["#4f6ef7", "#8b5cf6", "#22c55e", "#f59e0b", "#ec4899", "#06b6d4"];
+  const colors = [
+    "#4f6ef7",
+    "#8b5cf6",
+    "#22c55e",
+    "#f59e0b",
+    "#ec4899",
+    "#06b6d4",
+  ];
 
   return (
     <AbsoluteFill style={{ backgroundColor: props.backgroundColor }}>
-      <GridPattern color={props.primaryColor} opacity={0.025} variant="dots" spacing={50} />
+      <GridPattern
+        color={props.primaryColor}
+        opacity={0.025}
+        variant="dots"
+        spacing={50}
+      />
       <div
         style={{
           position: "absolute",

@@ -7,55 +7,59 @@ This module eliminates ~200 lines of duplicated HTTP/auth/size logic.
 
 import json
 import os
-import sys
-from http import HTTPStatus
-from typing import Optional, Callable
+from typing import Any
 
 try:
     import requests
 except ImportError:
-    requests = None  # handled lazily
+    requests = None  # type: ignore[assignment]  # handled lazily
 
 
 # ── Exceptions ──────────────────────────────────────────────────────────
 
+
 class ImageGenError(Exception):
     """Base exception for image generation errors."""
+
     exit_code: int = 1
 
 
 class ConfigError(ImageGenError):
     """Missing API key or invalid config."""
+
     exit_code = 2
 
 
 class APIError(ImageGenError):
     """Upstream API failure."""
+
     exit_code = 3
 
 
 class IOError_(ImageGenError):
     """File I/O or download failure."""
+
     exit_code = 4
 
 
 # ── Shared HTTP helpers ─────────────────────────────────────────────────
 
-def safe_request(method, url, headers, json_data=None, timeout=120,
-                 label="API") -> requests.Response:
+
+def safe_request(method, url, headers, json_data=None, timeout=120, label="API"):
     """Wrap requests with timeout and clean error handling."""
     if requests is None:
         raise ConfigError("'requests' package not installed. Run: pip install requests")
     try:
-        rsp = requests.request(method, url, headers=headers, json=json_data,
-                               timeout=timeout)
+        rsp = requests.request(
+            method, url, headers=headers, json=json_data, timeout=timeout
+        )
         return rsp
-    except requests.Timeout:
-        raise APIError(f"{label} request timed out after {timeout}s")
+    except requests.Timeout as e:
+        raise APIError(f"{label} request timed out after {timeout}s") from e
     except requests.ConnectionError as e:
-        raise APIError(f"{label} connection failed: {e}")
+        raise APIError(f"{label} connection failed: {e}") from e
     except requests.RequestException as e:
-        raise APIError(f"{label} request failed: {e}")
+        raise APIError(f"{label} request failed: {e}") from e
 
 
 def safe_json(rsp, label="API") -> dict:
@@ -64,11 +68,24 @@ def safe_json(rsp, label="API") -> dict:
         return rsp.json()
     except (json.JSONDecodeError, ValueError):
         raise APIError(
-            f"{label} returned non-JSON (HTTP {rsp.status_code}): "
-            f"{rsp.text[:300]}")
+            f"{label} returned non-JSON (HTTP {rsp.status_code}): {rsp.text[:300]}"
+        )
+
+
+def save_image_bytes(image_bytes: bytes, output_path: str) -> int:
+    """Write raw image bytes to output_path. Returns byte count."""
+    path = os.path.abspath(output_path)
+    try:
+        os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+        with open(path, "wb") as f:
+            f.write(image_bytes)
+    except OSError as e:
+        raise IOError_(f"failed to write {output_path}: {e}") from e
+    return len(image_bytes)
 
 
 # ── OpenAI-compatible provider base ─────────────────────────────────────
+
 
 class OpenAICompatibleProvider:
     """Base for providers using OpenAI-compatible /images/generations endpoint.
@@ -78,9 +95,11 @@ class OpenAICompatibleProvider:
 
     # Subclass must set:
     name: str = ""
-    env_var: str = ""           # e.g. "ARK_API_KEY"
-    env_model_var: str = ""     # e.g. "ARK_MODEL"
-    api_base: str = ""          # e.g. "https://ark.cn-beijing.volces.com/api/v3/images/generations"
+    env_var: str = ""  # e.g. "ARK_API_KEY"
+    env_model_var: str = ""  # e.g. "ARK_MODEL"
+    api_base: str = (
+        ""  # e.g. "https://ark.cn-beijing.volces.com/api/v3/images/generations"
+    )
     default_model: str = ""
     models: set[str] = set()
     default_size: str = "1024x1024"
@@ -93,7 +112,7 @@ class OpenAICompatibleProvider:
 
     # Post-processing on request body before POST (hook for subclass overrides)
     @staticmethod
-    def tweak_body(body: dict, args) -> dict:
+    def tweak_body(body: dict, extra) -> dict:
         """Hook: modify the request body before POST. Return modified body."""
         return body
 
@@ -117,7 +136,8 @@ class OpenAICompatibleProvider:
         if not key:
             raise ConfigError(
                 f"{self.env_var} environment variable not set.\n"
-                f"Set it with: export {self.env_var}='your-api-key'")
+                f"Set it with: export {self.env_var}='your-api-key'"
+            )
         return key
 
     def get_default_model(self) -> str | None:
@@ -139,14 +159,21 @@ class OpenAICompatibleProvider:
             return size_input.replace("*", "x")
         return size_input  # pass through named presets like "2K"
 
-    def generate(self, api_key: str, model: str, prompt: str, size: str,
-                 seed: int | None = None, **extra) -> str:
+    def generate(
+        self,
+        api_key: str,
+        model: str,
+        prompt: str,
+        size: str,
+        seed: int | None = None,
+        **extra,
+    ) -> str:
         """POST /images/generations → return image URL. Raises APIError on failure."""
         headers = {
             "Authorization": f"{self.auth_prefix} {api_key}",
             "Content-Type": "application/json",
         }
-        body = {
+        body: dict[str, Any] = {
             "model": model,
             "prompt": prompt,
             "size": size,
@@ -158,8 +185,13 @@ class OpenAICompatibleProvider:
         # Let subclasses tweak body
         body = self.tweak_body(body, extra)
 
-        rsp = safe_request("POST", self.api_base, headers=headers, json_data=body,
-                          label=f"{self.name} generate")
+        rsp = safe_request(
+            "POST",
+            self.api_base,
+            headers=headers,
+            json_data=body,
+            label=f"{self.name} generate",
+        )
         if rsp.status_code != 200:
             raise APIError(self.format_error(rsp))
 
@@ -171,13 +203,16 @@ class OpenAICompatibleProvider:
 
     def download(self, image_url: str, output_path: str) -> int:
         """Download an image from URL to output_path. Returns byte count."""
-        rsp = safe_request("GET", image_url, headers={},
-                          timeout=300, label=f"{self.name} download")
+        rsp = safe_request(
+            "GET", image_url, headers={}, timeout=300, label=f"{self.name} download"
+        )
         if rsp.status_code != 200:
-            raise APIError(
-                f"{self.name} download failed (HTTP {rsp.status_code})")
+            raise APIError(f"{self.name} download failed (HTTP {rsp.status_code})")
         path = os.path.abspath(output_path)
-        os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
-        with open(path, "wb") as f:
-            f.write(rsp.content)
+        try:
+            os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+            with open(path, "wb") as f:
+                f.write(rsp.content)
+        except OSError as e:
+            raise IOError_(f"failed to write {output_path}: {e}") from e
         return len(rsp.content)

@@ -7,12 +7,19 @@ Wan (通义万相), PixVerse (爱诗), Kling (可灵), Vidu, HappyHorse.
 import os
 import sys
 from pathlib import Path
-from typing import Optional
 
-from providers.base import (VideoProvider, GenerationRequest, pick_size,
-                            safe_json, safe_request, validate_media_file,
-                            encode_image_to_data_uri,
-                            ConfigError, InputError, APIError)
+from providers.base import (
+    APIError,
+    ConfigError,
+    GenerationRequest,
+    InputError,
+    VideoProvider,
+    encode_image_to_data_uri,
+    pick_size,
+    safe_json,
+    safe_request,
+    validate_media_file,
+)
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -35,25 +42,49 @@ DEFAULT_MODELS: dict[str, str] = {
 
 # Wan family
 WAN_T2V_RATIO = {"wan2.7-t2v-2026-04-25"}
-WAN_T2V_SIZE = {"wan2.5-t2v-preview", "wan2.2-t2v-plus",
-                "wanx2.1-t2v-turbo", "wanx2.1-t2v-plus"}
-WAN_I2V = {"wan2.6-i2v-flash", "wan2.6-i2v", "wan2.5-i2v-preview",
-           "wan2.2-i2v-plus", "wan2.2-i2v-flash",
-           "wanx2.1-i2v-turbo", "wanx2.1-i2v-plus"}
+WAN_T2V_SIZE = {
+    "wan2.5-t2v-preview",
+    "wan2.2-t2v-plus",
+    "wanx2.1-t2v-turbo",
+    "wanx2.1-t2v-plus",
+}
+WAN_I2V = {
+    "wan2.6-i2v-flash",
+    "wan2.6-i2v",
+    "wan2.5-i2v-preview",
+    "wan2.2-i2v-plus",
+    "wan2.2-i2v-flash",
+    "wanx2.1-i2v-turbo",
+    "wanx2.1-i2v-plus",
+}
 WAN_AUDIO_TOGGLE = {"wan2.6-i2v-flash", "wan2.5-t2v-preview", "wan2.5-i2v-preview"}
 
 # Third-party families
 PIXVERSE_VERSIONS = ("c1", "v6", "v5.6")
 VIDU_MODELS: dict[str, list[str]] = {
-    "t2v": ["vidu/viduq3-pro_text2video", "vidu/viduq3-turbo_text2video",
-            "vidu/viduq2_text2video"],
-    "i2v": ["vidu/viduq3-pro_img2video", "vidu/viduq3-turbo_img2video",
-            "vidu/viduq2-pro_img2video", "vidu/viduq2-pro-fast_img2video",
-            "vidu/viduq2-turbo_img2video"],
-    "kf2v": ["vidu/viduq3-pro_start-end2video", "vidu/viduq3-turbo_start-end2video",
-             "vidu/viduq2-pro_start-end2video", "vidu/viduq2-turbo_start-end2video"],
+    "t2v": [
+        "vidu/viduq3-pro_text2video",
+        "vidu/viduq3-turbo_text2video",
+        "vidu/viduq2_text2video",
+    ],
+    "i2v": [
+        "vidu/viduq3-pro_img2video",
+        "vidu/viduq3-turbo_img2video",
+        "vidu/viduq2-pro_img2video",
+        "vidu/viduq2-pro-fast_img2video",
+        "vidu/viduq2-turbo_img2video",
+    ],
+    "kf2v": [
+        "vidu/viduq3-pro_start-end2video",
+        "vidu/viduq3-turbo_start-end2video",
+        "vidu/viduq2-pro_start-end2video",
+        "vidu/viduq2-turbo_start-end2video",
+    ],
 }
-KLING_MODELS = ["kling/kling-v3-video-generation", "kling/kling-v3-omni-video-generation"]
+KLING_MODELS = [
+    "kling/kling-v3-video-generation",
+    "kling/kling-v3-omni-video-generation",
+]
 HAPPYHORSE_MODELS: dict[str, list[str]] = {
     "t2v": ["happyhorse-1.1-t2v", "happyhorse-1.0-t2v"],
     "i2v": ["happyhorse-1.1-i2v", "happyhorse-1.0-i2v"],
@@ -63,6 +94,7 @@ HAPPYHORSE_MODELS: dict[str, list[str]] = {
 # ---------------------------------------------------------------------------
 # Provider class
 # ---------------------------------------------------------------------------
+
 
 class BailianProvider(VideoProvider):
     name = "bailian"
@@ -81,7 +113,8 @@ class BailianProvider(VideoProvider):
             raise ConfigError(
                 f"{self.env_var} environment variable not set.\n"
                 f"Set it with: export {self.env_var}='your-api-key'\n"
-                f"Get a key at: https://bailian.console.aliyun.com/")
+                f"Get a key at: https://bailian.console.aliyun.com/"
+            )
         return val
 
     def auth_headers(self) -> dict:
@@ -119,20 +152,24 @@ class BailianProvider(VideoProvider):
         """Upload a local file to DashScope temporary storage, return oss:// URL."""
         validate_media_file(path)
         rsp = safe_request(
-            "GET", f"{self.api_base}/uploads",
+            "GET",
+            f"{self.api_base}/uploads",
             params={"action": "getPolicy", "model": model},
             headers={"Authorization": f"Bearer {self.api_key}"},
-            label="Bailian upload policy")
+            label="Bailian upload policy",
+        )
         if rsp.status_code != 200:
             raise APIError(
                 f"Bailian upload policy failed "
-                f"(HTTP {rsp.status_code}): {rsp.text[:300]}")
+                f"(HTTP {rsp.status_code}): {rsp.text[:300]}"
+            )
         payload = safe_json(rsp, "Bailian upload policy")
         data = payload.get("data")
         if not isinstance(data, dict):
             raise APIError(
                 f"Bailian upload policy missing data: "
-                f"{payload.get('code')} {payload.get('message')}")
+                f"{payload.get('code')} {payload.get('message')}"
+            )
         key = f"{data['upload_dir']}/{Path(path).name}"
         form = {
             "OSSAccessKeyId": data["oss_access_key_id"],
@@ -143,14 +180,21 @@ class BailianProvider(VideoProvider):
             "key": key,
             "success_action_status": "200",
         }
+        # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
         with open(path, "rb") as f:
-            upload_rsp = safe_request("POST", data["upload_host"], data=form,
-                                      files={"file": (Path(path).name, f)},
-                                      timeout=120, label="Bailian OSS upload")
+            upload_rsp = safe_request(
+                "POST",
+                data["upload_host"],
+                data=form,
+                files={"file": (Path(path).name, f)},
+                timeout=120,
+                label="Bailian OSS upload",
+            )
         if upload_rsp.status_code != 200:
             raise APIError(
                 f"Bailian OSS upload failed "
-                f"(HTTP {upload_rsp.status_code}): {upload_rsp.text[:300]}")
+                f"(HTTP {upload_rsp.status_code}): {upload_rsp.text[:300]}"
+            )
         print(f"Uploaded {path} -> oss (48h temporary URL)")
         return f"oss://{key}"
 
@@ -182,20 +226,32 @@ class BailianProvider(VideoProvider):
             elif mode == "t2v":
                 ok = "t2v" in model
             else:
-                ok, hint = False, (
-                    f"Wan models support t2v/i2v only; "
-                    f"use e.g. '{DEFAULT_MODELS[mode]}' for {mode}")
+                ok, hint = (
+                    False,
+                    (
+                        f"Wan models support t2v/i2v only; "
+                        f"use e.g. '{DEFAULT_MODELS[mode]}' for {mode}"
+                    ),
+                )
         elif family == "pixverse":
-            suffix = {"t2v": "-t2v", "i2v": "-it2v", "kf2v": "-kf2v", "r2v": "-r2v"}[mode]
+            suffix = {"t2v": "-t2v", "i2v": "-it2v", "kf2v": "-kf2v", "r2v": "-r2v"}[
+                mode
+            ]
             ok = model.endswith(suffix)
             hint = f"PixVerse {mode} needs a model ending in '{suffix}'"
         elif family == "vidu":
-            suffix_map = {"t2v": "_text2video", "i2v": "_img2video",
-                          "kf2v": "_start-end2video"}
+            suffix_map = {
+                "t2v": "_text2video",
+                "i2v": "_img2video",
+                "kf2v": "_start-end2video",
+            }
             suffix = suffix_map.get(mode)
             ok = suffix is not None and model.endswith(suffix)
-            hint = (f"Vidu {mode} needs a model ending in '{suffix}'" if suffix
-                    else "Vidu has no r2v variant; use PixVerse or Kling omni")
+            hint = (
+                f"Vidu {mode} needs a model ending in '{suffix}'"
+                if suffix
+                else "Vidu has no r2v variant; use PixVerse or Kling omni"
+            )
         elif family == "kling":
             if mode == "r2v":
                 ok = model.endswith("omni-video-generation")
@@ -204,29 +260,41 @@ class BailianProvider(VideoProvider):
             suffix_map = {"t2v": "-t2v", "i2v": "-i2v"}
             suffix = suffix_map.get(mode)
             ok = suffix is not None and model.endswith(suffix)
-            hint = (f"HappyHorse {mode} needs a model ending in '{suffix}'" if suffix
-                    else "HappyHorse supports t2v/i2v only")
+            hint = (
+                f"HappyHorse {mode} needs a model ending in '{suffix}'"
+                if suffix
+                else "HappyHorse supports t2v/i2v only"
+            )
         if not ok:
-            raise InputError(
-                f"model '{model}' does not match mode '{mode}'. {hint}")
+            raise InputError(f"model '{model}' does not match mode '{mode}'. {hint}")
 
     def validate_params(self, req: GenerationRequest) -> None:
         family = self._family(req.model)
         if req.model.startswith("wanx2.1") and req.mode == "t2v":
             if req.duration != 5:
-                print(f"Warning: {req.model} does not support custom duration; "
-                      f"requested {req.duration}s is ignored.", file=sys.stderr)
+                print(
+                    f"Warning: {req.model} does not support custom duration; "
+                    f"requested {req.duration}s is ignored.",
+                    file=sys.stderr,
+                )
         if family == "pixverse" and req.ratio not in ("16:9", "9:16"):
-            print(f"Warning: PixVerse may not support ratio {req.ratio}; "
-                  f"try 16:9 or 9:16.", file=sys.stderr)
+            print(
+                f"Warning: PixVerse may not support ratio {req.ratio}; "
+                f"try 16:9 or 9:16.",
+                file=sys.stderr,
+            )
 
     # ------------------------------------------------------------------
     # Request body builder
     # ------------------------------------------------------------------
 
-    def build_body(self, req: GenerationRequest,
-                   image_url: Optional[str], last_url: Optional[str],
-                   refs: list[tuple[Optional[str], str]]) -> dict:
+    def build_body(
+        self,
+        req: GenerationRequest,
+        image_url: str | None,
+        last_url: str | None,
+        refs: list[tuple[str | None, str]],
+    ) -> dict:
         family = self._family(req.model)
         inp: dict = {"prompt": req.prompt}
         params: dict = {"duration": req.duration, "watermark": False}
@@ -259,8 +327,10 @@ class BailianProvider(VideoProvider):
                 inp["media"] = [{"type": "image_url", "url": image_url}]
                 params["resolution"] = req.resolution
             elif req.mode == "kf2v":
-                inp["media"] = [{"type": "first_frame", "url": image_url},
-                                {"type": "last_frame", "url": last_url}]
+                inp["media"] = [
+                    {"type": "first_frame", "url": image_url},
+                    {"type": "last_frame", "url": last_url},
+                ]
                 params["resolution"] = req.resolution
             else:  # r2v
                 media = []
@@ -292,8 +362,10 @@ class BailianProvider(VideoProvider):
             if req.mode == "i2v":
                 inp["media"] = [{"type": "image", "url": image_url}]
             elif req.mode == "kf2v":
-                inp["media"] = [{"type": "image", "url": image_url},
-                                {"type": "image", "url": last_url}]
+                inp["media"] = [
+                    {"type": "image", "url": image_url},
+                    {"type": "image", "url": last_url},
+                ]
 
         else:  # happyhorse
             params["resolution"] = req.resolution
@@ -317,22 +389,32 @@ class BailianProvider(VideoProvider):
         if oss_used:
             headers["X-DashScope-OssResourceResolve"] = "enable"
         data = safe_json(
-            safe_request("POST", self.api_base + SUBMIT_PATH, headers=headers,
-                        json=body, label="Bailian submit"),
-            label="Bailian submit")
+            safe_request(
+                "POST",
+                self.api_base + SUBMIT_PATH,
+                headers=headers,
+                json=body,
+                label="Bailian submit",
+            ),
+            label="Bailian submit",
+        )
         task_id = data.get("output", {}).get("task_id")
         if not task_id:
             raise APIError(
-                f"Bailian submit failed: "
-                f"{data.get('code')} {data.get('message')}")
+                f"Bailian submit failed: {data.get('code')} {data.get('message')}"
+            )
         return task_id
 
     def _poll_request(self, task_id: str):
         headers = self.auth_headers()
-        return safe_request("GET", f"{self.api_base}/tasks/{task_id}",
-                           headers=headers, label="Bailian poll")
+        return safe_request(
+            "GET",
+            f"{self.api_base}/tasks/{task_id}",
+            headers=headers,
+            label="Bailian poll",
+        )
 
-    def _parse_poll_response(self, rsp) -> tuple[str, Optional[str], str]:
+    def _parse_poll_response(self, rsp) -> tuple[str, str | None, str]:
         output = safe_json(rsp, "Bailian poll").get("output", {})
         status = output.get("task_status", "UNKNOWN")
         video_url = output.get("video_url")
@@ -350,12 +432,14 @@ class BailianProvider(VideoProvider):
         for m in sorted(WAN_T2V_SIZE):
             lines.append(f"  {m}")
         lines.append(f"  {DEFAULT_MODELS['i2v']} (i2v default)")
-        for m in sorted(WAN_I2V - {DEFAULT_MODELS['i2v']}):
+        for m in sorted(WAN_I2V - {DEFAULT_MODELS["i2v"]}):
             lines.append(f"  {m}")
         lines.append("\nPixVerse 爱诗 (t2v/it2v/kf2v/r2v; 1-15s, up to 1080P):")
         for v in PIXVERSE_VERSIONS:
             lines.append(f"  pixverse/pixverse-{v}-{{t2v,it2v,kf2v,r2v}}")
-        lines.append("\nKling 可灵 (one model covers t2v/i2v/kf2v; omni adds references):")
+        lines.append(
+            "\nKling 可灵 (one model covers t2v/i2v/kf2v; omni adds references):"
+        )
         for m in KLING_MODELS:
             lines.append(f"  {m}")
         lines.append("\nVidu (q3: 1-16s + audio; q2: 1-10s):")
@@ -366,8 +450,13 @@ class BailianProvider(VideoProvider):
         for models in HAPPYHORSE_MODELS.values():
             for m in models:
                 lines.append(f"  {m}")
-        lines.append(f"\nMode defaults: "
-                      f"{', '.join(f'{k}={v}' for k, v in DEFAULT_MODELS.items())}")
-        lines.append("Endpoints (DASHSCOPE_API_BASE): " + ", ".join(API_ENDPOINTS)
-                      + " (third-party models: cn only)")
+        lines.append(
+            f"\nMode defaults: "
+            f"{', '.join(f'{k}={v}' for k, v in DEFAULT_MODELS.items())}"
+        )
+        lines.append(
+            "Endpoints (DASHSCOPE_API_BASE): "
+            + ", ".join(API_ENDPOINTS)
+            + " (third-party models: cn only)"
+        )
         return "\n".join(lines)

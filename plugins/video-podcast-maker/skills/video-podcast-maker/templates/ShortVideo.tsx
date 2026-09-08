@@ -14,130 +14,153 @@ import type { VideoProps } from "./Root";
 // Inline vertical props to avoid circular dependency (Root imports this file)
 // These match defaultVideoProps with orientation: "vertical" overrides
 
-import {
-  Scale4K,
-  ShortIntroCard,
-  ShortCTACard,
-} from "./components";
+import { Scale4K, ShortIntroCard, ShortCTACard } from "./components";
 
 // ─── Short Config ─────────────────────────────────────────────────────────────
 // Replaced per-short by scripts/generate_shorts.py
 const SHORT_CONFIG = {
-  sectionName: "placeholder",
-  sectionTitle: "Section Title",
-  videoTitle: "Video Title",
-  contentFrames: 300,   // duration of section audio in frames (30fps)
-  introFrames: 90,      // 3 seconds intro card
-  ctaFrames: 90,        // 3 seconds CTA card
-  transitionFrames: 10, // fade transition between parts
+        sectionName: "placeholder",
+        sectionTitle: "Section Title",
+        videoTitle: "Video Title",
+        contentFrames: 300, // duration of section audio in frames (30fps)
+        introFrames: 90, // 3 seconds intro card
+        ctaFrames: 90, // 3 seconds CTA card
+        transitionFrames: 10, // fade transition between parts
 };
 // ─────────────────────────────────────────────────────────────────────────────
 
 // SectionContent placeholder — replaced per-short by scripts/generate_shorts.py
 const SectionContent = ({ props }: { props: VideoProps }) => {
-  return (
-    <div
-      style={{
-        width: "100%",
-        height: "100%",
-        background: props.backgroundColor,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "80px 60px",
-        boxSizing: "border-box",
-      }}
-    >
-      <div
-        style={{
-          fontSize: 40,
-          fontWeight: 600,
-          color: props.textColor,
-          textAlign: "center",
-          opacity: 0.5,
-        }}
-      >
-        Section content placeholder
-      </div>
-    </div>
-  );
+        return (
+                <div
+                        style={{
+                                width: "100%",
+                                height: "100%",
+                                background: props.backgroundColor,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                padding: "80px 60px",
+                                boxSizing: "border-box",
+                        }}
+                >
+                        <div
+                                style={{
+                                        fontSize: 40,
+                                        fontWeight: 600,
+                                        color: props.textColor,
+                                        textAlign: "center",
+                                        opacity: 0.5,
+                                }}
+                        >
+                                Section content placeholder
+                        </div>
+                </div>
+        );
 };
 
 // ─── Main Short Composition ───────────────────────────────────────────────────
 const shortProps: VideoProps = {
-  primaryColor: "#4f6ef7",
-  backgroundColor: "#ffffff",
-  textColor: "#1a1a1a",
-  accentColor: "#FF6B6B",
-  titleSize: 96,
-  subtitleSize: 48,
-  bodySize: 36,
-  showProgressBar: false,
-  progressBarHeight: 130,
-  progressFontSize: 38,
-  progressActiveColor: "#4f6ef7",
-  bgmVolume: 0,
-  enableAnimations: true,
-  transitionType: "fade",
-  transitionDuration: 15,
-  orientation: "vertical",
-  iconStyle: "lucide",
-  iconAnimation: "entrance",
+        primaryColor: "#4f6ef7",
+        backgroundColor: "#ffffff",
+        textColor: "#1a1a1a",
+        accentColor: "#FF6B6B",
+        titleSize: 96,
+        subtitleSize: 48,
+        bodySize: 36,
+        showProgressBar: false,
+        progressBarHeight: 130,
+        progressFontSize: 38,
+        progressActiveColor: "#4f6ef7",
+        bgmVolume: 0,
+        enableAnimations: true,
+        transitionType: "fade",
+        transitionDuration: 15,
+        orientation: "vertical",
+        iconStyle: "lucide",
+        iconAnimation: "entrance",
 };
 
 export const ShortVideo = () => {
-  const props = shortProps;
-  const { introFrames, contentFrames, ctaFrames, transitionFrames, sectionTitle } =
-    SHORT_CONFIG;
+        const props = shortProps;
+        const {
+                introFrames,
+                contentFrames,
+                ctaFrames,
+                transitionFrames,
+                sectionTitle,
+        } = SHORT_CONFIG;
 
-  // TransitionSeries compensates for frame overlap:
-  // each transition "steals" transitionFrames from the preceding sequence's
-  // tail, so rendered = sum(durations) - 2*transitionFrames. Distributing
-  // +transitionFrames to intro and content makes the rendered total exactly
-  // introFrames + contentFrames + ctaFrames (matching generate_shorts.py
-  // total_frames), and content starts at rendered frame introFrames where
-  // the audio begins.
-  const compensatedIntroFrames = introFrames + transitionFrames;
+        // TransitionSeries compensates for frame overlap:
+        // each transition "steals" transitionFrames from the preceding sequence's
+        // tail, so rendered = sum(durations) - 2*transitionFrames. Distributing
+        // +transitionFrames to intro and content makes the rendered total exactly
+        // introFrames + contentFrames + ctaFrames (matching generate_shorts.py
+        // total_frames), and content starts at rendered frame introFrames where
+        // the audio begins.
+        const compensatedIntroFrames = introFrames + transitionFrames;
 
-  return (
-    <AbsoluteFill style={{ backgroundColor: props.backgroundColor }}>
-      <Scale4K orientation="vertical">
-        <TransitionSeries>
-          {/* 1. Intro card (3s) */}
-          <TransitionSeries.Sequence durationInFrames={compensatedIntroFrames}>
-            <ShortIntroCard props={props} title={sectionTitle} />
-          </TransitionSeries.Sequence>
+        return (
+                <AbsoluteFill
+                        style={{ backgroundColor: props.backgroundColor }}
+                >
+                        <Scale4K orientation="vertical">
+                                <TransitionSeries>
+                                        {/* 1. Intro card (3s) */}
+                                        <TransitionSeries.Sequence
+                                                durationInFrames={
+                                                        compensatedIntroFrames
+                                                }
+                                        >
+                                                <ShortIntroCard
+                                                        props={props}
+                                                        title={sectionTitle}
+                                                />
+                                        </TransitionSeries.Sequence>
 
-          {/* Fade: intro → content */}
-          <TransitionSeries.Transition
-            presentation={fade()}
-            timing={linearTiming({ durationInFrames: transitionFrames })}
-          />
+                                        {/* Fade: intro → content */}
+                                        <TransitionSeries.Transition
+                                                presentation={fade()}
+                                                timing={linearTiming({
+                                                        durationInFrames:
+                                                                transitionFrames,
+                                                })}
+                                        />
 
-          {/* 2. Section content */}
-          <TransitionSeries.Sequence durationInFrames={contentFrames + transitionFrames}>
-            <SectionContent props={props} />
-          </TransitionSeries.Sequence>
+                                        {/* 2. Section content */}
+                                        <TransitionSeries.Sequence
+                                                durationInFrames={
+                                                        contentFrames +
+                                                        transitionFrames
+                                                }
+                                        >
+                                                <SectionContent props={props} />
+                                        </TransitionSeries.Sequence>
 
-          {/* Fade: content → CTA */}
-          <TransitionSeries.Transition
-            presentation={fade()}
-            timing={linearTiming({ durationInFrames: transitionFrames })}
-          />
+                                        {/* Fade: content → CTA */}
+                                        <TransitionSeries.Transition
+                                                presentation={fade()}
+                                                timing={linearTiming({
+                                                        durationInFrames:
+                                                                transitionFrames,
+                                                })}
+                                        />
 
-          {/* 3. CTA card (3s) */}
-          <TransitionSeries.Sequence durationInFrames={ctaFrames}>
-            <ShortCTACard props={props} />
-          </TransitionSeries.Sequence>
-        </TransitionSeries>
-      </Scale4K>
+                                        {/* 3. CTA card (3s) */}
+                                        <TransitionSeries.Sequence
+                                                durationInFrames={ctaFrames}
+                                        >
+                                                <ShortCTACard props={props} />
+                                        </TransitionSeries.Sequence>
+                                </TransitionSeries>
+                        </Scale4K>
 
-      {/* Section audio — starts after intro to stay in sync with section content */}
-      <Sequence from={introFrames}>
-        <Audio src={staticFile("short_audio.wav")} />
-      </Sequence>
-    </AbsoluteFill>
-  );
+                        {/* Section audio — starts after intro to stay in sync with section content */}
+                        <Sequence from={introFrames}>
+                                <Audio src={staticFile("short_audio.wav")} />
+                        </Sequence>
+                </AbsoluteFill>
+        );
 };
 
 export default ShortVideo;

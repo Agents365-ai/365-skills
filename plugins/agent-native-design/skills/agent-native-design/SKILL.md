@@ -1,11 +1,11 @@
 ---
 name: agent-native-design
 description: Use when designing, reviewing, or refactoring a CLI that must serve AI agents alongside humans, or when converting an API or SDK into an agent-usable CLI interface.
-license: CC-BY-NC-4.0
+license: MIT
 homepage: https://github.com/Agents365-ai/agent-native-design
 compatibility: Includes sidecar metadata for OpenClaw, Hermes, pi-mono, and OpenAI Codex; the core SKILL.md is portable to any agent runtime that supports Agent Skills-style instructions.
 platforms: [macos, linux, windows]
-metadata: {"openclaw":{"requires":{},"emoji":"⌨️","os":["darwin","linux","win32"]},"hermes":{"tags":["cli","agent-native","interface-design","structured-output","schema-driven"],"category":"engineering","requires_tools":[],"related_skills":[]},"pimo":{"category":"engineering","tags":["cli","agent-native","interface-design","structured-output","schema-driven"]},"author":"Agents365-ai","version":"1.3.5"}
+metadata: {"openclaw":{"requires":{},"emoji":"⌨️","os":["darwin","linux","win32"]},"hermes":{"tags":["cli","agent-native","interface-design","structured-output","schema-driven"],"category":"engineering","requires_tools":[],"related_skills":[]},"pimo":{"category":"engineering","tags":["cli","agent-native","interface-design","structured-output","schema-driven"]},"author":"Agents365-ai","version":"1.4.0"}
 ---
 
 # agent-native-design
@@ -80,7 +80,7 @@ Channels: environment variables, exit codes, dry-run mode, stable command semant
 ### Foundational contract
 
 | Channel | Primary audience |
-|---------|-----------------|
+| --------- | ----------------- |
 | `stdout` | Machines and agents |
 | `stderr` | Humans |
 | `exit codes` | Systems and orchestrators |
@@ -92,7 +92,7 @@ This skill teaches how to make CLI a first-class interface for agents. Productio
 ## The complete interaction loop
 
 | Phase | Step | Description |
-|-------|------|-------------|
+| ------- | ------ | ------------- |
 | 0. Bootstrap | 1 | Human/system obtains auth token or credentials |
 | 0. Bootstrap | 2 | Set trusted env vars: token, profile, safety mode |
 | 1. Discovery | 3 | Agent loads skills or command summaries |
@@ -166,11 +166,13 @@ Check whether the CLI supports: bootstrap, discovery, parameter understanding, p
 
 Use the 14-criterion rubric to score the CLI. The full rubric lives in `references/rubric.md`. Every one of the seven principles has at least one rubric row backing it, so the score-to-principle mapping is total: P0 → Three-audience support, Non-interactive operation; P1 → Stdout contract, Stderr separation, Idempotent retries, Error recoverability; P2 → Trust boundary; P3 → Self-description (help), Dry-run; P4 → Safety tiers; P5 → Boundary validation; P6 → Schema introspection; P7 → Auth delegation. Then summarize per principle with evidence, risk, and recommendation. The full review checklists live in `references/checklists.md`.
 
+**Machine verification baseline.** When the CLI under review is installed and runnable, run `anc audit <command> --output json` (the [agentnative](https://github.com/brettdavies/agentnative) linter, 8 RFC 2119 principles) before applying the rubric. `anc` probes shipped-binary behavior: non-interactive operation, `--output json` validity, schema discoverability, help/version, exit codes, NO_COLOR, and dry-run. Score the rubric-only dimensions yourself — no current linter measures trust directionality (P2), boundary validation (P5), safety tiers (P4), auth delegation (P7), or schema version drift (P6). Use the rubric alone when the CLI is not installable or `anc` is unavailable; report the anc scorecard alongside the rubric score when it is.
+
 ### Step 5. Produce a refactor plan
 
-- **P0** must fix
-- **P1** should improve
-- **P2** long-term enhancements
+* **P0** must fix
+* **P1** should improve
+* **P2** long-term enhancements
 
 ---
 
@@ -222,7 +224,7 @@ Prioritized recommendations with examples drawn from `references/examples.md`.
 Load on demand — these are not in the agent's context until needed:
 
 | File | Read when |
-|------|-----------|
+| ------ | ----------- |
 | `references/examples.md` | Showing the user a good envelope, error, dry-run, batch response, or anti-pattern |
 | `references/rubric.md` | Producing the score component of a CLI review |
 | `references/checklists.md` | Walking through a CLI auditing list with the user, or sanity-checking a new design |

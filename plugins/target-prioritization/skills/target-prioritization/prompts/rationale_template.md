@@ -8,6 +8,7 @@ sentences total for rationale, 1 sentence for next step.
 
 Sentence 1 — **most compelling evidence** (pick the single strongest signal
 from the dossier row):
+
 - If `is_focus_disease_associated` → "OpenTargets surfaces a focus-disease
   association (score [max_focus_disease_assoc_score]) — likely backed by
   GWAS / text-mining evidence…"
@@ -33,6 +34,7 @@ from the dossier row):
 - Else use whatever component scores highest in the breakdown row.
 
 Sentence 2 — **main risk or caveat**:
+
 - `maturity_tag = uncharted` → "Very thin literature ([N] hits) — risk of
   unknown off-target biology."
 - `maturity_tag = saturated` → "Heavily studied ([N] hits); likely IP
@@ -69,6 +71,7 @@ healthy control biopsies").
 
 Be concrete and adapted to the user's experimental context. Examples
 across domains:
+
 - **Functional genomics**: "siRNA / CRISPRi knockdown in the relevant
   primary cell type; readout the disease-relevant secreted protein or
   phosphorylation marker by ELISA / flow."
@@ -84,6 +87,7 @@ across domains:
 ## Executive summary (top 5–10 genes)
 
 3–5 sentences total at the top of the report. Cover:
+
 1. How many genes scored Tier-1 vs Tier-2.
 2. The 2–3 most compelling individual candidates and the headline reason.
 3. Any pattern across the top genes (e.g. "5/10 are surface receptors in

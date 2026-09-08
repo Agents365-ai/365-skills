@@ -2,13 +2,16 @@
 
 > Auto-generated from `data/providers.json` · Updated: 2026-08-13
 
-## Quick Comparison (12 backends)
+## Quick Comparison (15 backends)
 
 | Provider | Cost/10K chars | Voices | Max chars | Max duration | SSML | Clone | Emotion | Languages | Streaming | Setup |
 |----------|---------------|--------|-----------|-------------|------|-------|---------|-----------|-----------|-------|
 | **Edge TTS**<br><small>Microsoft</small> | 免费 | 20+ | 2000 | ~10 分钟 | ✅ | ❌ | Via SSML | 100+ | WebSocket | 零配置 |
 | **豆包 TTS**<br><small>ByteDance (火山引擎)</small> | ~1 元/万字 | 9 + 声音复刻 | 280 | ~1 分钟 | ❌ | ✅ | 情感预测版 (+1元/万字) | 中文、英文、中英混读 | WebSocket | 中等 |
-| **CosyVoice**<br><small>Alibaba (阿里云百炼)</small> | ~2 元/万字 | 7 | 400 | ~2 分钟 | ❌ | ✅ | Via voice style | 中文 | SDK 流式 | 简单 |
+| **CosyVoice**<br><small>Alibaba (阿里云百炼)</small> | ~2 元/万字 (v3-flash) / ~0.8 元/万字 (v3.5-flash) | 7 | 400 | ~2 分钟 | ❌ | ✅ | Via voice style | 中文 | SDK 流式 | 简单 |
+| **Qwen3-TTS**<br><small>Alibaba (阿里云百炼)</small> | ~1 元/万字 | 10+ | 400 | ~2 分钟 | ❌ | ✅ | Via instructions (qwen3-tts-instruct-flash) | 10 (中/英/日/韩/法/德/意/葡/西/俄) | SDK 流式 (realtime 模型) | 简单 (复用 DASHSCOPE_API_KEY) |
+| **StepFun TTS**<br><small>阶跃星辰</small> | 低价 (step-tts-mini) | 数十种官方音色 | 1000 | ~2 分钟 | ❌ | ✅ | Via 音色 (step-tts-2) | 中/英/中英混合/日 | REST only | 简单 (复用 STEP_API_KEY) |
+| **GLM-TTS**<br><small>智谱 (BigModel)</small> | 低价 | 7 (含动动动物圈系列) | 400 | ~2 分钟 | ❌ | ✅ | 情感调节 | 中/英 | SSE 流式 (可选) | 简单 (复用 ZHIPUAI_API_KEY) |
 | **Azure TTS**<br><small>Microsoft</small> | ~$1/百万字符 | 20+ + 自定义 | 2000 | ~10 分钟 | ✅ | ✅ | Via SSML (mstts:express-as) | 100+ | SDK 流式 | 中等 |
 | **腾讯云 TTS**<br><small>Tencent</small> | 0.75 元/万字 | 380+ + 声音复刻 | 150 | ~30 秒 | ✅ | ✅ | Via SSML (精品音色) | 中文、英文、粤语 | WebSocket | 中等 |
 | **百度 AI TTS**<br><small>Baidu</small> | 灵活计费 | 30+ + 声音复刻 | 500 | ~2 分钟 | ✅ | ✅ | Native 情感合成 (喜悦/悲伤/中性) | 中文、英文、日文 | WebSocket | 简单 |
@@ -87,7 +90,7 @@
 
 | Property | Value |
 |----------|-------|
-| Cost | ~2 元/万字 (~¥2/10K chars) |
+| Cost | ~2 元/万字 (v3-flash) / ~0.8 元/万字 (v3.5-flash) (~¥2 / ~¥0.8/10K chars) |
 | Built-in voices | 7 |
 | Max chars / chunk | 400 |
 | Max duration / chunk | ~2 分钟 |
@@ -112,6 +115,97 @@
 - `longchen_v3` 小陈 — Male, 沉稳 → 商务、专业
 - `longyuhan_v3` 雨涵 — Female, 知性 → 知识、教育
 - `longyue_v3` 小悦 — Female, 甜美 → 客服、导航
+
+
+## Qwen3-TTS
+
+**Provider:** Alibaba (阿里云百炼)
+
+| Property | Value |
+|----------|-------|
+| Cost | ~1 元/万字 (~¥1/10K chars) |
+| Built-in voices | 10+ |
+| Max chars / chunk | 400 |
+| Max duration / chunk | ~2 分钟 |
+| SSML | False |
+| Voice cloning | True |
+| Clone detail | 声音复刻(qwen-voice-enrollment)与声音设计(qwen-voice-design): 定制音色后通过 voice 参数调用 |
+| Emotion | Via instructions (qwen3-tts-instruct-flash) |
+| Dialects | — |
+| Languages | 10 (中/英/日/韩/法/德/意/葡/西/俄) |
+| Streaming | SDK 流式 (realtime 模型) |
+| Setup | 简单 (复用 DASHSCOPE_API_KEY) |
+| Install | `pip install dashscope` |
+| API Key | https://bailian.console.aliyun.com/ |
+| Env vars | `DASHSCOPE_API_KEY` |
+
+### Recommended Voices
+
+- `Cherry` Cherry — Female, 甜美活泼 → 短视频、带货
+- `Serena` Serena — Female, 温柔自然 → 有声书、陪伴
+- `Ethan` Ethan — Male, 沉稳 → 商务、纪录片
+- `Brian` Brian — Male, 英文为主 → 英语内容
+
+
+## StepFun TTS
+
+**Provider:** 阶跃星辰
+
+| Property | Value |
+|----------|-------|
+| Cost | 低价 (step-tts-mini) (≈¥1/10K chars) |
+| Built-in voices | 数十种官方音色 |
+| Max chars / chunk | 1000 |
+| Max duration / chunk | ~2 分钟 |
+| SSML | False |
+| Voice cloning | True |
+| Clone detail | 音色复刻: ~10s 参考音频; step-tts-2 复刻音色支持全部情绪/风格控制 |
+| Emotion | Via 音色 (step-tts-2) |
+| Dialects | — |
+| Languages | 中/英/中英混合/日 |
+| Streaming | REST only |
+| Setup | 简单 (复用 STEP_API_KEY) |
+| Install | `pip install requests` |
+| API Key | https://platform.stepfun.com/ |
+| Env vars | `STEP_API_KEY` |
+
+### Recommended Voices
+
+- `cixingnansheng` 磁性男声 — Male, 磁性 → 营销、带货
+- `jingdiannvsheng` 经典女声 — Female, 经典 → 通用
+- `qingchunshaonv` 青春少女 — Female, 年轻活力 → 短视频、动漫
+- `wenrounansheng` 温柔男声 — Male, 温柔 → 客服、陪伴
+- `elegantgentle-female` 气质温婉 — Female, 温婉 → 客服、商务
+- `livelybreezy-female` 活力轻快 — Female, 轻快 → 营销、广告
+
+
+## GLM-TTS
+
+**Provider:** 智谱 (BigModel)
+
+| Property | Value |
+|----------|-------|
+| Cost | 低价 (≈¥1/10K chars) |
+| Built-in voices | 7 (含动动动物圈系列) |
+| Max chars / chunk | 400 |
+| Max duration / chunk | ~2 分钟 |
+| SSML | False |
+| Voice cloning | True |
+| Clone detail | 音色复刻 (glm-tts-clone / voice/clone 接口) |
+| Emotion | 情感调节 |
+| Dialects | — |
+| Languages | 中/英 |
+| Streaming | SSE 流式 (可选) |
+| Setup | 简单 (复用 ZHIPUAI_API_KEY) |
+| Install | `pip install requests` |
+| API Key | https://open.bigmodel.cn/ |
+| Env vars | `ZHIPUAI_API_KEY` |
+
+### Recommended Voices
+
+- `tongtong` 彤彤 — 默认音色 → 通用
+- `chuichui` 锤锤 — 活泼 → 儿童、动画
+- `xiaochen` 小陈 — Male, 沉稳 → 商务
 
 
 ## Azure TTS

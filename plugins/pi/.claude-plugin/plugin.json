@@ -1,8 +1,0 @@
-{
-  "name": "pi",
-  "version": "0.1.2",
-  "description": "Use the Pi coding agent from Claude Code to review code or delegate tasks.",
-  "author": {
-    "name": "Agents365-ai"
-  }
-}

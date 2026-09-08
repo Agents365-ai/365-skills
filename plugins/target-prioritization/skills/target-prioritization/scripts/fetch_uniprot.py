@@ -3,6 +3,7 @@
 MHC flag, coding status, protein class.
 
 Uses UniProt REST search endpoint with human + reviewed filter."""
+
 import argparse
 import json
 import re
@@ -29,7 +30,7 @@ def is_mhc(gene: str) -> bool:
 
 def fetch_one(gene: str) -> dict:
     """Query UniProt for a single human gene; return parsed fields."""
-    query = f'(gene:{gene}) AND (organism_id:9606) AND (reviewed:true)'
+    query = f"(gene:{gene}) AND (organism_id:9606) AND (reviewed:true)"
     params = {"query": query, "fields": FIELDS, "format": "json", "size": "1"}
     url = f"{UNIPROT_URL}?{urllib.parse.urlencode(params)}"
     try:
@@ -58,7 +59,12 @@ def fetch_one(gene: str) -> dict:
         return out
     rec = results[0]
     out["uniprot_id"] = rec.get("primaryAccession")
-    name = rec.get("proteinDescription", {}).get("recommendedName", {}).get("fullName", {}).get("value")
+    name = (
+        rec.get("proteinDescription", {})
+        .get("recommendedName", {})
+        .get("fullName", {})
+        .get("value")
+    )
     out["protein_name"] = name
     out["protein_existence"] = rec.get("proteinExistence")
 
@@ -92,7 +98,9 @@ def fetch_one(gene: str) -> dict:
     if out["has_signal_peptide"] and not out["is_surface"]:
         out["is_secreted"] = True
 
-    out["keywords"] = [k.get("name") for k in rec.get("keywords", []) if k.get("name")][:20]
+    out["keywords"] = [k.get("name") for k in rec.get("keywords", []) if k.get("name")][
+        :20
+    ]
 
     return out
 

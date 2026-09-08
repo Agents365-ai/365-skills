@@ -23,11 +23,11 @@ def build_ssml_fragment(chunk, phoneme_dict):
 
     def _save(m):
         tags.append(m.group(0))
-        return "\x00{}\x00".format(len(tags) - 1)
+        return f"\x00{len(tags) - 1}\x00"
 
     frag = escape(re.sub(r"<[^>]+>", _save, frag))
     for i, tag in enumerate(tags):
-        frag = frag.replace("\x00{}\x00".format(i), tag)
+        frag = frag.replace(f"\x00{i}\x00", tag)
     return frag
 
 
@@ -38,8 +38,11 @@ def _style_wrap(block):
     variants) produce vocoder artifacts under express-as.
     """
     style = os.environ.get("TTS_STYLE", "")
-    return (f'<mstts:express-as style="{style}">{block}</mstts:express-as>'
-            if style else block)
+    return (
+        f'<mstts:express-as style="{style}">{block}</mstts:express-as>'
+        if style
+        else block
+    )
 
 
 def synthesize(chunks, config, output_file, output_format="wav"):
@@ -56,7 +59,8 @@ def synthesize(chunks, config, output_file, output_format="wav"):
         region=config.get("region", "eastasia"),
     )
     voice = config.get("voice", "zh-CN-XiaoxiaoNeural")
-    speech_config.SpeechSynthesisVoiceName = voice
+    # azure SDK stubs not installed in this env; runtime attribute is valid
+    speech_config.SpeechSynthesisVoiceName = voice  # pyright: ignore[reportAttributeAccessIssue]
     speech_rate = config.get("speech_rate", "+5%")
 
     out_dir = os.path.dirname(output_file) or "."
@@ -73,7 +77,8 @@ def synthesize(chunks, config, output_file, output_format="wav"):
             try:
                 audio = speechsdk.audio.AudioOutputConfig(filename=part_file)
                 synth = speechsdk.SpeechSynthesizer(
-                    speech_config=speech_config, audio_config=audio,
+                    speech_config=speech_config,
+                    audio_config=audio,
                 )
 
                 # Collect per attempt; merged only on success so a failed
@@ -83,38 +88,48 @@ def synthesize(chunks, config, output_file, output_format="wav"):
 
                 def word_boundary_cb(evt, _start=chunk_start):
                     # Punctuation boundaries carry no spoken text — skip them.
-                    if getattr(evt, "boundary_type", None) == \
-                            speechsdk.SpeechSynthesisBoundaryType.Punctuation:
+                    if (
+                        getattr(evt, "boundary_type", None)
+                        == speechsdk.SpeechSynthesisBoundaryType.Punctuation
+                    ):
                         return
-                    attempt_words.append({
-                        "text": evt.text,
-                        # audio_offset is in 100-ns ticks
-                        "offset": _start + evt.audio_offset / 10_000_000,
-                        "duration": evt.duration.total_seconds(),
-                    })
+                    attempt_words.append(
+                        {
+                            "text": evt.text,
+                            # audio_offset is in 100-ns ticks
+                            "offset": _start + evt.audio_offset / 10_000_000,
+                            "duration": evt.duration.total_seconds(),
+                        }
+                    )
+
                 synth.synthesis_word_boundary.connect(word_boundary_cb)
 
                 fragment = build_ssml_fragment(chunk, phoneme_dict)
                 inner = _style_wrap(
-                    f'<prosody rate="{speech_rate}">{fragment}</prosody>')
+                    f'<prosody rate="{speech_rate}">{fragment}</prosody>'
+                )
                 ssml = (
                     f'<speak version="1.0" '
                     f'xmlns="http://www.w3.org/2001/10/synthesis" '
                     f'xmlns:mstts="https://www.w3.org/2001/mstts" '
                     f'xml:lang="zh-CN">'
                     f'<voice name="{voice}">'
-                    f'{inner}'
-                    f'</voice>'
-                    f'</speak>'
+                    f"{inner}"
+                    f"</voice>"
+                    f"</speak>"
                 )
 
                 result = synth.speak_ssml_async(ssml).get()
+                if result is None:
+                    raise RuntimeError("Azure synthesis returned no result")
                 if result.reason == speechsdk.ResultReason.SynthesizingAudioCompleted:
                     chunk_duration = result.audio_duration.total_seconds()
                     accumulated_duration += chunk_duration
                     word_boundaries.extend(attempt_words)
-                    print(f"  Part {i + 1}/{len(chunks)} done "
-                          f"({len(chunk)} chars, {chunk_duration:.1f}s)")
+                    print(
+                        f"  Part {i + 1}/{len(chunks)} done "
+                        f"({len(chunk)} chars, {chunk_duration:.1f}s)"
+                    )
                     break
                 else:
                     details = result.cancellation_details.error_details
@@ -130,23 +145,40 @@ def synthesize(chunks, config, output_file, output_format="wav"):
 
     # Write final output
     import subprocess
+
     if len(part_files) == 1:
         os.replace(part_files[0], output_file)
     else:
         concat_list = os.path.join(out_dir, ".tts_concat.txt")
+        # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
         with open(concat_list, "w", encoding="utf-8") as f:
             for pf in part_files:
                 f.write(f"file '{os.path.basename(pf)}'\n")
         result = subprocess.run(
-            ["ffmpeg", "-y", "-f", "concat", "-safe", "0",
-             "-i", concat_list, "-c", "copy", output_file],
-            capture_output=True, text=True, cwd=out_dir,
+            [
+                "ffmpeg",
+                "-y",
+                "-f",
+                "concat",
+                "-safe",
+                "0",
+                "-i",
+                concat_list,
+                "-c",
+                "copy",
+                output_file,
+            ],
+            capture_output=True,
+            text=True,
+            cwd=out_dir,
         )
         if result.returncode != 0:
             raise RuntimeError(f"FFmpeg concat failed: {result.stderr[:200]}")
+        # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
         os.remove(concat_list)
         for pf in part_files:
             if os.path.exists(pf):
+                # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
                 os.remove(pf)
 
     return accumulated_duration, word_boundaries

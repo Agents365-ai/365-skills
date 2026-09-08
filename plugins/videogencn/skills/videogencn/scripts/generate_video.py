@@ -33,26 +33,34 @@ except ImportError:
     print("Error: 'requests' not installed. Run: pip install requests", file=sys.stderr)
     sys.exit(1)
 
-from providers import get_provider, detect_provider, list_providers, register_providers
+from providers import detect_provider, get_provider, list_providers, register_providers
 from providers.base import (
-    GenerationRequest, VideoGenError, ConfigError, InputError, APIError,
-    TaskFailedError, TaskTimeoutError,
-    safe_request, emit_success, emit_error, emit_progress,
-    stdout_is_tty, resolve_format, SCHEMA_VERSION,
+    APIError,
+    ConfigError,
+    GenerationRequest,
+    InputError,
+    TaskFailedError,
+    TaskTimeoutError,
+    VideoGenError,
+    emit_error,
+    emit_progress,
+    emit_success,
+    resolve_format,
 )
 from providers.base import safe_request as _safe_request
-
 
 # ---------------------------------------------------------------------------
 # Shared utilities
 # ---------------------------------------------------------------------------
+
 
 def download_video(url: str, output_path: Path) -> int:
     """Download a video from URL, write to output_path, return byte count."""
     rsp = _safe_request("GET", url, timeout=300, label="Video download")
     if rsp.status_code != 200:
         raise APIError(
-            f"video download failed (HTTP {rsp.status_code}): {rsp.text[:300]}")
+            f"video download failed (HTTP {rsp.status_code}): {rsp.text[:300]}"
+        )
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_bytes(rsp.content)
     return len(rsp.content)
@@ -119,17 +127,19 @@ def _detect_provider_from_task(task_id: str):
 # Schema introspection
 # ---------------------------------------------------------------------------
 
+
 def _load_models_json() -> dict:
     """Load models.json from the docs directory (repo root or skill root)."""
     script_dir = Path(__file__).resolve().parent  # .../skills/videogencn/scripts
-    skill_dir = script_dir.parent                  # .../skills/videogencn
-    repo_dir = skill_dir.parent.parent             # repo root
+    skill_dir = script_dir.parent  # .../skills/videogencn
+    repo_dir = skill_dir.parent.parent  # repo root
     candidates = [
         repo_dir / "docs" / "models.json",
         skill_dir / "docs" / "models.json",
     ]
     for p in candidates:
         if p.exists():
+            # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
             return json.loads(p.read_text())
     return {}
 
@@ -143,13 +153,15 @@ def cmd_schema(args, available):
     if target == "providers" or target == "":
         providers = []
         for p in data.get("providers", []):
-            providers.append({
-                "id": p["id"],
-                "name": p["name"],
-                "full_name": p["full_name"],
-                "api_key_env": p["api_key_env"],
-                "model_count": len(p.get("models", [])),
-            })
+            providers.append(
+                {
+                    "id": p["id"],
+                    "name": p["name"],
+                    "full_name": p["full_name"],
+                    "api_key_env": p["api_key_env"],
+                    "model_count": len(p.get("models", [])),
+                }
+            )
         emit_success(providers)
         return
 
@@ -158,33 +170,38 @@ def cmd_schema(args, available):
         if target == p["id"]:
             models = []
             for m in p["models"]:
-                models.append({
-                    "name": m["name"],
-                    "family": m["family"],
-                    "modes": m["modes_en"],
-                    "resolution": m["resolution"],
-                    "duration": m["duration"],
-                    "audio": m.get("audio", False),
-                    "camera_control": m.get("camera_control", False),
-                    "multi_shot": m.get("multi_shot", False),
-                    "default": m.get("default", False),
-                    "price": m.get("price", ""),
-                    "use_case": m.get("use_case", ""),
-                    "experimental": m.get("experimental", False),
-                })
+                models.append(
+                    {
+                        "name": m["name"],
+                        "family": m["family"],
+                        "modes": m["modes_en"],
+                        "resolution": m["resolution"],
+                        "duration": m["duration"],
+                        "audio": m.get("audio", False),
+                        "camera_control": m.get("camera_control", False),
+                        "multi_shot": m.get("multi_shot", False),
+                        "default": m.get("default", False),
+                        "price": m.get("price", ""),
+                        "use_case": m.get("use_case", ""),
+                        "experimental": m.get("experimental", False),
+                    }
+                )
             emit_success(models, {"provider": p["id"], "provider_name": p["name"]})
             return
 
     # Fallback: unknown target
-    emit_error("schema_not_found",
-               f"Unknown resource '{target}'. Try 'providers' or a provider id: "
-               + ", ".join(p["id"] for p in data.get("providers", [])),
-               retryable=False)
+    emit_error(
+        "schema_not_found",
+        f"Unknown resource '{target}'. Try 'providers' or a provider id: "
+        + ", ".join(p["id"] for p in data.get("providers", [])),
+        retryable=False,
+    )
 
 
 # ---------------------------------------------------------------------------
 # Cost estimation (for --dry-run)
 # ---------------------------------------------------------------------------
+
 
 def _estimate_cost(req: GenerationRequest, provider_name: str) -> dict:
     """Estimate cost from models.json data. Returns {min, max, currency}."""
@@ -205,22 +222,33 @@ def _estimate_cost(req: GenerationRequest, provider_name: str) -> dict:
                                 "currency": "USD",
                             }
                         except (ValueError, IndexError):
+                            # pi-lens-ignore: python-empty-except
                             pass
                     elif price and price != "—":
                         try:
                             v = float(price.replace("$", "").replace("/s", ""))
-                            return {"min": round(v * req.duration, 3),
-                                    "max": round(v * req.duration, 3), "currency": "USD"}
+                            return {
+                                "min": round(v * req.duration, 3),
+                                "max": round(v * req.duration, 3),
+                                "currency": "USD",
+                            }
                         except ValueError:
+                            # pi-lens-ignore: python-empty-except
                             pass
                     break
             break
-    return {"min": None, "max": None, "currency": "USD", "note": "price data unavailable"}
+    return {
+        "min": None,
+        "max": None,
+        "currency": "USD",
+        "note": "price data unavailable",
+    }
 
 
 # ---------------------------------------------------------------------------
 # Output dispatcher
 # ---------------------------------------------------------------------------
+
 
 def _print_msg(fmt: str, msg: str, **kwargs) -> None:
     """Print a message: table mode → stderr; json mode → skip (use envelope)."""
@@ -233,9 +261,10 @@ def _print_msg(fmt: str, msg: str, **kwargs) -> None:
 # Core logic
 # ---------------------------------------------------------------------------
 
+
 def _run(args, available, fmt: str, *, parent_parser=None):
     # --- --help-providers -----------------------------------------------
-    if getattr(args, 'help_providers', False):
+    if getattr(args, "help_providers", False):
         data = _load_models_json()
         for p in data.get("providers", []):
             if p["id"] not in available:
@@ -253,7 +282,7 @@ def _run(args, available, fmt: str, *, parent_parser=None):
                 star = " ⭐" if m.get("default") else ""
                 exp = " ⚠️" if m.get("experimental") else ""
                 modes = ", ".join(m.get("modes_en", m.get("modes", [])))
-                print(f"    {m['name']}{star}{exp} [{modes}] {m.get('price','')}")
+                print(f"    {m['name']}{star}{exp} [{modes}] {m.get('price', '')}")
             print()
         return
 
@@ -280,32 +309,48 @@ def _run(args, available, fmt: str, *, parent_parser=None):
         else:
             provider, confident = _detect_provider_from_task(args.task_id)
             if not confident:
-                msg = (f"cannot auto-detect provider from task ID '{args.task_id}'; "
-                       f"defaulting to '{provider.name}'")
+                msg = (
+                    f"cannot auto-detect provider from task ID '{args.task_id}'; "
+                    f"defaulting to '{provider.name}'"
+                )
                 _print_msg(fmt, f"Warning: {msg}", file=sys.stderr)
-        _print_msg(fmt, f"Resuming task {args.task_id} via provider: {provider.name}",
-                   file=sys.stderr)
+        _print_msg(
+            fmt,
+            f"Resuming task {args.task_id} via provider: {provider.name}",
+            file=sys.stderr,
+        )
         emit_progress("resume", task_id=args.task_id, provider=provider.name)
         start = time.time()
         video_url = provider.poll(args.task_id)
         output_path = Path(args.output)
-        _print_msg(fmt, "Downloading video (result URLs expire after 24h)...", file=sys.stderr)
+        _print_msg(
+            fmt, "Downloading video (result URLs expire after 24h)...", file=sys.stderr
+        )
         size = download_video(video_url, output_path)
         elapsed = round(time.time() - start, 1)
-        _print_msg(fmt, f"Saved: {output_path} ({size / 1024 / 1024:.1f} MB)", file=sys.stderr)
-        emit_success({
-            "output_path": str(output_path),
-            "size_bytes": size,
-            "size_mb": round(size / 1024 / 1024, 1),
-        }, {"provider": provider.name, "task_id": args.task_id, "elapsed_s": elapsed})
+        _print_msg(
+            fmt, f"Saved: {output_path} ({size / 1024 / 1024:.1f} MB)", file=sys.stderr
+        )
+        emit_success(
+            {
+                "output_path": str(output_path),
+                "size_bytes": size,
+                "size_mb": round(size / 1024 / 1024, 1),
+            },
+            {"provider": provider.name, "task_id": args.task_id, "elapsed_s": elapsed},
+        )
         return
 
     # --- Normal generation ----------------------------------------------
     if not args.prompt:
         if parent_parser:
-            parent_parser.error("prompt is required (or use --task-id / --list-models / schema)")
+            parent_parser.error(
+                "prompt is required (or use --task-id / --list-models / schema)"
+            )
         else:
-            raise InputError("prompt is required (or use --task-id / --list-models / schema)")
+            raise InputError(
+                "prompt is required (or use --task-id / --list-models / schema)"
+            )
     if args.last_frame and not args.image:
         raise InputError("--last-frame requires --image (the first frame)")
 
@@ -320,13 +365,16 @@ def _run(args, available, fmt: str, *, parent_parser=None):
     if mode not in provider.supported_modes:
         raise InputError(
             f"provider '{provider.name}' does not support mode '{mode}'. "
-            f"Supported: {', '.join(provider.supported_modes)}")
+            f"Supported: {', '.join(provider.supported_modes)}"
+        )
 
     # Model selection
     model_env = provider.model_env_var
-    model = (args.model
-             or (os.environ.get(model_env) if model_env else None)
-             or provider.default_models[mode])
+    model = (
+        args.model
+        or (os.environ.get(model_env) if model_env else None)
+        or provider.default_models[mode]
+    )
     provider.check_mode(model, mode)
 
     # Build GenerationRequest
@@ -354,26 +402,38 @@ def _run(args, available, fmt: str, *, parent_parser=None):
         image_url = last_url = None
         refs_preview = []
         if args.image:
-            image_url = args.image if args.image.startswith(("http", "data:")) else f"<local:{args.image}>"
+            image_url = (
+                args.image
+                if args.image.startswith(("http", "data:"))
+                else f"<local:{args.image}>"
+            )
         if args.last_frame:
-            last_url = args.last_frame if args.last_frame.startswith(("http", "data:")) else f"<local:{args.last_frame}>"
+            last_url = (
+                args.last_frame
+                if args.last_frame.startswith(("http", "data:"))
+                else f"<local:{args.last_frame}>"
+            )
         for ref in args.ref:
             name, value = parse_ref(ref)
             refs_preview.append([name, value])
 
-        body = provider.build_body(req, image_url, last_url,
-                                   [(n, v) for n, v in refs_preview])
+        body = provider.build_body(
+            req, image_url, last_url, [(n, v) for n, v in refs_preview]
+        )
         cost = _estimate_cost(req, provider.name)
-        emit_success({
-            "dry_run": True,
-            "would_submit": {
-                "provider": provider.name,
-                "model": model,
-                "mode": mode,
-                "body": body,
+        emit_success(
+            {
+                "dry_run": True,
+                "would_submit": {
+                    "provider": provider.name,
+                    "model": model,
+                    "mode": mode,
+                    "body": body,
+                },
+                "estimated_cost": cost,
             },
-            "estimated_cost": cost,
-        }, {"provider": provider.name, "model": model, "mode": mode})
+            {"provider": provider.name, "model": model, "mode": mode},
+        )
         return
 
     # Resolve media (real upload)
@@ -394,13 +454,17 @@ def _run(args, available, fmt: str, *, parent_parser=None):
 
     # Build body, submit, poll
     body = provider.build_body(req, image_url, last_url, refs)
-    _print_msg(fmt, f"Model: {model} (provider: {provider.name}, mode: {mode})", file=sys.stderr)
+    _print_msg(
+        fmt,
+        f"Model: {model} (provider: {provider.name}, mode: {mode})",
+        file=sys.stderr,
+    )
     emit_progress("submit", provider=provider.name, model=model, mode=mode)
 
     start = time.time()
 
     # Idempotency: check for cached task before submitting
-    idem_key = getattr(args, 'idempotency_key', None)
+    idem_key = getattr(args, "idempotency_key", None)
     cached = _check_idempotency(idem_key) if idem_key else None
     if cached and cached.get("provider") == provider.name:
         task_id = cached["task_id"]
@@ -410,32 +474,47 @@ def _run(args, available, fmt: str, *, parent_parser=None):
         task_id = provider.submit(body, oss_used=oss_used)
         _print_msg(fmt, f"Task submitted: {task_id}", file=sys.stderr)
         if idem_key:
-            _store_idempotency(idem_key, {
-                "task_id": task_id, "provider": provider.name,
-                "model": model, "mode": mode, "created": time.time()})
+            _store_idempotency(
+                idem_key,
+                {
+                    "task_id": task_id,
+                    "provider": provider.name,
+                    "model": model,
+                    "mode": mode,
+                    "created": time.time(),
+                },
+            )
 
     emit_progress("submitted", task_id=task_id, provider=provider.name)
     video_url = provider.poll(task_id)
 
-    _print_msg(fmt, "Downloading video (result URLs expire after 24h)...", file=sys.stderr)
+    _print_msg(
+        fmt, "Downloading video (result URLs expire after 24h)...", file=sys.stderr
+    )
     emit_progress("download", task_id=task_id)
     output_path = Path(args.output)
     size = download_video(video_url, output_path)
     elapsed = round(time.time() - start, 1)
-    _print_msg(fmt, f"Saved: {output_path} ({size / 1024 / 1024:.1f} MB)", file=sys.stderr)
+    _print_msg(
+        fmt, f"Saved: {output_path} ({size / 1024 / 1024:.1f} MB)", file=sys.stderr
+    )
 
-    emit_success({
-        "output_path": str(output_path),
-        "size_bytes": size,
-        "size_mb": round(size / 1024 / 1024, 1),
-        "task_id": task_id,
-        "video_url": video_url,
-    }, {"provider": provider.name, "model": model, "mode": mode, "elapsed_s": elapsed})
+    emit_success(
+        {
+            "output_path": str(output_path),
+            "size_bytes": size,
+            "size_mb": round(size / 1024 / 1024, 1),
+            "task_id": task_id,
+            "video_url": video_url,
+        },
+        {"provider": provider.name, "model": model, "mode": mode, "elapsed_s": elapsed},
+    )
 
 
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
+
 
 def main():
     register_providers()
@@ -450,49 +529,95 @@ def main():
 
     parser = argparse.ArgumentParser(
         description="Generate video via Chinese video models "
-                    "(Bailian Wan/PixVerse/Kling/Vidu/HappyHorse, Jimeng, MiniMax, Hunyuan)")
+        "(Bailian Wan/PixVerse/Kling/Vidu/HappyHorse, Jimeng, MiniMax, Hunyuan)"
+    )
     parser.add_argument("prompt", nargs="?", help="video description")
-    parser.add_argument("output", nargs="?", default="./generated-video.mp4",
-                        help="output MP4 path (default: ./generated-video.mp4)")
+    parser.add_argument(
+        "output",
+        nargs="?",
+        default="./generated-video.mp4",
+        help="output MP4 path (default: ./generated-video.mp4)",
+    )
     parser.add_argument("-m", "--model", help="model name (default: auto by mode)")
-    parser.add_argument("--provider", choices=available,
-                        help=f"provider backend (default: auto-detect; available: {', '.join(available)})")
+    parser.add_argument(
+        "--provider",
+        choices=available,
+        help=f"provider backend (default: auto-detect; available: {', '.join(available)})",
+    )
     parser.add_argument("-i", "--image", help="first-frame image (path or URL) -> i2v")
     parser.add_argument("--last-frame", help="last-frame image (with --image) -> kf2v")
-    parser.add_argument("--ref", action="append", default=[],
-                        help="reference image 'name=path_or_url' (repeatable) -> r2v")
-    parser.add_argument("-d", "--duration", type=int, default=5,
-                        help="duration in seconds (default: 5)")
-    parser.add_argument("-r", "--resolution", default="1080P",
-                        choices=["360P", "480P", "540P", "720P", "1080P"],
-                        help="output resolution (default: 1080P)")
-    parser.add_argument("--ratio", default="16:9",
-                        choices=["16:9", "9:16", "1:1", "3:4", "4:3", "21:9"],
-                        help="aspect ratio (default: 16:9)")
+    parser.add_argument(
+        "--ref",
+        action="append",
+        default=[],
+        help="reference image 'name=path_or_url' (repeatable) -> r2v",
+    )
+    parser.add_argument(
+        "-d", "--duration", type=int, default=5, help="duration in seconds (default: 5)"
+    )
+    parser.add_argument(
+        "-r",
+        "--resolution",
+        default="1080P",
+        choices=["360P", "480P", "540P", "720P", "1080P"],
+        help="output resolution (default: 1080P)",
+    )
+    parser.add_argument(
+        "--ratio",
+        default="16:9",
+        choices=["16:9", "9:16", "1:1", "3:4", "4:3", "21:9"],
+        help="aspect ratio (default: 16:9)",
+    )
     parser.add_argument("-s", "--size", help="exact size 'W*H' for size-based models")
     parser.add_argument("-n", "--negative", help="negative prompt (Wan only)")
-    parser.add_argument("--no-prompt-extend", action="store_true",
-                        help="disable automatic prompt rewriting (Wan only)")
-    parser.add_argument("--no-prompt-optimizer", action="store_true",
-                        help="disable built-in prompt optimizer (MiniMax only)")
-    parser.add_argument("--audio", action="store_true",
-                        help="enable audio on PixVerse/Kling/Vidu/Jimeng")
-    parser.add_argument("--no-audio", action="store_true",
-                        help="silent output on Wan models that default to audio")
-    parser.add_argument("--camera-motion",
-                        help="camera motion description (Jimeng Seedance 2.0)")
+    parser.add_argument(
+        "--no-prompt-extend",
+        action="store_true",
+        help="disable automatic prompt rewriting (Wan only)",
+    )
+    parser.add_argument(
+        "--no-prompt-optimizer",
+        action="store_true",
+        help="disable built-in prompt optimizer (MiniMax only)",
+    )
+    parser.add_argument(
+        "--audio",
+        action="store_true",
+        help="enable audio on PixVerse/Kling/Vidu/Jimeng",
+    )
+    parser.add_argument(
+        "--no-audio",
+        action="store_true",
+        help="silent output on Wan models that default to audio",
+    )
+    parser.add_argument(
+        "--camera-motion", help="camera motion description (Jimeng Seedance 2.0)"
+    )
     parser.add_argument("--seed", type=int, help="random seed for reproducibility")
-    parser.add_argument("--idempotency-key",
-                        help="[WRITE] client-supplied key; retries reuse cached task")
+    parser.add_argument(
+        "--idempotency-key",
+        help="[WRITE] client-supplied key; retries reuse cached task",
+    )
     parser.add_argument("--task-id", help="[WRITE] resume polling an existing task")
-    parser.add_argument("--dry-run", action="store_true",
-                        help="[READ] preview request body + cost estimate without submitting")
-    parser.add_argument("--format", choices=["json", "table"], default=None,
-                        help="output format (default: table in TTY, json otherwise)")
-    parser.add_argument("--list-models", action="store_true",
-                        help="[READ] list all models and exit")
-    parser.add_argument("--help-providers", action="store_true",
-                        help="[READ] show provider details and exit")
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="[READ] preview request body + cost estimate without submitting",
+    )
+    parser.add_argument(
+        "--format",
+        choices=["json", "table"],
+        default=None,
+        help="output format (default: table in TTY, json otherwise)",
+    )
+    parser.add_argument(
+        "--list-models", action="store_true", help="[READ] list all models and exit"
+    )
+    parser.add_argument(
+        "--help-providers",
+        action="store_true",
+        help="[READ] show provider details and exit",
+    )
     args = parser.parse_args()
     fmt = resolve_format(args.format)
 

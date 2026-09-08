@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 """Build docs/providers.html and docs/providers.md from data/providers.json."""
 
+import html as html_lib
 import json
-import os
-import sys
-from datetime import datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -20,111 +18,117 @@ PAGES_MD = PAGES_DIR / "providers.md"
 
 
 def load_data():
-    with open(DATA_FILE, "r", encoding="utf-8") as f:
-        return json.load(f)
+  try:
+    with open(DATA_FILE, encoding="utf-8") as f:
+      return json.load(f)
+  except (OSError, ValueError) as e:
+    raise SystemExit(f"build_docs: cannot read {DATA_FILE}: {e}")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
 # HTML Builder
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 def _bool_icon(val):
-    return '<span class="yes">✅</span>' if val else '<span class="no">❌</span>'
+  return '<span class="yes">✅</span>' if val else '<span class="no">❌</span>'
 
 
 def _tag_badge(tag_id, tags_meta):
-    t = tags_meta.get(tag_id, {})
-    label = t.get("label", tag_id)
-    icon = t.get("icon", "")
-    color = t.get("color", "#888")
-    return f'<span class="tag" style="--tag-color:{color}">{icon} {label}</span>'
+  t = tags_meta.get(tag_id, {})
+  label = t.get("label", tag_id)
+  icon = t.get("icon", "")
+  color = t.get("color", "#888")
+  return f'<span class="tag" style="--tag-color:{color}">{icon} {label}</span>'
 
 
 def _voice_cards(voices):
-    cards = ""
-    for v in voices:
-        cards += f"""
+  cards = ""
+  for v in voices:
+    cards += f"""
         <div class="voice-card">
-          <code class="voice-id">{v['id']}</code>
-          <span class="voice-label">{v.get('label', '')}</span>
-          <span class="voice-style">{v.get('style', '')}</span>
-          <span class="voice-best">{v.get('best_for', '')}</span>
+          <code class="voice-id">{v["id"]}</code>
+          <span class="voice-label">{v.get("label", "")}</span>
+          <span class="voice-style">{v.get("style", "")}</span>
+          <span class="voice-best">{v.get("best_for", "")}</span>
         </div>"""
-    return cards
+  return cards
 
 
 def build_html(data):
-    """Generate providers.html from JSON data."""
-    backends = data["backends"]
-    tags_meta = data.get("tags", {})
-    updated = data.get("updated", "")
+  """Generate providers.html from JSON data."""
+  backends = data["backends"]
+  tags_meta = data.get("tags", {})
+  updated = data.get("updated", "")
 
-    rows = ""
-    detail_sections = ""
-    for i, p in enumerate(backends):
-        bid = p["id"]
-        tags_html = " ".join(_tag_badge(t, tags_meta) for t in p.get("tags", []))
-        clone_str = p["clone_detail"] if p["supports_clone"] else "—"
-        ssml_icon = _bool_icon(p["supports_ssml"])
-        clone_icon = _bool_icon(p["supports_clone"])
-        cost_class = "free" if p.get("cost_tier") == "free" else ""
+  rows = ""
+  detail_sections = ""
+  for i, p in enumerate(backends):
+    bid = p["id"]
+    tags_html = " ".join(_tag_badge(t, tags_meta) for t in p.get("tags", []))
+    clone_str = p["clone_detail"] if p["supports_clone"] else "—"
+    clone_str = html_lib.escape(clone_str)
+    ssml_icon = _bool_icon(p["supports_ssml"])
+    clone_icon = _bool_icon(p["supports_clone"])
+    cost_class = "free" if p.get("cost_tier") == "free" else ""
 
-        difficulty_emoji = {"zero": "⚡", "easy": "🟢", "medium": "🟡", "hard": "🔴"}
-        diff_emoji = difficulty_emoji.get(p.get("setup_difficulty", "medium"), "🟡")
+    difficulty_emoji = {"zero": "⚡", "easy": "🟢", "medium": "🟡", "hard": "🔴"}
+    diff_emoji = difficulty_emoji.get(p.get("setup_difficulty", "medium"), "🟡")
 
-        rows += f"""
+    rows += f"""
         <tr class="provider-row" id="row-{bid}">
           <td class="col-name">
             <a href="#detail-{bid}" class="provider-link">
-              <strong>{p['name']}</strong>
-              <small>{p['provider']}</small>
+              <strong>{p["name"]}</strong>
+              <small>{p["provider"]}</small>
             </a>
           </td>
-          <td class="col-cost {cost_class}">{p['cost']}</td>
-          <td class="col-voices">{p['voices_count']}</td>
-          <td class="col-chars">{p['max_chars']}<small> 字/次</small></td>
-          <td class="col-duration">{p['max_duration_display']}<small> /次</small></td>
+          <td class="col-cost {cost_class}">{p["cost"]}</td>
+          <td class="col-voices">{p["voices_count"]}</td>
+          <td class="col-chars">{p["max_chars"]}<small> 字/次</small></td>
+          <td class="col-duration">{p["max_duration_display"]}<small> /次</small></td>
           <td class="col-ssml">{ssml_icon}</td>
           <td class="col-clone">{clone_icon}</td>
-          <td class="col-emoji">{p.get('supports_emotion','—')}</td>
-          <td class="col-lang">{p['languages']}</td>
-          <td class="col-streaming">{p['streaming']}</td>
-          <td class="col-setup">{diff_emoji} {p.get('setup_label','')}</td>
+          <td class="col-emoji">{p.get("supports_emotion", "—")}</td>
+          <td class="col-lang">{p["languages"]}</td>
+          <td class="col-streaming">{p["streaming"]}</td>
+          <td class="col-setup">{diff_emoji} {p.get("setup_label", "")}</td>
         </tr>"""
 
-        detail_sections += f"""
+    detail_sections += f"""
       <section class="detail-panel" id="detail-{bid}">
         <div class="detail-header">
-          <h2>{p['name']}</h2>
-          <span class="provider-name">{p['provider']}</span>
+          <h2>{p["name"]}</h2>
+          <span class="provider-name">{p["provider"]}</span>
           <div class="detail-tags">{tags_html}</div>
         </div>
         <div class="detail-grid">
-          <div class="detail-item"><label>费用</label><span class="cost-badge {cost_class}">{p['cost']}</span></div>
-          <div class="detail-item"><label>万字成本</label><span>{p['cost_per_10k']}</span></div>
-          <div class="detail-item"><label>内置音色</label><span>{p['voices_count']}</span></div>
-          <div class="detail-item"><label>单次最大字数</label><span>{p['max_chars']} 字</span></div>
-          <div class="detail-item"><label>单次最大时长</label><span>{p['max_duration_display']}</span></div>
+          <div class="detail-item"><label>费用</label><span class="cost-badge {cost_class}">{p["cost"]}</span></div>
+          <div class="detail-item"><label>万字成本</label><span>{p["cost_per_10k"]}</span></div>
+          <div class="detail-item"><label>内置音色</label><span>{p["voices_count"]}</span></div>
+          <div class="detail-item"><label>单次最大字数</label><span>{p["max_chars"]} 字</span></div>
+          <div class="detail-item"><label>单次最大时长</label><span>{p["max_duration_display"]}</span></div>
           <div class="detail-item"><label>SSML</label>{ssml_icon}</div>
           <div class="detail-item"><label>声音克隆</label>{clone_icon}</div>
-          <div class="detail-item"><label>情感合成</label><span>{p.get('supports_emotion','—')}</span></div>
-          <div class="detail-item"><label>方言支持</label><span>{p.get('supports_dialects') or '—'}</span></div>
-          <div class="detail-item"><label>语言</label><span>{p['languages']}</span></div>
-          <div class="detail-item"><label>流式合成</label><span>{p['streaming']}</span></div>
-          <div class="detail-item"><label>配置难度</label><span>{diff_emoji} {p.get('setup_label','')}</span></div>
-          <div class="detail-item"><label>安装</label><code>{p['pip_install']}</code></div>
-          <div class="detail-item"><label>API 地址</label><code>{p.get('api_url','')}</code></div>
-          <div class="detail-item full-width"><label>环境变量</label><code>{' '.join(p['env_vars']) if p['env_vars'] else '无需'}</code></div>
+          <div class="detail-item"><label>情感合成</label><span>{p.get("supports_emotion", "—")}</span></div>
+          <div class="detail-item"><label>方言支持</label><span>{p.get("supports_dialects") or "—"}</span></div>
+          <div class="detail-item"><label>语言</label><span>{p["languages"]}</span></div>
+          <div class="detail-item"><label>流式合成</label><span>{p["streaming"]}</span></div>
+          <div class="detail-item"><label>配置难度</label><span>{diff_emoji} {p.get("setup_label", "")}</span></div>
+          <div class="detail-item"><label>安装</label><code>{p["pip_install"]}</code></div>
+          <div class="detail-item"><label>API 地址</label><code>{p.get("api_url", "")}</code></div>
+          <div class="detail-item full-width"><label>环境变量</label><code>{" ".join(p["env_vars"]) if p["env_vars"] else "无需"}</code></div>
         </div>
-        {f'<div class="clone-box"><strong>🔊 声音克隆:</strong> {clone_str}</div>' if p['supports_clone'] else ''}
-        {f'<div class="key-box"><strong>🔑 获取 API Key:</strong> <a href="{p["get_key_url"]}" target="_blank">{p["get_key_url"]}</a></div>' if p.get('get_key_url') else ''}
+        {f'<div class="note-box"><strong>📌 说明:</strong> {p["notes"]}</div>' if p.get("notes") else ""}
+        {f'<div class="clone-box"><strong>🔊 声音克隆:</strong> {clone_str}</div>' if p["supports_clone"] else ""}
+        {f'<div class="key-box"><strong>🔑 获取 API Key:</strong> <a href="{p["get_key_url"]}" target="_blank">{p["get_key_url"]}</a></div>' if p.get("get_key_url") else ""}
         <div class="voice-list">
           <h3>推荐音色</h3>
-          {_voice_cards(p.get('voices', []))}
+          {_voice_cards(p.get("voices", []))}
         </div>
       </section>"""
 
-    html = f"""<!DOCTYPE html>
+  html = f"""<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -192,8 +196,9 @@ tr:hover {{ background:rgba(56,189,248,0.04); }}
 .detail-item.full-width {{ grid-column:1/-1; }}
 .detail-item code,.clone-box code,.key-box code {{ background:rgba(0,0,0,0.3); padding:3px 8px; border-radius:4px; font-size:0.85rem; color:var(--accent); word-break:break-all; }}
 
-.clone-box,.key-box {{ padding:14px 18px; border-radius:8px; margin-bottom:16px; background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.2); }}
+.clone-box,.key-box,.note-box {{ padding:14px 18px; border-radius:8px; margin-bottom:16px; background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.2); }}
 .key-box {{ background:rgba(56,189,248,0.06); border-color:rgba(56,189,248,0.2); }}
+.note-box {{ background:rgba(139,92,246,0.06); border-color:rgba(139,92,246,0.2); }}
 .clone-box a,.key-box a {{ font-size:0.85rem; }}
 
 .cost-badge {{ font-weight:700; }}
@@ -369,122 +374,128 @@ document.querySelectorAll('.provider-link').forEach(link => {{
 </script>
 </body>
 </html>"""
-    return "\n".join(line.rstrip() for line in html.splitlines()) + "\n"
+  return html
 
 
 # ═══════════════════════════════════════════════════════════════════════════
 # Markdown Builder
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 def build_md(data):
-    """Generate providers.md from JSON data."""
-    backends = data["backends"]
-    updated = data.get("updated", "")
+  """Generate providers.md from JSON data."""
+  backends = data["backends"]
+  updated = data.get("updated", "")
 
-    lines = [
-        f"# ttscn — Chinese TTS Provider Comparison",
-        f"",
-        f"> Auto-generated from `data/providers.json` · Updated: {updated}",
-        f"",
-        f"## Quick Comparison ({len(backends)} backends)",
-        f"",
-    ]
+  lines = [
+    "# ttscn — Chinese TTS Provider Comparison",
+    "",
+    f"> Auto-generated from `data/providers.json` · Updated: {updated}",
+    "",
+    f"## Quick Comparison ({len(backends)} backends)",
+    "",
+  ]
 
-    # Summary table
-    header = "| Provider | Cost/10K chars | Voices | Max chars | Max duration | SSML | Clone | Emotion | Languages | Streaming | Setup |"
-    sep = "|----------|---------------|--------|-----------|-------------|------|-------|---------|-----------|-----------|-------|"
-    lines.append(header)
-    lines.append(sep)
-    for p in backends:
-        ssml = "✅" if p["supports_ssml"] else "❌"
-        clone = "✅" if p["supports_clone"] else "❌"
-        lines.append(
-            f"| **{p['name']}**<br><small>{p['provider']}</small> "
-            f"| {p['cost']} "
-            f"| {p['voices_count']} "
-            f"| {p['max_chars']} "
-            f"| {p['max_duration_display']} "
-            f"| {ssml} "
-            f"| {clone} "
-            f"| {p.get('supports_emotion','—')} "
-            f"| {p['languages']} "
-            f"| {p['streaming']} "
-            f"| {p.get('setup_label','')} |"
-        )
+  # Summary table
+  header = "| Provider | Cost/10K chars | Voices | Max chars | Max duration | SSML | Clone | Emotion | Languages | Streaming | Setup |"
+  sep = "|----------|---------------|--------|-----------|-------------|------|-------|---------|-----------|-----------|-------|"
+  lines.append(header)
+  lines.append(sep)
+  for p in backends:
+    ssml = "✅" if p["supports_ssml"] else "❌"
+    clone = "✅" if p["supports_clone"] else "❌"
+    lines.append(
+      f"| **{p['name']}**<br><small>{p['provider']}</small> "
+      f"| {p['cost']} "
+      f"| {p['voices_count']} "
+      f"| {p['max_chars']} "
+      f"| {p['max_duration_display']} "
+      f"| {ssml} "
+      f"| {clone} "
+      f"| {p.get('supports_emotion', '—')} "
+      f"| {p['languages']} "
+      f"| {p['streaming']} "
+      f"| {p.get('setup_label', '')} |"
+    )
 
-    # Detail sections
-    for p in backends:
-        lines.append(f"")
-        lines.append(f"## {p['name']}")
-        lines.append(f"")
-        lines.append(f"**Provider:** {p['provider']}")
-        lines.append(f"")
-        lines.append(f"| Property | Value |")
-        lines.append(f"|----------|-------|")
-        lines.append(f"| Cost | {p['cost']} ({p['cost_per_10k']}/10K chars) |")
-        lines.append(f"| Built-in voices | {p['voices_count']} |")
-        lines.append(f"| Max chars / chunk | {p['max_chars']} |")
-        lines.append(f"| Max duration / chunk | {p['max_duration_display']} |")
-        lines.append(f"| SSML | {p['supports_ssml']} |")
-        lines.append(f"| Voice cloning | {p['supports_clone']} |")
-        if p["supports_clone"]:
-            lines.append(f"| Clone detail | {p['clone_detail']} |")
-        lines.append(f"| Emotion | {p.get('supports_emotion','—')} |")
-        lines.append(f"| Dialects | {p.get('supports_dialects') or '—'} |")
-        lines.append(f"| Languages | {p['languages']} |")
-        lines.append(f"| Streaming | {p['streaming']} |")
-        lines.append(f"| Setup | {p.get('setup_label','')} |")
-        lines.append(f"| Install | `{p['pip_install']}` |")
-        lines.append(f"| API Key | {p.get('get_key_url') or 'N/A'} |")
-        lines.append(f"| Env vars | `{' '.join(p['env_vars']) if p['env_vars'] else 'none'}` |")
-        lines.append(f"")
+  # Detail sections
+  for p in backends:
+    lines.append("")
+    lines.append(f"## {p['name']}")
+    lines.append("")
+    lines.append(f"**Provider:** {p['provider']}")
+    lines.append("")
+    lines.append("| Property | Value |")
+    lines.append("|----------|-------|")
+    lines.append(f"| Cost | {p['cost']} ({p['cost_per_10k']}/10K chars) |")
+    lines.append(f"| Built-in voices | {p['voices_count']} |")
+    lines.append(f"| Max chars / chunk | {p['max_chars']} |")
+    lines.append(f"| Max duration / chunk | {p['max_duration_display']} |")
+    lines.append(f"| SSML | {p['supports_ssml']} |")
+    lines.append(f"| Voice cloning | {p['supports_clone']} |")
+    if p["supports_clone"]:
+      lines.append(f"| Clone detail | {p['clone_detail']} |")
+    lines.append(f"| Emotion | {p.get('supports_emotion', '—')} |")
+    lines.append(f"| Dialects | {p.get('supports_dialects') or '—'} |")
+    lines.append(f"| Languages | {p['languages']} |")
+    lines.append(f"| Streaming | {p['streaming']} |")
+    lines.append(f"| Setup | {p.get('setup_label', '')} |")
+    lines.append(f"| Install | `{p['pip_install']}` |")
+    lines.append(f"| API Key | {p.get('get_key_url') or 'N/A'} |")
+    lines.append(
+      f"| Env vars | `{' '.join(p['env_vars']) if p['env_vars'] else 'none'}` |"
+    )
+    lines.append("")
 
-        if p.get("voices"):
-            lines.append(f"### Recommended Voices")
-            lines.append(f"")
-            for v in p["voices"]:
-                extra = f" — {v['style']}" if v.get("style") else ""
-                extra += f" → {v['best_for']}" if v.get("best_for") else ""
-                lines.append(f"- `{v['id']}` {v.get('label','')}{extra}")
-            lines.append(f"")
+    if p.get("voices"):
+      lines.append("### Recommended Voices")
+      lines.append("")
+      for v in p["voices"]:
+        extra = f" — {v['style']}" if v.get("style") else ""
+        extra += f" → {v['best_for']}" if v.get("best_for") else ""
+        lines.append(f"- `{v['id']}` {v.get('label', '')}{extra}")
+      lines.append("")
 
-    lines.append(f"---")
-    lines.append(f"*Generated by [ttscn](https://github.com/Agents365-ai/ttsCN) from `data/providers.json`*")
-    lines.append(f"")
+  lines.append("---")
+  lines.append(
+    "*Generated by [ttscn](https://github.com/Agents365-ai/ttsCN) from `data/providers.json`*"
+  )
+  lines.append("")
 
-    return "\n".join(lines)
+  return "\n".join(lines)
 
 
 # ═══════════════════════════════════════════════════════════════════════════
 # Main
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 def main():
-    data = load_data()
-    DOCS_DIR.mkdir(parents=True, exist_ok=True)
+  data = load_data()
+  DOCS_DIR.mkdir(parents=True, exist_ok=True)
 
-    print(f"Building docs from {len(data['backends'])} providers...")
+  print(f"Building docs from {len(data['backends'])} providers...")
 
-    # Skill-internal docs
-    DOCS_DIR.mkdir(parents=True, exist_ok=True)
-    html = build_html(data)
-    HTML_OUT.write_text(html, encoding="utf-8")
-    print(f"  ✓ {HTML_OUT} ({len(html):,} bytes)")
+  # Skill-internal docs
+  DOCS_DIR.mkdir(parents=True, exist_ok=True)
+  html = build_html(data)
+  HTML_OUT.write_text(html, encoding="utf-8")
+  print(f"  ✓ {HTML_OUT} ({len(html):,} bytes)")
 
-    md = build_md(data)
-    MD_OUT.write_text(md, encoding="utf-8")
-    print(f"  ✓ {MD_OUT} ({len(md):,} bytes)")
+  md = build_md(data)
+  MD_OUT.write_text(md, encoding="utf-8")
+  print(f"  ✓ {MD_OUT} ({len(md):,} bytes)")
 
-    # GitHub Pages output (repo root docs/)
-    PAGES_DIR.mkdir(parents=True, exist_ok=True)
-    PAGES_HTML.write_text(html, encoding="utf-8")
-    print(f"  ✓ {PAGES_HTML} ({len(html):,} bytes)  ← GitHub Pages")
+  # GitHub Pages output (repo root docs/)
+  PAGES_DIR.mkdir(parents=True, exist_ok=True)
+  PAGES_HTML.write_text(html, encoding="utf-8")
+  print(f"  ✓ {PAGES_HTML} ({len(html):,} bytes)  ← GitHub Pages")
 
-    PAGES_MD.write_text(md, encoding="utf-8")
-    print(f"  ✓ {PAGES_MD} ({len(md):,} bytes)")
+  PAGES_MD.write_text(md, encoding="utf-8")
+  print(f"  ✓ {PAGES_MD} ({len(md):,} bytes)")
 
-    print("\nDone. Open docs/index.html in a browser or push to GitHub Pages.")
+  print("\nDone. Open docs/index.html in a browser or push to GitHub Pages.")
 
 
 if __name__ == "__main__":
-    main()
+  main()

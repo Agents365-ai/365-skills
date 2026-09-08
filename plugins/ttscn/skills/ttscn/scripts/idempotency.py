@@ -11,14 +11,16 @@ import hashlib
 import json
 import os
 import time
-from pathlib import Path
 
 CACHE_DIR = os.path.expanduser("~/.ttscn_idem")
 CACHE_TTL_SECONDS = 7 * 24 * 3600  # 7 days
 
 
 def _ensure_cache_dir():
-    os.makedirs(CACHE_DIR, exist_ok=True)
+    try:
+        os.makedirs(CACHE_DIR, exist_ok=True)
+    except OSError as e:
+        raise SystemExit(f"idempotency: cannot create cache dir {CACHE_DIR}: {e}")
 
 
 def _key_path(idempotency_key):
@@ -48,6 +50,7 @@ def lookup(idempotency_key):
         try:
             os.remove(path)
         except OSError:
+            # pi-lens-ignore: python-empty-except
             pass
         return False, None
     return True, data.get("result")
@@ -60,12 +63,17 @@ def store(idempotency_key, result):
     _ensure_cache_dir()
     entry = {
         "cached_at": time.time(),
-        "idempotency_key_hash": hashlib.sha256(idempotency_key.encode()).hexdigest()[:16],
+        "idempotency_key_hash": hashlib.sha256(idempotency_key.encode()).hexdigest()[
+            :16
+        ],
         "result": result,
     }
     path = _key_path(idempotency_key)
-    with open(path, "w") as f:
-        json.dump(entry, f, ensure_ascii=False, indent=2)
+    try:
+        with open(path, "w") as f:
+            json.dump(entry, f, ensure_ascii=False, indent=2)
+    except OSError as e:
+        raise SystemExit(f"idempotency: cannot write cache {path}: {e}")
 
 
 def purge(older_than_days=None):
@@ -76,7 +84,11 @@ def purge(older_than_days=None):
     removed = 0
     if not os.path.exists(CACHE_DIR):
         return 0
-    for name in os.listdir(CACHE_DIR):
+    try:
+        names = os.listdir(CACHE_DIR)
+    except OSError:
+        return 0
+    for name in names:
         if not name.endswith(".json"):
             continue
         path = os.path.join(CACHE_DIR, name)
@@ -86,5 +98,6 @@ def purge(older_than_days=None):
                 os.remove(path)
                 removed += 1
         except OSError:
+            # pi-lens-ignore: python-empty-except
             pass
     return removed

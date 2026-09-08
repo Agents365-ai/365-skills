@@ -1,5 +1,10 @@
 import { useState, useEffect } from "react";
-import { staticFile, delayRender, continueRender, cancelRender } from "remotion";
+import {
+  staticFile,
+  delayRender,
+  continueRender,
+  cancelRender,
+} from "remotion";
 
 export interface TimingSection {
   name: string;

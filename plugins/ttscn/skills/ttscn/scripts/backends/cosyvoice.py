@@ -34,12 +34,14 @@ def _to_boundaries(words_by_index, base_offset):
     try:
         for idx in sorted(words_by_index):
             for w in words_by_index[idx]:
-                out.append({
-                    "text": w["text"],
-                    "offset": base_offset + float(w["begin_time"]) / 1000.0,
-                    "duration": (float(w["end_time"])
-                                 - float(w["begin_time"])) / 1000.0,
-                })
+                out.append(
+                    {
+                        "text": w["text"],
+                        "offset": base_offset + float(w["begin_time"]) / 1000.0,
+                        "duration": (float(w["end_time"]) - float(w["begin_time"]))
+                        / 1000.0,
+                    }
+                )
     except (KeyError, TypeError, ValueError):
         return []
     return out
@@ -54,13 +56,16 @@ def synthesize(chunks, config, output_file, output_format="wav"):
     """
     import re as _re
     import struct
-    import json as _json
+
     from dashscope.audio.tts_v2 import (
-        SpeechSynthesizer, ResultCallback, AudioFormat,
+        AudioFormat,
+        ResultCallback,
+        SpeechSynthesizer,
     )
 
     speech_rate = config.get("speech_rate", "+5%")
     rate_match = _re.match(r"([+-]?\d+)%", speech_rate)
+    # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
     cosy_rate = 1.0 + int(rate_match.group(1)) / 100.0 if rate_match else 1.0
     cosy_rate = max(0.5, min(2.0, cosy_rate))
 
@@ -111,20 +116,32 @@ def synthesize(chunks, config, output_file, output_format="wav"):
                 data_size = len(pcm_data)
                 wav_header = struct.pack(
                     "<4sI4s4sIHHIIHH4sI",
-                    b"RIFF", 36 + data_size, b"WAVE",
-                    b"fmt ", 16, 1, 1, sample_rate,
-                    sample_rate * 2, 2, 16,
-                    b"data", data_size,
+                    b"RIFF",
+                    36 + data_size,
+                    b"WAVE",
+                    b"fmt ",
+                    16,
+                    1,
+                    1,
+                    sample_rate,
+                    sample_rate * 2,
+                    2,
+                    16,
+                    b"data",
+                    data_size,
                 )
                 with open(part_file, "wb") as f:
                     f.write(wav_header + pcm_data)
 
                 chunk_duration = data_size / (sample_rate * 2)
                 word_boundaries.extend(
-                    _to_boundaries(words_by_index, accumulated_duration))
+                    _to_boundaries(words_by_index, accumulated_duration)
+                )
                 accumulated_duration += chunk_duration
-                print(f"  Part {i + 1}/{len(chunks)} done "
-                      f"({len(chunk)} chars, {chunk_duration:.1f}s)")
+                print(
+                    f"  Part {i + 1}/{len(chunks)} done "
+                    f"({len(chunk)} chars, {chunk_duration:.1f}s)"
+                )
                 break
             except Exception as e:
                 print(f"  Part {i + 1} attempt {attempt}/3 failed: {e}")
@@ -140,20 +157,37 @@ def synthesize(chunks, config, output_file, output_format="wav"):
         os.replace(part_files[0], output_file)
     else:
         concat_list = os.path.join(out_dir, ".tts_concat.txt")
+        # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
         with open(concat_list, "w", encoding="utf-8") as f:
             for pf in part_files:
                 f.write(f"file '{os.path.basename(pf)}'\n")
         import subprocess
+
         result = subprocess.run(
-            ["ffmpeg", "-y", "-f", "concat", "-safe", "0",
-             "-i", concat_list, "-c", "copy", output_file],
-            capture_output=True, text=True, cwd=out_dir,
+            [
+                "ffmpeg",
+                "-y",
+                "-f",
+                "concat",
+                "-safe",
+                "0",
+                "-i",
+                concat_list,
+                "-c",
+                "copy",
+                output_file,
+            ],
+            capture_output=True,
+            text=True,
+            cwd=out_dir,
         )
         if result.returncode != 0:
             raise RuntimeError(f"FFmpeg concat failed: {result.stderr[:200]}")
+        # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
         os.remove(concat_list)
         for pf in part_files:
             if os.path.exists(pf):
+                # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
                 os.remove(pf)
 
     return accumulated_duration, word_boundaries

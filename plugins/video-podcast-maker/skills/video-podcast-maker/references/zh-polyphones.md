@@ -13,7 +13,7 @@ This is a non-exhaustive reference for the most common polyphones in tech / expl
 ## Common polyphones in tech / explainer content
 
 | 字 | Pinyin choices | Typical context |
-|----|---|---|
+| ---- | --- | --- |
 | 行 | háng / xíng | 一行/银行/行业 (háng); 执行/运行/可行/行走 (xíng) |
 | 重 | chóng / zhòng | 重做/重新/重复/重试 (chóng); 重要/重量/严重 (zhòng) |
 | 长 | cháng / zhǎng | 长度/长期 (cháng); 增长/成长/校长 (zhǎng) |

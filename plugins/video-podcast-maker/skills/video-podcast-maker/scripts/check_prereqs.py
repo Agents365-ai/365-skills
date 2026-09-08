@@ -31,7 +31,6 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import cli_envelope  # noqa: E402
 from tts.backends import BACKENDS, resolve_backend  # noqa: E402
 
-
 REQUIRED_BINS = ["node", "python3", "ffmpeg"]
 
 
@@ -84,7 +83,7 @@ def check_prereqs(env=None):
 
 def build_parser():
     parser = argparse.ArgumentParser(
-        description=__doc__.split("\n\n")[0],
+        description=(__doc__ or "").split("\n\n")[0],
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     cli_envelope.add_format_arg(parser)

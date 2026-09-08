@@ -35,12 +35,11 @@ import cli_envelope  # noqa: E402
 from _state import resolve_state_file  # noqa: E402
 from learn_design import (  # noqa: E402
     PREFS_VERSION,
-    _load_template,
     _deep_merge,
+    _load_template,
     _structural_migrate,
     save_prefs,
 )
-
 
 
 def migrate(prefs_path, dry_run=False):
@@ -58,7 +57,9 @@ def migrate(prefs_path, dry_run=False):
         save_prefs(template, prefs_path)
         return {"action": "created", "from": None, "to": PREFS_VERSION, "changes": []}
 
+    # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
     with open(prefs_path, encoding="utf-8") as f:
+        # pi-lens-ignore: ast-grep:unchecked-throwing-call-python
         prefs = json.load(f)
 
     from_version = prefs.get("version", "1.0")
@@ -92,7 +93,7 @@ def migrate(prefs_path, dry_run=False):
 
 
 def build_parser():
-    parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    parser = argparse.ArgumentParser(description=(__doc__ or "").split("\n")[0])
     parser.add_argument(
         "--prefs",
         default=None,

@@ -18,17 +18,26 @@ class ArkProvider(OpenAICompatibleProvider):
     api_base = "https://ark.cn-beijing.volces.com/api/v3/images/generations"
     default_model = "doubao-seedream-5-0-260128"
 
+    # pi-lens-ignore: python-mutable-class-attr
     models = {
         "doubao-seedream-5-0-260128",
         "doubao-seedream-4-5-251128",
         "doubao-seedream-4-0-250828",
     }
 
+    # pi-lens-ignore: python-mutable-class-attr
     SIZES = {
-        "1:1": "2048x2048", "16:9": "2848x1600", "9:16": "1600x2848",
-        "4:3": "2304x1728", "3:4": "1728x2304", "3:2": "2496x1664",
+        "1:1": "2048x2048",
+        "16:9": "2848x1600",
+        "9:16": "1600x2848",
+        "4:3": "2304x1728",
+        "3:4": "1728x2304",
+        "3:2": "2496x1664",
         "2:3": "1664x2496",
-        "1K": "1K", "2K": "2K", "3K": "3K", "4K": "4K",
+        "1K": "1K",
+        "2K": "2K",
+        "3K": "3K",
+        "4K": "4K",
     }
 
     default_size = "2048x2048"
@@ -43,13 +52,15 @@ class ArkProvider(OpenAICompatibleProvider):
     @staticmethod
     def format_error(rsp):
         import json
+
         try:
             err = rsp.json().get("error", {})
             code = err.get("code", "")
             msg = err.get("message", rsp.text)
             if code == "ModelNotOpen":
-                return (f"Model not activated. Open it in the Ark Console. "
-                        f"Details: {msg}")
+                return (
+                    f"Model not activated. Open it in the Ark Console. Details: {msg}"
+                )
             return f"HTTP {rsp.status_code} ({code}): {msg}"
         except (json.JSONDecodeError, ValueError):
             return f"HTTP {rsp.status_code}: {rsp.text[:300]}"
@@ -71,8 +82,9 @@ def resolve_ark_size(size_input, model=None):
     return _provider.resolve_size(size_input, model)
 
 
-def generate_with_ark(api_key, model, prompt, size, seed=None,
-                      guidance_scale=None, no_watermark=False):
+def generate_with_ark(
+    api_key, model, prompt, size, seed=None, guidance_scale=None, no_watermark=False
+):
     extra = {}
     if guidance_scale is not None:
         extra["guidance_scale"] = guidance_scale

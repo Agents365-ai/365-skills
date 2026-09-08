@@ -9,6 +9,7 @@ Subcellular localization is NOT fetched here — UniProt is the authoritative
 source (see scripts/fetch_uniprot.py). Cell-type / disease focus terms live
 in scripts/aggregate.py (FOCUS_CELL_TYPES, FOCUS_DISEASE_TERMS).
 """
+
 import argparse
 import gzip
 import json
@@ -75,11 +76,13 @@ def summarize_pathology(entry: dict) -> dict:
         if not k.startswith("Cancer prognostics - ") or not isinstance(v, dict):
             continue
         if v.get("is_prognostic"):
-            prognostic.append({
-                "cancer": k.replace("Cancer prognostics - ", ""),
-                "type": v.get("prognostic type", ""),
-                "p_val": v.get("p_val"),
-            })
+            prognostic.append(
+                {
+                    "cancer": k.replace("Cancer prognostics - ", ""),
+                    "type": v.get("prognostic type", ""),
+                    "p_val": v.get("p_val"),
+                }
+            )
     return {
         "n_prognostic_cancers": len(prognostic),
         "prognostic_top3": prognostic[:3],
