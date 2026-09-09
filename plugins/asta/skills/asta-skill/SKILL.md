@@ -10,7 +10,7 @@ metadata: {"homepage":"https://github.com/Agents365-ai/asta-skill","compatibilit
 Asta is Ai2's Scientific Corpus Tool, exposing the Semantic Scholar academic graph over MCP (streamable HTTP transport). This skill tells agents **which Asta tool to call for which intent**, and how to compose them into useful workflows.
 
 - **MCP endpoint:** `https://asta-tools.allen.ai/mcp/v1`
-- **Auth:** `x-api-key` header (request key at https://share.hsforms.com/1L4hUh20oT3mu8iXJQMV77w3ioxm)
+- **Auth:** `x-api-key` header (request key at <https://share.hsforms.com/1L4hUh20oT3mu8iXJQMV77w3ioxm>)
 - **Transport:** streamable HTTP
 
 ## Prerequisite Check
@@ -18,6 +18,7 @@ Asta is Ai2's Scientific Corpus Tool, exposing the Semantic Scholar academic gra
 Before invoking any tool, verify the Asta MCP server is registered in the host agent. Tool names will be prefixed by the MCP server name chosen at install time (commonly `asta__<tool>` or `mcp__asta__<tool>`).
 
 If no Asta tools are visible, do **not** make raw HTTP calls or invent results. Tell the user to register `https://asta-tools.allen.ai/mcp/v1` as a streamable HTTP MCP server with an `x-api-key` header, then restart/reload the host. Minimal setup hints:
+
 - Codex CLI: add `[mcp_servers.asta] url = "https://asta-tools.allen.ai/mcp/v1"` and `env_http_headers = { "x-api-key" = "ASTA_API_KEY" }` to `~/.codex/config.toml`.
 - Claude Code: run `claude mcp add -t http -s user asta https://asta-tools.allen.ai/mcp/v1 -H "x-api-key: $ASTA_API_KEY"`.
 - Generic MCP clients: configure server URL `https://asta-tools.allen.ai/mcp/v1` with header `{ "x-api-key": "<YOUR_API_KEY>" }`.
@@ -25,7 +26,7 @@ If no Asta tools are visible, do **not** make raw HTTP calls or invent results. 
 ## Tool Map — Intent → Asta Tool
 
 | User intent | Asta tool | Notes |
-|---|---|---|
+| --- | --- | --- |
 | Broad topic search | `search_papers_by_relevance` | Supports venue + date filters |
 | Known paper title | `search_paper_by_title` | Optional `venues` + `publication_date_range` filters |
 | Known DOI / arXiv / PMID / CorpusId / MAG / ACL / SHA / URL | `get_paper` | Single-paper lookup |
@@ -38,6 +39,7 @@ If no Asta tools are visible, do **not** make raw HTTP calls or invent results. 
 Most search/citation tools accept **`publication_date_range`** (format `YYYY-MM-DD:YYYY-MM-DD`; year shorthand like `"2021:"`, `":2015-01"`, `"2015:2020"` is also accepted), **`venues`**, and **`fields`** for field selection — pass them whenever the user's intent constrains scope (e.g., "recent", "since 2022", "at NeurIPS"). `venues` matches Semantic Scholar's **exact** venue strings (comma-separated, e.g. `"Nature,N. Engl. J. Med."`); a casual name like "NeurIPS" may not match, so fall back to a date/keyword filter when a venue lookup returns empty.
 
 **Per-tool parameter exceptions** (verified against the live server — getting these wrong yields a malformed or silently-ignored argument):
+
 - `get_author_papers` names its field-selection param **`paper_fields`**, not `fields` (passing `fields=` is silently ignored — you get titles only), and accepts a `publication_date_range` but **no** `venues` filter. Its date filter is applied *after* paging and can drop valid in-range papers (a well-known author's `2024:2024` returned `[]`), so for reliable results narrow by topic/venue **and date** client-side.
 - `get_citations` accepts `publication_date_range` but **not** `venues`.
 - `snippet_search` accepts **neither** `fields` nor `publication_date_range`. Instead it has: **`inserted_before`** (date filter, `YYYY-MM-DD`/`YYYY-MM`/`YYYY`), **`paper_ids`** (comma-separated list of ≤100 IDs to restrict snippets to specific papers), and `venues`.
@@ -51,16 +53,19 @@ Most search/citation tools accept **`publication_date_range`** (format `YYYY-MM-
 Use task-specific field presets:
 
 Metadata lookup:
+
 ```
 title,year,authors,venue,tldr,url,abstract
 ```
 
 Search/ranking/results tables:
+
 ```
 title,year,authors,venue,tldr,url,abstract,citationCount,influentialCitationCount
 ```
 
 DOI/export handoff:
+
 ```
 title,year,authors,venue,tldr,url,externalIds
 ```
@@ -68,6 +73,7 @@ title,year,authors,venue,tldr,url,externalIds
 Add `journal`, `publicationDate`, `fieldsOfStudy`, `isOpenAccess` only when needed. If pass-through fields such as `citationCount` are absent in a future response, degrade gracefully: sort by relevance/recency and omit citation-based claims.
 
 **Example call** (topic search, ranked by citations, DOI exposed for downstream fetch):
+
 ```
 search_papers_by_relevance(
   keyword="mixture of experts routing",
@@ -80,6 +86,7 @@ search_papers_by_relevance(
 ### Retrieving DOI / external IDs (undocumented but supported)
 
 Asta's official `fields` list does **not** include `externalIds`, but the field is transparently passed through to the underlying Semantic Scholar API and works in practice. Add `externalIds` to `fields` to retrieve `DOI`, `PubMed`, `PubMedCentral`, `ArXiv`, `MAG`, `DBLP`, `CorpusId`. The same pass-through applies to **`citationCount`** and **`influentialCitationCount`** (also absent from the official list but verified to return) — request them when ranking results by citations. Caveats:
+
 - Not all papers have a DOI — pure arXiv preprints often only return `ArXiv` + `CorpusId`.
 - `get_paper("DOI:...")` lookup is not 100% reliable; some valid DOIs return `not found`. Prefer searching by title first, then reading `externalIds` off the result.
 - Since this is undocumented, treat it as best-effort and degrade gracefully if a future Asta release drops it.
@@ -87,22 +94,26 @@ Asta's official `fields` list does **not** include `externalIds`, but the field 
 ## Workflow Patterns
 
 ### Pattern 1 — Topic Discovery
+
 1. `search_papers_by_relevance(keyword, publication_date_range="<current_year-5>:", venues=?, fields="title,year,authors,venue,tldr,url,abstract,citationCount,influentialCitationCount", limit=20)` → initial hits (compute the lower bound from today's date — e.g., in 2026 pass `publication_date_range="2021:"`; adjust or drop the filter if the user asks for older work)
 2. Rank/present top N by citationCount + recency
 3. Offer follow-ups: `get_citations` on the most influential, or `snippet_search` for specific claims
 
 ### Pattern 2 — Seed-Paper Expansion
+
 1. `get_paper(DOI|arXiv|...)` → verify seed
 2. `get_citations(paperId)` → forward expansion
 3. Optionally `search_papers_by_relevance` with seed title terms for sideways discovery
 4. Deduplicate by paperId before presenting
 
 ### Pattern 3 — Author Deep-Dive
+
 1. `search_authors_by_name(name, fields="name,affiliations,paperCount,citationCount,hIndex,externalIds")` → pick correct profile. **You must request these fields** — the default `fields="name"` returns only `name` + `authorId`, leaving nothing to rank on. Disambiguate by `externalIds.ORCID` when present (strongest signal), then `paperCount`/`citationCount`/`hIndex`; `affiliations` is often empty even when requested, so use it only as a tiebreaker
 2. `get_author_papers(authorId, limit=50, paper_fields="title,year,authors,venue,tldr,url,abstract,citationCount")` → a bounded first page; expand only if the user asks for the full list
 3. Filter client-side by topic keywords or date
 
 ### Pattern 4 — Evidence Retrieval
+
 1. `snippet_search(claim_query)` → find passages making/supporting a claim
 2. To ground a claim **within specific papers**, pass `paper_ids="<id1>,<id2>,…"` (≤100) so snippets are drawn only from that set
 3. For each hit, optionally `get_paper(id)` for full metadata
@@ -124,7 +135,7 @@ Asta's official `fields` list does **not** include `externalIds`, but the field 
 ## Handling Asta responses
 
 | Situation | What to do |
-|---|---|
+| --- | --- |
 | Empty `abstract` | Not all corpus papers have full text — use `snippet_search`, or fall back to title + TLDR |
 | Author disambiguation uncertain | Request the ranking fields up front (see Pattern 3 — they are **not** returned by default); prefer `externalIds.ORCID`, then `paperCount`/`citationCount`/`hIndex`, with `affiliations` only as a tiebreaker |
 | Date-filtered results | A `publication_date_range` filter can return records whose `publicationDate` is `null` (only `year` is guaranteed), and papers with unknown dates are treated as published **Jan 1** of their year — so boundary-year filtering is approximate |
