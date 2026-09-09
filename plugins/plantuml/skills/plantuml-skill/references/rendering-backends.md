@@ -4,7 +4,7 @@ The skill can render through three backends. They produce the same output; they
 differ in **install cost** and, crucially, **where your source goes**.
 
 | Backend | Endpoint / command | Install | Source leaves your machine? |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | **Public Kroki** (default) | `https://kroki.io/plantuml/{png,svg}` | just `curl` | **Yes** — POSTed to a third-party service |
 | **Local Kroki** (Docker) | `http://localhost:8000/plantuml/{png,svg}` | `docker run -d -p 8000:8000 yuzutech/kroki` | No |
 | **Local `plantuml.jar`** | `java -jar plantuml.jar diagram.puml` | Java + Graphviz + jar | No |
