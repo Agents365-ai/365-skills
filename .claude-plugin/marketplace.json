@@ -174,6 +174,26 @@
       ]
     },
     {
+      "name": "pi-dev-rules",
+      "source": "./plugins/pi-dev-rules",
+      "description": "Authoritative reference for Pi (@earendil-works/pi-coding-agent): install, configure, run, and extend. Use when the user asks about Pi CLI/flags/commands, providers/models/auth, settings/compaction/sessions, security/trust, extensions, skills, prompt templates, themes, packages, custom providers, TUI components, the SDK, RPC mode, or JSON streaming. Also use for Pi's design philosophy and opinionated choices (why minimal, 4 tools, YOLO, no MCP/plan mode/to-dos/sub-agents).",
+      "version": "0.2.0",
+      "author": {
+        "name": "Agents365-ai"
+      },
+      "repository": "https://github.com/Agents365-ai/pi-dev-rules",
+      "license": "MIT",
+      "keywords": [
+        "pi",
+        "pi-coding-agent",
+        "reference",
+        "documentation",
+        "cli",
+        "mcp-alternative",
+        "agent-tools"
+      ]
+    },
+    {
       "name": "scholar-deep-research",
       "source": "./plugins/scholar-deep-research",
       "description": "End-to-end academic research pipeline — 8-phase (Phase 0..7) script-driven workflow across 7 federated sources (OpenAlex, arXiv, Crossref, PubMed, DBLP, bioRxiv, Exa), cross-source dedup, transparent ranking, dual-backend citation chasing (OpenAlex + Semantic Scholar), parallel deep-read fan-out, mandatory self-critique, and cited reports across 5 archetypes",
