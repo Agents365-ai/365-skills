@@ -27,18 +27,24 @@ import time
 import httpx
 from twikit.client.gql import FEATURES, USER_FEATURES, Endpoint
 
-BEARER = ("AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D"
-          "1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA")
+BEARER = (
+    "AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D"
+    "1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA"
+)
 DEFAULT_COOKIES = os.path.expanduser(
-    os.environ.get("XFETCH_COOKIES") or "~/.config/xfetch/cookies.json")
+    os.environ.get("XFETCH_COOKIES") or "~/.config/xfetch/cookies.json"
+)
 TIMEOUT = float(os.environ.get("XFETCH_TIMEOUT") or "30")
 PROXY = os.environ.get("XFETCH_PROXY")
 
 # Endpoints that current X serves only over POST (GET 404s). The requester also
 # falls back GET<->POST on a 404, so this is an optimization, not a hard rule.
 POST_ENDPOINTS = {
-    Endpoint.SEARCH_TIMELINE, Endpoint.FOLLOWERS, Endpoint.FOLLOWING,
-    Endpoint.HOME_TIMELINE, Endpoint.HOME_LATEST_TIMELINE,
+    Endpoint.SEARCH_TIMELINE,
+    Endpoint.FOLLOWERS,
+    Endpoint.FOLLOWING,
+    Endpoint.HOME_TIMELINE,
+    Endpoint.HOME_LATEST_TIMELINE,
 }
 
 
@@ -47,6 +53,7 @@ def err(msg):
 
 
 # --- session / auth ----------------------------------------------------------
+
 
 def load_session(args):
     at = getattr(args, "auth_token", None) or os.environ.get("XFETCH_AUTH_TOKEN")
@@ -85,6 +92,7 @@ def save_session(at, ct0, path):
 
 # --- GraphQL layer -----------------------------------------------------------
 
+
 def _headers(at, ct0):
     return {
         "authorization": f"Bearer {BEARER}",
@@ -96,9 +104,11 @@ def _headers(at, ct0):
         "x-twitter-client-language": "en",
         # X's anti-bot transaction id; a placeholder is accepted for reads.
         "x-client-transaction-id": base64.b64encode(os.urandom(70)).decode(),
-        "user-agent": ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-                       "AppleWebKit/537.36 (KHTML, like Gecko) "
-                       "Chrome/120.0.0.0 Safari/537.36"),
+        "user-agent": (
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/120.0.0.0 Safari/537.36"
+        ),
     }
 
 
@@ -126,8 +136,10 @@ def gql(at, ct0, endpoint, variables, features=FEATURES, extra_params=None):
     if r.status_code == 404:
         r = _do("POST" if prefer == "GET" else "GET")
     if r.status_code in (401, 403):
-        err(f"X rejected the request (HTTP {r.status_code}) — cookies are likely "
-            f"expired or invalid. Re-authenticate.")
+        err(
+            f"X rejected the request (HTTP {r.status_code}) — cookies are likely "
+            f"expired or invalid. Re-authenticate."
+        )
         sys.exit(2)
     if r.status_code == 429:
         reset = r.headers.get("x-rate-limit-reset")
@@ -140,12 +152,14 @@ def gql(at, ct0, endpoint, variables, features=FEATURES, extra_params=None):
     data = r.json()
     if isinstance(data, dict) and data.get("errors") and not data.get("data"):
         msgs = "; ".join(e.get("message", "?") for e in data["errors"])
-        raise RuntimeError(f"GraphQL error: {msgs} "
-                           f"(X may have changed; try: pip install -U twikit)")
+        raise RuntimeError(
+            f"GraphQL error: {msgs} (X may have changed; try: pip install -U twikit)"
+        )
     return data
 
 
 # --- parsers -----------------------------------------------------------------
+
 
 def parse_user(result):
     if not result or result.get("__typename") == "UserUnavailable":
@@ -189,7 +203,9 @@ def parse_tweet(result):
     author = ((result.get("core") or {}).get("user_results") or {}).get("result") or {}
     alg = author.get("legacy") or {}
     sn = alg.get("screen_name")
-    note = (((result.get("note_tweet") or {}).get("note_tweet_results") or {}).get("result") or {})
+    note = ((result.get("note_tweet") or {}).get("note_tweet_results") or {}).get(
+        "result"
+    ) or {}
     ent = lg.get("entities") or {}
     media_src = (lg.get("extended_entities") or ent or {}).get("media") or []
     return {
@@ -210,12 +226,26 @@ def parse_tweet(result):
         "conversation_id": lg.get("conversation_id_str"),
         "hashtags": [h.get("text") for h in (ent.get("hashtags") or [])],
         "urls": [u.get("expanded_url") for u in (ent.get("urls") or [])],
-        "media": [{"type": m.get("type"),
-                   "url": m.get("media_url_https") or m.get("media_url")} for m in media_src],
-        "quote_id": ((result.get("quoted_status_result") or {}).get("result") or {}).get("rest_id"),
-        "retweeted_id": ((lg.get("retweeted_status_result") or {}).get("result") or {}).get("rest_id"),
-        "author": {"id": author.get("rest_id"), "screen_name": sn,
-                   "name": alg.get("name")} if author else None,
+        "media": [
+            {
+                "type": m.get("type"),
+                "url": m.get("media_url_https") or m.get("media_url"),
+            }
+            for m in media_src
+        ],
+        "quote_id": (
+            (result.get("quoted_status_result") or {}).get("result") or {}
+        ).get("rest_id"),
+        "retweeted_id": (
+            (lg.get("retweeted_status_result") or {}).get("result") or {}
+        ).get("rest_id"),
+        "author": {
+            "id": author.get("rest_id"),
+            "screen_name": sn,
+            "name": alg.get("name"),
+        }
+        if author
+        else None,
     }
 
 
@@ -236,8 +266,10 @@ def _find_instructions(data):
 
 
 def _is_cursor(content):
-    if content.get("entryType") == "TimelineTimelineCursor" or \
-            content.get("__typename") == "TimelineTimelineCursor":
+    if (
+        content.get("entryType") == "TimelineTimelineCursor"
+        or content.get("__typename") == "TimelineTimelineCursor"
+    ):
         return content.get("cursorType"), content.get("value")
     return None, None
 
@@ -270,7 +302,10 @@ def extract_timeline(data, kind):
                 if ctype == "Bottom":
                     cursor = cval
                 continue
-            if content.get("entryType") == "TimelineTimelineModule" or "items" in content:
+            if (
+                content.get("entryType") == "TimelineTimelineModule"
+                or "items" in content
+            ):
                 for it in content.get("items") or []:
                     handle((it.get("item") or {}).get("itemContent"))
                 continue
@@ -280,18 +315,35 @@ def extract_timeline(data, kind):
 
 # --- output ------------------------------------------------------------------
 
+
+def _sql_ident(c):
+    # SQLite identifier allowlist: word chars only so quoting cannot be escaped
+    return '"' + re.sub(r"\W", "_", c) + '"'
+
+
 def _flat(v):
-    return json.dumps(v, ensure_ascii=False, default=str) if isinstance(v, (list, dict)) else v
+    return (
+        json.dumps(v, ensure_ascii=False, default=str)
+        if isinstance(v, (list, dict))
+        else v
+    )
 
 
 def emit(data, args):
     fmt = args.format
     if fmt == "json":
-        json.dump(data, sys.stdout, ensure_ascii=False,
-                  indent=None if args.plain else 2, default=str)
+        json.dump(
+            data,
+            sys.stdout,
+            ensure_ascii=False,
+            indent=None if args.plain else 2,
+            default=str,
+        )
         sys.stdout.write("\n")
         return
-    rows = [r for r in (data if isinstance(data, list) else [data]) if isinstance(r, dict)]
+    rows = [
+        r for r in (data if isinstance(data, list) else [data]) if isinstance(r, dict)
+    ]
     if fmt == "jsonl":
         for r in rows:
             sys.stdout.write(json.dumps(r, ensure_ascii=False, default=str) + "\n")
@@ -311,6 +363,7 @@ def emit(data, args):
         return
     if fmt == "sqlite":
         import sqlite3
+
         if not args.db:
             err("Error: --db <path> is required for --format sqlite")
             sys.exit(1)
@@ -322,15 +375,28 @@ def emit(data, args):
             for k in r:
                 if k not in cols:
                     cols.append(k)
-        table = ("tweets" if "retweet_count" in cols
-                 else "users" if "followers_count" in cols else "records")
+        table = (
+            "tweets"
+            if "retweet_count" in cols
+            else "users"
+            if "followers_count" in cols
+            else "records"
+        )
         con = sqlite3.connect(args.db)
-        con.execute(f"CREATE TABLE IF NOT EXISTS {table} (%s)" % ",".join(
-            f'"{c}" TEXT PRIMARY KEY' if c == "id" else f'"{c}" TEXT' for c in cols))
-        con.executemany(
-            f"INSERT OR REPLACE INTO {table} (%s) VALUES (%s)"
-            % (",".join(f'"{c}"' for c in cols), ",".join("?" for _ in cols)),
-            [[_flat(r.get(c)) for c in cols] for r in rows])
+        defs = ",".join(
+            f"{_sql_ident(c)} TEXT PRIMARY KEY" if c == "id" else f"{_sql_ident(c)} TEXT"
+            for c in cols
+        )
+        create_sql = f"CREATE TABLE IF NOT EXISTS {table} ({defs})"
+        insert_sql = "INSERT OR REPLACE INTO {} ({}) VALUES ({})".format(
+            table,
+            ",".join(_sql_ident(c) for c in cols),
+            ",".join("?" for _ in cols),
+        )
+        # pi-lens-ignore: python-sql-injection
+        con.execute(create_sql)  # nosemgrep
+        # pi-lens-ignore: python-sql-injection
+        con.executemany(insert_sql, [[_flat(r.get(c)) for c in cols] for r in rows])
         con.commit()
         con.close()
         err(f"✓ Inserted {len(rows)} rows into {table} ({args.db})")
@@ -339,7 +405,10 @@ def emit(data, args):
 
 # --- pagination --------------------------------------------------------------
 
-def paginate(args, at, ct0, endpoint, variables, kind, features=FEATURES, extra_params=None):
+
+def paginate(
+    args, at, ct0, endpoint, variables, kind, features=FEATURES, extra_params=None
+):
     seen, out = set(), []
     cursor = getattr(args, "cursor", None)
     max_pages = int(args.max_pages) if getattr(args, "max_pages", None) else None
@@ -351,7 +420,9 @@ def paginate(args, at, ct0, endpoint, variables, kind, features=FEATURES, extra_
             v = dict(variables)
             if cursor:
                 v["cursor"] = cursor
-            data = gql(at, ct0, endpoint, v, features=features, extra_params=extra_params)
+            data = gql(
+                at, ct0, endpoint, v, features=features, extra_params=extra_params
+            )
             items, next_cursor = extract_timeline(data, kind)
             fresh = [it for it in items if it["id"] not in seen]
             for it in fresh:
@@ -390,12 +461,22 @@ def extract_tweet_id(s):
 def resolve_user(at, ct0, handle):
     h = handle.lstrip("@")
     if h.isdigit():
-        data = gql(at, ct0, Endpoint.USER_BY_REST_ID,
-                   {"userId": h, "withSafetyModeUserFields": True}, features=USER_FEATURES)
+        data = gql(
+            at,
+            ct0,
+            Endpoint.USER_BY_REST_ID,
+            {"userId": h, "withSafetyModeUserFields": True},
+            features=USER_FEATURES,
+        )
     else:
-        data = gql(at, ct0, Endpoint.USER_BY_SCREEN_NAME,
-                   {"screen_name": h, "withSafetyModeUserFields": False}, features=USER_FEATURES,
-                   extra_params={"fieldToggles": {"withAuxiliaryUserLabels": False}})
+        data = gql(
+            at,
+            ct0,
+            Endpoint.USER_BY_SCREEN_NAME,
+            {"screen_name": h, "withSafetyModeUserFields": False},
+            features=USER_FEATURES,
+            extra_params={"fieldToggles": {"withAuxiliaryUserLabels": False}},
+        )
     res = ((data.get("data") or {}).get("user") or {}).get("result")
     if not res:
         raise RuntimeError(f"User not found: {handle}")
@@ -403,6 +484,7 @@ def resolve_user(at, ct0, handle):
 
 
 # --- commands ----------------------------------------------------------------
+
 
 def cmd_auth_set(args):
     if not args.auth_token or not args.ct0:
@@ -420,6 +502,7 @@ def cmd_auth_import(args):
         for c in items:
             if isinstance(c, dict) and c.get("name"):
                 jar[c["name"]] = c.get("value")
+    # pi-lens-ignore: ast-grep:no-boolean-in-except
     except json.JSONDecodeError:
         for line in raw.splitlines():
             s = line.strip()
@@ -433,8 +516,10 @@ def cmd_auth_import(args):
     if not jar.get("auth_token") or not jar.get("ct0"):
         err(f"Could not find both auth_token and ct0 in {args.file}")
         sys.exit(2)
-    err(f"✓ Imported cookies from {args.file}; saved to "
-        f"{save_session(jar['auth_token'], jar['ct0'], args.cookies)}")
+    err(
+        f"✓ Imported cookies from {args.file}; saved to "
+        f"{save_session(jar['auth_token'], jar['ct0'], args.cookies)}"
+    )
 
 
 def cmd_auth_extract(args):
@@ -456,18 +541,23 @@ def cmd_auth_extract(args):
         except Exception as e:
             problems.append(f"{domain}: {e}")
     if not found.get("auth_token") or not found.get("ct0"):
-        err(f"Could not find auth_token/ct0 in {args.browser} — is it logged into x.com?")
+        err(
+            f"Could not find auth_token/ct0 in {args.browser} — is it logged into x.com?"
+        )
         for p in problems:
             err(f"  ({p})")
         sys.exit(2)
-    err(f"✓ Extracted from {args.browser}; saved to "
-        f"{save_session(found['auth_token'], found['ct0'], args.cookies)}")
+    err(
+        f"✓ Extracted from {args.browser}; saved to "
+        f"{save_session(found['auth_token'], found['ct0'], args.cookies)}"
+    )
 
 
 def cmd_auth_login(args):
     import asyncio
 
     import twikit
+
     user = args.username or os.environ.get("X_USERNAME")
     pw = args.password or os.environ.get("X_PASSWORD")
     if not user or not pw:
@@ -476,15 +566,22 @@ def cmd_auth_login(args):
 
     async def _login():
         c = twikit.Client(language="en-US", proxy=PROXY)
-        await c.login(auth_info_1=user, auth_info_2=(args.email or os.environ.get("X_EMAIL")),
-                      password=pw, totp_secret=(args.totp or os.environ.get("X_TOTP_SECRET")))
+        await c.login(
+            auth_info_1=user,
+            auth_info_2=(args.email or os.environ.get("X_EMAIL")),
+            password=pw,
+            totp_secret=(args.totp or os.environ.get("X_TOTP_SECRET")),
+        )
         return c.get_cookies()
+
     ck = asyncio.run(_login())
     if not ck.get("auth_token") or not ck.get("ct0"):
         err("Login did not return the expected cookies")
         sys.exit(1)
-    err(f"✓ Logged in as @{user.lstrip('@')}; saved to "
-        f"{save_session(ck['auth_token'], ck['ct0'], args.cookies)}")
+    err(
+        f"✓ Logged in as @{user.lstrip('@')}; saved to "
+        f"{save_session(ck['auth_token'], ck['ct0'], args.cookies)}"
+    )
 
 
 def cmd_auth_check(args):
@@ -495,10 +592,18 @@ def cmd_auth_check(args):
         sys.exit(2)
     # Verify by reading the home timeline, which requires a valid login.
     try:
-        data = gql(at, ct0, Endpoint.HOME_TIMELINE,
-                   {"count": 1, "includePromotedContent": False,
-                    "latestControlAvailable": True, "requestContext": "launch",
-                    "seenTweetIds": []})
+        data = gql(
+            at,
+            ct0,
+            Endpoint.HOME_TIMELINE,
+            {
+                "count": 1,
+                "includePromotedContent": False,
+                "latestControlAvailable": True,
+                "requestContext": "launch",
+                "seenTweetIds": [],
+            },
+        )
     except SystemExit:
         raise  # 401/403 already reported by gql() with exit 2
     except Exception as e:
@@ -531,44 +636,81 @@ def cmd_user(args):
 def cmd_tweets(args):
     at, ct0 = require_session(args)
     uid = resolve_user(at, ct0, args.handle)["rest_id"]
-    endpoint = (Endpoint.USER_MEDIA if args.media
-                else Endpoint.USER_TWEETS_AND_REPLIES if args.replies
-                else Endpoint.USER_TWEETS)
-    variables = {"userId": uid, "count": int(args.count), "includePromotedContent": True,
-                 "withQuickPromoteEligibilityTweetFields": True, "withVoice": True,
-                 "withV2Timeline": True}
+    endpoint = (
+        Endpoint.USER_MEDIA
+        if args.media
+        else Endpoint.USER_TWEETS_AND_REPLIES
+        if args.replies
+        else Endpoint.USER_TWEETS
+    )
+    variables = {
+        "userId": uid,
+        "count": int(args.count),
+        "includePromotedContent": True,
+        "withQuickPromoteEligibilityTweetFields": True,
+        "withVoice": True,
+        "withV2Timeline": True,
+    }
     emit(paginate(args, at, ct0, endpoint, variables, "tweet"), args)
 
 
 def cmd_likes(args):
     at, ct0 = require_session(args)
     uid = resolve_user(at, ct0, args.handle)["rest_id"]
-    variables = {"userId": uid, "count": int(args.count), "includePromotedContent": False,
-                 "withVoice": True, "withV2Timeline": True}
+    variables = {
+        "userId": uid,
+        "count": int(args.count),
+        "includePromotedContent": False,
+        "withVoice": True,
+        "withV2Timeline": True,
+    }
     emit(paginate(args, at, ct0, Endpoint.USER_LIKES, variables, "tweet"), args)
 
 
 def cmd_tweet(args):
     at, ct0 = require_session(args)
     tid = extract_tweet_id(args.url_or_id)
-    data = gql(at, ct0, Endpoint.TWEET_RESULT_BY_REST_ID,
-               {"tweetId": tid, "withCommunity": False, "includePromotedContent": False,
-                "withVoice": False},
-               extra_params={"fieldToggles": {"withArticleRichContentState": True,
-                                              "withArticlePlainText": False,
-                                              "withGrokAnalyze": False}})
-    emit(parse_tweet(((data.get("data") or {}).get("tweetResult") or {}).get("result")), args)
+    data = gql(
+        at,
+        ct0,
+        Endpoint.TWEET_RESULT_BY_REST_ID,
+        {
+            "tweetId": tid,
+            "withCommunity": False,
+            "includePromotedContent": False,
+            "withVoice": False,
+        },
+        extra_params={
+            "fieldToggles": {
+                "withArticleRichContentState": True,
+                "withArticlePlainText": False,
+                "withGrokAnalyze": False,
+            }
+        },
+    )
+    emit(
+        parse_tweet(((data.get("data") or {}).get("tweetResult") or {}).get("result")),
+        args,
+    )
 
 
 def cmd_thread(args):
     at, ct0 = require_session(args)
     focal = extract_tweet_id(args.url_or_id)
-    variables = {"focalTweetId": focal, "with_rux_injections": False,
-                 "includePromotedContent": True, "withCommunity": True,
-                 "withQuickPromoteEligibilityTweetFields": True, "withBirdwatchNotes": True,
-                 "withVoice": True, "withV2Timeline": True}
+    variables = {
+        "focalTweetId": focal,
+        "with_rux_injections": False,
+        "includePromotedContent": True,
+        "withCommunity": True,
+        "withQuickPromoteEligibilityTweetFields": True,
+        "withBirdwatchNotes": True,
+        "withVoice": True,
+        "withV2Timeline": True,
+    }
     extra = {"fieldToggles": {"withAuxiliaryUserLabels": False}}
-    tweets = paginate(args, at, ct0, Endpoint.TWEET_DETAIL, variables, "tweet", extra_params=extra)
+    tweets = paginate(
+        args, at, ct0, Endpoint.TWEET_DETAIL, variables, "tweet", extra_params=extra
+    )
     root = [t for t in tweets if t["id"] == focal]
     replies = [t for t in tweets if t["id"] != focal]
     emit(root + replies, args)
@@ -576,32 +718,53 @@ def cmd_thread(args):
 
 def cmd_search(args):
     at, ct0 = require_session(args)
-    product = {"top": "Top", "latest": "Latest", "media": "Media"}.get(args.type.lower(), "Top")
-    variables = {"rawQuery": args.query, "count": int(args.count),
-                 "querySource": "typed_query", "product": product}
+    product = {"top": "Top", "latest": "Latest", "media": "Media"}.get(
+        args.type.lower(), "Top"
+    )
+    variables = {
+        "rawQuery": args.query,
+        "count": int(args.count),
+        "querySource": "typed_query",
+        "product": product,
+    }
     emit(paginate(args, at, ct0, Endpoint.SEARCH_TIMELINE, variables, "tweet"), args)
 
 
 def cmd_followers(args):
     at, ct0 = require_session(args)
     uid = resolve_user(at, ct0, args.handle)["rest_id"]
-    variables = {"userId": uid, "count": int(args.count), "includePromotedContent": False}
+    variables = {
+        "userId": uid,
+        "count": int(args.count),
+        "includePromotedContent": False,
+    }
     emit(paginate(args, at, ct0, Endpoint.FOLLOWERS, variables, "user"), args)
 
 
 def cmd_following(args):
     at, ct0 = require_session(args)
     uid = resolve_user(at, ct0, args.handle)["rest_id"]
-    variables = {"userId": uid, "count": int(args.count), "includePromotedContent": False}
+    variables = {
+        "userId": uid,
+        "count": int(args.count),
+        "includePromotedContent": False,
+    }
     emit(paginate(args, at, ct0, Endpoint.FOLLOWING, variables, "user"), args)
 
 
 def cmd_home(args):
     at, ct0 = require_session(args)
-    endpoint = Endpoint.HOME_LATEST_TIMELINE if args.following else Endpoint.HOME_TIMELINE
-    variables = {"count": int(args.count), "includePromotedContent": True,
-                 "latestControlAvailable": True, "requestContext": "launch",
-                 "withCommunity": True, "seenTweetIds": []}
+    endpoint = (
+        Endpoint.HOME_LATEST_TIMELINE if args.following else Endpoint.HOME_TIMELINE
+    )
+    variables = {
+        "count": int(args.count),
+        "includePromotedContent": True,
+        "latestControlAvailable": True,
+        "requestContext": "launch",
+        "withCommunity": True,
+        "seenTweetIds": [],
+    }
     emit(paginate(args, at, ct0, endpoint, variables, "tweet"), args)
 
 
@@ -610,10 +773,16 @@ def cmd_bookmarks(args):
     variables = {"count": int(args.count), "includePromotedContent": True}
     features = dict(FEATURES)
     features["graphql_timeline_v2_bookmark_timeline"] = True
-    emit(paginate(args, at, ct0, Endpoint.BOOKMARKS, variables, "tweet", features=features), args)
+    emit(
+        paginate(
+            args, at, ct0, Endpoint.BOOKMARKS, variables, "tweet", features=features
+        ),
+        args,
+    )
 
 
 # --- CLI ---------------------------------------------------------------------
+
 
 class Parser(argparse.ArgumentParser):
     """Exit 64 on usage errors so exit 2 stays reserved for 'not authenticated'."""
@@ -629,19 +798,25 @@ def build_parser():
     g.add_argument("--auth-token", dest="auth_token", help="auth_token cookie")
     g.add_argument("--ct0", help="ct0 cookie")
     g.add_argument("--proxy", help="proxy URL, e.g. http://user:pass@host:port")
-    g.add_argument("--format", choices=["json", "jsonl", "csv", "sqlite"], default="json")
+    g.add_argument(
+        "--format", choices=["json", "jsonl", "csv", "sqlite"], default="json"
+    )
     g.add_argument("--db", help="SQLite path (with --format sqlite)")
     g.add_argument("--plain", action="store_true", help="compact JSON (no indent)")
 
     p = Parser(add_help=False)
     p.add_argument("-n", "--count", type=int, default=20, help="results per page")
     p.add_argument("--all", action="store_true", help="fetch every page")
-    p.add_argument("--max-pages", dest="max_pages", type=int, help="cap number of pages")
+    p.add_argument(
+        "--max-pages", dest="max_pages", type=int, help="cap number of pages"
+    )
     p.add_argument("--cursor", help="start from a pagination cursor")
     p.add_argument("--delay", type=float, default=1.0, help="seconds between pages")
 
-    ap = Parser(prog="xfetch.py",
-                description="Fetch public X (Twitter) data with your own cookies.")
+    ap = Parser(
+        prog="xfetch.py",
+        description="Fetch public X (Twitter) data with your own cookies.",
+    )
     ap.add_argument("-v", "--version", action="version", version="xfetch-skill 0.3")
     sub = ap.add_subparsers(dest="cmd", required=True)
 
@@ -649,22 +824,44 @@ def build_parser():
     asub = sp.add_subparsers(dest="authcmd", required=True)
     asub.add_parser("check", parents=[g]).set_defaults(func=cmd_auth_check)
     asub.add_parser("set", parents=[g]).set_defaults(func=cmd_auth_set)
-    ai = asub.add_parser("import", parents=[g], help="import a cookies.txt / JSON export")
+    ai = asub.add_parser(
+        "import", parents=[g], help="import a cookies.txt / JSON export"
+    )
     ai.add_argument("--file", required=True)
     ai.set_defaults(func=cmd_auth_import)
-    ae = asub.add_parser("extract", parents=[g], help="read cookies from a logged-in browser")
-    ae.add_argument("--browser", default="chrome",
-                    choices=["chrome", "chromium", "firefox", "safari", "edge",
-                             "brave", "arc", "opera", "vivaldi", "librewolf"])
+    ae = asub.add_parser(
+        "extract", parents=[g], help="read cookies from a logged-in browser"
+    )
+    ae.add_argument(
+        "--browser",
+        default="chrome",
+        choices=[
+            "chrome",
+            "chromium",
+            "firefox",
+            "safari",
+            "edge",
+            "brave",
+            "arc",
+            "opera",
+            "vivaldi",
+            "librewolf",
+        ],
+    )
     ae.set_defaults(func=cmd_auth_extract)
-    al = asub.add_parser("login", parents=[g], help="username/password login (via twikit)")
-    al.add_argument("--username"); al.add_argument("--password")
-    al.add_argument("--email"); al.add_argument("--totp")
+    al = asub.add_parser(
+        "login", parents=[g], help="username/password login (via twikit)"
+    )
+    al.add_argument("--username")
+    al.add_argument("--password")
+    al.add_argument("--email")
+    al.add_argument("--totp")
     al.set_defaults(func=cmd_auth_login)
     asub.add_parser("clear", parents=[g]).set_defaults(func=cmd_auth_clear)
 
     x = sub.add_parser("user", parents=[g], help="user profile")
-    x.add_argument("handle"); x.set_defaults(func=cmd_user)
+    x.add_argument("handle")
+    x.set_defaults(func=cmd_user)
 
     x = sub.add_parser("tweets", parents=[g, p], help="a user's tweets")
     x.add_argument("handle")
@@ -673,31 +870,43 @@ def build_parser():
     x.set_defaults(func=cmd_tweets)
 
     x = sub.add_parser("likes", parents=[g, p], help="a user's liked tweets")
-    x.add_argument("handle"); x.set_defaults(func=cmd_likes)
+    x.add_argument("handle")
+    x.set_defaults(func=cmd_likes)
 
     x = sub.add_parser("tweet", parents=[g], help="single tweet by URL or ID")
-    x.add_argument("url_or_id"); x.set_defaults(func=cmd_tweet)
+    x.add_argument("url_or_id")
+    x.set_defaults(func=cmd_tweet)
 
     x = sub.add_parser("thread", parents=[g, p], help="a tweet and its replies")
-    x.add_argument("url_or_id"); x.set_defaults(func=cmd_thread)
+    x.add_argument("url_or_id")
+    x.set_defaults(func=cmd_thread)
 
     x = sub.add_parser("search", parents=[g, p], help="search tweets")
     x.add_argument("query")
-    x.add_argument("--type", default="top", type=str.lower,
-                   choices=["top", "latest", "media"], help="top | latest | media")
+    x.add_argument(
+        "--type",
+        default="top",
+        type=str.lower,
+        choices=["top", "latest", "media"],
+        help="top | latest | media",
+    )
     x.set_defaults(func=cmd_search)
 
     x = sub.add_parser("followers", parents=[g, p], help="a user's followers")
-    x.add_argument("handle"); x.set_defaults(func=cmd_followers)
+    x.add_argument("handle")
+    x.set_defaults(func=cmd_followers)
 
     x = sub.add_parser("following", parents=[g, p], help="who a user follows")
-    x.add_argument("handle"); x.set_defaults(func=cmd_following)
+    x.add_argument("handle")
+    x.set_defaults(func=cmd_following)
 
     x = sub.add_parser("home", parents=[g, p], help="your home timeline")
     x.add_argument("--following", action="store_true", help="chronological (Following)")
     x.set_defaults(func=cmd_home)
 
-    sub.add_parser("bookmarks", parents=[g, p], help="your bookmarks").set_defaults(func=cmd_bookmarks)
+    sub.add_parser("bookmarks", parents=[g, p], help="your bookmarks").set_defaults(
+        func=cmd_bookmarks
+    )
     return ap
 
 
@@ -708,6 +917,7 @@ def main():
         PROXY = args.proxy
     try:
         args.func(args)
+    # pi-lens-ignore: unreachable-except
     except SystemExit:
         raise
     except KeyboardInterrupt:
