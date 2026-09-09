@@ -7,7 +7,10 @@ Usage: python3 scripts/fetch-changelog.py [output.md]
 import html
 import os
 import re
+import ssl
 import sys
+import urllib.error
+import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
 from email.utils import parsedate_to_datetime
@@ -58,11 +61,12 @@ def parse_rss():
             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
         },
     )
+    ctx = ssl.create_default_context()
     try:
-        with urllib.request.urlopen(req, timeout=30) as r:
+        with urllib.request.urlopen(req, timeout=30, context=ctx) as r:
             data = r.read()
-    except Exception as e:
-        raise SystemExit(f"Failed to fetch RSS: {e}")
+    except (urllib.error.URLError, TimeoutError, OSError) as e:
+        raise SystemExit(f"Failed to fetch RSS: {e}") from e
 
     root = ET.fromstring(data)
     ns = {"content": "http://purl.org/rss/1.0/modules/content/"}
