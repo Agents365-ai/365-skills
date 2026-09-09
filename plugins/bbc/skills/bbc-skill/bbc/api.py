@@ -22,7 +22,9 @@ NOT_FOUND_CODES = {-404, 62002, 62004}
 
 
 class ApiError(Exception):
-    def __init__(self, code: str, message: str, *, retryable: bool = False, raw: Any = None):
+    def __init__(
+        self, code: str, message: str, *, retryable: bool = False, raw: Any = None
+    ):
         super().__init__(message)
         self.code = code
         self.message = message
@@ -99,7 +101,9 @@ class Client:
                     time.sleep(backoff)
                     backoff *= 2
                     continue
-                raise ApiError("network_error", f"{type(e).__name__}: {e}", retryable=True)
+                raise ApiError(
+                    "network_error", f"{type(e).__name__}: {e}", retryable=True
+                )
             except json.JSONDecodeError as e:
                 raise ApiError("api_error", f"invalid JSON response: {e}")
 
@@ -107,19 +111,31 @@ class Client:
             if code == 0:
                 return data
             if code in AUTH_BAD_CODES:
-                raise ApiError("auth_expired", data.get("message") or "cookie rejected", raw=data)
+                raise ApiError(
+                    "auth_expired", data.get("message") or "cookie rejected", raw=data
+                )
             if code in NOT_FOUND_CODES:
-                raise ApiError("not_found", data.get("message") or "resource not found", raw=data)
+                raise ApiError(
+                    "not_found", data.get("message") or "resource not found", raw=data
+                )
             if code in RETRYABLE_CODES and attempt <= max_retries:
                 time.sleep(backoff)
                 backoff *= 2
                 continue
             if code in RETRYABLE_CODES:
-                raise ApiError("rate_limited", data.get("message") or "rate limited", retryable=True, raw=data)
-            raise ApiError("api_error", f"B站 code={code}: {data.get('message')}", raw=data)
+                raise ApiError(
+                    "rate_limited",
+                    data.get("message") or "rate limited",
+                    retryable=True,
+                    raw=data,
+                )
+            raise ApiError(
+                "api_error", f"B站 code={code}: {data.get('message')}", raw=data
+            )
 
 
 # ---- Endpoint helpers ----
+
 
 def bv_to_view(client: Client, bvid: str) -> dict:
     url = f"https://api.bilibili.com/x/web-interface/view?bvid={bvid}"
@@ -138,7 +154,9 @@ def get_tags(client: Client, bvid: str) -> list[dict]:
         return []
 
 
-def get_main_page(client: Client, aid: int, next_cursor: int, bvid: str, ps: int = 20) -> dict:
+def get_main_page(
+    client: Client, aid: int, next_cursor: int, bvid: str, ps: int = 20
+) -> dict:
     url = (
         "https://api.bilibili.com/x/v2/reply/main"
         f"?type=1&oid={aid}&mode=3&next={next_cursor}&ps={ps}"
@@ -146,7 +164,9 @@ def get_main_page(client: Client, aid: int, next_cursor: int, bvid: str, ps: int
     return client.get_json(url, referer=f"https://www.bilibili.com/video/{bvid}/")
 
 
-def get_sub_page(client: Client, aid: int, root_rpid: int, pn: int, bvid: str, ps: int = 20) -> dict:
+def get_sub_page(
+    client: Client, aid: int, root_rpid: int, pn: int, bvid: str, ps: int = 20
+) -> dict:
     url = (
         "https://api.bilibili.com/x/v2/reply/reply"
         f"?type=1&oid={aid}&root={root_rpid}&ps={ps}&pn={pn}"

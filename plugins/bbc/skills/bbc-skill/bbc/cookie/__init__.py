@@ -44,7 +44,9 @@ def _from_config_file() -> dict[str, str] | None:
     return None
 
 
-def _auto_detect(browser_hint: str = "auto") -> tuple[dict[str, str] | None, str | None]:
+def _auto_detect(
+    browser_hint: str = "auto",
+) -> tuple[dict[str, str] | None, str | None]:
     """Returns (cookies, source_label)."""
     candidates: list[tuple[str, Callable[[], dict[str, str] | None]]] = []
 
@@ -52,7 +54,9 @@ def _auto_detect(browser_hint: str = "auto") -> tuple[dict[str, str] | None, str
         candidates.append(("firefox", firefox.extract))
     if browser_hint in ("auto", "chrome"):
         if sys.platform == "darwin":
-            candidates.append(("chrome (macOS)", lambda: chrome_macos.extract("chrome")))
+            candidates.append(
+                ("chrome (macOS)", lambda: chrome_macos.extract("chrome"))
+            )
     if browser_hint in ("auto", "edge"):
         if sys.platform == "darwin":
             candidates.append(("edge (macOS)", lambda: chrome_macos.extract("edge")))

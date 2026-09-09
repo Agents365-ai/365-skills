@@ -27,13 +27,17 @@ def default_output_dir(uid: int) -> Path:
     return (Path.cwd() / "bilibili-comments" / f"user-{uid}").resolve()
 
 
-def _list_all_videos(client: api.Client, uid: int, img_key: str, sub_key: str, *, limit: int | None) -> list[dict]:
+def _list_all_videos(
+    client: api.Client, uid: int, img_key: str, sub_key: str, *, limit: int | None
+) -> list[dict]:
     """Paginate through all user videos. Returns list of dicts with bvid/title/play/comment/created."""
     videos: list[dict] = []
     pn = 1
     ps = 30
     while True:
-        data = api.list_user_videos(client, uid, img_key=img_key, sub_key=sub_key, pn=pn, ps=ps)
+        data = api.list_user_videos(
+            client, uid, img_key=img_key, sub_key=sub_key, pn=pn, ps=ps
+        )
         vlist = (data.get("data", {}).get("list", {}) or {}).get("vlist") or []
         page_info = (data.get("data", {}).get("page", {})) or {}
         for v in vlist:
@@ -76,7 +80,10 @@ def run_fetch_user(
     video_limit: int | None,
     max_top: int | None,
     progress: Progress,
-    inter_video_sleep_range: tuple[float, float] = (INTER_VIDEO_SLEEP_MIN, INTER_VIDEO_SLEEP_MAX),
+    inter_video_sleep_range: tuple[float, float] = (
+        INTER_VIDEO_SLEEP_MIN,
+        INTER_VIDEO_SLEEP_MAX,
+    ),
 ) -> dict[str, Any]:
     out_dir = Path(output).expanduser().resolve() if output else default_output_dir(uid)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -112,16 +119,28 @@ def run_fetch_user(
         if not bvid:
             continue
         if bvid in completed:
-            progress.progress(phase="skip_video", idx=idx, total=len(videos), bvid=bvid, reason="already_done")
+            progress.progress(
+                phase="skip_video",
+                idx=idx,
+                total=len(videos),
+                bvid=bvid,
+                reason="already_done",
+            )
             continue
 
         video_out = out_dir / bvid
         progress.progress(
-            phase="video_start", idx=idx, total=len(videos),
-            bvid=bvid, title=v.get("title"), declared_comments=v.get("comment"),
+            phase="video_start",
+            idx=idx,
+            total=len(videos),
+            bvid=bvid,
+            title=v.get("title"),
+            declared_comments=v.get("comment"),
         )
 
-        sub_progress = Progress("fetch-user.video", progress.request_id, enabled=progress.enabled)
+        sub_progress = Progress(
+            "fetch-user.video", progress.request_id, enabled=progress.enabled
+        )
         try:
             result = fetch.run_fetch(
                 target=bvid,
@@ -143,8 +162,11 @@ def run_fetch_user(
             )
             completed.add(bvid)
             progress.progress(
-                phase="video_done", idx=idx, total=len(videos),
-                bvid=bvid, counts=result.get("counts"),
+                phase="video_done",
+                idx=idx,
+                total=len(videos),
+                bvid=bvid,
+                counts=result.get("counts"),
             )
         except api.ApiError as e:
             err_rec = {
@@ -220,7 +242,9 @@ def run_fetch_user(
     }
 
 
-def run_dry_run(uid: int, output: str | None, video_limit: int | None) -> dict[str, Any]:
+def run_dry_run(
+    uid: int, output: str | None, video_limit: int | None
+) -> dict[str, Any]:
     out_dir = Path(output).expanduser().resolve() if output else default_output_dir(uid)
     return {
         "dry_run": True,

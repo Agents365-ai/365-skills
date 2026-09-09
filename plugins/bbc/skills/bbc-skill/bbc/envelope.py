@@ -136,9 +136,7 @@ def _print_table_success(env: dict) -> None:
                 sys.stdout.write(f"{k}:\n")
                 sys.stdout.write(
                     "  "
-                    + json.dumps(v, ensure_ascii=False, indent=2).replace(
-                        "\n", "\n  "
-                    )
+                    + json.dumps(v, ensure_ascii=False, indent=2).replace("\n", "\n  ")
                     + "\n"
                 )
             else:

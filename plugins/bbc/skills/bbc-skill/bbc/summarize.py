@@ -45,7 +45,9 @@ def build_summary(
                 continue
 
     total = len(rows)
-    top_level = sum(1 for r in rows if r.get("parent", 0) == 0 and r.get("top_type", 0) == 0)
+    top_level = sum(
+        1 for r in rows if r.get("parent", 0) == 0 and r.get("top_type", 0) == 0
+    )
     nested = sum(1 for r in rows if r.get("parent", 0) != 0)
     pinned = sum(1 for r in rows if r.get("top_type", 0) != 0)
     unique_users = len({r.get("mid") for r in rows if r.get("mid")})
@@ -78,7 +80,9 @@ def build_summary(
     ]
 
     top_replied_pool = [r for r in rows if r.get("parent", 0) == 0]
-    top_replied = sorted(top_replied_pool, key=lambda r: r.get("rcount", 0), reverse=True)[:top_n]
+    top_replied = sorted(
+        top_replied_pool, key=lambda r: r.get("rcount", 0), reverse=True
+    )[:top_n]
     top_replied_out = [
         {
             "rpid": r.get("rpid"),
@@ -138,7 +142,11 @@ def video_meta_from_view(view: dict, tags: list[dict]) -> dict:
         "duration_seconds": view.get("duration"),
         "cover_url": view.get("pic"),
         "tname": view.get("tname"),
-        "owner": {"mid": owner.get("mid"), "name": owner.get("name"), "face": owner.get("face")},
+        "owner": {
+            "mid": owner.get("mid"),
+            "name": owner.get("name"),
+            "face": owner.get("face"),
+        },
         "stat": {
             "view": stat.get("view"),
             "like": stat.get("like"),

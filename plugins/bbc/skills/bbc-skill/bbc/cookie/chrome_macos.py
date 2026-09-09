@@ -122,14 +122,18 @@ def _decrypt_value(encrypted: bytes, key: bytes) -> str | None:
         return None
 
 
-def extract(browser: str = "chrome", domain_filter: str = "bilibili.com") -> dict[str, str] | None:
+def extract(
+    browser: str = "chrome", domain_filter: str = "bilibili.com"
+) -> dict[str, str] | None:
     key = _fetch_key(browser)
     if not key:
         return None
 
     for db_path in _profile_paths(browser):
         try:
-            with tempfile.NamedTemporaryFile(prefix="bbc-chrome-", suffix=".db", delete=False) as tf:
+            with tempfile.NamedTemporaryFile(
+                prefix="bbc-chrome-", suffix=".db", delete=False
+            ) as tf:
                 tmp = Path(tf.name)
             shutil.copy2(db_path, tmp)
             try:

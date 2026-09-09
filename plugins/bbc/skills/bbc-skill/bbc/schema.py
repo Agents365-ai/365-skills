@@ -106,9 +106,22 @@ COMMANDS = {
                 "default": None,
                 "description": "Limit how many of the UP's recent videos to fetch.",
             },
-            "max": {"type": "integer", "min": 1, "default": None, "description": "Per-video top-level cap."},
-            "cookie_file": {"type": "string", "default": None, "description": "See fetch."},
-            "browser": {"type": "string", "enum": ["auto", "firefox", "chrome", "edge", "safari"], "default": "auto"},
+            "max": {
+                "type": "integer",
+                "min": 1,
+                "default": None,
+                "description": "Per-video top-level cap.",
+            },
+            "cookie_file": {
+                "type": "string",
+                "default": None,
+                "description": "See fetch.",
+            },
+            "browser": {
+                "type": "string",
+                "enum": ["auto", "firefox", "chrome", "edge", "safari"],
+                "default": "auto",
+            },
             "format": {"type": "string", "enum": ["json", "table"], "default": "auto"},
             "dry_run": {"type": "boolean", "default": False},
         },
@@ -132,8 +145,16 @@ COMMANDS = {
         "tier": "open",
         "summary": "Validate cookie and print logged-in user info.",
         "params": {
-            "cookie_file": {"type": "string", "default": None, "description": "Path to cookie file (optional)."},
-            "browser": {"type": "string", "enum": ["auto", "firefox", "chrome", "edge", "safari"], "default": "auto"},
+            "cookie_file": {
+                "type": "string",
+                "default": None,
+                "description": "Path to cookie file (optional).",
+            },
+            "browser": {
+                "type": "string",
+                "enum": ["auto", "firefox", "chrome", "edge", "safari"],
+                "default": "auto",
+            },
             "format": {"type": "string", "enum": ["json", "table"], "default": "auto"},
         },
     },
@@ -174,10 +195,20 @@ def describe(command: str | None = None) -> dict:
 
 def _envelope_contract() -> dict:
     return {
-        "success": {"ok": True, "data": "<object>", "meta": {"request_id": "str", "latency_ms": "int", "schema_version": "str"}},
+        "success": {
+            "ok": True,
+            "data": "<object>",
+            "meta": {"request_id": "str", "latency_ms": "int", "schema_version": "str"},
+        },
         "failure": {
             "ok": False,
-            "error": {"code": "str", "message": "str", "retryable": "bool", "field?": "str", "retry_after_auth?": "bool"},
+            "error": {
+                "code": "str",
+                "message": "str",
+                "retryable": "bool",
+                "field?": "str",
+                "retry_after_auth?": "bool",
+            },
             "meta": {"request_id": "str", "latency_ms": "int", "schema_version": "str"},
         },
     }

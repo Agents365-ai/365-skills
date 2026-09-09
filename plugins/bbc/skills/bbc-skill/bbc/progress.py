@@ -25,7 +25,9 @@ class Progress:
             elif env in ("0", "false", "no"):
                 enabled = False
             else:
-                enabled = sys.stderr.isatty() if hasattr(sys.stderr, "isatty") else False
+                enabled = (
+                    sys.stderr.isatty() if hasattr(sys.stderr, "isatty") else False
+                )
         self.enabled = enabled
         self._t0 = time.monotonic()
 

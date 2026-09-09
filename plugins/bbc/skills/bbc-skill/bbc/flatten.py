@@ -19,7 +19,7 @@ def _ip_location(reply: dict) -> str:
     # Strip "IP属地：" or "IP属地:" prefix
     for prefix in ("IP属地：", "IP属地:"):
         if val.startswith(prefix):
-            return val[len(prefix):].strip()
+            return val[len(prefix) :].strip()
     return val.strip()
 
 
@@ -39,14 +39,16 @@ def _jump_urls(content: dict) -> list[str]:
     return []
 
 
-def flatten_reply(reply: dict, *, bvid: str, owner_mid: int | None, top_type: int = 0) -> dict:
+def flatten_reply(
+    reply: dict, *, bvid: str, owner_mid: int | None, top_type: int = 0
+) -> dict:
     """One API reply dict -> one JSONL row (omits sub-replies; caller flattens those)."""
     member = reply.get("member") or {}
     content = reply.get("content") or {}
     ctime = int(reply.get("ctime") or 0)
     mid = int(member.get("mid") or 0)
     level = ((member.get("level_info") or {}).get("current_level")) or 0
-    vip_info = (member.get("vip") or {})
+    vip_info = member.get("vip") or {}
     vip = bool(vip_info.get("vipStatus") or vip_info.get("status"))
 
     return {
