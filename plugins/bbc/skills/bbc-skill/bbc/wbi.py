@@ -104,7 +104,7 @@ def sign(params: dict, img_key: str, sub_key: str, *, now: int | None = None) ->
         k: "".join(c for c in str(v) if c not in _BAD_CHARS) for k, v in signed.items()
     }
     query = urllib.parse.urlencode(sorted(cleaned.items()))
-    # pi-lens-ignore: python-weak-hash  # B站 WBI 签名协议固定要求 MD5(w_rid)，非安全场景
+    # pi-lens-ignore: python-weak-hash
     signed["w_rid"] = hashlib.md5((query + mixin).encode("utf-8")).hexdigest()
     return signed
 
