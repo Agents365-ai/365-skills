@@ -30,7 +30,7 @@ Look up journal impact factors using a two-source cascade: bundled CSV cache (~2
 ## Quick Reference
 
 | User wants... | Tier | Command |
-|---------------|------|---------|
+| --------------- | ------ | --------- |
 | Look up IF of a journal | read | `python3 journal_if.py lookup "Nature Medicine"` |
 | Search for a journal | read | `python3 journal_if.py search "cancer immunology"` |
 | Process a list of journals | read | `python3 journal_if.py batch journals.txt` |
@@ -65,7 +65,7 @@ Envelope shape:
 ### Error codes (inside `error.code`)
 
 | Code | Retryable | Exit | Meaning |
-|------|-----------|------|---------|
+| ------ | ----------- | ------ | --------- |
 | `not_found` | no | 3 | Lookup completed but no source matched |
 | `upstream_unavailable` | **yes** | 1 | OpenAlex API failed transiently; retry later or use `--offline` |
 | `file_not_found` | no | 2 | Input file path does not exist |
@@ -81,7 +81,7 @@ Envelope shape:
 ### When to use which
 
 | Scenario | Source |
-|----------|--------|
+| ---------- | -------- |
 | Quick check of a major journal | Bundled CSV (instant) |
 | Niche or newer journal | OpenAlex fallback (automatic) |
 | Formal submission / grant | Note: OpenAlex IF ≠ official JCR IF. Cite only as approximate. |
@@ -93,7 +93,7 @@ Envelope shape:
 ### Step 1: Detect Intent
 
 | Intent | Action |
-|--------|--------|
+| -------- | -------- |
 | "What's the IF of Nature?" | `lookup "Nature"` |
 | "Compare IF of Cell and Science" | Run `lookup` twice, compare results |
 | "Which immunology journals have IF > 20?" | `search "immunology"` then filter |
@@ -117,7 +117,7 @@ Run the appropriate `journal_if.py` command. The script handles:
 ## Understanding Impact Factor
 
 | IF Range | Typical Tier | Example |
-|----------|-------------|---------|
+| ---------- | ------------- | --------- |
 | > 30 | Elite (top 0.1%) | Nature (64.8), Science (56.9), Cell (64.5) |
 | 20–30 | Exceptional (top 1%) | Cancer Cell (50.3), Immunity (32.4) |
 | 10–20 | Excellent (top 5%) | Nature Communications (16.6), Sci Adv (13.6) |
@@ -126,6 +126,7 @@ Run the appropriate `journal_if.py` command. The script handles:
 | < 2 | Niche / new | Many field-specific and new journals |
 
 **Caveats:**
+
 - IF varies dramatically by field — a top mathematics journal may have IF < 5 while a mid-tier oncology journal has IF > 10.
 - Always compare IF within the same field.
 - The IF data year matters; values shift annually.
@@ -150,7 +151,7 @@ python3 journal_if.py batch journals.txt
 ## Troubleshooting
 
 | Issue | Solution |
-|-------|---------|
+| ------- | --------- |
 | "No data found" | Try a shorter/alternative name; use `search` for fuzzy matching |
 | OpenAlex returns 0 or None IF | The journal may be too new (needs 2+ years of data); use `--offline` to check cache only |
 | OpenAlex IF differs from JCR | Expected — OpenAlex uses its own article classification. Use for ranking, not formal citation. |

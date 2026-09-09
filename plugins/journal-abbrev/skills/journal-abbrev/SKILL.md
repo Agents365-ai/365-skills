@@ -30,7 +30,7 @@ Look up journal/magazine name abbreviations using a multi-source cascade: JabRef
 ## Quick Reference
 
 | User wants... | Tier | Command |
-|---------------|------|---------|
+| --------------- | ------ | --------- |
 | Abbreviate a journal name | read | `python3 jabbrv.py abbrev "Nature Medicine"` |
 | Expand an abbreviation | read | `python3 jabbrv.py expand "Nat. Med."` |
 | Auto-detect direction | read | `python3 jabbrv.py lookup "J. Am. Chem. Soc."` |
@@ -77,7 +77,7 @@ Envelope shape (always the same fields for every subcommand):
 ### Error codes (inside `error.code`)
 
 | Code | Retryable | Exit | Meaning |
-|------|-----------|------|---------|
+| ------ | ----------- | ------ | --------- |
 | `not_found` | no | 3 | Lookup completed but no source matched |
 | `upstream_unavailable` | **yes** | 1 | One or more upstream APIs failed transiently; the lookup could not be concluded. Carries `error.sources[]` listing each failure. Retry later. |
 | `file_not_found` | no | 2 | Input file path does not exist |
@@ -91,10 +91,10 @@ listing: `python3 jabbrv.py schema` → `data.error_codes`.
 ### Environment variables (set by host, not by agent argv)
 
 | Variable | Effect |
-|----------|--------|
+| ---------- | -------- |
 | `JABBRV_CACHE_DIR` | Override the cache directory (default: `<install>/cache`). Useful in sandboxes where the install tree is read-only. |
 | `JABBRV_OFFLINE` | Truthy (`1`/`true`/`yes`/`on`) skips AbbrevISO and NLM; only the local JabRef cache is consulted. Misses become definitive `not_found` (not retryable) since the host has declared upstream off-limits. `meta.offline: true` appears in every envelope so callers can see the policy. |
-| `NO_COLOR` | https://no-color.org convention. Any non-empty value disables color. No ANSI is emitted today; `meta.no_color: true` appears when set so callers can see the policy. |
+| `NO_COLOR` | <https://no-color.org> convention. Any non-empty value disables color. No ANSI is emitted today; `meta.no_color: true` appears when set so callers can see the policy. |
 
 Trust boundary: these are read from the process environment, not from
 arguments. The host or sandbox sets them; the agent cannot override them via
@@ -120,7 +120,7 @@ argv. Schema introspection: `python3 jabbrv.py schema` → `data.global_env`.
 ### Step 1: Detect Intent
 
 | Intent | Action |
-|--------|--------|
+| -------- | -------- |
 | Single journal name/abbreviation | Use `lookup` (auto-detect) or `abbrev`/`expand` (explicit direction) |
 | "What's the abbreviation for X?" | Use `abbrev` |
 | "What journal is X?" | Use `expand` |
@@ -158,7 +158,7 @@ JabRef provides ISO 4 style. NLM Catalog provides MEDLINE style. AbbrevISO compu
 ## Common Abbreviation Patterns
 
 | Word | Abbreviation | Word | Abbreviation |
-|------|-------------|------|-------------|
+| ------ | ------------- | ------ | ------------- |
 | Journal | J. | International | Int. |
 | American | Am. | European | Eur. |
 | Science/Sciences | Sci. | Medicine/Medical | Med. |
@@ -209,7 +209,7 @@ python3 jabbrv.py batch journals.txt
 ## Troubleshooting
 
 | Issue | Solution |
-|-------|---------|
+| ------- | --------- |
 | "No result found" | Try `search` with partial name for fuzzy matching |
 | Cache download fails | Check network connection, retry with `cache update` (or `cache rebuild` to force) |
 | Wrong abbreviation style | JabRef = ISO 4 (with dots), NLM = MEDLINE (no dots) |

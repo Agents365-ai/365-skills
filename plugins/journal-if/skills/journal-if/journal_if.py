@@ -59,6 +59,7 @@ _quiet = False
 # Cache
 # ---------------------------------------------------------------------------
 
+
 def _resolve_cache_dir() -> Path:
     env = os.environ.get("JOURNALIF_CACHE_DIR", "").strip()
     if env:
@@ -97,13 +98,15 @@ def _csv_rows(path: Path) -> list[dict]:
             if_val = float(r.get("impact_factor", r.get("if", "")))
         except (ValueError, TypeError):
             if_val = None
-        rows.append({
-            "name": name,
-            "impact_factor": if_val,
-            "year": r.get("year", "").strip() or None,
-            "category": r.get("category", "").strip() or None,
-            "issn": r.get("issn", "").strip() or None,
-        })
+        rows.append(
+            {
+                "name": name,
+                "impact_factor": if_val,
+                "year": r.get("year", "").strip() or None,
+                "category": r.get("category", "").strip() or None,
+                "issn": r.get("issn", "").strip() or None,
+            }
+        )
     return rows
 
 
@@ -138,6 +141,7 @@ def _get_cache() -> dict[str, dict]:
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _normalize(s: str) -> str:
     s = s.lower().strip()
     s = re.sub(r"^the\s+", "", s)
@@ -149,7 +153,10 @@ def _normalize(s: str) -> str:
 
 
 def _fetch(url: str, timeout: int = 15, dest: Path | None = None) -> str:
-    req = Request(url, headers={"User-Agent": f"journal-if/{CLI_VERSION} (mailto:niehu@outlook.com)"})
+    req = Request(
+        url,
+        headers={"User-Agent": f"journal-if/{CLI_VERSION} (mailto:niehu@outlook.com)"},
+    )
     with urlopen(req, timeout=timeout) as resp:
         data = resp.read().decode("utf-8")
     if dest:
@@ -164,6 +171,7 @@ def _fetch_json(url: str, timeout: int = 15) -> Any:
 # ---------------------------------------------------------------------------
 # OpenAlex fallback
 # ---------------------------------------------------------------------------
+
 
 def _lookup_openalex(name: str) -> dict | None:
     """Compute approximate 2-year IF from OpenAlex Source API.
@@ -244,6 +252,7 @@ class UpstreamUnavailable(Exception):
 # Lookup
 # ---------------------------------------------------------------------------
 
+
 def lookup_journal(name: str, allow_web: bool = True) -> dict | None:
     """Look up IF for a journal. Cascade: local cache -> OpenAlex.
 
@@ -316,13 +325,16 @@ def fuzzy_search(query: str) -> list[dict]:
             results.append(r)
 
     # Exact prefix matches first, then by name length
-    results.sort(key=lambda r: (not _normalize(r["name"]).startswith(nq), len(r["name"])))
+    results.sort(
+        key=lambda r: (not _normalize(r["name"]).startswith(nq), len(r["name"]))
+    )
     return results
 
 
 # ---------------------------------------------------------------------------
 # Batch
 # ---------------------------------------------------------------------------
+
 
 def batch_lookup(filepath: str) -> dict:
     path = Path(filepath)
@@ -336,27 +348,31 @@ def batch_lookup(filepath: str) -> dict:
         try:
             result = lookup_journal(q)
         except UpstreamUnavailable as e:
-            failed.append({
-                "query": q,
-                "error": {
-                    "code": "upstream_unavailable",
-                    "message": f"Upstream failed for '{q}'",
-                    "retryable": True,
-                    "sources": e.sources,
-                },
-            })
+            failed.append(
+                {
+                    "query": q,
+                    "error": {
+                        "code": "upstream_unavailable",
+                        "message": f"Upstream failed for '{q}'",
+                        "retryable": True,
+                        "sources": e.sources,
+                    },
+                }
+            )
             continue
         if result:
             succeeded.append(result)
         else:
-            failed.append({
-                "query": q,
-                "error": {
-                    "code": "not_found",
-                    "message": f"No IF data found for '{q}'",
-                    "retryable": False,
-                },
-            })
+            failed.append(
+                {
+                    "query": q,
+                    "error": {
+                        "code": "not_found",
+                        "message": f"No IF data found for '{q}'",
+                        "retryable": False,
+                    },
+                }
+            )
     return {"succeeded": succeeded, "failed": failed}
 
 
@@ -368,11 +384,26 @@ SCHEMA: dict[str, Any] = {
     "schema_version": SCHEMA_VERSION,
     "cli_version": CLI_VERSION,
     "global_flags": [
-        {"name": "--format", "type": "string", "choices": ["json", "table", "human", "auto"],
-         "default": "auto", "description": "Output format. 'auto' picks json when stdout is not a TTY."},
+        {
+            "name": "--format",
+            "type": "string",
+            "choices": ["json", "table", "human", "auto"],
+            "default": "auto",
+            "description": "Output format. 'auto' picks json when stdout is not a TTY.",
+        },
         {"name": "--json", "type": "bool", "description": "Alias for --format json."},
-        {"name": "--quiet", "type": "bool", "default": False, "description": "Suppress stderr progress."},
-        {"name": "--offline", "type": "bool", "default": False, "description": "Local cache only; skip OpenAlex."},
+        {
+            "name": "--quiet",
+            "type": "bool",
+            "default": False,
+            "description": "Suppress stderr progress.",
+        },
+        {
+            "name": "--offline",
+            "type": "bool",
+            "default": False,
+            "description": "Local cache only; skip OpenAlex.",
+        },
     ],
     "exit_codes": {
         "0": "success (including partial success)",
@@ -381,11 +412,31 @@ SCHEMA: dict[str, Any] = {
         "3": "not found",
     },
     "error_codes": {
-        "not_found": {"retryable": False, "exit_code": 3, "description": "No source matched the query"},
-        "upstream_unavailable": {"retryable": True, "exit_code": 1, "description": "Upstream API failed transiently"},
-        "file_not_found": {"retryable": False, "exit_code": 2, "description": "Input file does not exist"},
-        "validation_error": {"retryable": False, "exit_code": 2, "description": "Bad argument or flag combination"},
-        "runtime_error": {"retryable": True, "exit_code": 1, "description": "Unexpected internal error"},
+        "not_found": {
+            "retryable": False,
+            "exit_code": 3,
+            "description": "No source matched the query",
+        },
+        "upstream_unavailable": {
+            "retryable": True,
+            "exit_code": 1,
+            "description": "Upstream API failed transiently",
+        },
+        "file_not_found": {
+            "retryable": False,
+            "exit_code": 2,
+            "description": "Input file does not exist",
+        },
+        "validation_error": {
+            "retryable": False,
+            "exit_code": 2,
+            "description": "Bad argument or flag combination",
+        },
+        "runtime_error": {
+            "retryable": True,
+            "exit_code": 1,
+            "description": "Unexpected internal error",
+        },
     },
     "envelope": {
         "success": '{"ok": true, "data": ..., "meta": {...}}',
@@ -397,24 +448,41 @@ SCHEMA: dict[str, Any] = {
             "summary": "Look up impact factor for a journal",
             "mutates": "read",
             "params": [
-                {"name": "query", "positional": True, "nargs": "+", "type": "string",
-                 "required": True, "description": "Journal name"},
+                {
+                    "name": "query",
+                    "positional": True,
+                    "nargs": "+",
+                    "type": "string",
+                    "required": True,
+                    "description": "Journal name",
+                },
             ],
         },
         "batch": {
             "summary": "Look up IF for a list of journals (one per line)",
             "mutates": "read",
             "params": [
-                {"name": "path", "positional": True, "type": "string", "required": True,
-                 "description": "Path to text file, one journal name per line"},
+                {
+                    "name": "path",
+                    "positional": True,
+                    "type": "string",
+                    "required": True,
+                    "description": "Path to text file, one journal name per line",
+                },
             ],
         },
         "search": {
             "summary": "Fuzzy-search the local cache",
             "mutates": "read",
             "params": [
-                {"name": "query", "positional": True, "nargs": "+", "type": "string",
-                 "required": True, "description": "Search terms"},
+                {
+                    "name": "query",
+                    "positional": True,
+                    "nargs": "+",
+                    "type": "string",
+                    "required": True,
+                    "description": "Search terms",
+                },
                 {"name": "--limit", "type": "integer", "default": 15},
                 {"name": "--offset", "type": "integer", "default": 0},
             ],
@@ -423,18 +491,28 @@ SCHEMA: dict[str, Any] = {
             "summary": "Inspect or refresh the local cache",
             "mutates": "destructive",
             "params": [
-                {"name": "action", "positional": True, "type": "string", "required": True,
-                 "choices": ["status", "update"],
-                 "description": "status: inspect cache; update: re-download upstream CSV"},
+                {
+                    "name": "action",
+                    "positional": True,
+                    "type": "string",
+                    "required": True,
+                    "choices": ["status", "update"],
+                    "description": "status: inspect cache; update: re-download upstream CSV",
+                },
             ],
         },
         "schema": {
             "summary": "Print the command schema (JSON)",
             "mutates": "read",
             "params": [
-                {"name": "target", "positional": True, "type": "string",
-                 "required": False, "default": None,
-                 "description": "Optional command name; omit to list all"},
+                {
+                    "name": "target",
+                    "positional": True,
+                    "type": "string",
+                    "required": False,
+                    "default": None,
+                    "description": "Optional command name; omit to list all",
+                },
             ],
         },
     },
@@ -444,6 +522,7 @@ SCHEMA: dict[str, Any] = {
 # ---------------------------------------------------------------------------
 # Envelope helpers
 # ---------------------------------------------------------------------------
+
 
 def _meta(**extra) -> dict:
     m: dict = {"schema_version": SCHEMA_VERSION, "cli_version": CLI_VERSION}
@@ -488,6 +567,7 @@ def exit_code_for(env: dict) -> int:
 # Output formatting
 # ---------------------------------------------------------------------------
 
+
 def _json_dump(obj: Any) -> str:
     return json.dumps(obj, indent=2, ensure_ascii=False)
 
@@ -529,7 +609,9 @@ def _format_table(rows: list[dict]) -> str:
     hdr = "|" + "|".join(f" {h:<{widths[i]}} " for i, h in enumerate(headers)) + "|"
     lines = [sep, hdr, sep]
     for row in body:
-        lines.append("|" + "|".join(f" {str(row[i]):<{widths[i]}} " for i in range(4)) + "|")
+        lines.append(
+            "|" + "|".join(f" {str(row[i]):<{widths[i]}} " for i in range(4)) + "|"
+        )
     lines.append(sep)
     return "\n".join(lines)
 
@@ -550,7 +632,7 @@ def emit(env: dict, fmt: str, command: str) -> None:
         print(_json_dump(env))
         return
 
-    if env["ok"] is False:
+    if not env["ok"]:
         err = env["error"]
         print(f"Error [{err['code']}]: {err['message']}", file=sys.stderr)
         return
@@ -596,12 +678,17 @@ def emit(env: dict, fmt: str, command: str) -> None:
 # Command handlers
 # ---------------------------------------------------------------------------
 
+
 def _validate_input_file(path: str) -> dict | None:
     p = Path(path)
     if not p.exists():
-        return envelope_error("file_not_found", f"file not found: {path}", retryable=False)
+        return envelope_error(
+            "file_not_found", f"file not found: {path}", retryable=False
+        )
     if not p.is_file():
-        return envelope_error("validation_error", f"not a regular file: {path}", retryable=False)
+        return envelope_error(
+            "validation_error", f"not a regular file: {path}", retryable=False
+        )
     return None
 
 
@@ -636,7 +723,9 @@ def handle_lookup(args) -> dict:
 def handle_search(args) -> dict:
     query = " ".join(args.query)
     if args.limit < 0 or args.offset < 0:
-        return envelope_error("validation_error", "--limit and --offset must be >= 0", retryable=False)
+        return envelope_error(
+            "validation_error", "--limit and --offset must be >= 0", retryable=False
+        )
     t0 = time.time()
     all_results = fuzzy_search(query)
     latency = int((time.time() - t0) * 1000)
@@ -647,8 +736,14 @@ def handle_search(args) -> dict:
     return envelope_ok(
         page_items,
         meta={"latency_ms": latency},
-        page={"offset": start, "limit": args.limit, "returned": len(page_items),
-              "total": total, "has_more": end < total, "next_offset": end if end < total else None},
+        page={
+            "offset": start,
+            "limit": args.limit,
+            "returned": len(page_items),
+            "total": total,
+            "has_more": end < total,
+            "next_offset": end if end < total else None,
+        },
     )
 
 
@@ -667,31 +762,41 @@ def handle_cache(args) -> dict:
     if action == "status":
         CACHE_DIR.mkdir(parents=True, exist_ok=True)
         bundled_exists = BUNDLED_CSV.exists()
-        cached_files = [f.name for f in CACHE_DIR.iterdir() if f.suffix == ".csv"] if CACHE_DIR.exists() else []
+        cached_files = (
+            [f.name for f in CACHE_DIR.iterdir() if f.suffix == ".csv"]
+            if CACHE_DIR.exists()
+            else []
+        )
         try:
             idx = load_cache()
             total = len(idx)
         except Exception:
             total = None
-        return envelope_ok({
-            "cache_dir": str(CACHE_DIR),
-            "bundled_csv": str(BUNDLED_CSV),
-            "bundled_exists": bundled_exists,
-            "cached_files": cached_files,
-            "total_journals": total,
-        })
+        return envelope_ok(
+            {
+                "cache_dir": str(CACHE_DIR),
+                "bundled_csv": str(BUNDLED_CSV),
+                "bundled_exists": bundled_exists,
+                "cached_files": cached_files,
+                "total_journals": total,
+            }
+        )
 
     if action == "update":
         _cache = None
         ensure_cache()
         idx = load_cache()
         _cache = idx
-        return envelope_ok({
-            "action": "update",
-            "total_journals": len(idx),
-        })
+        return envelope_ok(
+            {
+                "action": "update",
+                "total_journals": len(idx),
+            }
+        )
 
-    return envelope_error("validation_error", f"unknown cache action: {action}", retryable=False)
+    return envelope_error(
+        "validation_error", f"unknown cache action: {action}", retryable=False
+    )
 
 
 def handle_schema(args) -> dict:
@@ -701,7 +806,8 @@ def handle_schema(args) -> dict:
     cmd = SCHEMA["commands"].get(target)
     if cmd is None:
         return envelope_error(
-            "not_found", f"No such command: {target}",
+            "not_found",
+            f"No such command: {target}",
             retryable=False,
             known_commands=sorted(SCHEMA["commands"].keys()),
         )
@@ -720,6 +826,7 @@ HANDLERS = {
 # ---------------------------------------------------------------------------
 # Argparse
 # ---------------------------------------------------------------------------
+
 
 def _add_param(sp: argparse.ArgumentParser, param: dict) -> None:
     name = param["name"]
@@ -748,14 +855,30 @@ def _add_param(sp: argparse.ArgumentParser, param: dict) -> None:
 
 def _make_common_parser() -> argparse.ArgumentParser:
     common = argparse.ArgumentParser(add_help=False)
-    common.add_argument("--format", choices=["json", "table", "human", "auto"],
-                        default=argparse.SUPPRESS, help="Output format")
-    common.add_argument("--json", action="store_true", default=argparse.SUPPRESS,
-                        help="Alias for --format json")
-    common.add_argument("--quiet", action="store_true", default=argparse.SUPPRESS,
-                        help="Suppress stderr progress")
-    common.add_argument("--offline", action="store_true", default=argparse.SUPPRESS,
-                        help="Local cache only; skip OpenAlex API calls")
+    common.add_argument(
+        "--format",
+        choices=["json", "table", "human", "auto"],
+        default=argparse.SUPPRESS,
+        help="Output format",
+    )
+    common.add_argument(
+        "--json",
+        action="store_true",
+        default=argparse.SUPPRESS,
+        help="Alias for --format json",
+    )
+    common.add_argument(
+        "--quiet",
+        action="store_true",
+        default=argparse.SUPPRESS,
+        help="Suppress stderr progress",
+    )
+    common.add_argument(
+        "--offline",
+        action="store_true",
+        default=argparse.SUPPRESS,
+        help="Local cache only; skip OpenAlex API calls",
+    )
     return common
 
 
@@ -771,8 +894,12 @@ def build_parser() -> argparse.ArgumentParser:
     sub = p.add_subparsers(dest="command", metavar="<command>")
 
     for cmd_name, cmd_spec in SCHEMA["commands"].items():
-        sp = sub.add_parser(cmd_name, parents=[common], help=cmd_spec["summary"],
-                            formatter_class=argparse.RawDescriptionHelpFormatter)
+        sp = sub.add_parser(
+            cmd_name,
+            parents=[common],
+            help=cmd_spec["summary"],
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+        )
         for param in cmd_spec["params"]:
             _add_param(sp, param)
     return p
@@ -781,6 +908,7 @@ def build_parser() -> argparse.ArgumentParser:
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
+
 
 def main() -> int:
     global _quiet
@@ -804,7 +932,9 @@ def main() -> int:
     fmt = resolve_format(args)
     handler = HANDLERS.get(args.command)
     if handler is None:
-        env = envelope_error("validation_error", f"unknown command: {args.command}", retryable=False)
+        env = envelope_error(
+            "validation_error", f"unknown command: {args.command}", retryable=False
+        )
         emit(env, fmt, args.command)
         return EXIT_VALIDATION
 
