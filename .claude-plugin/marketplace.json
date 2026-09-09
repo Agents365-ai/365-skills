@@ -497,6 +497,27 @@
       ]
     },
     {
+      "name": "xfetch",
+      "source": "./plugins/xfetch",
+      "description": "Fetch and export public X (Twitter) data with a self-contained Python CLI built on the twikit library — no developer API keys, just the user's own login cookies. Covers user profiles, a user's tweets/replies/likes, single tweets, threads, search, followers/following, home/bookmark timelines, with JSON/JSONL/CSV/SQLite output and resumable pagination. Use whenever the user wants to scrape, download, collect, archive, monitor, or analyze tweets or X/Twitter accounts, export a timeline or follower list to a file or dataset, pull X data for research, or build a tweet corpus — even if they don't name the tool. Requires the user's own X login cookies (auth_token + ct0, or username/password login).",
+      "version": "0.3.0",
+      "author": {
+        "name": "Agents365-ai"
+      },
+      "repository": "https://github.com/Agents365-ai/xfetch-skill",
+      "license": "MIT",
+      "keywords": [
+        "xfetch",
+        "twitter",
+        "x",
+        "scraper",
+        "tweets",
+        "data-export",
+        "cli",
+        "social-media"
+      ]
+    },
+    {
       "name": "yt2bb",
       "source": "./plugins/yt2bb",
       "description": "Repurpose YouTube videos for Bilibili — download via yt-dlp, transcribe with whisper, generate bilingual (English-Chinese) SRT subtitles, hardcode them with ffmpeg",

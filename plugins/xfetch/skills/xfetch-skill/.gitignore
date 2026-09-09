@@ -1,0 +1,9 @@
+CLAUDE.md
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.db
+*.jsonl
+*.log
+cookies.json

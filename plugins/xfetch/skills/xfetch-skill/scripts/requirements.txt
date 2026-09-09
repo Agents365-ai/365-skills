@@ -1,0 +1,3 @@
+twikit>=2.3.3          # source of current X GraphQL query IDs + feature flags
+httpx>=0.24            # HTTP client (also a twikit dependency)
+browser_cookie3>=0.19.1   # optional — only for `auth extract`
