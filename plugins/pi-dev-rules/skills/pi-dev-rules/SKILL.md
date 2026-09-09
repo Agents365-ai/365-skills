@@ -1,9 +1,9 @@
 ---
 name: pi-dev-rules
-version: 0.2.0
+version: 0.2.1
 description: Authoritative reference for Pi (`@earendil-works/pi-coding-agent`): install, configure, run, and extend. Use when the user asks about Pi CLI/flags/commands, providers/models/auth, settings/compaction/sessions, security/trust, extensions, skills, prompt templates, themes, packages, custom providers, TUI components, the SDK, RPC mode, or JSON streaming. Also use for Pi's design philosophy and opinionated choices (why minimal, 4 tools, YOLO, no MCP/plan mode/to-dos/sub-agents) and the creator Mario Zechner's coding-agent blog post.
 license: MIT
-metadata: {"source":"https://pi.dev/docs/latest","docVersion":"latest","fetched":"2026-09-04"}
+metadata: {"source":"https://pi.dev/docs/latest","docVersion":"latest","fetched":"2026-09-04","version":"0.2.1"}
 ---
 
 # Pi Dev Rules
