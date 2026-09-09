@@ -1,0 +1,46 @@
+# SkillSpector baseline — findings listed here are suppressed on future scans.
+# Reviewed 2026-07-14 (v0.1.0). All findings are by-design for an API-backed
+# skill or false positives; no code change warranted. Future scans surface only
+# NEW/residual HIGH+ findings. See docs/SUPPRESSION.md.
+version: 1
+rules: []
+fingerprints:
+  - hash: sha256:186be574c0c9719f
+    rule_id: AST4
+    file: journal_meta.py
+    reason: >-
+      Executable Python CLI, expected; skill runs via `python3 journal_meta.py`.
+  - hash: sha256:ded96eed814abf50
+    rule_id: LP1
+    file: journal_meta.py
+    reason: >-
+      Network capability by design: resolves papers via OpenAlex/Crossref
+      HTTP APIs.
+  - hash: sha256:b0d9811ae25c4ab6
+    rule_id: LP1
+    file: journal_meta.py
+    reason: >-
+      Env-var reads (mailto / sibling CLI paths) are host-set config, not
+      secrets.
+  - hash: sha256:832a7109d77f19ff
+    rule_id: E1
+    file: journal_meta.py
+    reason: >-
+      OpenAlex API call: documented public endpoint, no secrets/PII sent.
+  - hash: sha256:e59c34ffc07be56d
+    rule_id: E1
+    file: journal_meta.py
+    reason: >-
+      Crossref API fallback: documented public endpoint, no secrets/PII sent.
+  - hash: sha256:1fe8616509b33fbe
+    rule_id: E1
+    file: journal_meta.py
+    reason: >-
+      AbbrevISO API fallback: documented public endpoint, no secrets/PII
+      sent.
+  - hash: sha256:3ae3d34d7b43cbfc
+    rule_id: OH1
+    file: journal_meta.py
+    reason: >-
+      False positive: list-form subprocess.run (no shell=True); journal name
+      is a single argv element, not a shell string.

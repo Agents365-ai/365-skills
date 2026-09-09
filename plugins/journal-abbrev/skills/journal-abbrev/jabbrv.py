@@ -59,7 +59,12 @@ def _is_offline() -> bool:
     """Truthy JABBRV_OFFLINE disables AbbrevISO and NLM lookups. The local
     JabRef cache still works. Treated as a definitive miss (not transient)
     because the user/system has decided not to consult these sources."""
-    return os.environ.get("JABBRV_OFFLINE", "").strip().lower() in ("1", "true", "yes", "on")
+    return os.environ.get("JABBRV_OFFLINE", "").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+        "on",
+    )
 
 
 def _no_color() -> bool:
@@ -97,9 +102,9 @@ JABREF_FILES = [
 
 # Exit codes (documented, stable, distinct per failure class)
 EXIT_OK = 0
-EXIT_RUNTIME = 1      # upstream error, I/O error, unexpected exception
-EXIT_VALIDATION = 2   # bad argv, missing input file, invalid flag combination
-EXIT_NOT_FOUND = 3    # the looked-up journal does not exist in any source
+EXIT_RUNTIME = 1  # upstream error, I/O error, unexpected exception
+EXIT_VALIDATION = 2  # bad argv, missing input file, invalid flag combination
+EXIT_NOT_FOUND = 3  # the looked-up journal does not exist in any source
 
 # Per-process cache telemetry — surfaced in envelope.meta so agents can detect
 # silent cache degradation without a separate command
@@ -146,17 +151,23 @@ def _try_source(fn, *args, transient: list[dict], **kwargs):
 # Boundary validation
 # ---------------------------------------------------------------------------
 
+
 def _validate_input_file(path: str) -> dict | None:
     """Boundary check for commands that read a user-supplied file. Returns an
     error envelope if the path is missing or not a regular file, else None.
     Internal processing functions assume the path is valid after this passes."""
     p = Path(path)
     if not p.exists():
-        return envelope_error("file_not_found", f"file not found: {path}",
-                              retryable=False, path=path)
+        return envelope_error(
+            "file_not_found", f"file not found: {path}", retryable=False, path=path
+        )
     if not p.is_file():
-        return envelope_error("validation_error", f"not a regular file: {path}",
-                              retryable=False, path=path)
+        return envelope_error(
+            "validation_error",
+            f"not a regular file: {path}",
+            retryable=False,
+            path=path,
+        )
     return None
 
 
@@ -164,8 +175,11 @@ def _validate_input_file(path: str) -> dict | None:
 # HTTP helpers
 # ---------------------------------------------------------------------------
 
+
 def _fetch(url: str, timeout: int = 15) -> str:
-    req = Request(url, headers={"User-Agent": f"jabbrv/{CLI_VERSION} (journal-abbrev-skill)"})
+    req = Request(
+        url, headers={"User-Agent": f"jabbrv/{CLI_VERSION} (journal-abbrev-skill)"}
+    )
     with urlopen(req, timeout=timeout) as resp:
         return resp.read().decode("utf-8")
 
@@ -177,6 +191,7 @@ def _fetch_json(url: str, timeout: int = 15) -> Any:
 # ---------------------------------------------------------------------------
 # Cache
 # ---------------------------------------------------------------------------
+
 
 def ensure_cache(verbose: bool = True, target_dir: Path | None = None) -> None:
     """Download any JabRef CSV files not present in `target_dir` (default
@@ -267,6 +282,7 @@ def _get_cache() -> tuple[dict, dict]:
 # Local lookup
 # ---------------------------------------------------------------------------
 
+
 def lookup_local(query: str) -> dict | None:
     full_to_abbrev, abbrev_to_full = _get_cache()
     nq = _normalize(query)
@@ -274,15 +290,21 @@ def lookup_local(query: str) -> dict | None:
     if nq in full_to_abbrev:
         full, abbrev = full_to_abbrev[nq]
         return {
-            "query": query, "full": full, "abbreviation": abbrev,
-            "direction": "abbreviate", "source": "JabRef",
+            "query": query,
+            "full": full,
+            "abbreviation": abbrev,
+            "direction": "abbreviate",
+            "source": "JabRef",
         }
 
     if nq in abbrev_to_full:
         abbrev, full = abbrev_to_full[nq]
         return {
-            "query": query, "full": full, "abbreviation": abbrev,
-            "direction": "expand", "source": "JabRef",
+            "query": query,
+            "full": full,
+            "abbreviation": abbrev,
+            "direction": "expand",
+            "source": "JabRef",
         }
 
     return None
@@ -310,13 +332,16 @@ def fuzzy_search(query: str) -> list[dict]:
             results.append({"full": full, "abbreviation": abbrev, "source": "JabRef"})
 
     # Exact prefix matches first, then by length
-    results.sort(key=lambda r: (not _normalize(r["full"]).startswith(nq), len(r["full"])))
+    results.sort(
+        key=lambda r: (not _normalize(r["full"]).startswith(nq), len(r["full"]))
+    )
     return results
 
 
 # ---------------------------------------------------------------------------
 # Upstream APIs
 # ---------------------------------------------------------------------------
+
 
 def lookup_abbreviso(name: str) -> dict | None:
     """Look up abbreviation via AbbrevISO (forward only).
@@ -346,8 +371,12 @@ def lookup_abbreviso(name: str) -> dict | None:
 
     if result and result != name:
         return {
-            "query": name, "full": name, "abbreviation": result,
-            "direction": "abbreviate", "source": "AbbrevISO", "standard": "ISO 4",
+            "query": name,
+            "full": name,
+            "abbreviation": result,
+            "direction": "abbreviate",
+            "source": "AbbrevISO",
+            "standard": "ISO 4",
         }
     return None
 
@@ -376,7 +405,9 @@ def lookup_nlm(query: str, direction: str = "abbreviate") -> dict | None:
     else:
         term = f'"{query}"[All Fields]'
 
-    search_url = f"{base}/esearch.fcgi?db=nlmcatalog&term={quote(term)}&retmax=3&retmode=json"
+    search_url = (
+        f"{base}/esearch.fcgi?db=nlmcatalog&term={quote(term)}&retmax=3&retmode=json"
+    )
     try:
         _last_nlm_time = time.time()
         data = _fetch_json(search_url)
@@ -392,18 +423,28 @@ def lookup_nlm(query: str, direction: str = "abbreviate") -> dict | None:
         fetch_url = f"{base}/efetch.fcgi?db=nlmcatalog&id={ids[0]}&retmode=xml"
         xml_text = _fetch(fetch_url)
         root = ET.fromstring(xml_text)
-    except (HTTPError, URLError, TimeoutError, ET.ParseError, json.JSONDecodeError) as e:
+    except (
+        HTTPError,
+        URLError,
+        TimeoutError,
+        ET.ParseError,
+        json.JSONDecodeError,
+    ) as e:
         raise UpstreamUnavailable([{"source": "NLM Catalog", "error": str(e)}]) from e
 
     title_el = root.find(".//TitleMain/Title")
     abbrev_el = root.find(".//MedlineTA")
 
     if title_el is not None and abbrev_el is not None:
-        full = title_el.text.strip().rstrip(".")
-        abbrev = abbrev_el.text.strip()
+        full = (title_el.text or "").strip().rstrip(".")
+        abbrev = (abbrev_el.text or "").strip()
         return {
-            "query": query, "full": full, "abbreviation": abbrev,
-            "direction": direction, "source": "NLM Catalog", "standard": "MEDLINE",
+            "query": query,
+            "full": full,
+            "abbreviation": abbrev,
+            "direction": direction,
+            "source": "NLM Catalog",
+            "standard": "MEDLINE",
         }
     return None
 
@@ -411,6 +452,7 @@ def lookup_nlm(query: str, direction: str = "abbreviate") -> dict | None:
 # ---------------------------------------------------------------------------
 # Cascade
 # ---------------------------------------------------------------------------
+
 
 def abbreviate(name: str) -> dict | None:
     """Full name -> abbreviation. Cascade: local -> AbbrevISO -> NLM.
@@ -501,6 +543,7 @@ def auto_lookup(query: str) -> dict | None:
 # BibTeX processing
 # ---------------------------------------------------------------------------
 
+
 def process_bib(
     filepath: str,
     direction: str = "abbreviate",
@@ -529,9 +572,13 @@ def process_bib(
             return m.group(0)
 
         if result:
-            new_name = result["abbreviation"] if direction == "abbreviate" else result["full"]
+            new_name = (
+                result["abbreviation"] if direction == "abbreviate" else result["full"]
+            )
             if new_name != name:
-                changes.append({"old": name, "new": new_name, "source": result["source"]})
+                changes.append(
+                    {"old": name, "new": new_name, "source": result["source"]}
+                )
                 return f"{prefix}{new_name}{suffix}"
         return m.group(0)
 
@@ -578,27 +625,31 @@ def batch_lookup(filepath: str) -> dict:
         try:
             result = auto_lookup(name)
         except UpstreamUnavailable as e:
-            failed.append({
-                "query": name,
-                "error": {
-                    "code": "upstream_unavailable",
-                    "message": f"upstream sources failed transiently for '{name}'",
-                    "retryable": True,
-                    "sources": e.sources,
-                },
-            })
+            failed.append(
+                {
+                    "query": name,
+                    "error": {
+                        "code": "upstream_unavailable",
+                        "message": f"upstream sources failed transiently for '{name}'",
+                        "retryable": True,
+                        "sources": e.sources,
+                    },
+                }
+            )
             continue
         if result:
             succeeded.append(result)
         else:
-            failed.append({
-                "query": name,
-                "error": {
-                    "code": "not_found",
-                    "message": f"No match for '{name}'",
-                    "retryable": False,
-                },
-            })
+            failed.append(
+                {
+                    "query": name,
+                    "error": {
+                        "code": "not_found",
+                        "message": f"No match for '{name}'",
+                        "retryable": False,
+                    },
+                }
+            )
     return {"succeeded": succeeded, "failed": failed}
 
 
@@ -682,8 +733,8 @@ SCHEMA: dict[str, Any] = {
             "type": "bool",
             "default": False,
             "description": "Suppress stderr progress (cache download chatter, warnings). "
-                           "Does not affect the envelope on stdout. Useful when piping into an "
-                           "orchestrator that should see only structured output.",
+            "Does not affect the envelope on stdout. Useful when piping into an "
+            "orchestrator that should see only structured output.",
             "since": "1.3.0",
         },
     ],
@@ -698,10 +749,10 @@ SCHEMA: dict[str, Any] = {
         {
             "name": "JABBRV_OFFLINE",
             "purpose": "Truthy value (1/true/yes/on) disables AbbrevISO and NLM "
-                       "lookups; only the local JabRef cache is consulted. Misses "
-                       "in offline mode are definitive (not retryable) — the system "
-                       "has declared upstream sources off-limits. The envelope's "
-                       "meta.offline flag is set to true so the caller can see it.",
+            "lookups; only the local JabRef cache is consulted. Misses "
+            "in offline mode are definitive (not retryable) — the system "
+            "has declared upstream sources off-limits. The envelope's "
+            "meta.offline flag is set to true so the caller can see it.",
             "default": "unset (online)",
             "trust": "system",
             "since": "1.2.0",
@@ -709,8 +760,8 @@ SCHEMA: dict[str, Any] = {
         {
             "name": "NO_COLOR",
             "purpose": "https://no-color.org convention: any non-empty value disables color "
-                       "output. The CLI emits no ANSI today, but the variable is honored so "
-                       "future color paths inherit the convention.",
+            "output. The CLI emits no ANSI today, but the variable is honored so "
+            "future color paths inherit the convention.",
             "default": "unset (color allowed)",
             "trust": "system",
             "since": "1.3.0",
@@ -723,18 +774,33 @@ SCHEMA: dict[str, Any] = {
         "3": "not found",
     },
     "error_codes": {
-        "not_found": {"retryable": False, "exit_code": 3,
-                      "description": "Lookup completed but no source matched"},
-        "upstream_unavailable": {"retryable": True, "exit_code": 1,
-                                 "description": "One or more upstream APIs failed transiently; "
-                                                "the lookup cannot be concluded — retry later. "
-                                                "Carries error.sources[] listing each failure."},
-        "file_not_found": {"retryable": False, "exit_code": 2,
-                           "description": "Input file path does not exist"},
-        "validation_error": {"retryable": False, "exit_code": 2,
-                             "description": "Bad argument or flag combination"},
-        "runtime_error": {"retryable": True, "exit_code": 1,
-                          "description": "Unexpected internal error"},
+        "not_found": {
+            "retryable": False,
+            "exit_code": 3,
+            "description": "Lookup completed but no source matched",
+        },
+        "upstream_unavailable": {
+            "retryable": True,
+            "exit_code": 1,
+            "description": "One or more upstream APIs failed transiently; "
+            "the lookup cannot be concluded — retry later. "
+            "Carries error.sources[] listing each failure.",
+        },
+        "file_not_found": {
+            "retryable": False,
+            "exit_code": 2,
+            "description": "Input file path does not exist",
+        },
+        "validation_error": {
+            "retryable": False,
+            "exit_code": 2,
+            "description": "Bad argument or flag combination",
+        },
+        "runtime_error": {
+            "retryable": True,
+            "exit_code": 1,
+            "description": "Unexpected internal error",
+        },
     },
     "envelope": {
         "success": '{"ok": true, "data": ..., "meta": {...}}',
@@ -747,8 +813,14 @@ SCHEMA: dict[str, Any] = {
             "since": "1.0.0",
             "mutates": "read",
             "params": [
-                {"name": "query", "positional": True, "nargs": "+", "type": "string",
-                 "required": True, "description": "Journal name or abbreviation (may contain spaces)"},
+                {
+                    "name": "query",
+                    "positional": True,
+                    "nargs": "+",
+                    "type": "string",
+                    "required": True,
+                    "description": "Journal name or abbreviation (may contain spaces)",
+                },
             ],
         },
         "abbrev": {
@@ -756,8 +828,14 @@ SCHEMA: dict[str, Any] = {
             "since": "1.0.0",
             "mutates": "read",
             "params": [
-                {"name": "query", "positional": True, "nargs": "+", "type": "string",
-                 "required": True, "description": "Full journal name"},
+                {
+                    "name": "query",
+                    "positional": True,
+                    "nargs": "+",
+                    "type": "string",
+                    "required": True,
+                    "description": "Full journal name",
+                },
             ],
         },
         "expand": {
@@ -765,8 +843,14 @@ SCHEMA: dict[str, Any] = {
             "since": "1.0.0",
             "mutates": "read",
             "params": [
-                {"name": "query", "positional": True, "nargs": "+", "type": "string",
-                 "required": True, "description": "Journal abbreviation"},
+                {
+                    "name": "query",
+                    "positional": True,
+                    "nargs": "+",
+                    "type": "string",
+                    "required": True,
+                    "description": "Journal abbreviation",
+                },
             ],
         },
         "search": {
@@ -774,12 +858,26 @@ SCHEMA: dict[str, Any] = {
             "since": "1.0.0",
             "mutates": "read",
             "params": [
-                {"name": "query", "positional": True, "nargs": "+", "type": "string",
-                 "required": True, "description": "Search terms (all terms must appear)"},
-                {"name": "--limit", "type": "integer", "default": 15,
-                 "description": "Maximum results to return (default 15)"},
-                {"name": "--offset", "type": "integer", "default": 0,
-                 "description": "Skip this many results (for pagination)"},
+                {
+                    "name": "query",
+                    "positional": True,
+                    "nargs": "+",
+                    "type": "string",
+                    "required": True,
+                    "description": "Search terms (all terms must appear)",
+                },
+                {
+                    "name": "--limit",
+                    "type": "integer",
+                    "default": 15,
+                    "description": "Maximum results to return (default 15)",
+                },
+                {
+                    "name": "--offset",
+                    "type": "integer",
+                    "default": 0,
+                    "description": "Skip this many results (for pagination)",
+                },
             ],
         },
         "bib": {
@@ -787,22 +885,43 @@ SCHEMA: dict[str, Any] = {
             "since": "1.0.0",
             "mutates": "write",
             "params": [
-                {"name": "path", "positional": True, "type": "string", "required": True,
-                 "description": "Path to .bib file"},
-                {"name": "--expand", "type": "bool", "default": False,
-                 "description": "Expand abbreviations (default: abbreviate)"},
-                {"name": "--output", "type": "string", "default": None,
-                 "description": "Explicit output path (default: <stem>_abbrev.bib / <stem>_full.bib)"},
-                {"name": "--dry-run", "type": "bool", "default": False,
-                 "description": "Preview changes without writing the output file"},
-                {"name": "--idempotency-key", "type": "string", "default": None,
-                 "description": "Opaque token ([A-Za-z0-9._-]{1,64}). When set, the success "
-                                "envelope is cached next to the output file as "
-                                "<output>.<key>.envelope.json. A retried call with the same key "
-                                "returns the cached envelope (meta.idempotent_replay: true) "
-                                "instead of rerunning the rewrite — safe to use after transient "
-                                "network or upstream failures.",
-                 "since": "1.3.0"},
+                {
+                    "name": "path",
+                    "positional": True,
+                    "type": "string",
+                    "required": True,
+                    "description": "Path to .bib file",
+                },
+                {
+                    "name": "--expand",
+                    "type": "bool",
+                    "default": False,
+                    "description": "Expand abbreviations (default: abbreviate)",
+                },
+                {
+                    "name": "--output",
+                    "type": "string",
+                    "default": None,
+                    "description": "Explicit output path (default: <stem>_abbrev.bib / <stem>_full.bib)",
+                },
+                {
+                    "name": "--dry-run",
+                    "type": "bool",
+                    "default": False,
+                    "description": "Preview changes without writing the output file",
+                },
+                {
+                    "name": "--idempotency-key",
+                    "type": "string",
+                    "default": None,
+                    "description": "Opaque token ([A-Za-z0-9._-]{1,64}). When set, the success "
+                    "envelope is cached next to the output file as "
+                    "<output>.<key>.envelope.json. A retried call with the same key "
+                    "returns the cached envelope (meta.idempotent_replay: true) "
+                    "instead of rerunning the rewrite — safe to use after transient "
+                    "network or upstream failures.",
+                    "since": "1.3.0",
+                },
             ],
         },
         "batch": {
@@ -810,10 +929,19 @@ SCHEMA: dict[str, Any] = {
             "since": "1.0.0",
             "mutates": "read",
             "params": [
-                {"name": "path", "positional": True, "type": "string", "required": True,
-                 "description": "Path to text file, one journal name per line"},
-                {"name": "--stream", "type": "bool", "default": False,
-                 "description": "Emit NDJSON — one result per line, final summary line"},
+                {
+                    "name": "path",
+                    "positional": True,
+                    "type": "string",
+                    "required": True,
+                    "description": "Path to text file, one journal name per line",
+                },
+                {
+                    "name": "--stream",
+                    "type": "bool",
+                    "default": False,
+                    "description": "Emit NDJSON — one result per line, final summary line",
+                },
             ],
         },
         "cache": {
@@ -826,28 +954,45 @@ SCHEMA: dict[str, Any] = {
                 "rebuild": "destructive",
             },
             "params": [
-                {"name": "action", "positional": True, "type": "string", "required": True,
-                 "choices": ["status", "update", "rebuild"],
-                 "description": "status: inspect cache (read); update: download missing files (write); "
-                                "rebuild: atomically replace all cached CSVs with a fresh download "
-                                "(destructive — but old cache is preserved if the download fails)"},
-                {"name": "--dry-run", "type": "bool", "default": False,
-                 "description": "For update: list files that would be downloaded. "
-                                "For rebuild: list files that would be deleted and redownloaded. "
-                                "No-op for status. Nothing is written either way."},
-                {"name": "--yes", "type": "bool", "default": False,
-                 "description": "Record explicit destructive intent in meta.confirmed. The CLI "
-                                "never prompts (it is always non-interactive), so --yes does not "
-                                "gate the operation; it lets policy layers and audit logs "
-                                "distinguish 'agent explicitly opted in' from 'agent stumbled "
-                                "into a destructive command name'.",
-                 "since": "1.3.0"},
-                {"name": "--idempotency-key", "type": "string", "default": None,
-                 "description": "Opaque token ([A-Za-z0-9._-]{1,64}). For 'rebuild': the success "
-                                "envelope is cached as <cache-dir>.rebuild.<key>.envelope.json; "
-                                "a retried call with the same key returns the cached envelope "
-                                "(meta.idempotent_replay: true) instead of re-downloading.",
-                 "since": "1.3.1"},
+                {
+                    "name": "action",
+                    "positional": True,
+                    "type": "string",
+                    "required": True,
+                    "choices": ["status", "update", "rebuild"],
+                    "description": "status: inspect cache (read); update: download missing files (write); "
+                    "rebuild: atomically replace all cached CSVs with a fresh download "
+                    "(destructive — but old cache is preserved if the download fails)",
+                },
+                {
+                    "name": "--dry-run",
+                    "type": "bool",
+                    "default": False,
+                    "description": "For update: list files that would be downloaded. "
+                    "For rebuild: list files that would be deleted and redownloaded. "
+                    "No-op for status. Nothing is written either way.",
+                },
+                {
+                    "name": "--yes",
+                    "type": "bool",
+                    "default": False,
+                    "description": "Record explicit destructive intent in meta.confirmed. The CLI "
+                    "never prompts (it is always non-interactive), so --yes does not "
+                    "gate the operation; it lets policy layers and audit logs "
+                    "distinguish 'agent explicitly opted in' from 'agent stumbled "
+                    "into a destructive command name'.",
+                    "since": "1.3.0",
+                },
+                {
+                    "name": "--idempotency-key",
+                    "type": "string",
+                    "default": None,
+                    "description": "Opaque token ([A-Za-z0-9._-]{1,64}). For 'rebuild': the success "
+                    "envelope is cached as <cache-dir>.rebuild.<key>.envelope.json; "
+                    "a retried call with the same key returns the cached envelope "
+                    "(meta.idempotent_replay: true) instead of re-downloading.",
+                    "since": "1.3.1",
+                },
             ],
         },
         "schema": {
@@ -855,9 +1000,14 @@ SCHEMA: dict[str, Any] = {
             "since": "1.0.0",
             "mutates": "read",
             "params": [
-                {"name": "target", "positional": True, "type": "string",
-                 "required": False, "default": None,
-                 "description": "Optional command name; omit to list all commands"},
+                {
+                    "name": "target",
+                    "positional": True,
+                    "type": "string",
+                    "required": False,
+                    "default": None,
+                    "description": "Optional command name; omit to list all commands",
+                },
             ],
         },
     },
@@ -867,6 +1017,7 @@ SCHEMA: dict[str, Any] = {
 # ---------------------------------------------------------------------------
 # Envelope helpers
 # ---------------------------------------------------------------------------
+
 
 def _meta(**extra) -> dict:
     m: dict = {
@@ -931,7 +1082,12 @@ def exit_code_for(env: dict) -> int:
     code = err.get("code", "")
     if code == "not_found":
         return EXIT_NOT_FOUND
-    if code in ("validation_error", "file_not_found", "invalid_argument", "file_exists"):
+    if code in (
+        "validation_error",
+        "file_not_found",
+        "invalid_argument",
+        "file_exists",
+    ):
         return EXIT_VALIDATION
     # upstream_unavailable, runtime_error, and anything unrecognized fall here.
     # Agents should branch on error.code + error.retryable, not exit alone.
@@ -941,6 +1097,7 @@ def exit_code_for(env: dict) -> int:
 # ---------------------------------------------------------------------------
 # Output formatting
 # ---------------------------------------------------------------------------
+
 
 def _json_dump(obj: Any) -> str:
     return json.dumps(obj, indent=2, ensure_ascii=False)
@@ -961,8 +1118,14 @@ def _format_table(rows: list[dict]) -> str:
     if not rows:
         return "No results."
     headers = ["Full Name", "Abbreviation", "Source"]
-    body = [(r.get("full", ""), r.get("abbreviation", ""), r.get("source", "")) for r in rows]
-    widths = [max(len(h), max((len(r[i]) for r in body), default=0)) for i, h in enumerate(headers)]
+    body = [
+        (r.get("full", ""), r.get("abbreviation", ""), r.get("source", ""))
+        for r in rows
+    ]
+    widths = [
+        max(len(h), max((len(r[i]) for r in body), default=0))
+        for i, h in enumerate(headers)
+    ]
     sep = "+" + "+".join("-" * (w + 2) for w in widths) + "+"
     hdr = "|" + "|".join(f" {h:<{widths[i]}} " for i, h in enumerate(headers)) + "|"
     lines = [sep, hdr, sep]
@@ -999,7 +1162,7 @@ def emit(env: dict, fmt: str, command: str) -> None:
         return
 
     # -------- Human / table mode --------
-    if env["ok"] is False:
+    if not env["ok"]:
         err = env["error"]
         print(f"Error [{err['code']}]: {err['message']}", file=sys.stderr)
         return
@@ -1078,6 +1241,7 @@ def emit(env: dict, fmt: str, command: str) -> None:
 # ---------------------------------------------------------------------------
 # Command handlers
 # ---------------------------------------------------------------------------
+
 
 def _lookup_handler(query: str, fn, miss_message: str) -> dict:
     """Shared body for handle_lookup/abbrev/expand. `fn` is one of
@@ -1183,7 +1347,7 @@ def handle_bib(args) -> dict:
                 cached = json.loads(replay_path.read_text(encoding="utf-8"))
             except (OSError, json.JSONDecodeError):
                 cached = None
-            if isinstance(cached, dict) and cached.get("ok") is True:
+            if isinstance(cached, dict) and cached.get("ok"):
                 meta = cached.setdefault("meta", {})
                 meta["idempotent_replay"] = True
                 meta["idempotency_key"] = key
@@ -1197,7 +1361,9 @@ def handle_bib(args) -> dict:
             dry_run=args.dry_run,
         )
     except Exception as e:
-        return envelope_error("runtime_error", f"process_bib failed: {e}", retryable=False)
+        return envelope_error(
+            "runtime_error", f"process_bib failed: {e}", retryable=False
+        )
 
     env = envelope_ok(result)
 
@@ -1248,35 +1414,41 @@ def handle_cache(args) -> dict:
                 total_journals = len(fta)
             except Exception:
                 total_journals = None
-        return envelope_ok({
-            "cache_dir": str(CACHE_DIR),
-            "files_total": len(JABREF_FILES),
-            "files_present": len(present),
-            "files_missing": missing,
-            "total_journals": total_journals,
-            "last_updated": last_updated,
-        })
+        return envelope_ok(
+            {
+                "cache_dir": str(CACHE_DIR),
+                "files_total": len(JABREF_FILES),
+                "files_present": len(present),
+                "files_missing": missing,
+                "total_journals": total_journals,
+                "last_updated": last_updated,
+            }
+        )
 
     if action == "update":
         missing = [f for f in JABREF_FILES if not (CACHE_DIR / f).exists()]
         if dry_run:
-            return envelope_ok({
-                "action": "update",
-                "dry_run": True,
-                "would_download": missing,
-                "would_download_count": len(missing),
-            })
+            return envelope_ok(
+                {
+                    "action": "update",
+                    "dry_run": True,
+                    "would_download": missing,
+                    "would_download_count": len(missing),
+                }
+            )
         _cache = None
         ensure_cache()
         fta, ata = load_cache()
         _cache = (fta, ata)
-        return envelope_ok({
-            "action": "update",
-            "fetched_this_run": _cache_stats["fetched_this_run"],
-            "files_failed": _cache_stats["files_failed"],
-            "files_missing": _cache_stats["files_missing"],
-            "total_journals": len(fta),
-        })
+        return envelope_ok(
+            {
+                "action": "update",
+                "fetched_this_run": _cache_stats["fetched_this_run"],
+                "files_failed": _cache_stats["files_failed"],
+                "files_missing": _cache_stats["files_missing"],
+                "total_journals": len(fta),
+            }
+        )
 
     if action == "rebuild":
         confirmed = bool(getattr(args, "yes", False))
@@ -1293,13 +1465,15 @@ def handle_cache(args) -> dict:
 
         replay_path: Path | None = None
         if key and not dry_run:
-            replay_path = CACHE_DIR.parent / f"{CACHE_DIR.name}.rebuild.{key}.envelope.json"
+            replay_path = (
+                CACHE_DIR.parent / f"{CACHE_DIR.name}.rebuild.{key}.envelope.json"
+            )
             if replay_path.exists():
                 try:
                     cached = json.loads(replay_path.read_text(encoding="utf-8"))
                 except (OSError, json.JSONDecodeError):
                     cached = None
-                if isinstance(cached, dict) and cached.get("ok") is True:
+                if isinstance(cached, dict) and cached.get("ok"):
                     meta = cached.setdefault("meta", {})
                     meta["idempotent_replay"] = True
                     meta["idempotency_key"] = key
@@ -1307,7 +1481,8 @@ def handle_cache(args) -> dict:
 
         existing_csvs = (
             sorted(f.name for f in CACHE_DIR.iterdir() if f.suffix == ".csv")
-            if CACHE_DIR.exists() else []
+            if CACHE_DIR.exists()
+            else []
         )
         if dry_run:
             return envelope_ok(
@@ -1420,6 +1595,7 @@ HANDLERS = {
 # Argparse wiring (driven from SCHEMA)
 # ---------------------------------------------------------------------------
 
+
 def _add_param(sp: argparse.ArgumentParser, param: dict) -> None:
     name = param["name"]
     desc = param.get("description", "")
@@ -1514,7 +1690,9 @@ def build_parser() -> argparse.ArgumentParser:
             _add_param(sp, param)
 
     # Deprecated alias: update-cache -> cache rebuild
-    sub.add_parser("update-cache", parents=[common], help="[deprecated] use 'cache rebuild'")
+    sub.add_parser(
+        "update-cache", parents=[common], help="[deprecated] use 'cache rebuild'"
+    )
 
     return p
 
@@ -1522,6 +1700,7 @@ def build_parser() -> argparse.ArgumentParser:
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
+
 
 def main() -> int:
     global _quiet
