@@ -177,7 +177,7 @@
       "name": "pi-dev-rules",
       "source": "./plugins/pi-dev-rules",
       "description": "Authoritative reference for Pi (@earendil-works/pi-coding-agent): install, configure, run, and extend. Use when the user asks about Pi CLI/flags/commands, providers/models/auth, settings/compaction/sessions, security/trust, extensions, skills, prompt templates, themes, packages, custom providers, TUI components, the SDK, RPC mode, or JSON streaming. Also use for Pi's design philosophy and opinionated choices (why minimal, 4 tools, YOLO, no MCP/plan mode/to-dos/sub-agents).",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "author": {
         "name": "Agents365-ai"
       },
