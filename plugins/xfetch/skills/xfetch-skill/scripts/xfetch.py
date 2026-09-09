@@ -384,7 +384,9 @@ def emit(data, args):
         )
         con = sqlite3.connect(args.db)
         defs = ",".join(
-            f"{_sql_ident(c)} TEXT PRIMARY KEY" if c == "id" else f"{_sql_ident(c)} TEXT"
+            f"{_sql_ident(c)} TEXT PRIMARY KEY"
+            if c == "id"
+            else f"{_sql_ident(c)} TEXT"
             for c in cols
         )
         create_sql = f"CREATE TABLE IF NOT EXISTS {table} ({defs})"
