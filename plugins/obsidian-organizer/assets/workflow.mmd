@@ -1,0 +1,33 @@
+flowchart TD
+  subgraph M1["Mode 1 — File a note"]
+    A1["New / unfiled note"] --> A2["Read the map"]
+    A2 --> A3{"Best-fit folder?"}
+    A3 -- "clear match" --> A4["File it<br/>obsidian create / move"]
+    A3 -- "rough fit" --> A5["Catch-all folder,<br/>tell the user"]
+    A3 -- "no fit" --> A6["Stop &amp; ask before<br/>inventing a folder"]
+    A6 -- "approved" --> A4
+  end
+
+  subgraph M2["Mode 2 — Reorganize"]
+    B1["Scope to audit"] --> B2["Gather signals<br/>files · orphans · deadends<br/>search · backlinks"]
+    B2 --> B3["Propose itemized plan<br/>MERGE / MOVE / RENAME"]
+    B3 --> B4{"User confirms?"}
+    B4 -- "yes" --> B5["Execute via obsidian CLI<br/>move / rename / delete<br/>(never raw shell)"]
+    B4 -- "no" --> B6["Stop — nothing changes"]
+  end
+
+  subgraph VAULT["inside the Obsidian vault"]
+    MAP[("00_Index/Folder_Map.md<br/>single source of truth")]
+  end
+
+  A2 -. "reads" .-> MAP
+  B2 -. "reads" .-> MAP
+  A4 -. "appends new category" .-> MAP
+  B5 -. "appends new categories" .-> MAP
+
+  classDef act fill:#e8f0fe,stroke:#4a76c9,color:#1a2b4a
+  classDef ask fill:#fdf2d0,stroke:#c9a227,color:#4a3b0a
+  classDef map fill:#e6f4ea,stroke:#3d8b57,color:#14401f
+  class A4,B5 act
+  class A6,B3,B4,A3 ask
+  class MAP map
