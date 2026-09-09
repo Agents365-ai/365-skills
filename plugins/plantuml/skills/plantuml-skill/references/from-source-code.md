@@ -11,7 +11,7 @@ anything inferred. Then render + validate via the normal Workflow Step 4–5 loo
 ## Pick the diagram type from the code shape
 
 | What you're looking at | Diagram | Map to PlantUML |
-|---|---|---|
+| --- | --- | --- |
 | Classes / structs / interfaces | Class | each type → `class`; fields & methods → members; `extends` → `--\|>`; `implements` → `..\|>`; a held field → `*--` / `-->` |
 | One request / handler / call path | Sequence | each object or service → `participant`; each call → `->`; each return → `-->` |
 | Modules / packages / imports | Component | each module → `component` or `package`; each import/dependency → `-->` |

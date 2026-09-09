@@ -48,34 +48,42 @@ Re-add the dropped styling only once the structure renders cleanly.
 ## Common syntax errors by diagram type
 
 ### General (any diagram)
+
 - Missing `@startuml` / `@enduml` (or `@startmindmap` / `@startgantt`) wrapper.
 - Smart quotes / non-breaking spaces / tabs pasted from a doc or chat — retype the line.
 - Unbalanced `{ }` in `package` / `rectangle` / class bodies.
 
 ### Sequence
+
 - `alt` / `opt` / `loop` / `par` / `group` each need a matching `end`.
 - Reversed arrow: `B <- A` sends *to* B's left; use `A -> B` for left-to-right intent.
 - Participants render in first-mention order — declare `participant` at the top to fix left-to-right order.
 
 ### Class
+
 - Relationship glyphs: `<|--` inheritance, `*--` composition, `o--` aggregation, `..|>` realization. Mixing the dashes/heads silently changes meaning.
 - Multiplicities must be quoted: `User "1" --> "*" Order`.
 
 ### Activity
+
 - Do not mix the legacy `(*)` syntax with the modern `start` / `:action;` / `stop` syntax in one diagram.
 - Every `if (…) then` needs `endif`; every `repeat` needs `repeat while`.
 
 ### State
+
 - Use `[*]` for the initial/final pseudo-state; `[ ]` or `()` will fail.
 - Composite states need `state Name { … }` braces, not indentation.
 
 ### ER / entity
+
 - Crow's-foot cardinality goes between the entities: `user ||--o{ order`.
 - Attribute block separator is `--` on its own line inside the `entity { }` body.
 
 ### Component
+
 - Overlap/crowding is a layout symptom, not an error — add `together { }` or a direction hint (`left to right direction`) before assuming the source is wrong.
 
 ### C4
+
 - `400` with "cannot include" → you used a remote `!includeurl`; switch to the bundled `!include <C4/C4_Context>`.
 - Macro arity matters: `System(alias, "Label", "Description")` — a missing argument throws.
