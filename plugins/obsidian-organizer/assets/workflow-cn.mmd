@@ -1,0 +1,33 @@
+flowchart TD
+  subgraph M1["模式一 — 归档笔记"]
+    A1["新建 / 未归档笔记"] --> A2["读取地图"]
+    A2 --> A3{"有最佳匹配文件夹？"}
+    A3 -- "明确匹配" --> A4["归档<br/>obsidian create / move"]
+    A3 -- "大致匹配" --> A5["归入兜底文件夹，<br/>并告知用户"]
+    A3 -- "无匹配" --> A6["停下并询问用户，<br/>再新建分类"]
+    A6 -- "已批准" --> A4
+  end
+
+  subgraph M2["模式二 — 重组整理"]
+    B1["待审计范围"] --> B2["收集信号<br/>files · orphans · deadends<br/>search · backlinks"]
+    B2 --> B3["提出详细方案<br/>MERGE / MOVE / RENAME"]
+    B3 --> B4{"用户确认？"}
+    B4 -- "是" --> B5["通过 obsidian CLI 执行<br/>move / rename / delete<br/>（禁止裸 shell）"]
+    B4 -- "否" --> B6["停止 — 不做任何更改"]
+  end
+
+  subgraph VAULT["Obsidian vault 内部"]
+    MAP[("00_Index/Folder_Map.md<br/>唯一权威地图")]
+  end
+
+  A2 -. "读取" .-> MAP
+  B2 -. "读取" .-> MAP
+  A4 -. "追加新分类" .-> MAP
+  B5 -. "追加新分类" .-> MAP
+
+  classDef act fill:#e8f0fe,stroke:#4a76c9,color:#1a2b4a
+  classDef ask fill:#fdf2d0,stroke:#c9a227,color:#4a3b0a
+  classDef map fill:#e6f4ea,stroke:#3d8b57,color:#14401f
+  class A4,B5 act
+  class A6,B3,B4,A3 ask
+  class MAP map

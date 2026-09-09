@@ -1,0 +1,49 @@
+<mxfile host="app.diagrams.net" modified="2026-07-16T00:00:00.000Z" agent="drawio" version="24.0.0">
+  <diagram name="pi-dev-rules-workflow-en" id="workflow-en">
+    <mxGraphModel dx="800" dy="600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="400" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="pi-dev-rules — How It Works" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=18;fontStyle=1;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="214" y="20" width="400" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="step1" value="User asks a Pi-related question&lt;br&gt;(install, configure, extend, SDK…)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="264" y="70" width="300" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6c8ebf;" edge="1" parent="1" source="step1" target="step2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="step2" value="Agent loads &lt;b&gt;SKILL.md&lt;/b&gt;&lt;br&gt;(description matches the query)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="254" y="150" width="320" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#82b366;" edge="1" parent="1" source="step2" target="step3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="step3" value="Agent consults the reference index&lt;br&gt;and loads the relevant file(s):" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="224" y="230" width="380" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="ref1" value="cli-and-usage.md" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="180" y="295" width="100" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="ref2" value="providers-and-models.md" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="290" y="295" width="120" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="ref3" value="extending-pi.md" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="420" y="295" width="100" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="ref4" value="programmatic.md" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="530" y="295" width="100" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="refdots" value="…" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=14;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="640" y="295" width="30" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#d6b656;" edge="1" parent="1" source="step3" target="result">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="result" value="Agent answers using the reference content&lt;br&gt;— accurate, up-to-date, no re-fetching" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;fontColor=#333333;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="224" y="345" width="380" height="45" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

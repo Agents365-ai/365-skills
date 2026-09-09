@@ -1,0 +1,92 @@
+name: Sync to 365-skills
+
+# Pushes changes under skills/agent-native-design/ into
+# Agents365-ai/365-skills:plugins/agent-native-design/skills/agent-native-design/
+# and bumps the version field in marketplace.json.
+#
+# Required repo secret: SYNC_365_SKILLS_TOKEN — fine-grained PAT or GitHub App
+# token with "Contents: write" on Agents365-ai/365-skills.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "skills/agent-native-design/**"
+  workflow_dispatch: {}
+
+concurrency:
+  group: sync-365-skills
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          path: source
+
+      - name: Checkout 365-skills
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: Agents365-ai/365-skills
+          token: ${{ secrets.SYNC_365_SKILLS_TOKEN }}
+          path: target
+
+      - name: Sync skill files
+        run: |
+          set -euo pipefail
+          dest=target/plugins/agent-native-design/skills/agent-native-design
+          mkdir -p "$dest"
+          rsync -a --delete source/skills/agent-native-design/ "$dest/"
+
+      - name: Bump version in marketplace.json
+        run: |
+          set -euo pipefail
+          version=$(python3 -c '
+          import re, json
+          text = open("source/skills/agent-native-design/SKILL.md").read()
+          m = re.search(r"^metadata:\s*(\{.*\})\s*$", text, re.M)
+          print(json.loads(m.group(1)).get("version", "") if m else "")
+          ')
+          if [ -z "$version" ]; then
+            echo "::error::could not parse version from SKILL.md frontmatter"
+            exit 1
+          fi
+          echo "Source version: $version"
+          python3 - "$version" <<'PY'
+          import re, sys
+          version = sys.argv[1]
+          path = "target/.claude-plugin/marketplace.json"
+          content = open(path).read()
+          pattern = (r'("name":\s*"agent-native-design"'
+                     r'(?:[^{}]|\{[^{}]*\})*?"version":\s*)"[^"]*"')
+          new_content, n = re.subn(
+              pattern,
+              lambda m: m.group(1) + f'"{version}"',
+              content, count=1, flags=re.S,
+          )
+          if n == 0:
+              print("::warning::agent-native-design plugin "
+                    "entry not found in marketplace.json")
+          else:
+              open(path, "w").write(new_content)
+              print(f"marketplace.json updated to {version}")
+          PY
+
+      - name: Commit and push to 365-skills
+        working-directory: target
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+          git add plugins/agent-native-design .claude-plugin/marketplace.json
+          if git diff --staged --quiet; then
+            echo "No changes to sync"
+            exit 0
+          fi
+          git commit -m "chore: sync agent-native-design from source" \
+            -m "Triggered by ${{ github.repository }}@${{ github.sha }}"
+          git push
