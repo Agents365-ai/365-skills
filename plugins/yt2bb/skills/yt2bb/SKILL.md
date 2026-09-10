@@ -2,7 +2,7 @@
 name: yt2bb
 description: Use when the user wants to repurpose a YouTube video for Bilibili, add bilingual (English-Chinese) subtitles to a video, or create hardcoded subtitle versions for Chinese platforms.
 license: MIT
-homepage: https://github.com/Agents365-ai/yt2bb
+homepage: https://github.com/Agents365-ai/365-skills
 compatibility: Requires Python 3, ffmpeg, yt-dlp, whisper (openai-whisper) on PATH. Self-check steps that need vision are gracefully skipped if unavailable.
 platforms: [macos, linux, windows]
 allowed-tools: Bash(python3:*) Bash(ffmpeg:*) Bash(whisper:*) Bash(yt-dlp:*) Bash(git:*) Read Write Edit
