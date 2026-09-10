@@ -635,6 +635,27 @@
         "upload",
         "rest-api"
       ]
+    },
+    {
+      "name": "zotero-dev-rules",
+      "source": "./plugins/zotero-dev-rules",
+      "description": "Authoritative reference and rules for developing with Zotero — the Web API v3 (read/write requests, file upload, syncing, streaming, OAuth, item types & fields), the desktop client's internal JavaScript API, building Zotero plugins (7–10, incl. Zotero 10 migration notes), writing translators (web/import/export/search), and creating/editing CSL citation styles. Use whenever the user asks to query or write to a Zotero library via the API, build or debug a Zotero plugin, write a Zotero translator, work with citeproc-js / CSL styles, sync Zotero data programmatically, or script the Zotero client.",
+      "version": "0.4.1",
+      "author": {
+        "name": "Agents365-ai"
+      },
+      "repository": "https://github.com/Agents365-ai/365-skills",
+      "license": "CC-BY-NC-4.0",
+      "keywords": [
+        "zotero",
+        "web-api",
+        "reference-manager",
+        "citations",
+        "csl",
+        "translators",
+        "plugins",
+        "developer-reference"
+      ]
     }
   ]
 }

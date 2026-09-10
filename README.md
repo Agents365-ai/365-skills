@@ -62,6 +62,7 @@ Install a single plugin (Claude Code): `/plugin install <plugin-name>`, e.g. `/p
 | Plugin | Description |
 |---|---|
 | `obsidian-organizer` | Keep a large Obsidian vault tidy — file new notes into the best-fit folder and audit/reorganize existing structure, driven by a single source-of-truth map note (`00_Index/Folder_Map.md`) inside the vault. Link-safe by design (moves go through the `obsidian` CLI so wikilinks auto-repair), propose-then-confirm for bulk changes |
+| `zotero-dev-rules` | Zotero developer reference — Web API v3 (read/write, file upload, syncing, streaming, OAuth), the desktop client's internal JavaScript API, plugin development (Zotero 7–10), translators, and CSL citation styles |
 
 ### Media & creative
 

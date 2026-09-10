@@ -62,6 +62,7 @@ npx skills add Agents365-ai/365-skills -g
 | 插件 | 说明 |
 |---|---|
 | `obsidian-organizer` | 让庞大的 Obsidian 仓库保持整洁 —— 把新笔记归入最合适的文件夹，并按需审计/重组已有结构，以仓库内的唯一权威地图笔记（`00_Index/Folder_Map.md`）为准。设计上保证链接安全（移动/重命名都走 `obsidian` CLI，wikilink 自动修复，禁止裸 shell），批量重组先出方案再确认 |
+| `zotero-dev-rules` | Zotero 开发者参考 —— Web API v3（读写、文件上传、同步、流式、OAuth）、桌面客户端内部 JavaScript API、插件开发（Zotero 7–10）、转换器（translator）与 CSL 引文样式 |
 
 ### 媒体与创意
 
