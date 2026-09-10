@@ -1,0 +1,20 @@
+interface:
+  display_name: "Zenodo"
+  short_description: "Deposit, publish, version, and search research artifacts on Zenodo via the REST API — get a citable DOI for every release"
+  brand_color: "#005A9C"
+
+policy:
+  allow_implicit_invocation: true
+
+capabilities:
+  - Create Zenodo depositions and upload files via the bucket API (50 GB / 100 files per record)
+  - Set deposition metadata (title, creators, license, upload_type, related identifiers, …)
+  - Publish depositions and mint citable DOIs
+  - Create new versions of existing records under the same concept-DOI
+  - Search published Zenodo records with Elasticsearch-style queries
+  - Sandbox-first workflow to avoid irreversible production publishes
+
+prerequisites:
+  - curl on PATH
+  - ZENODO_TOKEN environment variable (personal access token with deposit:write and deposit:actions scopes)
+  - Optional: jq for the example shell scripts

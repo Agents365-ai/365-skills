@@ -596,6 +596,26 @@
         "long-running",
         "process-management"
       ]
+    },
+    {
+      "name": "zenodo",
+      "source": "./plugins/zenodo",
+      "description": "Use whenever the user mentions Zenodo, depositing or publishing research artifacts (datasets, software, papers, posters) to Zenodo, minting a DOI for a dataset/code release, uploading files to a Zenodo record, creating a new version of a Zenodo deposit, or searching Zenodo records. Covers the full Zenodo REST API workflow (create, upload via bucket API, metadata, publish, version, search) for production and sandbox.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Agents365-ai"
+      },
+      "repository": "https://github.com/Agents365-ai/365-skills",
+      "license": "MIT",
+      "keywords": [
+        "zenodo",
+        "doi",
+        "dataset",
+        "research-data",
+        "open-science",
+        "publishing",
+        "rest-api"
+      ]
     }
   ]
 }

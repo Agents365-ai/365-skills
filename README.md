@@ -54,6 +54,7 @@ Install a single plugin (Claude Code): `/plugin install <plugin-name>`, e.g. `/p
 | `journal-abbrev` | Journal name abbreviation lookup — ISO 4 + MEDLINE, multi-source cascade (JabRef → AbbrevISO → NLM), BibTeX rewrite with `--idempotency-key`, atomic cache rebuild, agent-native JSON envelope with stable error codes and dry-run |
 | `journal-if` | Journal impact factor (JCR IF) lookup — find a journal's IF by name, compare IF across journals, and rank publication venue quality, backed by a bundled `journals_if.csv` dataset |
 | `target-prioritization` | Multi-source drug-target due-diligence — turn a ranked gene list (e.g. scRNA-seq DE output) into a per-gene dossier across UniProt, OpenTargets, and PubMed, plus a local cross-lineage DE scan, then re-rank by a configurable composite score (cross-lineage convergence + druggability + disease genetics + tractability + novelty). Disease-agnostic |
+| `zenodo` | Zenodo REST API — deposit, publish, version, and search research artifacts (datasets, software, papers) with a citable DOI; sandbox-first, bucket-API uploads, full metadata reference and end-to-end shell examples |
 
 ### Knowledge & notes
 

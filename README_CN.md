@@ -54,6 +54,7 @@ npx skills add Agents365-ai/365-skills -g
 | `journal-abbrev` | 期刊名称缩写查询 —— 支持 ISO 4 与 MEDLINE 两种标准，多源级联（JabRef → AbbrevISO → NLM）、BibTeX 字段批量重写并支持 `--idempotency-key` 幂等重试、原子缓存重建，agent-native JSON 信封带稳定错误码与 dry-run |
 | `journal-if` | 期刊影响因子（JCR IF）查询 —— 按名称查期刊 IF、跨期刊比较、评估投稿期刊档次，内置 `journals_if.csv` 数据集 |
 | `target-prioritization` | 多源药物靶点尽职调查 —— 将排序基因列表（如 scRNA-seq 差异表达输出）转化为逐基因档案（UniProt、OpenTargets、PubMed），叠加本地跨谱系差异表达扫描，再按可配置综合评分（跨谱系趋同 + 成药性 + 疾病遗传学 + 可开发性 + 新颖性）重排。疾病无关，可配置靶疾病与细胞上下文查询 |
+| `zenodo` | Zenodo REST API —— 存缴、发布、版本管理与检索研究成果（数据集、软件、论文）并获得可引用 DOI；默认先用 sandbox，支持 bucket API 上传，附完整元数据参考与端到端 Shell 示例 |
 
 ### 知识与笔记
 
