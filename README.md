@@ -56,6 +56,7 @@ Install a single plugin (Claude Code): `/plugin install <plugin-name>`, e.g. `/p
 | `target-prioritization` | Multi-source drug-target due-diligence — turn a ranked gene list (e.g. scRNA-seq DE output) into a per-gene dossier across UniProt, OpenTargets, and PubMed, plus a local cross-lineage DE scan, then re-rank by a configurable composite score (cross-lineage convergence + druggability + disease genetics + tractability + novelty). Disease-agnostic |
 | `figshare` | Figshare v2 REST API — search public datasets/articles, batch-download files by ID/DOI/URL, and create, update, publish, or multi-part-upload to your own articles (large-file 3-step upload flow) |
 | `zenodo` | Zenodo REST API — deposit, publish, version, and search research artifacts (datasets, software, papers) with a citable DOI; sandbox-first, bucket-API uploads, full metadata reference and end-to-end shell examples |
+| `grant-thinking-cn-biology` | Chinese NSFC-focused biology grant reasoning — mechanism-centered scientific questions, reviewer-aware logic, innovation discipline, feasibility and scope control across funding levels (youth / general / key) |
 
 ### Knowledge & notes
 
