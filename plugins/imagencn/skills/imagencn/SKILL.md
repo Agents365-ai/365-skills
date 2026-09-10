@@ -5,7 +5,7 @@ author: Agents365-ai
 version: 1.3.0
 created: 2024-12-01
 updated: 2026-08-08
-homepage: https://github.com/Agents365-ai/imagenCN
+homepage: https://github.com/Agents365-ai/365-skills
 metadata: {"openclaw":{"requires":{"bins":["python3"],"env":["DASHSCOPE_API_KEY"]},"primaryEnv":"DASHSCOPE_API_KEY","emoji":"🎨"}}
 ---
 
