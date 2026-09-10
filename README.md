@@ -58,6 +58,7 @@ Install a single plugin (Claude Code): `/plugin install <plugin-name>`, e.g. `/p
 | `zenodo` | Zenodo REST API — deposit, publish, version, and search research artifacts (datasets, software, papers) with a citable DOI; sandbox-first, bucket-API uploads, full metadata reference and end-to-end shell examples |
 | `scientific-thinking-general` | Structured scientific reasoning meta-skill — separates fact / evidence / hypothesis, ranks competing explanations by support, calibrates conclusion language to evidence strength, and defines interpretation boundaries |
 | `grant-thinking-general` | Grant proposal reasoning meta-skill — reviewer-aware logic, fundability framing (significance, innovation, feasibility), scope control, and section-by-section diagnosis before any NSFC/NIH-style proposal is written |
+| `grant-thinking-cn-biology` | Chinese NSFC-focused biology grant reasoning — mechanism-centered scientific questions, reviewer-aware logic, innovation discipline, feasibility and scope control across funding levels (youth / general / key) |
 
 | `scientific-thinking-biology` | Biology-specific adaptation of scientific-thinking-general — marker vs driver, experimental-system validity, an 8-level biological evidence hierarchy, alternative-explanation and confound checks (composition, batch, redundancy), and system-aware conclusion language |
 

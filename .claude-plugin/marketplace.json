@@ -741,6 +741,29 @@
         "innovation",
         "scientific-writing"
       ]
+    },
+    {
+      "name": "grant-thinking-cn-biology",
+      "source": "./plugins/grant-thinking-cn-biology",
+      "description": "Use when evaluating biology grant ideas in the Chinese funding context (NSFC, MOST, etc.) — diagnosing project legitimacy, mechanism-centered scientific questions, reviewer-aware logic, innovation discipline, feasibility, and scope control across funding levels (youth, general, key).",
+      "version": "1.0.0",
+      "author": {
+        "name": "Agents365-ai"
+      },
+      "repository": "https://github.com/Agents365-ai/365-skills",
+      "license": "MIT",
+      "keywords": [
+        "grant-thinking",
+        "biology",
+        "nsfc",
+        "china-grants",
+        "proposal",
+        "research-funding",
+        "reviewer-thinking",
+        "feasibility",
+        "mechanism",
+        "scientific-writing"
+      ]
     }
   ]
 }

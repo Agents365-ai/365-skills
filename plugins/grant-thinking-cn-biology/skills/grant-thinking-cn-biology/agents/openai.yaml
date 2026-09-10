@@ -1,0 +1,21 @@
+interface:
+  display_name: "Grant Thinking CN Biology"
+  short_description: "Biology grant reasoning for China's funding context: fundable project framing, mechanism-centered diagnosis, reviewer-aware evaluation, innovation discipline, feasibility judgment, and scope control across NSFC/MOST project levels"
+  brand_color: "#1A5276"
+
+policy:
+  allow_implicit_invocation: true
+
+capabilities:
+  - Evaluate whether a biology grant idea is fundable in the Chinese funding context
+  - Distinguish descriptive projects from mechanism-driven proposals
+  - Diagnose proposal logic and problem architecture for biology grants
+  - Separate background, gap, question, hypothesis, aims, content, and methods
+  - Identify real biological innovation vs. decorative novelty rhetoric
+  - Assess feasibility as biological-question fit, not method abundance
+  - Surface likely reviewer concerns specific to NSFC and Chinese biology panels
+  - Match project ambition to appropriate funding level (youth/general/key)
+  - Tighten scope and reduce overclaiming
+  - Deliver both strongest funding logic and main rejection risk in every response
+
+prerequisites: []
