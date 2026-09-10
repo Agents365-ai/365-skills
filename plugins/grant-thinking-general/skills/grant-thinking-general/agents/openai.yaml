@@ -1,0 +1,19 @@
+interface:
+  display_name: "Grant Thinking General"
+  short_description: "Apply high-level grant reasoning: fundable project framing, reviewer-aware evaluation, innovation discipline, feasibility judgment, and boundary-conscious proposal strategy"
+  brand_color: "#1B4F72"
+
+policy:
+  allow_implicit_invocation: true
+
+capabilities:
+  - Evaluate whether a grant idea is fundable vs. merely interesting
+  - Diagnose proposal logic and problem architecture
+  - Separate background, gap, question, aims, content, and approach
+  - Identify real innovation vs. decorative novelty rhetoric
+  - Assess feasibility as logic-to-question fit, not method abundance
+  - Surface likely reviewer concerns and rejection risks
+  - Tighten scope and reduce overclaiming
+  - Deliver both strongest funding logic and main rejection risk in every response
+
+prerequisites: []
