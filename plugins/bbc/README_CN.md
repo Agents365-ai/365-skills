@@ -36,21 +36,24 @@
 ## 安装
 
 这是一个纯自包含的常规 skill:只用 Python 3.9+ 标准库，零 `pip install`。
-任意 coding agent 的 skill 目录，clone 进去就能用：
+skill 位于 Agents365-ai 的 skills monorepo；clone 整个 monorepo，再把 skill 目录
+链接或复制到 agent 的 skills 路径：
 
 ```bash
 # 全局（以 Claude Code 为例；其他 agent 用各自的 skills 路径）
-git clone https://github.com/Agents365-ai/bbc-skill.git ~/.claude/skills/bbc-skill
+git clone https://github.com/Agents365-ai/365-skills.git
+ln -s "$(pwd)/365-skills/plugins/bbc/skills/bbc-skill" ~/.claude/skills/bbc-skill
 
 # 项目级
-git clone https://github.com/Agents365-ai/bbc-skill.git .claude/skills/bbc-skill
+ln -s "$(pwd)/365-skills/plugins/bbc/skills/bbc-skill" .claude/skills/bbc-skill
 ```
 
 不走 skill 运行时、直接命令行用也可以：
 
 ```bash
-git clone https://github.com/Agents365-ai/bbc-skill.git && cd bbc-skill
-./scripts/bbc --help
+git clone https://github.com/Agents365-ai/365-skills.git
+cd 365-skills/plugins/bbc/skills/bbc-skill
+python3 -m bbc --help
 ```
 
 ---
@@ -268,7 +271,7 @@ python3 -m bbc fetch-user 441831884 --video-limit 2   # 先小批量试跑
 
 ## 贡献
 
-欢迎提 issue、PR、建议。无论是新的分析场景、更稳的反风控默认值、其他平台支持、文档改进 —— 任何贡献都欢迎。[提 Issue](https://github.com/Agents365-ai/bbc-skill/issues) 或直接发 PR。
+欢迎提 issue、PR、建议。无论是新的分析场景、更稳的反风控默认值、其他平台支持、文档改进 —— 任何贡献都欢迎。[提 Issue](https://github.com/Agents365-ai/365-skills/issues) 或直接发 PR。
 
 ---
 
