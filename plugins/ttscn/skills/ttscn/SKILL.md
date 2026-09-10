@@ -5,7 +5,7 @@ author: Agents365-ai
 version: 1.9.0
 created: 2026-07-08
 updated: 2026-09-08
-homepage: https://github.com/Agents365-ai/ttsCN
+homepage: https://github.com/Agents365-ai/365-skills
 metadata: {"openclaw":{"requires":{"bins":["python3","ffmpeg"]},"emoji":"🔊"}}
 ---
 
