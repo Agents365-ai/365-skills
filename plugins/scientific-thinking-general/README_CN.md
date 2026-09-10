@@ -17,7 +17,7 @@
 兼容所有主流支持 [Agent Skills](https://agentskills.io) 格式的 AI 智能体：
 
 | 平台 | 支持状态 | 说明 |
-|------|----------|------|
+| ------ | ---------- | ------ |
 | **Claude Code** | ✅ 完全支持 | 原生 SKILL.md 格式 |
 | **OpenClaw / ClawHub** | ✅ 完全支持 | `metadata.openclaw` 命名空间 |
 | **Hermes Agent** | ✅ 完全支持 | `metadata.hermes` 命名空间，category: research |
@@ -28,7 +28,7 @@
 ## 有 skill 与无 skill 的对比
 
 | 能力 | 原生智能体 | 本 skill |
-|------|-----------|---------|
+| ------ | ----------- | --------- |
 | 区分事实与解释 | 偶尔 | 始终，明确标注 |
 | 标注声明来源 | 否 | 是 — 数据 / 背景知识 / 推断 |
 | 考虑替代解释 | 不稳定 | 是 — 按支持程度排序 |
@@ -118,7 +118,7 @@ skills install scientific-thinking
 ### 安装路径汇总
 
 | 平台 | 全局路径 | 项目路径 |
-|------|----------|----------|
+| ------ | ---------- | ---------- |
 | Claude Code | `~/.claude/skills/scientific-thinking/` | `.claude/skills/scientific-thinking/` |
 | OpenClaw | `~/.openclaw/skills/scientific-thinking/` | `skills/scientific-thinking/` |
 | Hermes Agent | `~/.hermes/skills/research/scientific-thinking/` | 通过 `external_dirs` 配置 |
@@ -174,5 +174,5 @@ MIT
 
 **Agents365-ai**
 
-- Bilibili: https://space.bilibili.com/441831884
-- GitHub: https://github.com/Agents365-ai
+- Bilibili: <https://space.bilibili.com/441831884>
+- GitHub: <https://github.com/Agents365-ai>

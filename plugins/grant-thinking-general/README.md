@@ -18,7 +18,7 @@
 Works with all major AI agents that support the [Agent Skills](https://agentskills.io) format:
 
 | Platform | Status | Details |
-|----------|--------|---------|
+| ---------- | -------- | --------- |
 | **Claude Code** | ✅ Full support | Native SKILL.md format |
 | **OpenClaw / ClawHub** | ✅ Full support | `metadata.openclaw` namespace |
 | **Hermes Agent** | ✅ Full support | `metadata.hermes` namespace, category: research |
@@ -29,7 +29,7 @@ Works with all major AI agents that support the [Agent Skills](https://agentskil
 ## Comparison: with vs. without this skill
 
 | Capability | Native agent | This skill |
-|------------|-------------|------------|
+| ------------ | ------------- | ------------ |
 | Distinguish interesting from fundable | No | Yes — explicit diagnosis |
 | Separate background / gap / question / aims / approach | Inconsistent | Always |
 | Evaluate innovation as real vs. decorative | No | Yes |
@@ -121,7 +121,7 @@ skills install grant-thinking-general
 ### Installation paths summary
 
 | Platform | Global path | Project path |
-|----------|-------------|--------------|
+| ---------- | ------------- | -------------- |
 | Claude Code | `~/.claude/skills/grant-thinking-general/` | `.claude/skills/grant-thinking-general/` |
 | OpenClaw | `~/.openclaw/skills/grant-thinking-general/` | `skills/grant-thinking-general/` |
 | Hermes Agent | `~/.hermes/skills/research/grant-thinking-general/` | Via `external_dirs` config |
@@ -177,5 +177,5 @@ If this skill helps your research, consider supporting the author:
 
 **Agents365-ai**
 
-- Bilibili: https://space.bilibili.com/441831884
-- GitHub: https://github.com/Agents365-ai
+- Bilibili: <https://space.bilibili.com/441831884>
+- GitHub: <https://github.com/Agents365-ai>

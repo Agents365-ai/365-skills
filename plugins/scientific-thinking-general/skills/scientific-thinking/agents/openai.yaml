@@ -1,6 +1,9 @@
 interface:
   display_name: "Scientific Thinking"
-  short_description: "Apply structured, evidence-aware scientific reasoning to research questions, result interpretation, hypothesis evaluation, and experiment design"
+  short_description: >-
+    Apply structured, evidence-aware scientific reasoning to research
+    questions, result interpretation, hypothesis evaluation, and experiment
+    design
   brand_color: "#2E86AB"
 
 policy:

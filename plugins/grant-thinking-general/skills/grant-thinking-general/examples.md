@@ -6,6 +6,7 @@ User:
 I want to propose a project using multi-omics and AI to study disease X. Is this a good grant idea?
 
 Good response pattern:
+
 - Do not immediately praise the idea.
 - Identify that "multi-omics + AI" is not yet a project core.
 - Ask what scientific question the project will actually answer.
@@ -22,6 +23,7 @@ User:
 My proposal has three aims, but it still feels loose. Why?
 
 Good response pattern:
+
 - Diagnose structural rather than stylistic weakness.
 - Explain that multiple aims do not automatically produce a coherent proposal.
 - Check whether the aims answer one core question or several unrelated ones.
@@ -37,6 +39,7 @@ User:
 My innovation point is that I will, for the first time, comprehensively reveal the full mechanism of process Y.
 
 Good response pattern:
+
 - Do not echo the claim.
 - Identify overclaiming.
 - Explain that "for the first time" and "full mechanism" are high-risk formulations.
@@ -52,6 +55,7 @@ User:
 I have exciting aims, but I worry reviewers may think the project is too difficult.
 
 Good response pattern:
+
 - Confirm that feasibility is about project survival under uncertainty.
 - Identify the likely bottlenecks.
 - Distinguish essential steps from optional steps.
@@ -67,6 +71,7 @@ User:
 I have a strong background section and many citations, but the proposal still does not feel convincing.
 
 Good response pattern:
+
 - Explain that background strength is not equivalent to proposal strength.
 - Identify the missing bridge from significance to project logic.
 - Ask whether the gap, question, and aims are explicit.
@@ -81,6 +86,7 @@ User:
 Please evaluate this title as a grant project title: 'Mechanistic study of the role of factor Z in disease progression and therapeutic response.'
 
 Good response pattern:
+
 - Evaluate clarity, scope, and implied structure.
 - Identify whether the title is too broad, generic, or non-committal.
 - Explain what kind of project logic the title suggests.
@@ -95,6 +101,7 @@ User:
 This is a very interesting scientific question. Should I build a grant around it?
 
 Good response pattern:
+
 - Explicitly distinguish scientific merit from proposal readiness.
 - Ask whether the question can be bounded, operationalized, and supported.
 - Explain that not every good question is yet a good project.

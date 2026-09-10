@@ -14,6 +14,7 @@ Before responding, check:
 10. Did I help the user move toward a tighter, more credible project shape?
 
 For concise answers, still preserve:
+
 - current best funding logic
 - main weakness
 - next strengthening move
