@@ -56,7 +56,10 @@ Install a single plugin (Claude Code): `/plugin install <plugin-name>`, e.g. `/p
 | `target-prioritization` | Multi-source drug-target due-diligence — turn a ranked gene list (e.g. scRNA-seq DE output) into a per-gene dossier across UniProt, OpenTargets, and PubMed, plus a local cross-lineage DE scan, then re-rank by a configurable composite score (cross-lineage convergence + druggability + disease genetics + tractability + novelty). Disease-agnostic |
 | `figshare` | Figshare v2 REST API — search public datasets/articles, batch-download files by ID/DOI/URL, and create, update, publish, or multi-part-upload to your own articles (large-file 3-step upload flow) |
 | `zenodo` | Zenodo REST API — deposit, publish, version, and search research artifacts (datasets, software, papers) with a citable DOI; sandbox-first, bucket-API uploads, full metadata reference and end-to-end shell examples |
+| `scientific-thinking-general` | Structured scientific reasoning meta-skill — separates fact / evidence / hypothesis, ranks competing explanations by support, calibrates conclusion language to evidence strength, and defines interpretation boundaries |
 | `grant-thinking-general` | Grant proposal reasoning meta-skill — reviewer-aware logic, fundability framing (significance, innovation, feasibility), scope control, and section-by-section diagnosis before any NSFC/NIH-style proposal is written |
+
+| `scientific-thinking-biology` | Biology-specific adaptation of scientific-thinking-general — marker vs driver, experimental-system validity, an 8-level biological evidence hierarchy, alternative-explanation and confound checks (composition, batch, redundancy), and system-aware conclusion language |
 
 ### Knowledge & notes
 
