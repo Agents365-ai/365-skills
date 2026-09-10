@@ -1,0 +1,17 @@
+interface:
+  display_name: "Scientific Thinking"
+  short_description: "Apply structured, evidence-aware scientific reasoning to research questions, result interpretation, hypothesis evaluation, and experiment design"
+  brand_color: "#2E86AB"
+
+policy:
+  allow_implicit_invocation: true
+
+capabilities:
+  - Frame and decompose research problems
+  - Distinguish evidence from interpretation and hypothesis
+  - Evaluate competing explanations with ranked plausibility
+  - Calibrate claim strength to evidence level
+  - Define interpretation boundaries and limitations
+  - Suggest lowest-cost next steps to resolve uncertainty
+
+prerequisites: []
