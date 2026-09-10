@@ -679,15 +679,9 @@
       ]
     },
     {
-<<<<<<< HEAD
       "name": "scientific-thinking-biology",
       "source": "./plugins/scientific-thinking-biology",
       "description": "Use when interpreting biological research findings, evaluating life science evidence, analyzing molecular or cellular mechanisms, comparing competing biological hypotheses, designing or critiquing experiments in biology, genetics, genomics, cell biology, immunology, neuroscience, ecology, or any life science domain.",
-=======
-      "name": "scientific-thinking-general",
-      "source": "./plugins/scientific-thinking-general",
-      "description": "Use when interpreting research findings, evaluating scientific evidence, analyzing mechanisms, comparing competing hypotheses, designing experiments, or constructing scientific arguments.",
->>>>>>> origin/main
       "version": "1.0.0",
       "author": {
         "name": "Agents365-ai"
@@ -696,7 +690,6 @@
       "license": "MIT",
       "keywords": [
         "scientific-thinking",
-<<<<<<< HEAD
         "biology",
         "life-science",
         "genomics",
@@ -706,7 +699,19 @@
         "genetics",
         "molecular-biology",
         "experiment-design"
-=======
+      ]
+    },
+    {
+      "name": "scientific-thinking-general",
+      "source": "./plugins/scientific-thinking-general",
+      "description": "Use when interpreting research findings, evaluating scientific evidence, analyzing mechanisms, comparing competing hypotheses, designing experiments, or constructing scientific arguments.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Agents365-ai"
+      },
+      "repository": "https://github.com/Agents365-ai/365-skills",
+      "license": "MIT",
+      "keywords": [
         "research",
         "reasoning",
         "evidence-evaluation",
@@ -714,7 +719,6 @@
         "experiment-design",
         "mechanism",
         "peer-review"
->>>>>>> origin/main
       ]
     }
   ]
