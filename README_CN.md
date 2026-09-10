@@ -56,6 +56,7 @@ npx skills add Agents365-ai/365-skills -g
 | `target-prioritization` | 多源药物靶点尽职调查 —— 将排序基因列表（如 scRNA-seq 差异表达输出）转化为逐基因档案（UniProt、OpenTargets、PubMed），叠加本地跨谱系差异表达扫描，再按可配置综合评分（跨谱系趋同 + 成药性 + 疾病遗传学 + 可开发性 + 新颖性）重排。疾病无关，可配置靶疾病与细胞上下文查询 |
 | `figshare` | Figshare v2 REST API —— 搜索公开数据集/文章、按 ID/DOI/URL 批量下载文件，并可对自己账号的文章进行创建、更新、发布与多分片上传（大文件三步上传流程） |
 | `zenodo` | Zenodo REST API —— 存缴、发布、版本管理与检索研究成果（数据集、软件、论文）并获得可引用 DOI；默认先用 sandbox，支持 bucket API 上传，附完整元数据参考与端到端 Shell 示例 |
+| `grant-thinking-general` | 基金申请推理元技能 —— 评审人视角论证、可资助性框架（重要性、创新性、可行性）、范围控制，在动笔前对申请书各部分做逻辑诊断 |
 
 ### 知识与笔记
 
