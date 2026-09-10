@@ -2,7 +2,7 @@
 name: bbc-skill
 description: Fetch Bilibili (哔哩哔哩) video comments for UP主 self-analysis. Use when the user asks to collect, download, export, or analyze comments on a Bilibili video (BV号 / URL / UID). Produces JSONL + summary.json suitable for further Claude Code analysis (sentiment, keywords, audience trends). Read-only; does not post/edit/delete.
 license: MIT
-homepage: https://github.com/Agents365-ai/bbc-skill
+homepage: https://github.com/Agents365-ai/365-skills/tree/main/plugins/bbc/skills/bbc-skill
 metadata: {"version":"1.0.4","openclaw":{"requires":{"bins":["python3"]},"emoji":"💬"},"hermes":{"category":"data","tags":["bilibili","comments","up主","scraping","chinese"]}}
 ---
 

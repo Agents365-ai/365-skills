@@ -51,21 +51,24 @@
 ## Install
 
 It is a plain, self-contained skill: Python 3.9+ stdlib only, zero pip
-install. Clone it into any coding-agent skills directory and it works:
+install. The skill lives in the Agents365-ai skills monorepo; clone the
+monorepo and link or copy the skill directory into your agent's skills path:
 
 ```bash
 # Global (Claude Code example; other agents read their own skills path)
-git clone https://github.com/Agents365-ai/bbc-skill.git ~/.claude/skills/bbc-skill
+git clone https://github.com/Agents365-ai/365-skills.git
+ln -s "$(pwd)/365-skills/plugins/bbc/skills/bbc-skill" ~/.claude/skills/bbc-skill
 
 # Project-level
-git clone https://github.com/Agents365-ai/bbc-skill.git .claude/skills/bbc-skill
+ln -s "$(pwd)/365-skills/plugins/bbc/skills/bbc-skill" .claude/skills/bbc-skill
 ```
 
 Or run it standalone without any skill runtime:
 
 ```bash
-git clone https://github.com/Agents365-ai/bbc-skill.git && cd bbc-skill
-./scripts/bbc --help
+git clone https://github.com/Agents365-ai/365-skills.git
+cd 365-skills/plugins/bbc/skills/bbc-skill
+python3 -m bbc --help
 ```
 
 ---
@@ -303,7 +306,7 @@ See `references/agent-contract.md` for the full schema.
 Suggestions, bug reports, and pull requests are all welcome. If you have
 ideas — new analysis workflows, better anti-bot defaults, additional
 platform support, documentation fixes — feel free to
-[open an issue](https://github.com/Agents365-ai/bbc-skill/issues) or
+[open an issue](https://github.com/Agents365-ai/365-skills/issues) or
 submit a PR directly.
 
 This skill is community-friendly: every contribution, no matter how small,
