@@ -150,6 +150,7 @@ def resolve_voice(backend):
         "elevenlabs": "21m00Tcm4TlvDq8ikWAM",
         "openai": "alloy",
         "google": "en-US-Neural2-F",
+        "atlas": "eve",
         "qwen": "Cherry",
         "stepfun": "cixingnansheng",
         "zhipu": "tongtong",
@@ -284,6 +285,13 @@ def _build_config(name):
         config["key"] = os.environ["GOOGLE_TTS_API_KEY"]
         # Empty default: the adapter derives languageCode from the voice name
         config["language"] = os.environ.get("GOOGLE_TTS_LANGUAGE", "")
+    elif name == "atlas":
+        config["key"] = os.environ["ATLASCLOUD_API_KEY"]
+        config["language"] = os.environ.get("ATLASCLOUD_TTS_LANGUAGE", "auto")
+        config["poll_seconds"] = float(
+            os.environ.get("ATLASCLOUD_POLL_SECONDS", "2")
+        )
+        config["max_polls"] = int(os.environ.get("ATLASCLOUD_MAX_POLLS", "150"))
     return config
 
 
