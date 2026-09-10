@@ -19,7 +19,7 @@
 Works with all major AI agents that support the [Agent Skills](https://agentskills.io) format:
 
 | Platform | Status | Details |
-|----------|--------|---------|
+| ---------- | -------- | --------- |
 | **Claude Code** | ✅ Full support | Native SKILL.md format |
 | **OpenClaw / ClawHub** | ✅ Full support | `metadata.openclaw` namespace |
 | **Hermes Agent** | ✅ Full support | `metadata.hermes` namespace, category: research |
@@ -30,7 +30,7 @@ Works with all major AI agents that support the [Agent Skills](https://agentskil
 ## Comparison: with vs. without this skill
 
 | Capability | Native agent | This skill |
-|------------|-------------|------------|
+| ------------ | ------------- | ------------ |
 | Distinguish interesting from fundable (biology) | No | Yes — explicit diagnosis |
 | Detect descriptive vs. mechanism-driven project | No | Always |
 | Separate background / gap / question / hypothesis / aims / content / methods | Inconsistent | Always |
@@ -132,7 +132,7 @@ skills install grant-thinking-cn-biology
 ### Installation paths summary
 
 | Platform | Global path | Project path |
-|----------|-------------|--------------|
+| ---------- | ------------- | -------------- |
 | Claude Code | `~/.claude/skills/grant-thinking-cn-biology/` | `.claude/skills/grant-thinking-cn-biology/` |
 | OpenClaw | `~/.openclaw/skills/grant-thinking-cn-biology/` | `skills/grant-thinking-cn-biology/` |
 | Hermes Agent | `~/.hermes/skills/research/grant-thinking-cn-biology/` | Via `external_dirs` config |
@@ -158,6 +158,7 @@ grant-thinking-cn-biology/       ← this skill: Chinese biology grants
 ```
 
 Planned extensions:
+
 - `grant-thinking-cn-biology-youth/` — youth-level (青年科学基金) focused
 - `grant-thinking-cn-biology-general-program/` — general program (面上项目) focused
 - `grant-thinking-cn-biomedicine/` — translational/clinical biology variant
@@ -200,5 +201,5 @@ If this skill helps your research, consider supporting the author:
 
 **Agents365-ai**
 
-- Bilibili: https://space.bilibili.com/441831884
-- GitHub: https://github.com/Agents365-ai
+- Bilibili: <https://space.bilibili.com/441831884>
+- GitHub: <https://github.com/Agents365-ai>

@@ -14,6 +14,7 @@ Before responding, verify:
 10. Is the response logically organized rather than scattered?
 
 If the answer is short, it should still preserve:
+
 - conclusion (with claim level)
 - boundary
 - next step

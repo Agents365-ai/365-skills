@@ -16,6 +16,7 @@ Before responding, check:
 12. Did I give a concrete next step that improves fundability?
 
 For concise responses, still preserve:
+
 - current best biological funding logic
 - biggest weakness
 - next strengthening move

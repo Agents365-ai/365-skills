@@ -18,7 +18,7 @@
 兼容所有主流支持 [Agent Skills](https://agentskills.io) 格式的 AI 智能体：
 
 | 平台 | 支持状态 | 说明 |
-|------|----------|------|
+| ------ | ---------- | ------ |
 | **Claude Code** | ✅ 完全支持 | 原生 SKILL.md 格式 |
 | **OpenClaw / ClawHub** | ✅ 完全支持 | `metadata.openclaw` 命名空间 |
 | **Hermes Agent** | ✅ 完全支持 | `metadata.hermes` 命名空间，category: research |
@@ -29,7 +29,7 @@
 ## 有 skill 与无 skill 的对比
 
 | 能力 | 原生智能体 | 本 skill |
-|------|-----------|---------|
+| ------ | ----------- | --------- |
 | 区分"有趣"与"可资助" | 否 | 是 — 显式诊断 |
 | 分离背景 / 空白 / 问题 / 目标 / 内容 / 方案 | 不稳定 | 始终 |
 | 区分真实创新与装饰性新颖语言 | 否 | 是 |
@@ -121,7 +121,7 @@ skills install grant-thinking-general
 ### 安装路径汇总
 
 | 平台 | 全局路径 | 项目路径 |
-|------|----------|----------|
+| ------ | ---------- | ---------- |
 | Claude Code | `~/.claude/skills/grant-thinking-general/` | `.claude/skills/grant-thinking-general/` |
 | OpenClaw | `~/.openclaw/skills/grant-thinking-general/` | `skills/grant-thinking-general/` |
 | Hermes Agent | `~/.hermes/skills/research/grant-thinking-general/` | 通过 `external_dirs` 配置 |
@@ -177,5 +177,5 @@ MIT
 
 **Agents365-ai**
 
-- Bilibili: https://space.bilibili.com/441831884
-- GitHub: https://github.com/Agents365-ai
+- Bilibili: <https://space.bilibili.com/441831884>
+- GitHub: <https://github.com/Agents365-ai>

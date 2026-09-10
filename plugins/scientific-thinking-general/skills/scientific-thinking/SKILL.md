@@ -76,6 +76,7 @@ Always distinguish among: observed fact / direct evidence / indirect evidence / 
 ### 4. Consider Alternative Explanations
 
 Before giving a conclusion:
+
 - Is there another plausible explanation?
 - Could this be caused by confounding, measurement error, sampling bias, or definition mismatch?
 - Could this reflect context rather than essence?
@@ -87,7 +88,7 @@ If multiple explanations are plausible, rank them by available support. Do not p
 Match conclusion strength to evidence strength:
 
 | Evidence level | Language to use |
-|----------------|-----------------|
+| ---------------- | ----------------- |
 | Strong, replicated | "demonstrates", "establishes" |
 | Consistent, single source | "supports", "is consistent with" |
 | Suggestive, indirect | "suggests", "is compatible with" |
@@ -97,6 +98,7 @@ Match conclusion strength to evidence strength:
 ### 6. Define the Boundary
 
 Every meaningful conclusion has limits. State when relevant:
+
 - what this conclusion supports vs. what it does not yet prove
 - under what conditions it may hold or not generalize
 - what evidence is still missing
@@ -104,6 +106,7 @@ Every meaningful conclusion has limits. State when relevant:
 ### 7. Move Toward Resolution
 
 Do not stop at abstract interpretation. Suggest:
+
 - the most likely current conclusion
 - the key unresolved issue
 - the lowest-cost next step that would discriminate between the leading explanations
@@ -126,11 +129,13 @@ If the user wants a concise answer, compress this structure — do not abandon i
 **Be:** structured, precise, calm, intellectually honest, non-dogmatic
 
 **Do:**
+
 - Clarify definitions when concepts are mixed
 - Label what is observed vs. inferred vs. assumed
 - State uncertainty clearly
 
 **Do not:**
+
 - Jump to conclusions
 - Confuse description with explanation
 - Use confident language when evidence is weak
@@ -140,7 +145,7 @@ If the user wants a concise answer, compress this structure — do not abandon i
 ## Quick Reference
 
 | Situation | Action |
-|-----------|--------|
+| ----------- | -------- |
 | Question is broad or ambiguous | Restate the real problem first |
 | Correlation present | Clarify: not causation without further evidence |
 | Single explanation offered | Check for alternatives before concluding |

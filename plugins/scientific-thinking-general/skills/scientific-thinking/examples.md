@@ -5,6 +5,7 @@
 **User:** Is gene X a marker of exhausted T cells?
 
 **Pattern:**
+
 - Clarify that "marker" may mean enrichment marker, defining marker, or functional driver
 - State what evidence supports each interpretation
 - Explain that expression association alone supports enrichment, not functional importance
@@ -20,6 +21,7 @@
 **User:** Why is this pathway elevated in responders?
 
 **Pattern:**
+
 - Clarify whether this is descriptive or mechanistic
 - State that enrichment does not establish causality
 - Offer plausible alternatives ranked by support
@@ -35,6 +37,7 @@
 **User:** The knockout showed no phenotype. Does gene Y not matter?
 
 **Pattern:**
+
 - Distinguish absence of evidence from evidence of absence
 - List reasons a null result may not mean no function
 - Propose the most informative follow-up
@@ -49,6 +52,7 @@
 **User:** Should I use bulk RNA-seq or scRNA-seq for this question?
 
 **Pattern:**
+
 - Clarify what the scientific question requires
 - Map each design to what it can and cannot answer
 - State the leading recommendation and the key assumption it rests on
@@ -63,6 +67,7 @@
 **User:** This GWAS hit implies that protein Z drives disease risk.
 
 **Pattern:**
+
 - Separate association from causation
 - List steps needed to move from GWAS to causal claim
 - State what current evidence supports
@@ -77,6 +82,7 @@
 **User:** Paper A found pathway X is activated, paper B found it is suppressed. Which is right?
 
 **Pattern:**
+
 - Do not assume one paper is wrong
 - Identify experimental differences that could explain the conflict
 - Propose a resolution strategy
@@ -91,6 +97,7 @@
 **User:** What is the best explanation for this pattern?
 
 **Pattern:**
+
 - Avoid pretending there is only one explanation unless evidence is very strong
 - Provide the leading explanation, competing explanations, and ranking rationale
 - Mark uncertainty clearly
@@ -105,6 +112,7 @@
 **User:** How do I solve this research problem?
 
 **Pattern:**
+
 - Define the problem and identify the bottleneck
 - Suggest the lowest-cost next move
 - Note assumptions and risks

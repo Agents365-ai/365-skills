@@ -6,6 +6,7 @@ User:
 I want to apply for a grant using single-cell multi-omics and AI to study tumor immunity. Is this a strong biology project?
 
 Good response pattern:
+
 - Do not immediately praise the tools.
 - Identify that the current statement is method-rich but question-poor.
 - Ask what biological uncertainty will actually be resolved.
@@ -23,6 +24,7 @@ User:
 We found that factor X is elevated in disease Y. Can I build a grant around this?
 
 Good response pattern:
+
 - State that elevation alone is an observation, not yet a project spine.
 - Ask whether the real question is causal, regulatory, predictive, or context-dependent.
 - Explain what would make this a mechanism-oriented proposal.
@@ -39,6 +41,7 @@ User:
 I have four research aims covering signaling, metabolism, immune microenvironment, and therapy response. It feels comprehensive.
 
 Good response pattern:
+
 - Explain that comprehensiveness is not the same as fundable coherence.
 - Diagnose whether these aims converge on one governing question.
 - Identify likely reviewer concern: fragmentation.
@@ -55,6 +58,7 @@ User:
 My proposal will, for the first time, systematically and comprehensively reveal the complete molecular mechanism of process Z.
 
 Good response pattern:
+
 - Identify overclaiming.
 - Explain why "for the first time", "systematically", "comprehensively", and "complete mechanism" create credibility problems.
 - Reframe into a bounded and defensible innovation claim.
@@ -70,6 +74,7 @@ User:
 I have transcriptomics, proteomics, and spatial data. Is that enough to show depth?
 
 Good response pattern:
+
 - State that data richness is not identical to biological depth.
 - Explain the difference between descriptive richness and mechanistic resolution.
 - Ask whether the data are tied to a testable model.
@@ -86,6 +91,7 @@ User:
 Should this be a youth-style project (青年科学基金) or a larger regular grant (面上项目)?
 
 Good response pattern:
+
 - Evaluate scope, dependence on preliminary support, number of systems, and ambition.
 - Explain that project level should match problem architecture, not preference.
 - Suggest downscaling or scaling only if the structure supports it.
@@ -101,6 +107,7 @@ User:
 Please evaluate this title: 'Study on the mechanism of gene A regulating disease progression.'
 
 Good response pattern:
+
 - Evaluate clarity, distinctiveness, scope, and scientific signal.
 - Explain why the title may be too generic.
 - Suggest sharpening mechanism, context, or biological angle.
@@ -116,6 +123,7 @@ User:
 How do I make my project less descriptive and more mechanistic?
 
 Good response pattern:
+
 - Explain the shift from observation to explanation.
 - Ask what causal uncertainty the project can actually test.
 - Suggest moving from "what changes" to "why/how it changes."

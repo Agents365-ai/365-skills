@@ -19,7 +19,7 @@
 兼容所有主流支持 [Agent Skills](https://agentskills.io) 格式的 AI 智能体：
 
 | 平台 | 支持状态 | 说明 |
-|------|----------|------|
+| ------ | ---------- | ------ |
 | **Claude Code** | ✅ 完全支持 | 原生 SKILL.md 格式 |
 | **OpenClaw / ClawHub** | ✅ 完全支持 | `metadata.openclaw` 命名空间 |
 | **Hermes Agent** | ✅ 完全支持 | `metadata.hermes` 命名空间，category: research |
@@ -30,7 +30,7 @@
 ## 有 skill 与无 skill 的对比
 
 | 能力 | 原生智能体 | 本 skill |
-|------|-----------|---------|
+| ------ | ----------- | --------- |
 | 区分"有趣"与"可资助"（生物学语境） | 否 | 是 — 显式诊断 |
 | 识别描述性项目 vs 机制驱动型申请 | 否 | 始终 |
 | 分离背景 / 空白 / 问题 / 假设 / 目标 / 内容 / 方案 | 不稳定 | 始终 |
@@ -132,7 +132,7 @@ skills install grant-thinking-cn-biology
 ### 安装路径汇总
 
 | 平台 | 全局路径 | 项目路径 |
-|------|----------|----------|
+| ------ | ---------- | ---------- |
 | Claude Code | `~/.claude/skills/grant-thinking-cn-biology/` | `.claude/skills/grant-thinking-cn-biology/` |
 | OpenClaw | `~/.openclaw/skills/grant-thinking-cn-biology/` | `skills/grant-thinking-cn-biology/` |
 | Hermes Agent | `~/.hermes/skills/research/grant-thinking-cn-biology/` | 通过 `external_dirs` 配置 |
@@ -158,6 +158,7 @@ grant-thinking-cn-biology/       ← 本 skill：中国生物学基金
 ```
 
 规划中的扩展：
+
 - `grant-thinking-cn-biology-youth/` — 专注青年科学基金
 - `grant-thinking-cn-biology-general-program/` — 专注面上项目
 - `grant-thinking-cn-biomedicine/` — 转化 / 临床生物学变体
@@ -200,5 +201,5 @@ MIT
 
 **Agents365-ai**
 
-- Bilibili: https://space.bilibili.com/441831884
-- GitHub: https://github.com/Agents365-ai
+- Bilibili: <https://space.bilibili.com/441831884>
+- GitHub: <https://github.com/Agents365-ai>
