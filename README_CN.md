@@ -57,6 +57,7 @@ npx skills add Agents365-ai/365-skills -g
 | `figshare` | Figshare v2 REST API —— 搜索公开数据集/文章、按 ID/DOI/URL 批量下载文件，并可对自己账号的文章进行创建、更新、发布与多分片上传（大文件三步上传流程） |
 | `zenodo` | Zenodo REST API —— 存缴、发布、版本管理与检索研究成果（数据集、软件、论文）并获得可引用 DOI；默认先用 sandbox，支持 bucket API 上传，附完整元数据参考与端到端 Shell 示例 |
 | `scientific-thinking-general` | 结构化科学推理元技能 —— 区分事实/证据/假说、按支持度排序竞争性解释、结论措辞与证据强度校准、明确解释边界 |
+| `scientific-thinking-biology` | scientific-thinking-general 的生物学专项适配版 —— 标志物与驱动因子区分、实验系统评估、8 级生物学证据层次、替代解释与混杂检查（组成、批次、冗余）、随证据强度校准的结论措辞 |
 
 ### 知识与笔记
 
