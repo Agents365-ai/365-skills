@@ -514,6 +514,27 @@
       ]
     },
     {
+      "name": "obsidian-dev-rules",
+      "source": "./plugins/obsidian-dev-rules",
+      "description": "Authoritative reference and rules for developing for Obsidian — building TypeScript plugins (Plugin lifecycle, manifest.json, commands, settings, modals, views, ribbon/status bar), the Vault and Editor APIs, the event system, Markdown post-processing & code-block processors, CodeMirror 6 editor extensions, building CSS themes (CSS variables, theme.css/manifest), and submitting plugins/themes to the community directory. Use whenever the user asks to build, debug, or review an Obsidian plugin or theme, work with the Obsidian API (Vault/Editor/Workspace/Plugin), register commands/views/events, process Markdown, or release/submit to the Obsidian community.",
+      "version": "0.1.0",
+      "author": {
+        "name": "Agents365-ai"
+      },
+      "repository": "https://github.com/Agents365-ai/365-skills",
+      "license": "MIT",
+      "keywords": [
+        "obsidian",
+        "plugin-development",
+        "typescript",
+        "codemirror",
+        "vault-api",
+        "themes",
+        "docs-reference",
+        "documentation"
+      ]
+    },
+    {
       "name": "obsidian-organizer",
       "source": "./plugins/obsidian-organizer",
       "description": "Keep a large Obsidian vault tidy — file new notes into the best-fit folder and audit/reorganize existing structure, driven by a single source-of-truth map note (00_Index/Folder_Map.md) that lives inside the vault. Link-safe by design: all moves/renames go through the obsidian CLI so wikilinks auto-repair, never raw shell. Propose-then-confirm for bulk reorganizations.",
