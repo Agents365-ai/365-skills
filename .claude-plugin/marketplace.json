@@ -596,6 +596,25 @@
         "long-running",
         "process-management"
       ]
+    },
+    {
+      "name": "figshare",
+      "source": "./plugins/figshare",
+      "description": "Interact with Figshare via the v2 REST API - search public datasets/articles, batch-download files, and create, update, publish, or multi-part-upload to your own articles (trigger on \"figshare\", figshare DOIs 10.6084/m9.figshare.*, or figshare.com URLs)",
+      "version": "1.0.0",
+      "author": {
+        "name": "Agents365-ai"
+      },
+      "repository": "https://github.com/Agents365-ai/365-skills",
+      "license": "MIT",
+      "keywords": [
+        "figshare",
+        "dataset",
+        "doi",
+        "research-data",
+        "upload",
+        "rest-api"
+      ]
     }
   ]
 }

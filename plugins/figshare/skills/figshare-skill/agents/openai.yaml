@@ -1,0 +1,7 @@
+interface:
+  display_name: "Figshare"
+  short_description: "Search, download, and publish via Figshare"
+  default_prompt: "Search Figshare, inspect an article, or upload a file."
+
+policy:
+  allow_implicit_invocation: true
