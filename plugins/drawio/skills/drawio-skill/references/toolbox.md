@@ -1,6 +1,8 @@
 # Toolbox — every bundled script, by use-case
 
-A map of the 31 bundled scripts grouped by what you're trying to do. The
+A map of the 41 focused tools, the unified `diagramctl.py` orchestrator
+(and its MCP server wrapper), and its
+internal `diagram_ir.py` model grouped by what you're trying to do. The
 per-task routing table in `SKILL.md` says *when* to reach for each; this says
 *how they fit together*. Read it when you're not sure which script a request
 maps to, or you want to chain several.
@@ -9,21 +11,40 @@ The recurring backbone is one pipeline — an **extractor** emits graph JSON, th
 `autolayout.py` places it, then `validate.py` lints it, then the draw.io CLI
 exports it:
 
-```
+```text
 <extractor> → graph.json → autolayout.py → diagram.drawio → validate.py → (export PNG/SVG/PDF)
 ```
+
+For new workflows, prefer the semantic backbone. It retains provenance and
+supports incremental updates instead of one-shot regeneration:
+
+```text
+source → diagramctl build → Diagram IR → views/test/review/story
+                              ↕
+                       diagramctl sync ↔ existing .drawio
+```
+
+Use focused scripts directly when you need their narrow interface; use
+`diagramctl.py` when a task crosses several stages.
 
 ## Quick decision guide
 
 | I have… | I want… | Use |
-|---|---|---|
+| --- | --- | --- |
 | a description in words | a styled diagram | hand-write XML (`references/xml-authoring.md`) or `autolayout.py` |
+| code/IaC/spec/IR | one command that detects, builds, and records provenance | `diagramctl build` |
+| a source-backed `.drawio` + changed source | update it without losing manual layout/style | `diagramctl sync` |
+| one architecture model | executive/system/deployment/data/security pages | `diagramctl views` |
+| a diagram or IR | queries, policy tests, architecture review, failure impact | `diagramctl query/test/review/whatif` |
+| a diagram or IR | an accessible guided offline walkthrough | `diagramctl story` |
 | a big/complex graph | it laid out for me | `autolayout.py` (`--tune` picks direction) |
 | a Python/JS/Go/Rust project | its module/class structure | `pyimports` · `jsimports` · `goimports` · `rustimports` · `pyclasses` |
 | Terraform/K8s/compose files | the **declared** architecture | `tfimports` · `k8simports` · `composeimports` |
 | a running cluster/stack/cloud | what's **actually deployed** | `tfstate` · `dockerimports` · `k8simports -` |
 | a SQL schema | an ER diagram | `sqlerd` |
 | an OpenAPI / Swagger spec | an API diagram (by method) | `openapiimports` |
+| an AsyncAPI 2 / 3 spec | an event-driven architecture diagram | `asyncapiimports` |
+| a Protocol Buffers (.proto) schema | a message/service diagram | `protoimports` |
 | CI workflows (GH Actions / GitLab) | the pipeline as a DAG | `ciimports` |
 | a diagram + a metrics file | it coloured by the data | `heatmap` |
 | a sequence of interactions | a UML sequence diagram | `seqlayout` |
@@ -37,7 +58,7 @@ exports it:
 | a `.drawio` | diagrams-as-code | `drawio2mermaid` (→ Mermaid) |
 | a `.drawio` | the same diagram in another language | `relabel` (extract → translate → apply) |
 | a `.drawio` | it re-themed (dark / corporate preset) | `restyle` |
-| a shape/icon need | the exact style string | `shapesearch` · `aiicons` (AI/LLM logos) |
+| a shape/icon need | the exact style string | `shapesearch` · `aiicons` (AI/LLM logos) · `dbxicons` (Databricks products) |
 | a photo/screenshot of a diagram | an editable `.drawio` | `raster2drawio` (your vision → JSON → draw.io) |
 | ONE `.drawio` | it building itself, as a video/GIF | `buildup` (→ HTML player; `--gif`) |
 | a big/sprawling diagram | a boardroom exec summary + drill-down | `compress` |
@@ -51,7 +72,7 @@ exports it:
 - **`seqlayout.py`** — participants + messages JSON → sequence diagram with computed lifelines/activation bars (no Graphviz).
 - **`c4.py`** — levels JSON → one multi-page `.drawio` (Context→Container→Component) with click-to-drill-down links.
 - **`tubemap.py`** — metro JSON (coloured lines + grid-placed stations) → a London-Underground-style **tube map**: octilinear (H/V/45°) routing, white interchange circles, station stops. No Graphviz. See `references/tubemap.md`.
-- **`shapesearch.py`** — search 10k+ official shapes for their exact `style=` string. **`aiicons.py`** — draw.io `image` styles for AI/LLM brand logos.
+- **`shapesearch.py`** — search 10k+ official shapes for their exact `style=` string. **`aiicons.py`** — draw.io `image` styles for AI/LLM brand logos. **`dbxicons.py`** — draw.io `image` styles for Databricks product icons (see `references/databricks.md`).
 - **`raster2drawio.py`** — a vision-extracted image graph JSON (from a whiteboard photo / legacy PNG / Visio screenshot) → editable `.drawio` honouring the read coordinates; missing positions fall back to `autolayout.py`. See `references/derasterize.md`.
 
 ## 2. Code → diagram
@@ -69,6 +90,8 @@ All emit graph JSON → `autolayout.py`.
 - **`sqlerd.py`** — SQL DDL (`CREATE TABLE`) → ERD with crow's-foot FK edges.
 - **`ciimports.py`** — GitHub Actions (`.github/workflows/*.yml`) and/or `.gitlab-ci.yml` -> pipeline DAG: job nodes (runner, `matrix xN`, reusable-workflow calls in purple), `needs:` edges, an `on:` trigger node per workflow, jobs boxed per workflow / per GitLab stage.
 - **`openapiimports.py`** — OpenAPI 3 / Swagger 2 spec → API diagram: one node per operation (coloured by HTTP method) + one per component schema, with edges to the schemas each operation uses and between nested schemas. `--group` by tag.
+- **`asyncapiimports.py`** — AsyncAPI 2 / 3 spec → event-driven architecture diagram: channel, publish/subscribe operation, and payload-schema nodes with provenance. `--group` by operation tag, channel tag, or channel prefix.
+- **`protoimports.py`** — Protocol Buffers (`.proto`) → message/service diagram: one node per message, service (with RPC methods), or enum; edges for referenced message field types and service request/response types. `--group` by proto package.
 
 ## 4. Live infrastructure → diagram (actually running)
 
@@ -80,7 +103,7 @@ The **actual** counterpart to §3 — see `references/live-infra.md`.
 
 ## 5. Compare & evolve
 
-- **`drawiodiff.py`** — diff two `.drawio` (or two live snapshots) → colour-coded graph (added=green, removed=red, changed=orange). Pairs with §4 for drift.
+- **`drawiodiff.py`** — diff two `.drawio` (or two live snapshots) → colour-coded graph (added=green, removed=red, changed=orange, moved=violet, rerouted edges=orange). Pairs with §4 for drift.
 - **`timelapse.py`** — re-run an extractor across git history → a self-contained HTML player of how the architecture grew.
 - **`heatmap.py`** — recolour any `.drawio` by a metrics file (CSV/JSON): each node shaded low→high on a gradient by its value (`--palette`, optional `--size`, auto legend). Turns a static architecture into a cost / latency / traffic / error-rate heat map.
 - **`buildup.py`** — reveal ONE diagram's cells in dependency order (topological over its edges) → self-contained HTML player (embedded PNG frames, play/pause/step/scrub); optional `--gif`. Needs the draw.io CLI.
@@ -102,6 +125,7 @@ The skill runs both directions — these turn a `.drawio` back into something el
 
 - **`relabel.py`** — swap every label via a JSON map, layout untouched — `--extract` dumps an identity map of all labels (vertices, edges, UserObjects, page names), translate the values, `--map` applies them. Built for bilingual (EN/CN) variants of one diagram.
 - **`restyle.py`** — apply a style preset (user or built-in, e.g. `dark`) to an existing `.drawio`: palette remap by hue, font, dark-theme extras, page background. Layout, shapes, and edge routing stay put.
-- **`validate.py`** — deterministic structural lint (dangling edges, dup/reserved ids, overlaps; `--score` for layout readability). Run before exporting.
+- **`edgeports.py`** — pin `exitX/exitY`/`entryX/entryY` ports when several edges stack at the same side of one node (typical on swimlane handoffs); spreads each (node, side) group evenly, keeps already-pinned and hand-tuned geometry, idempotent. Port assignment, not routing; node positions untouched. `SKILL.md` "Editing and identity" says when to reach for it.
+- **`validate.py`** — deterministic structural lint (dangling edges, dup/reserved ids, overlaps; `--score` for layout readability). Findings render as `error: [E-DANGLING-END] ... (fix: ...)` — stable codes + fix hints; `--json` for structured output. Run before exporting.
 - **`repair_png.py`** — fix draw.io's truncated IEND chunk after every `-e` PNG export (issue #8).
 - **`encode_drawio_url.py`** — encode a `.drawio` into a diagrams.net browser URL when the CLI is unavailable (`--edit` for an editable editor URL).
