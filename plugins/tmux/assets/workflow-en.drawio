@@ -1,0 +1,80 @@
+<mxfile host="app.diagrams.net">
+  <diagram id="tmux-agent-workflow-en" name="tmux agent workflow (EN)">
+    <mxGraphModel dx="1000" dy="800" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1000" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="2" />
+        <mxCell id="3" parent="2" />
+        <mxCell id="start" value="Process to run / monitor" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="3">
+          <mxGeometry x="350" y="30" width="280" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="d1" value="TTY, interactivity, or must outlive the terminal?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="3">
+          <mxGeometry x="340" y="120" width="300" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="plain" value="Plain shell job:&#10;cmd &gt; log 2&gt;&amp;1 &amp;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="3">
+          <mxGeometry x="720" y="135" width="220" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="new" value="tmux -L pi-agent new-session -d -s NAME&#10;-x 220 -y 50" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Courier New;" vertex="1" parent="3">
+          <mxGeometry x="330" y="240" width="320" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="send" value="tmux send-keys -t NAME&#10;&apos;cmd; echo &quot;__DONE__:$?&quot;&apos; Enter" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Courier New;" vertex="1" parent="3">
+          <mxGeometry x="330" y="335" width="320" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="poll" value="capture-pane -p -t NAME |&#10;grep &apos;__DONE__:[0-9]&apos; ?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontFamily=Courier New;" vertex="1" parent="3">
+          <mxGeometry x="330" y="430" width="320" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="capture" value="tmux capture-pane -p -S -2000 -t NAME&#10;(full output + exit code)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Courier New;" vertex="1" parent="3">
+          <mxGeometry x="330" y="565" width="320" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="d2" value="Keep the session for the human to watch?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="3">
+          <mxGeometry x="330" y="690" width="320" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="keep" value="Leave it running, hand over:&#10;tmux -L pi-agent attach -t NAME" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontFamily=Courier New;" vertex="1" parent="3">
+          <mxGeometry x="60" y="810" width="290" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="kill" value="tmux -L pi-agent kill-session -t NAME" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontFamily=Courier New;" vertex="1" parent="3">
+          <mxGeometry x="640" y="810" width="290" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="3" source="start" target="d1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" value="no" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="3" source="d1" target="plain">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" value="yes" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="3" source="d1" target="new">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="3" source="new" target="send">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="3" source="send" target="poll">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" value="yes" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=1;exitY=0.5;entryX=1;entryY=0.5;" edge="1" parent="3" source="poll" target="capture">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="740" y="475" />
+              <mxPoint x="740" y="592" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e7" value="no: sleep 1, re-check" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=0;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="3" source="poll" target="send">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="270" y="475" />
+              <mxPoint x="270" y="362" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e8" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="3" source="capture" target="d2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e9" value="yes" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="3" source="d2" target="keep">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e10" value="no" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="3" source="d2" target="kill">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

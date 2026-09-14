@@ -32,6 +32,7 @@ Install a single plugin (Claude Code): `/plugin install <plugin-name>`, e.g. `/p
 | --- | --- |
 | `agent-native-design` | CLI design for AI agents — evaluate, design, and refactor CLIs to serve humans, agents, and orchestration systems simultaneously |
 | `pi-plugin-cc` | Drive the Pi coding agent from Claude Code — model-agnostic delegation and code review. `/pi:review` with structured findings, `/pi:adversarial-review`, `/pi:rescue`, `/pi:parallel-rescue`, racing/fallback across providers, incremental review |
+| `tmux` | Run, drive, and monitor terminal programs from a coding agent: detached sessions at a fixed size, `send-keys` input injection, `capture-pane` polling with a race-free sentinel, format inspection, four completion-detection strategies, and the pitfalls that break naive tmux scripts |
 
 ### Drawing & diagrams
 
