@@ -13,7 +13,9 @@
 一个编程助手技能，将最新的 [Pi](https://pi.dev) 文档（`@earendil-works/pi-coding-agent`）
 打包为按需参考库，让助手无需重新抓取文档即可安装、配置、运行和**扩展 Pi**。
 
-镜像 <https://pi.dev/docs/latest>（抓取日期：2026-09-14）。
+镜像 <https://pi.dev/docs/latest>（抓取日期：2026-09-14）。另外两个参考文件（`chord.md`、
+`agent-harness.md`）覆盖 Pi 的**内部 monorepo 架构**，从 `pi@71dca871b` 的本地源码树构建，
+因为这些包在官网没有对应页面。
 
 适用于 Claude Code、Cursor、Codex、Copilot、Windsurf、Cline / Roo Code、Gemini CLI、
 Aider、Zed、OpenCode、OpenClaw / ClawHub、Hermes、pi-mono，以及主流国产编程助手
@@ -46,6 +48,12 @@ Aider、Zed、OpenCode、OpenClaw / ClawHub、Hermes、pi-mono，以及主流国
 - `references/philosophy-and-design.md`（作者的设计宣言，Mario Zechner 的博客文章，2025-11-30）：
   为何极简、4 工具哲学、默认 YOLO、明确的非功能特性（无 MCP / 无计划模式 / 无待办 / 无子代理 /
   无后台 bash）及其预期替代方案。
+- `references/chord.md`：`@earendil-works/chord`，与应用无关的组合运行时：插件加载/组合/打包、
+  服务目录、RPC 传输、facet bundle loader，以及 `chord/delta` 的“最新值”状态复制。其中
+  `PLANNING.md` 是实施计划，不是冻结的 API。
+- `references/agent-harness.md`：内部 agent 架构，取自 `packages/agent/docs/`：`AgentHarness`
+  规范、application host 与 facet、typed value/list、facet-service RPC、telemetry schema 与
+  invocation context。
 
 ## 安装
 
@@ -63,8 +71,17 @@ cp -r pi-dev-rules ~/.claude/skills/      # 示例：Claude Code，全局
 
 ## 更新
 
-重新抓取 <https://pi.dev/docs/latest> 下的页面并重新生成 `references/` 文件；更新
-`SKILL.md` 中的 `metadata.fetched`。
+参考文件全部从本地 pi 源码检出重建，不访问网络：
+
+```bash
+PI_REPO=~/github/pi bash scripts/refresh.sh    # PI_REPO 默认为 ~/github/pi
+```
+
+该脚本会根据各参考包头部的源文件列表重建 12 个自动生成的参考包与 `changelog.md`（手工维护的
+`philosophy-and-design.md` 不受影响），在 changelog 中固定修订号，并打印提交提醒。检查 diff 后，
+在 `SKILL.md`（以及 marketplace 条目）中更新 `version` 与 `metadata.fetched` /
+`metadata.piRevision` 再发布。官网镜像与源码树保持同步，因为同一批文档页就在
+`packages/coding-agent/docs/` 下。
 
 ## 支持
 

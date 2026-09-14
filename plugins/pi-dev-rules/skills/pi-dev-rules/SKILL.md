@@ -1,9 +1,9 @@
 ---
 name: pi-dev-rules
-version: 0.2.2
-description: "Authoritative reference for Pi (@earendil-works/pi-coding-agent): install, configure, run, and extend. Use when the user asks about Pi CLI/flags/commands, providers/models/auth, settings/compaction/sessions, security/trust, extensions, skills, prompt templates, themes, packages, custom providers, TUI components, the SDK, RPC mode, or JSON streaming. Also use for Pi's design philosophy and opinionated choices (why minimal, 4 tools, YOLO, no MCP/plan mode/to-dos/sub-agents) and the creator Mario Zechner's coding-agent blog post."
+version: 0.3.0
+description: "Authoritative reference for Pi (@earendil-works/pi-coding-agent): install, configure, run, and extend. Use when the user asks about Pi CLI/flags/commands, providers/models/auth, settings/compaction/sessions, security/trust, extensions, skills, prompt templates, themes, packages, custom providers, TUI components, the SDK, RPC mode, or JSON streaming. Also use for Pi's design philosophy and opinionated choices (why minimal, 4 tools, YOLO, no MCP/plan mode/to-dos/sub-agents), the creator Mario Zechner's coding-agent blog post, and Pi's internal monorepo architecture: the Chord plugin/service runtime (@earendil-works/chord), the agent harness, facets/services, and delta tracking."
 license: MIT
-metadata: {"source":"https://pi.dev/docs/latest","docVersion":"latest","fetched":"2026-09-14","version":"0.2.2"}
+metadata: {"source":"https://pi.dev/docs/latest","docVersion":"latest","fetched":"2026-09-14","piRevision":"71dca871b","version":"0.3.0"}
 ---
 
 # Pi Dev Rules
@@ -11,7 +11,9 @@ metadata: {"source":"https://pi.dev/docs/latest","docVersion":"latest","fetched"
 Pi is a **minimal terminal coding harness**: lightweight core, extended through TypeScript
 customizations. Package: `@earendil-works/pi-coding-agent`. Maintained by Earendil Inc. (MIT).
 This skill mirrors the official docs at <https://pi.dev/docs/latest> so you can answer Pi questions
-and build Pi customizations without re-fetching.
+and build Pi customizations without re-fetching. Two further bundles describe the **internal
+monorepo architecture** (Chord runtime, agent harness) and are built from the pi source tree, not
+from the website, because those packages are not user-facing.
 
 ## When to use this skill
 
@@ -26,6 +28,9 @@ and build Pi customizations without re-fetching.
 - Understanding **why Pi is designed the way it is**: the creator's philosophy (minimal core, 4
   tools, YOLO by default, no MCP/plan mode/to-dos/sub-agents) and how to configure/extend Pi along
   those lines instead of against them.
+- Working **inside** the pi monorepo: the `@earendil-works/chord` runtime (plugin loading,
+  service catalogue, RPC transport, delta/replicated state), the agent harness, facets/services,
+  and the experimental `server`/`client`/`protocol` packages.
 
 ## Reference index: load the file you need
 
@@ -42,7 +47,9 @@ and build Pi customizations without re-fetching.
 | `references/platform-setup.md` | Windows, Termux, tmux, per-terminal modified-Enter setup, shell aliases, build-from-source |
 | `references/development.md` | Building Pi from source, monorepo structure, forking/rebranding, debugging |
 | `references/philosophy-and-design.md` | Creator Mario Zechner's design manifesto (blog, 2025-11-30): minimal prompt <1000 tokens, 4 tools, YOLO by default, non-features (no MCP/plan/to-dos/sub-agents/background bash) with their intended alternatives, multi-provider architecture, Terminal-Bench 2.0 results (manually curated, not auto-built) |
-| `references/changelog.md` | pi.dev/news release notes: recent versions, RSS feed, how to fetch latest |
+| `references/chord.md` | `@earendil-works/chord`: plugin loading/composition/bundling, the service catalogue, RPC transport, `bundleFacetPackage` + facet bundle loaders, and `chord/delta` replicated latest-value state. Built from `packages/chord/{README.md,PLANNING.md,src/delta/README.md}`; `PLANNING.md` is a plan, not a frozen API |
+| `references/agent-harness.md` | Internal agent architecture: `AgentHarness` spec, application hosts & facets, typed values/lists, facet-service RPC, telemetry schema and invocation context. Built from `packages/agent/docs/`; specifications, not user docs |
+| `references/changelog.md` | Release history: the last 25 versions with their headline change, extracted from `packages/coding-agent/CHANGELOG.md` (275 release sections; read the file in the checkout for the full text) |
 
 ## Starter plugins
 
@@ -106,6 +113,10 @@ pi --mode rpc                                   # JSON-RPC over stdin/stdout
   ~50KB / 2000 lines. Use `StringEnum` (from `@earendil-works/pi-ai`) for LLM-facing enums.
 - **Skill `name`**: 1–64 chars, lowercase `a-z 0-9 -`, no leading/trailing or consecutive hyphens;
   `description` ≤1024 chars and must say *when* to load it (a skill with no description won't load).
+- **`chord.md` and `agent-harness.md` describe internals, not a stable contract.** Chord is
+  published but application-neutral, the harness docs are implementation specifications, and
+  `PLANNING.md`/`server`/`client`/`protocol` are explicitly experimental. Quote them as the
+  current source tree state (pi@`71dca871b`), not as promised API.
 - **`auth.json` must be `0600`.** Credential priority: CLI `--api-key` → `auth.json` →
   env var → custom-provider keys in `models.json`.
 - Project `.pi/settings.json` overrides global; nested objects merge (not replace). Use `pi install -l`
