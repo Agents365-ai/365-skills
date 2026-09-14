@@ -13,7 +13,7 @@
   <meta property="og:description" content="Claude Code / OpenClaw / SkillsMP 技能:自然语言生成手绘白板风格 .tldr 图表,视觉自检、5 轮反馈循环、6 种图表预设,PNG/SVG 导出。">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://agents365-ai.github.io/365-skills/tldraw/zh.html">
-  <meta property="og:image" content="https://raw.githubusercontent.com/Agents365-ai/tldraw-skill/main/assets/example.png">
+  <meta property="og:image" content="https://raw.githubusercontent.com/Agents365-ai/365-skills/main/plugins/tldraw/assets/example.png">
   <meta name="twitter:card" content="summary_large_image">
   <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -201,16 +201,16 @@ footer a:hover { color: var(--text); }
         <button class="copy-btn" data-copied="已复制!" onclick="copyInstall()">复制</button>
       </div>
       <div class="hero-links">
-        <a href="https://github.com/Agents365-ai/tldraw-skill" class="btn btn-primary">GitHub</a>
+        <a href="https://github.com/Agents365-ai/365-skills/tree/main/plugins/tldraw" class="btn btn-primary">GitHub</a>
         <a href="https://clawhub.ai/agents365-ai/tldraw-pro-skill" class="btn btn-outline">ClawHub</a>
         <a href="https://skillsmp.com/skills/agents365-ai-tldraw-skill-skills-tldraw-skill-skill-md" class="btn btn-outline">SkillsMP</a>
         <a href="https://discord.gg/79JF5Atuk" class="btn btn-outline">Discord</a>
       </div>
       <div style="margin-top:56px;">
-        <img src="https://raw.githubusercontent.com/Agents365-ai/tldraw-skill/main/assets/example.png"
+        <img src="https://raw.githubusercontent.com/Agents365-ai/365-skills/main/plugins/tldraw/assets/example.png"
              alt="tldraw-skill 从一条自然语言提示词生成的白板风格微服务架构图"
              style="width:100%;max-width:920px;height:auto;border-radius:12px;border:1px solid var(--border);box-shadow:0 8px 32px rgba(0,0,0,0.3);">
-        <p style="margin-top:14px;font-size:13px;color:var(--text-muted);">来自一条自然语言提示词 &mdash; 完整提示词见 <a href="https://github.com/Agents365-ai/tldraw-skill/blob/main/README_CN.md#%EF%B8%8F-%E7%A4%BA%E4%BE%8B">README</a>。</p>
+        <p style="margin-top:14px;font-size:13px;color:var(--text-muted);">来自一条自然语言提示词 &mdash; 完整提示词见 <a href="https://github.com/Agents365-ai/365-skills/blob/main/plugins/tldraw/README_CN.md#%EF%B8%8F-%E7%A4%BA%E4%BE%8B">README</a>。</p>
       </div>
     </div>
   </div>
@@ -272,21 +272,21 @@ footer a:hover { color: var(--text); }
 npx skills add Agents365-ai/365-skills -g
 
 # Manual install
-git clone https://github.com/Agents365-ai/tldraw-skill.git ~/.claude/skills/tldraw-skill</pre></div>
+git clone https://github.com/Agents365-ai/365-skills.git && cp -r 365-skills/plugins/tldraw/skills/tldraw-skill ~/.claude/skills/tldraw-skill</pre></div>
 <div id="tab-opencode" class="tab-content" role="tabpanel"><pre># Global
-git clone https://github.com/Agents365-ai/tldraw-skill.git ~/.config/opencode/skills/tldraw-skill
+git clone https://github.com/Agents365-ai/365-skills.git && cp -r 365-skills/plugins/tldraw/skills/tldraw-skill ~/.config/opencode/skills/tldraw-skill
 
 # Project
-git clone https://github.com/Agents365-ai/tldraw-skill.git .opencode/skills/tldraw-skill</pre></div>
+git clone https://github.com/Agents365-ai/365-skills.git && cp -r 365-skills/plugins/tldraw/skills/tldraw-skill .opencode/skills/tldraw-skill</pre></div>
 <div id="tab-openclaw" class="tab-content" role="tabpanel"><pre># Global
-git clone https://github.com/Agents365-ai/tldraw-skill.git ~/.openclaw/skills/tldraw-skill</pre></div>
+git clone https://github.com/Agents365-ai/365-skills.git && cp -r 365-skills/plugins/tldraw/skills/tldraw-skill ~/.openclaw/skills/tldraw-skill</pre></div>
 <div id="tab-skillsmp" class="tab-content" role="tabpanel"><pre># Via SkillsMP CLI
 skills install tldraw-skill</pre></div>
 <div id="tab-codex" class="tab-content" role="tabpanel"><pre># User-level
-git clone https://github.com/Agents365-ai/tldraw-skill.git ~/.agents/skills/tldraw-skill
+git clone https://github.com/Agents365-ai/365-skills.git && cp -r 365-skills/plugins/tldraw/skills/tldraw-skill ~/.agents/skills/tldraw-skill
 
 # Project-level
-git clone https://github.com/Agents365-ai/tldraw-skill.git .agents/skills/tldraw-skill</pre></div>
+git clone https://github.com/Agents365-ai/365-skills.git && cp -r 365-skills/plugins/tldraw/skills/tldraw-skill .agents/skills/tldraw-skill</pre></div>
     </div>
   </section>
 
@@ -300,17 +300,17 @@ git clone https://github.com/Agents365-ai/tldraw-skill.git .agents/skills/tldraw
           <h3>drawio-skill</h3>
           <p>商务正式风格 &mdash; 汇报材料、严格 UML、ML 论文、网络拓扑。</p>
         </a>
-        <a href="https://github.com/Agents365-ai/excalidraw-skill" class="feature-card" style="text-decoration:none;color:inherit;">
+        <a href="https://github.com/Agents365-ai/365-skills/tree/main/plugins/excalidraw" class="feature-card" style="text-decoration:none;color:inherit;">
           <div class="feature-icon">&#x270F;&#xFE0F;</div>
           <h3>excalidraw-skill</h3>
           <p>手绘 / 草图风格 &mdash; 白板原型、非正式图。</p>
         </a>
-        <a href="https://github.com/Agents365-ai/mermaid-skill" class="feature-card" style="text-decoration:none;color:inherit;">
+        <a href="https://github.com/Agents365-ai/365-skills/tree/main/plugins/mermaid" class="feature-card" style="text-decoration:none;color:inherit;">
           <div class="feature-icon">&#x1F4CA;</div>
           <h3>mermaid-skill</h3>
           <p>文本驱动、自动布局 &mdash; 可嵌入 README,易于版本管理。</p>
         </a>
-        <a href="https://github.com/Agents365-ai/plantuml-skill" class="feature-card" style="text-decoration:none;color:inherit;">
+        <a href="https://github.com/Agents365-ai/365-skills/tree/main/plugins/plantuml" class="feature-card" style="text-decoration:none;color:inherit;">
           <div class="feature-icon">&#x1F9E9;</div>
           <h3>plantuml-skill</h3>
           <p>UML 专精 &mdash; CI 流水线里的类图 / 序列图。</p>
@@ -356,7 +356,7 @@ git clone https://github.com/Agents365-ai/tldraw-skill.git .agents/skills/tldraw
 
   <footer>
     <div class="container">
-      <p><a href="https://github.com/Agents365-ai/tldraw-skill/blob/main/LICENSE">MIT 协议</a> &middot; <a href="https://github.com/Agents365-ai/tldraw-skill">GitHub</a> &middot; <a href="https://github.com/Agents365-ai">Agents365-ai</a></p>
+      <p><a href="https://github.com/Agents365-ai/365-skills/blob/main/plugins/tldraw/LICENSE">MIT 协议</a> &middot; <a href="https://github.com/Agents365-ai/365-skills/tree/main/plugins/tldraw">GitHub</a> &middot; <a href="https://github.com/Agents365-ai">Agents365-ai</a></p>
     </div>
   </footer>
 
