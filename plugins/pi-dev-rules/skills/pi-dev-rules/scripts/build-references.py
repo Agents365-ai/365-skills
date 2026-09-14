@@ -1,17 +1,16 @@
 #!/usr/bin/env python3
-"""Build combined reference markdown files from individual pi doc pages.
+"""Build the combined reference markdown files from a local Pi checkout.
 
-Fetches source .md files from the pi GitHub repo, then combines them into the
-grouped reference files used by this skill. Run after fetching fresh docs into
-a temp directory.
+Reads individual .md files from the pi monorepo and combines them into the
+grouped reference files used by this skill. Nothing is fetched from the network.
 
-Usage: python3 scripts/build-references.py <src_dir> [output_dir]
+Usage: python3 scripts/build-references.py <pi_repo_root> [output_dir]
 """
 
 import os
 import sys
 
-SRC = sys.argv[1]  # temp dir with individual .md files
+REPO = sys.argv[1]  # path to the pi monorepo checkout
 OUT = (
     sys.argv[2]
     if len(sys.argv) > 2
@@ -20,56 +19,72 @@ OUT = (
     )
 )
 
-# (output_file, [(source_file, header), ...])
+# (output_file, [(repo-relative source_file, header), ...])
 BUNDLES = {
     "cli-and-usage.md": [
-        ("quickstart.md", "Quickstart"),
-        ("usage.md", "Using Pi"),
-        ("environment-variables.md", "Environment Variables"),
-        ("sessions.md", "Sessions"),
-        ("keybindings.md", "Keybindings"),
+        ("packages/coding-agent/docs/quickstart.md", "Quickstart"),
+        ("packages/coding-agent/docs/usage.md", "Using Pi"),
+        (
+            "packages/coding-agent/docs/environment-variables.md",
+            "Environment Variables",
+        ),
+        ("packages/coding-agent/docs/sessions.md", "Sessions"),
+        ("packages/coding-agent/docs/keybindings.md", "Keybindings"),
     ],
     "providers-and-models.md": [
-        ("providers.md", "Providers"),
-        ("llama-cpp.md", "llama.cpp Router Setup"),
-        ("models.md", "Custom Models"),
-        ("custom-provider.md", "Custom Providers"),
+        ("packages/coding-agent/docs/providers.md", "Providers"),
+        ("packages/coding-agent/docs/llama-cpp.md", "llama.cpp Router Setup"),
+        ("packages/coding-agent/docs/models.md", "Custom Models"),
+        ("packages/coding-agent/docs/custom-provider.md", "Custom Providers"),
     ],
     "settings-and-compaction.md": [
-        ("settings.md", "Settings"),
-        ("compaction.md", "Compaction"),
+        ("packages/coding-agent/docs/settings.md", "Settings"),
+        ("packages/coding-agent/docs/compaction.md", "Compaction"),
     ],
     "extending-pi.md": [
-        ("extensions.md", "Extensions"),
-        ("skills.md", "Skills"),
-        ("prompt-templates.md", "Prompt Templates"),
-        ("themes.md", "Themes"),
-        ("packages.md", "Pi Packages"),
+        ("packages/coding-agent/docs/extensions.md", "Extensions"),
+        ("packages/coding-agent/docs/skills.md", "Skills"),
+        ("packages/coding-agent/docs/prompt-templates.md", "Prompt Templates"),
+        ("packages/coding-agent/docs/themes.md", "Themes"),
+        ("packages/coding-agent/docs/packages.md", "Pi Packages"),
     ],
     "tui-components.md": [
-        ("tui.md", "TUI Components"),
+        ("packages/coding-agent/docs/tui.md", "TUI Components"),
     ],
     "security-and-containerization.md": [
-        ("security.md", "Security"),
-        ("containerization.md", "Containerization"),
+        ("packages/coding-agent/docs/security.md", "Security"),
+        ("packages/coding-agent/docs/containerization.md", "Containerization"),
     ],
     "session-format.md": [
-        ("session-format.md", "Session Format"),
+        ("packages/coding-agent/docs/session-format.md", "Session Format"),
     ],
     "programmatic.md": [
-        ("sdk.md", "SDK"),
-        ("rpc.md", "RPC Mode"),
-        ("json.md", "JSON Event Stream Mode"),
+        ("packages/coding-agent/docs/sdk.md", "SDK"),
+        ("packages/coding-agent/docs/rpc.md", "RPC Mode"),
+        ("packages/coding-agent/docs/json.md", "JSON Event Stream Mode"),
     ],
     "platform-setup.md": [
-        ("windows.md", "Windows"),
-        ("termux.md", "Termux on Android"),
-        ("tmux.md", "tmux"),
-        ("terminal-setup.md", "Terminal Setup"),
-        ("shell-aliases.md", "Shell Aliases"),
+        ("packages/coding-agent/docs/windows.md", "Windows"),
+        ("packages/coding-agent/docs/termux.md", "Termux on Android"),
+        ("packages/coding-agent/docs/tmux.md", "tmux"),
+        ("packages/coding-agent/docs/terminal-setup.md", "Terminal Setup"),
+        ("packages/coding-agent/docs/shell-aliases.md", "Shell Aliases"),
     ],
     "development.md": [
-        ("development.md", "Development"),
+        ("packages/coding-agent/docs/development.md", "Development"),
+    ],
+    "chord.md": [
+        ("packages/chord/README.md", "Overview"),
+        ("packages/chord/src/delta/README.md", "Delta Tracking"),
+        ("packages/chord/PLANNING.md", "Implementation Plan"),
+    ],
+    "agent-harness.md": [
+        ("packages/agent/docs/harness.md", "AgentHarness Implementation Specification"),
+        ("packages/agent/docs/plugins.md", "Application Hosts and Facets"),
+        ("packages/agent/docs/values.md", "Typed Values and Lists"),
+        ("packages/agent/docs/rpc.md", "Facet Service RPC"),
+        ("packages/agent/docs/telemetry-schema.md", "Telemetry Schemas"),
+        ("packages/agent/docs/telemetry.md", "Invocation Context and Telemetry Notes"),
     ],
 }
 
@@ -115,9 +130,17 @@ HEADER_DOCS = {
         "# Pi: Development (Build from Source)",
         "Source: https://pi.dev/docs/latest/development",
     ),
+    "chord.md": (
+        "# Chord: Application-Composition Runtime",
+        "Source: `packages/chord/README.md`, `src/delta/README.md`, `PLANNING.md`\nNot a Pi package: `@earendil-works/chord` is an application-neutral runtime that depends on no other Pi workspace package, and it is not covered by the Pi user docs. `PLANNING.md` is an active implementation plan, not a stable API contract.",
+    ),
+    "agent-harness.md": (
+        "# Pi Agent Harness, Facets, and Services",
+        "Source: `packages/agent/docs/harness.md`, `plugins.md`, `values.md`, `rpc.md`, `telemetry-schema.md`, `telemetry.md`\nInternal architecture of the agent harness, not user documentation. `harness.md`, `plugins.md`, and `rpc.md` are implementation specifications; `telemetry.md` is design input and `telemetry-schema.md` is generated. See the shipped CLI docs in the other reference files for user-facing behavior.",
+    ),
 }
 
-GH_BASE = "https://raw.githubusercontent.com/earendil-works/pi/main/packages/coding-agent/docs"
+GH_BASE = "https://raw.githubusercontent.com/earendil-works/pi/main"
 
 
 def read_file(path):
@@ -163,6 +186,10 @@ def strip_trailing_blank_lines(lines):
 
 
 def build():
+    if not os.path.isdir(REPO):
+        raise SystemExit(f"not a directory: {REPO}")
+
+    missing = []
     for out_name, sources in BUNDLES.items():
         hdr = HEADER_DOCS[out_name]
         header = hdr[0] + "\n"
@@ -173,9 +200,10 @@ def build():
 
         parts = []
         for src_name, section_header in sources:
-            src_path = os.path.join(SRC, src_name)
+            src_path = os.path.join(REPO, src_name)
             if not os.path.exists(src_path):
                 print(f"  WARNING: {src_path} not found, skipping", file=sys.stderr)
+                missing.append(src_name)
                 continue
             content = read_file(src_path)
             lines = content.split("\n")
@@ -194,6 +222,8 @@ def build():
         out_path = os.path.join(OUT, out_name)
         write_file(out_path, full)
 
+    if missing:
+        raise SystemExit(f"missing source files: {', '.join(missing)}")
     print("Done building references.")
 
 

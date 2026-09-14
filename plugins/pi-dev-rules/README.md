@@ -14,7 +14,9 @@ A coding-agent skill that packages the **latest [Pi](https://pi.dev) documentati
 (`@earendil-works/pi-coding-agent`) as an on-demand reference, so an agent can install, configure,
 run, and **extend Pi** without re-fetching the docs.
 
-Mirrors <https://pi.dev/docs/latest> (fetched 2026-09-14).
+Mirrors <https://pi.dev/docs/latest> (fetched 2026-09-14). Two extra bundles (`chord.md`,
+`agent-harness.md`) cover Pi's **internal monorepo architecture** and are built from a pi
+checkout at `pi@71dca871b`, since those packages have no pages on the website.
 
 Works with Claude Code, Cursor, Codex, Copilot, Windsurf, Cline / Roo Code, Gemini CLI,
 Aider, Zed, OpenCode, OpenClaw / ClawHub, Hermes, pi-mono, plus major Chinese agents
@@ -47,6 +49,13 @@ Aider, Zed, OpenCode, OpenClaw / ClawHub, Hermes, pi-mono, plus major Chinese ag
 - `references/philosophy-and-design.md` (the creator's design manifesto, Mario Zechner's blog post,
   2025-11-30): why minimal, the 4-tool philosophy, YOLO by default, the explicit non-features (no
   MCP / plan mode / to-dos / sub-agents / background bash) with their intended alternatives.
+- `references/chord.md`: `@earendil-works/chord`, the application-neutral composition runtime:
+  plugin loading/composition/bundling, the service catalogue, RPC transport, facet bundle loaders,
+  and `chord/delta` replicated latest-value state. Includes `PLANNING.md`, which is a plan rather
+  than a frozen API.
+- `references/agent-harness.md`: internal agent architecture, from `packages/agent/docs/`:
+  `AgentHarness` spec, application hosts and facets, typed values and lists, facet-service RPC,
+  telemetry schema and invocation context.
 
 ## Install
 
@@ -64,8 +73,18 @@ cp -r pi-dev-rules ~/.claude/skills/      # example: Claude Code, global
 
 ## Updating
 
-Re-fetch the pages under <https://pi.dev/docs/latest> and regenerate the `references/` files; bump
-`metadata.fetched` in `SKILL.md`.
+The references are rebuilt from a local pi checkout, with no network access:
+
+```bash
+PI_REPO=~/github/pi bash scripts/refresh.sh    # PI_REPO defaults to ~/github/pi
+```
+
+That regenerates the 12 auto-built bundles plus `changelog.md` from the files listed in their
+headers, leaving the manually curated `philosophy-and-design.md` untouched. It pins the revision
+in the changelog and prints the commit reminder. Review the diff, then bump `version` and
+`metadata.fetched` / `metadata.piRevision` in `SKILL.md` (and in the marketplace entry) before
+releasing. The website mirror stays in sync because the same doc pages live in
+`packages/coding-agent/docs/`.
 
 ## Support
 

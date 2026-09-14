@@ -1,31 +1,34 @@
 #!/usr/bin/env bash
-# Refresh doc references and changelog.
+# Rebuild the reference bundles and the changelog from a local Pi checkout.
 #
-# Intended cadence: weekly (Sundays): Pi releases ship every few days, but a
-# weekly refresh keeps this reference skill current without churn.
+# Requires the pi monorepo (https://github.com/earendil-works/pi) on disk.
+# Nothing is fetched from the network.
 #
-# Usage: bash scripts/refresh.sh
+# Usage: PI_REPO=/path/to/pi bash scripts/refresh.sh
+#        PI_REPO defaults to ~/github/pi
+#
+# Intended cadence: weekly, since Pi releases ship every few days.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-TMPDIR=$(mktemp -d)
-trap 'rm -rf "$TMPDIR"' EXIT
+PI_REPO="${PI_REPO:-$HOME/github/pi}"
+if [ ! -d "$PI_REPO/packages/coding-agent/docs" ]; then
+	echo "not a Pi checkout: $PI_REPO" >&2
+	echo "set PI_REPO to the pi monorepo root, for example:" >&2
+	echo "  PI_REPO=\$HOME/github/pi bash scripts/refresh.sh" >&2
+	exit 1
+fi
 
-echo "=== [1/2] Fetch latest docs from pi repo ==="
-FETCH_FLAGS=(--retry 3 --retry-delay 2 --connect-timeout 5 --max-time 20 --max-filesize 524288)
-for f in index.md quickstart.md usage.md environment-variables.md providers.md llama-cpp.md security.md containerization.md settings.md keybindings.md sessions.md compaction.md extensions.md skills.md prompt-templates.md themes.md packages.md models.md custom-provider.md session-format.md sdk.md rpc.md json.md tui.md windows.md termux.md tmux.md terminal-setup.md shell-aliases.md development.md; do
-	echo "  fetching $f..."
-	curl -sfL "${FETCH_FLAGS[@]}" "https://raw.githubusercontent.com/earendil-works/pi/main/packages/coding-agent/docs/$f" -o "$TMPDIR/$f" || echo "  WARNING: $f failed"
-done
-python3 scripts/build-references.py "$TMPDIR"
+REV=$(git -C "$PI_REPO" rev-parse --short HEAD 2>/dev/null || echo unknown)
+
+echo "=== [1/2] Reference bundles (pi@$REV) ==="
+python3 scripts/build-references.py "$PI_REPO"
 echo ""
 
 echo "=== [2/2] Changelog ==="
-python3 scripts/fetch-changelog.py
+python3 scripts/build-changelog.py "$PI_REPO" "$REV"
 echo ""
 
 echo "Done. Review git diff, then commit on a feature branch:"
-echo "  git checkout -b weekly-refresh-\$(date +%Y-%m-%d)"
-echo "  git add references/"
-echo "  git commit -m 'Weekly refresh: docs, changelog (\$(date +%Y-%m-%d))'"
-echo "  git push -u origin HEAD && gh pr create --title 'Weekly refresh (\$(date +%Y-%m-%d))' --body 'Automated weekly refresh of docs and changelog.'"
+echo "  git checkout -b refresh-\$(date +%Y-%m-%d)"
+echo "  git add references/ && git commit -m 'Refresh references (pi@$REV)'"
