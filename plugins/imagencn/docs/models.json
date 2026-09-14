@@ -1,0 +1,931 @@
+{
+  "updated": "2026-08-08",
+  "providers": [
+    {
+      "id": "dashscope",
+      "name": "Alibaba Cloud Bailian",
+      "nameCN": "阿里云百炼",
+      "shortName": "DashScope",
+      "color": "#FF6A00",
+      "apiStyle": "Native SDK (dashscope)",
+      "endpoint": "https://dashscope.aliyuncs.com/api/v1",
+      "envVar": "DASHSCOPE_API_KEY",
+      "regions": [
+        "cn",
+        "sg",
+        "us"
+      ],
+      "getKeyUrl": "https://bailian.console.aliyun.com/",
+      "strength": "Text rendering, model variety",
+      "strengthCN": "文字渲染，模型种类最多",
+      "modelCount": 21,
+      "models": [
+        {
+          "id": "qwen-image-2.0-pro",
+          "name": "Qwen-Image 2.0 Pro",
+          "category": "Qwen-Image 2.0",
+          "categoryCN": "通义千问 2.0",
+          "api": "MultiModalConversation",
+          "description": "Latest flagship, native 2K, strongest typography and detail",
+          "descriptionCN": "最新旗舰，原生2K，最强字体与细节",
+          "maxResolution": "2048×2048",
+          "pricing": "¥0.12/img",
+          "strengths": [
+            "Chinese text",
+            "English text",
+            "Posters",
+            "Typography"
+          ],
+          "default": true
+        },
+        {
+          "id": "qwen-image-2.0-pro-2026-06-22",
+          "name": "Qwen-Image 2.0 Pro (Jun 2026)",
+          "category": "Qwen-Image 2.0",
+          "categoryCN": "通义千问 2.0",
+          "api": "MultiModalConversation",
+          "description": "Latest snapshot: generation + editing fusion, improved text",
+          "descriptionCN": "最新快照版：生成与编辑融合，文字渲染增强",
+          "maxResolution": "2048×2048",
+          "pricing": "¥0.12/img",
+          "strengths": [
+            "Chinese text",
+            "Editing",
+            "Snapshots"
+          ]
+        },
+        {
+          "id": "qwen-image-2.0",
+          "name": "Qwen-Image 2.0",
+          "category": "Qwen-Image 2.0",
+          "categoryCN": "通义千问 2.0",
+          "api": "MultiModalConversation",
+          "description": "Standard 2.0 tier, native 2K",
+          "descriptionCN": "标准2.0版本，原生2K",
+          "maxResolution": "2048×2048",
+          "pricing": "¥0.10/img",
+          "strengths": [
+            "Chinese text",
+            "Balanced"
+          ]
+        },
+        {
+          "id": "qwen-image-max",
+          "name": "Qwen-Image Max",
+          "category": "Qwen-Image 2.0",
+          "categoryCN": "通义千问 2.0",
+          "api": "MultiModalConversation",
+          "description": "Previous-gen flagship (Dec 2025)",
+          "descriptionCN": "上代旗舰",
+          "maxResolution": "2048×2048",
+          "pricing": "¥0.10/img",
+          "strengths": [
+            "Chinese text",
+            "Stable"
+          ]
+        },
+        {
+          "id": "qwen-image-max-2025-12-30",
+          "name": "Qwen-Image Max (Dec 2025)",
+          "category": "Qwen-Image 2.0",
+          "categoryCN": "通义千问 2.0",
+          "api": "MultiModalConversation",
+          "description": "qwen-image-max snapshot, improved realism",
+          "descriptionCN": "快照版，写实感增强",
+          "maxResolution": "2048×2048",
+          "pricing": "¥0.10/img",
+          "strengths": [
+            "Realism",
+            "Stable"
+          ]
+        },
+        {
+          "id": "qwen-image-edit-max",
+          "name": "Qwen-Image Edit Max",
+          "category": "Editing",
+          "categoryCN": "图像编辑",
+          "api": "MultiModalConversation",
+          "description": "Flagship editing model, strongest instruction following",
+          "descriptionCN": "旗舰编辑模型，指令遵循最强",
+          "maxResolution": "auto (matches input)",
+          "pricing": "¥0.12/img",
+          "strengths": [
+            "Image editing",
+            "Instruction following"
+          ],
+          "requiresImage": true
+        },
+        {
+          "id": "qwen-image-edit-max-2026-01-16",
+          "name": "Qwen-Image Edit Max (Jan 2026)",
+          "category": "Editing",
+          "categoryCN": "图像编辑",
+          "api": "MultiModalConversation",
+          "description": "Latest editing snapshot",
+          "descriptionCN": "最新编辑快照版",
+          "maxResolution": "auto (matches input)",
+          "pricing": "¥0.12/img",
+          "strengths": [
+            "Image editing",
+            "Latest"
+          ],
+          "requiresImage": true
+        },
+        {
+          "id": "qwen-image-edit-plus",
+          "name": "Qwen-Image Edit Plus",
+          "category": "Editing",
+          "categoryCN": "图像编辑",
+          "api": "MultiModalConversation",
+          "description": "Fast, lower-cost image editing",
+          "descriptionCN": "快速低成本图像编辑",
+          "maxResolution": "auto (matches input)",
+          "pricing": "¥0.06/img",
+          "strengths": [
+            "Image editing",
+            "Low cost",
+            "Fast"
+          ],
+          "requiresImage": true
+        },
+        {
+          "id": "qwen-image-plus",
+          "name": "Qwen-Image Plus",
+          "category": "Legacy",
+          "categoryCN": "经典版",
+          "api": "ImageSynthesis",
+          "description": "Distilled accelerated version of qwen-image-max",
+          "descriptionCN": "蒸馏加速版",
+          "maxResolution": "1328×1328",
+          "pricing": "¥0.04/img",
+          "strengths": [
+            "Fast",
+            "Low cost",
+            "Text"
+          ]
+        },
+        {
+          "id": "qwen-image-plus-2026-01-09",
+          "name": "Qwen-Image Plus (Jan 2026)",
+          "category": "Legacy",
+          "categoryCN": "经典版",
+          "api": "ImageSynthesis",
+          "description": "qwen-image-plus snapshot, fast high-quality",
+          "descriptionCN": "快照版，快速高质量",
+          "maxResolution": "1328×1328",
+          "pricing": "¥0.04/img",
+          "strengths": [
+            "Fast",
+            "Snapshots"
+          ]
+        },
+        {
+          "id": "qwen-image",
+          "name": "Qwen-Image",
+          "category": "Legacy",
+          "categoryCN": "经典版",
+          "api": "ImageSynthesis",
+          "description": "Base model",
+          "descriptionCN": "基础版",
+          "maxResolution": "1328×1328",
+          "pricing": "¥0.04/img",
+          "strengths": [
+            "Low cost",
+            "Basic"
+          ]
+        },
+        {
+          "id": "z-image-turbo",
+          "name": "Z-Image Turbo",
+          "category": "Z-Image",
+          "categoryCN": "Z-Image",
+          "api": "MultiModalConversation",
+          "description": "Lightweight, fast & low-cost; portraits and product images",
+          "descriptionCN": "轻量快速低成本；人像和商品图",
+          "maxResolution": "2048×2048",
+          "pricing": "¥0.02/img",
+          "strengths": [
+            "Ultra-fast",
+            "Cheapest",
+            "Portraits",
+            "Products"
+          ]
+        },
+        {
+          "id": "wan2.7-image-pro",
+          "name": "Wan2.7 Image Pro",
+          "category": "Wan Series",
+          "categoryCN": "通义万相",
+          "api": "ImageGeneration",
+          "description": "Latest photorealistic, up to 4K, unified T2I + edit + multi-image",
+          "descriptionCN": "最新写实模型，最高4K，统一架构",
+          "maxResolution": "4K",
+          "pricing": "¥0.20/img",
+          "strengths": [
+            "Photorealistic",
+            "4K",
+            "Portraits",
+            "Landscapes"
+          ]
+        },
+        {
+          "id": "wan2.7-image",
+          "name": "Wan2.7 Image",
+          "category": "Wan Series",
+          "categoryCN": "通义万相",
+          "api": "ImageGeneration",
+          "description": "Wan 2.7 standard, up to 2K",
+          "descriptionCN": "Wan 2.7 标准版，最高2K",
+          "maxResolution": "2K",
+          "pricing": "¥0.12/img",
+          "strengths": [
+            "Photorealistic",
+            "Balanced"
+          ]
+        },
+        {
+          "id": "wan2.6-t2i",
+          "name": "Wan2.6 T2I",
+          "category": "Wan Series",
+          "categoryCN": "通义万相",
+          "api": "ImageGeneration",
+          "description": "Wan 2.6, flexible sizing",
+          "descriptionCN": "Wan 2.6，灵活尺寸",
+          "maxResolution": "2K",
+          "pricing": "¥0.10/img",
+          "strengths": [
+            "Flexible sizing",
+            "Stable"
+          ]
+        },
+        {
+          "id": "wan2.5-t2i-preview",
+          "name": "Wan2.5 T2I Preview",
+          "category": "Wan Series",
+          "categoryCN": "通义万相",
+          "api": "ImageGeneration",
+          "description": "High quality art, up to 768×2700",
+          "descriptionCN": "高质量艺术作品",
+          "maxResolution": "768×2700",
+          "pricing": "¥0.10/img",
+          "strengths": [
+            "Art",
+            "High quality"
+          ]
+        },
+        {
+          "id": "wan2.2-t2i-flash",
+          "name": "Wan2.2 T2I Flash",
+          "category": "Wan Series",
+          "categoryCN": "通义万相",
+          "api": "ImageGeneration",
+          "description": "Speed-optimized",
+          "descriptionCN": "快速生成",
+          "maxResolution": "2K",
+          "pricing": "¥0.06/img",
+          "strengths": [
+            "Fast",
+            "Low cost"
+          ]
+        },
+        {
+          "id": "wan2.2-t2i-plus",
+          "name": "Wan2.2 T2I Plus",
+          "category": "Wan Series",
+          "categoryCN": "通义万相",
+          "api": "ImageGeneration",
+          "description": "Professional tier",
+          "descriptionCN": "专业级",
+          "maxResolution": "2K",
+          "pricing": "¥0.10/img",
+          "strengths": [
+            "Professional",
+            "Quality"
+          ]
+        },
+        {
+          "id": "wanx2.1-t2i-turbo",
+          "name": "Wanx2.1 T2I Turbo",
+          "category": "Wan Series",
+          "categoryCN": "通义万相",
+          "api": "ImageGeneration",
+          "description": "Fast execution",
+          "descriptionCN": "快速执行",
+          "maxResolution": "2K",
+          "pricing": "¥0.06/img",
+          "strengths": [
+            "Fast",
+            "Budget"
+          ]
+        },
+        {
+          "id": "wanx2.1-t2i-plus",
+          "name": "Wanx2.1 T2I Plus",
+          "category": "Wan Series",
+          "categoryCN": "通义万相",
+          "api": "ImageGeneration",
+          "description": "Professional tier",
+          "descriptionCN": "专业级",
+          "maxResolution": "2K",
+          "pricing": "¥0.10/img",
+          "strengths": [
+            "Professional"
+          ]
+        },
+        {
+          "id": "wanx2.0-t2i-turbo",
+          "name": "Wanx2.0 T2I Turbo",
+          "category": "Wan Series",
+          "categoryCN": "通义万相",
+          "api": "ImageGeneration",
+          "description": "Earlier generation",
+          "descriptionCN": "早期版本",
+          "maxResolution": "2K",
+          "pricing": "¥0.06/img",
+          "strengths": [
+            "Budget",
+            "Fast"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ark",
+      "name": "ByteDance Volcano Ark",
+      "nameCN": "字节火山方舟",
+      "shortName": "Volcano Ark",
+      "color": "#3370FF",
+      "apiStyle": "OpenAI-compatible REST",
+      "endpoint": "https://ark.cn-beijing.volces.com/api/v3/images/generations",
+      "envVar": "ARK_API_KEY",
+      "regions": [
+        "cn-beijing"
+      ],
+      "getKeyUrl": "https://console.volcengine.com/ark/region:ark+cn-beijing/apikey",
+      "strength": "Photo + text combo, up to 4K",
+      "strengthCN": "图+文混合，最高4K",
+      "modelCount": 3,
+      "models": [
+        {
+          "id": "doubao-seedream-5-0-260128",
+          "name": "Seedream 5.0",
+          "category": "Seedream",
+          "categoryCN": "Seedream",
+          "api": "OpenAI-compatible",
+          "description": "Latest flagship, up to 3K, PNG/JPEG, best text rendering",
+          "descriptionCN": "最新旗舰，最高3K，PNG/JPEG，最强文字渲染",
+          "maxResolution": "3K",
+          "pricing": "¥0.22/img",
+          "strengths": [
+            "Photo+text",
+            "Latest",
+            "Text rendering"
+          ],
+          "default": true
+        },
+        {
+          "id": "doubao-seedream-4-5-251128",
+          "name": "Seedream 4.5",
+          "category": "Seedream",
+          "categoryCN": "Seedream",
+          "api": "OpenAI-compatible",
+          "description": "Seedream 4.5, up to 4K",
+          "descriptionCN": "Seedream 4.5，最高4K",
+          "maxResolution": "4K",
+          "pricing": "¥0.22/img",
+          "strengths": [
+            "4K",
+            "Photo+text"
+          ]
+        },
+        {
+          "id": "doubao-seedream-4-0-250828",
+          "name": "Seedream 4.0",
+          "category": "Seedream",
+          "categoryCN": "Seedream",
+          "api": "OpenAI-compatible",
+          "description": "Seedream 4.0, budget-friendly 4K",
+          "descriptionCN": "Seedream 4.0，高性价比4K",
+          "maxResolution": "4K",
+          "pricing": "¥0.15/img",
+          "strengths": [
+            "4K",
+            "Budget"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hunyuan",
+      "name": "Tencent Hunyuan",
+      "nameCN": "腾讯混元",
+      "shortName": "Hunyuan",
+      "color": "#00A870",
+      "apiStyle": "OpenAI-compatible REST",
+      "endpoint": "https://tokenhub.tencentmaas.com/v1/images/generations",
+      "envVar": "HUNYUAN_API_KEY",
+      "regions": [
+        "cn"
+      ],
+      "getKeyUrl": "https://console.cloud.tencent.com/tokenhub/apikey",
+      "strength": "Complex Chinese composition, 8K-char prompts",
+      "strengthCN": "复杂中文长文本构图，最高8K字符",
+      "modelCount": 1,
+      "models": [
+        {
+          "id": "hy-image-v3.0",
+          "name": "Hunyuan Image 3.0",
+          "category": "Hunyuan",
+          "categoryCN": "混元生图",
+          "api": "OpenAI-compatible",
+          "description": "Flagship, strong composition awareness, handles 8K-char Chinese prompts",
+          "descriptionCN": "旗舰模型，复杂中文语义理解，最高支持8K字符",
+          "maxResolution": "2048×2048",
+          "pricing": "¥0.20/img",
+          "strengths": [
+            "Complex Chinese",
+            "Long prompts",
+            "Composition"
+          ],
+          "default": true
+        }
+      ]
+    },
+    {
+      "id": "zhipu",
+      "name": "Zhipu / BigModel",
+      "nameCN": "智谱 / BigModel",
+      "shortName": "Zhipu",
+      "color": "#7B3FF2",
+      "apiStyle": "OpenAI-compatible REST",
+      "endpoint": "https://api.z.ai/api/paas/v4/images/generations",
+      "envVar": "ZHIPUAI_API_KEY",
+      "regions": [
+        "cn"
+      ],
+      "getKeyUrl": "https://bigmodel.cn",
+      "strength": "Native Chinese text in images, cheapest",
+      "strengthCN": "图片中直接渲染中文，价格最低",
+      "modelCount": 3,
+      "models": [
+        {
+          "id": "cogview-4",
+          "name": "CogView-4",
+          "category": "CogView",
+          "categoryCN": "CogView",
+          "api": "OpenAI-compatible",
+          "description": "Stable alias for latest CogView-4, native Chinese text rendering",
+          "descriptionCN": "最新CogView-4稳定版，原生中文文字渲染",
+          "maxResolution": "2048×2048",
+          "pricing": "¥0.06/img",
+          "strengths": [
+            "Chinese text in image",
+            "Low cost"
+          ],
+          "default": true
+        },
+        {
+          "id": "cogview-4-250304",
+          "name": "CogView-4 (Mar 2025)",
+          "category": "CogView",
+          "categoryCN": "CogView",
+          "api": "OpenAI-compatible",
+          "description": "Fixed snapshot, reproducible results",
+          "descriptionCN": "固定快照版，结果可复现",
+          "maxResolution": "2048×2048",
+          "pricing": "¥0.06/img",
+          "strengths": [
+            "Reproducible",
+            "Stable"
+          ]
+        },
+        {
+          "id": "glm-image",
+          "name": "GLM-Image",
+          "category": "GLM",
+          "categoryCN": "GLM",
+          "api": "OpenAI-compatible",
+          "description": "GLM-Image flagship, hybrid autoregressive/diffusion, up to 2048×2048",
+          "descriptionCN": "GLM-Image旗舰，混合自回归/扩散架构",
+          "maxResolution": "2048×2048",
+          "pricing": "¥0.08/img",
+          "strengths": [
+            "Hybrid architecture",
+            "High quality"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "stepfun",
+      "name": "StepFun",
+      "nameCN": "阶跃星辰",
+      "shortName": "StepFun",
+      "color": "#E04040",
+      "apiStyle": "OpenAI-compatible REST",
+      "endpoint": "https://api.stepfun.com/v1/images/generations",
+      "envVar": "STEP_API_KEY",
+      "regions": [
+        "cn"
+      ],
+      "getKeyUrl": "https://platform.stepfun.com/interface-key",
+      "strength": "Ultra-cheap volume generation",
+      "strengthCN": "超低价批量生成",
+      "modelCount": 2,
+      "models": [
+        {
+          "id": "step-2x-large",
+          "name": "Step-2X Large",
+          "category": "Step-2X",
+          "categoryCN": "Step-2X",
+          "api": "OpenAI-compatible",
+          "description": "High quality, 0.1 RMB/image, up to 1024×1024",
+          "descriptionCN": "高品质，0.1元/张",
+          "maxResolution": "1024×1024",
+          "pricing": "¥0.10/img",
+          "strengths": [
+            "High quality",
+            "Balanced"
+          ],
+          "default": true
+        },
+        {
+          "id": "step-image-edit-2",
+          "name": "Step Image Edit 2",
+          "category": "Step-Edit",
+          "categoryCN": "Step-Edit",
+          "api": "OpenAI-compatible",
+          "description": "Ultra-cheap, 0.02 RMB/image, supports negative prompts, 8 inference steps",
+          "descriptionCN": "超低价，0.02元/张，支持负面提示词",
+          "maxResolution": "1024×1024",
+          "pricing": "¥0.02/img",
+          "strengths": [
+            "Cheapest",
+            "Negative prompts",
+            "Fast"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gemini",
+      "name": "Google Gemini",
+      "nameCN": "谷歌 Gemini",
+      "shortName": "Gemini",
+      "color": "#4285F4",
+      "apiStyle": "REST (generateContent)",
+      "endpoint": "https://generativelanguage.googleapis.com/v1beta/models",
+      "envVar": "GEMINI_API_KEY",
+      "regions": [
+        "global"
+      ],
+      "getKeyUrl": "https://aistudio.google.com/",
+      "strength": "International access, strong prompt understanding",
+      "strengthCN": "国际平台，出色的提示词理解",
+      "modelCount": 4,
+      "models": [
+        {
+          "id": "gemini-3-pro-image-preview",
+          "name": "Gemini 3 Pro Image (Preview)",
+          "category": "Gemini",
+          "categoryCN": "Gemini",
+          "api": "generateContent",
+          "description": "Google flagship image model, 512/1K/2K named sizes plus aspect-ratio presets",
+          "descriptionCN": "谷歌旗舰生图模型，支持 512/1K/2K 命名尺寸与比例预设",
+          "maxResolution": "2K",
+          "pricing": "~$0.13/img",
+          "strengths": [
+            "International",
+            "Prompt adherence",
+            "Photorealism"
+          ],
+          "default": true
+        },
+        {
+          "id": "gemini-3-pro-image",
+          "name": "Gemini 3 Pro Image",
+          "category": "Gemini",
+          "categoryCN": "Gemini",
+          "api": "generateContent",
+          "description": "Stable flagship image model (Nano Banana Pro), 1K/2K/4K",
+          "descriptionCN": "稳定版旗舰生图模型（Nano Banana Pro），支持 1K/2K/4K",
+          "maxResolution": "4K",
+          "pricing": "~$0.13/img",
+          "strengths": [
+            "International",
+            "4K",
+            "Photorealism"
+          ]
+        },
+        {
+          "id": "gemini-3.1-flash-image",
+          "name": "Gemini 3.1 Flash Image",
+          "category": "Gemini",
+          "categoryCN": "Gemini",
+          "api": "generateContent",
+          "description": "Nano Banana 2: fast generalist workhorse, 512/1K/2K/4K, strong text rendering",
+          "descriptionCN": "Nano Banana 2：快速通用生图，支持 512/1K/2K/4K，文字渲染强",
+          "maxResolution": "4K",
+          "pricing": "~$0.07/img",
+          "strengths": [
+            "Fast",
+            "4K",
+            "Text rendering"
+          ]
+        },
+        {
+          "id": "gemini-3.1-flash-lite-image",
+          "name": "Gemini 3.1 Flash Lite Image",
+          "category": "Gemini",
+          "categoryCN": "Gemini",
+          "api": "generateContent",
+          "description": "Nano Banana 2 Lite: fastest and cheapest, 1K only",
+          "descriptionCN": "Nano Banana 2 Lite：最快最便宜，仅支持 1K",
+          "maxResolution": "1K",
+          "pricing": "~$0.03/img",
+          "strengths": [
+            "Cheapest",
+            "Fast"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "grok",
+      "name": "Grok (xAI)",
+      "nameCN": "Grok（xAI）",
+      "shortName": "Grok",
+      "color": "#000000",
+      "apiStyle": "REST (OpenAI-compatible)",
+      "endpoint": "https://api.x.ai/v1/images/generations",
+      "envVar": "XAI_API_KEY",
+      "regions": [
+        "global"
+      ],
+      "getKeyUrl": "https://console.x.ai/",
+      "strength": "International access, prompt revision built in",
+      "strengthCN": "国际平台，内置提示词改写",
+      "modelCount": 3,
+      "models": [
+        {
+          "id": "grok-imagine-image-quality",
+          "name": "Grok Imagine Image (Quality)",
+          "category": "Grok Imagine",
+          "categoryCN": "Grok Imagine",
+          "api": "images/generations",
+          "description": "High-quality Grok image model, aspect-ratio and resolution presets",
+          "descriptionCN": "高质量 Grok 生图模型，支持比例与分辨率预设",
+          "maxResolution": "4K",
+          "pricing": "~$0.14/img",
+          "strengths": [
+            "International",
+            "Photorealism",
+            "Prompt revision"
+          ],
+          "default": true
+        },
+        {
+          "id": "grok-imagine-image",
+          "name": "Grok Imagine Image",
+          "category": "Grok Imagine",
+          "categoryCN": "Grok Imagine",
+          "api": "images/generations",
+          "description": "Standard Grok image model (alias grok-imagine-image-2026-03-02)",
+          "descriptionCN": "标准 Grok 生图模型（别名 grok-imagine-image-2026-03-02）",
+          "maxResolution": "4K",
+          "pricing": "~$0.11/img",
+          "strengths": [
+            "International",
+            "Photorealism",
+            "Fast"
+          ]
+        },
+        {
+          "id": "grok-2-image",
+          "name": "Grok 2 Image (legacy)",
+          "category": "Grok Imagine",
+          "categoryCN": "Grok Imagine",
+          "api": "images/generations",
+          "description": "Legacy JPG image model, no size control",
+          "descriptionCN": "旧版 JPG 生图模型，不支持尺寸控制",
+          "maxResolution": "1024×1024",
+          "pricing": "$0.07/img",
+          "strengths": [
+            "Cheap",
+            "Legacy"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "openai",
+      "name": "OpenAI",
+      "nameCN": "OpenAI",
+      "shortName": "OpenAI",
+      "color": "#10A37F",
+      "apiStyle": "REST (Images API)",
+      "endpoint": "https://api.openai.com/v1/images/generations",
+      "envVar": "OPENAI_API_KEY",
+      "regions": [
+        "global"
+      ],
+      "getKeyUrl": "https://platform.openai.com/api-keys",
+      "strength": "International access, strong text rendering",
+      "strengthCN": "国际平台，文字渲染能力强",
+      "modelCount": 4,
+      "models": [
+        {
+          "id": "gpt-image-1",
+          "name": "GPT Image 1",
+          "category": "GPT Image",
+          "categoryCN": "GPT Image",
+          "api": "images/generations",
+          "description": "Multimodal image model; 1024x1024/1536x1024/1024x1536 only",
+          "descriptionCN": "多模态生图模型，仅支持 1024x1024/1536x1024/1024x1536",
+          "maxResolution": "1536×1024",
+          "pricing": "~$0.04/img",
+          "strengths": [
+            "International",
+            "Text rendering",
+            "Quality levels"
+          ],
+          "default": true
+        },
+        {
+          "id": "gpt-image-1-mini",
+          "name": "GPT Image 1 Mini",
+          "category": "GPT Image",
+          "categoryCN": "GPT Image",
+          "api": "images/generations",
+          "description": "Fast and cheap GPT image variant",
+          "descriptionCN": "快速低价的 GPT 生图版本",
+          "maxResolution": "1024×1024",
+          "pricing": "~$0.01/img",
+          "strengths": [
+            "Cheap",
+            "Fast"
+          ]
+        },
+        {
+          "id": "gpt-image-1.5",
+          "name": "GPT Image 1.5",
+          "category": "GPT Image",
+          "categoryCN": "GPT Image",
+          "api": "images/generations",
+          "description": "Improved GPT image generation quality",
+          "descriptionCN": "增强版 GPT 生图质量",
+          "maxResolution": "1536×1024",
+          "pricing": "~$0.05/img",
+          "strengths": [
+            "International",
+            "Quality"
+          ]
+        },
+        {
+          "id": "gpt-image-2",
+          "name": "GPT Image 2",
+          "category": "GPT Image",
+          "categoryCN": "GPT Image",
+          "api": "images/generations",
+          "description": "Latest flagship; arbitrary WxH sizes (edges divisible by 16) up to 4K",
+          "descriptionCN": "最新旗舰，支持任意 WxH 尺寸（边长为 16 的倍数）最高 4K",
+          "maxResolution": "3840×2160",
+          "pricing": "~$0.21/img",
+          "strengths": [
+            "International",
+            "4K",
+            "Arbitrary sizes"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bfl",
+      "name": "Black Forest Labs",
+      "nameCN": "Black Forest Labs（FLUX）",
+      "shortName": "FLUX",
+      "color": "#FF4D00",
+      "apiStyle": "Async REST (polling)",
+      "endpoint": "https://api.bfl.ai/v1",
+      "envVar": "BFL_API_KEY",
+      "regions": [
+        "global"
+      ],
+      "getKeyUrl": "https://api.bfl.ai/",
+      "strength": "Photorealistic, flexible aspect ratios, seed control",
+      "strengthCN": "写实风格，灵活比例，支持种子复现",
+      "modelCount": 3,
+      "models": [
+        {
+          "id": "flux-2-pro-preview",
+          "name": "FLUX.2 Pro (Preview)",
+          "category": "FLUX.2",
+          "categoryCN": "FLUX.2",
+          "api": "async REST",
+          "description": "Latest rolling FLUX.2 Pro, recommended default; prompt upsampling built in",
+          "descriptionCN": "最新滚动更新的 FLUX.2 Pro，推荐默认；内置提示词增强",
+          "maxResolution": "2K",
+          "pricing": "~$0.03/img",
+          "strengths": [
+            "Photorealism",
+            "Flexible ratios",
+            "Seed control"
+          ],
+          "default": true
+        },
+        {
+          "id": "flux-2-pro",
+          "name": "FLUX.2 Pro (Pinned)",
+          "category": "FLUX.2",
+          "categoryCN": "FLUX.2",
+          "api": "async REST",
+          "description": "Fixed snapshot of FLUX.2 Pro for reproducible workflows",
+          "descriptionCN": "FLUX.2 Pro 固定快照版，结果可复现",
+          "maxResolution": "2K",
+          "pricing": "~$0.03/img",
+          "strengths": [
+            "Reproducible",
+            "Photorealism"
+          ]
+        },
+        {
+          "id": "flux-2-max",
+          "name": "FLUX.2 Max",
+          "category": "FLUX.2",
+          "categoryCN": "FLUX.2",
+          "api": "async REST",
+          "description": "Highest quality FLUX.2 with search-grounding for real-time information",
+          "descriptionCN": "FLUX.2 最高质量版，支持联网检索实时信息",
+          "maxResolution": "2K",
+          "pricing": "~$0.10/img",
+          "strengths": [
+            "Highest quality",
+            "Search grounding"
+          ]
+        }
+      ]
+    }
+  ],
+  "quickReference": [
+    {
+      "use": "Default / general",
+      "model": "qwen-image-2.0-pro",
+      "platform": "dashscope"
+    },
+    {
+      "use": "Photorealistic photos",
+      "model": "wan2.7-image-pro",
+      "platform": "dashscope"
+    },
+    {
+      "use": "Edit an image",
+      "model": "qwen-image-edit-max",
+      "platform": "dashscope"
+    },
+    {
+      "use": "Cheap & fast",
+      "model": "z-image-turbo",
+      "platform": "dashscope"
+    },
+    {
+      "use": "Photo + text combo",
+      "model": "doubao-seedream-5-0-260128",
+      "platform": "ark"
+    },
+    {
+      "use": "Complex Chinese composition",
+      "model": "hy-image-v3.0",
+      "platform": "hunyuan"
+    },
+    {
+      "use": "Chinese text in images",
+      "model": "cogview-4",
+      "platform": "zhipu"
+    },
+    {
+      "use": "Ultra-cheap volume gen",
+      "model": "step-image-edit-2",
+      "platform": "stepfun"
+    },
+    {
+      "use": "International / Gemini",
+      "model": "gemini-3-pro-image-preview",
+      "platform": "gemini"
+    },
+    {
+      "use": "International / Grok",
+      "model": "grok-imagine-image-quality",
+      "platform": "grok"
+    },
+    {
+      "use": "International / OpenAI",
+      "model": "gpt-image-1",
+      "platform": "openai"
+    },
+    {
+      "use": "International / FLUX",
+      "model": "flux-2-pro-preview",
+      "platform": "bfl"
+    }
+  ]
+}

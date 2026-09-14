@@ -1,0 +1,26 @@
+@startuml
+!theme plain
+title OAuth 2.0 Authorization Code Flow
+
+actor User
+participant "Client App" as C
+participant "Auth Server" as A
+participant "Resource Server" as R
+
+User -> C : Click "Login"
+C -> A : Redirect to /authorize
+activate A
+A -> User : Login & consent prompt
+User -> A : Approve
+A --> C : Redirect with auth code
+deactivate A
+C -> A : POST /token (code + secret)
+activate A
+A --> C : access_token + refresh_token
+deactivate A
+C -> R : GET /resource (Bearer token)
+activate R
+R --> C : 200 OK + data
+deactivate R
+C --> User : Show protected data
+@enduml

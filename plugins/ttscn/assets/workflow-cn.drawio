@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="drawio" version="26.0.0">
+  <diagram name="ttscn Workflow">
+    <mxGraphModel dx="900" dy="900" grid="1" gridSize="10" pageWidth="600" pageHeight="900">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- Actor labels (left column) -->
+        <mxCell id="actor-user" value="用户" style="text;html=1;fontSize=10;fontStyle=1;fontColor=#6c8ebf;fillColor=none;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="20" y="55" width="50" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="actor-claude" value="AI / Claude" style="text;html=1;fontSize=10;fontStyle=1;fontColor=#82b366;fillColor=none;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="20" y="335" width="50" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="actor-api" value="TTS API" style="text;html=1;fontSize=10;fontStyle=1;fontColor=#d79b00;fillColor=none;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="20" y="575" width="50" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="actor-output" value="输出" style="text;html=1;fontSize=10;fontStyle=1;fontColor=#666666;fillColor=none;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="20" y="695" width="50" height="20" as="geometry" />
+        </mxCell>
+
+        <!-- 1. User provides text -->
+        <mxCell id="2" value="提供要朗读的文本&#xa;(直接输入或 .txt 文件)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#333333;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="80" y="40" width="220" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- 2. Claude understands requirements -->
+        <mxCell id="3" value="理解需求&#xa;(音色风格 · 语速 · 格式 · 文本长度)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#333333;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="80" y="130" width="220" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- 3. Recommend backend + voice -->
+        <mxCell id="4" value="推荐后端和音色&#xa;(用例匹配 → 最佳平台)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#333333;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="80" y="215" width="220" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- 4. Decision: Right choice? -->
+        <mxCell id="5" value="选择对吗？" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#333333;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="50" y="300" width="280" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- 5. User confirms -->
+        <mxCell id="6" value="用户确认&#xa;('ok' / 'go' / 'synthesize')" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#333333;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="80" y="410" width="220" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- 6. Load config + select backend/voice -->
+        <mxCell id="7" value="加载配置 (~/.ttscn.json)&#xa;选择后端、音色和语速" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#333333;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="80" y="500" width="220" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- 7. Synthesize via TTS API -->
+        <mxCell id="8" value="通过 TTS API 合成语音&#xa;(8 个后端 / 800+ 音色)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontColor=#333333;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="80" y="585" width="220" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- 8. Post-process + save -->
+        <mxCell id="9" value="后处理 (ffmpeg)&#xa;保存为 .wav 或 .mp3" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="80" y="670" width="220" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- 9. Success -->
+        <mxCell id="10" value="&#x2713; 语音已生成并保存" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#333333;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="755" width="220" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- EDGES -->
+
+        <!-- 1→2: User provides text → Claude understand -->
+        <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6c8ebf;endArrow=block;endFill=1;" edge="1" parent="1" source="2" target="3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 2→3: Claude understand → Recommend -->
+        <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#82b366;endArrow=block;endFill=1;" edge="1" parent="1" source="3" target="4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 3→4: Recommend → Decision -->
+        <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6c8ebf;endArrow=block;endFill=1;" edge="1" parent="1" source="4" target="5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 4→5 (Yes): Decision → User confirms -->
+        <mxCell id="e4" value="是" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#82b366;endArrow=block;endFill=1;fontColor=#82b366;fontStyle=1;fontSize=11;" edge="1" parent="1" source="5" target="6">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 4→2 (No loop-back): Decision → Claude understand -->
+        <mxCell id="e5" value="否 — 重新选择" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#d6b656;endArrow=block;endFill=1;fontColor=#d6b656;fontStyle=1;fontSize=11;exitX=0;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="5" target="3">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="10" y="335" />
+              <mxPoint x="10" y="155" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- 5→6: User confirms → Config -->
+        <mxCell id="e6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6c8ebf;endArrow=block;endFill=1;" edge="1" parent="1" source="6" target="7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 6→7: Config → API call -->
+        <mxCell id="e7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#82b366;endArrow=block;endFill=1;" edge="1" parent="1" source="7" target="8">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 7→8: API → Save -->
+        <mxCell id="e8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#d79b00;endArrow=block;endFill=1;" edge="1" parent="1" source="8" target="9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 8→9: Save → Success -->
+        <mxCell id="e9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;endArrow=block;endFill=1;" edge="1" parent="1" source="9" target="10">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Annotation: 8 backends -->
+        <mxCell id="note1" value="Edge TTS · 豆包 · CosyVoice&#xa;Azure · 腾讯云 · 百度&#xa;MiniMax · 讯飞" style="text;html=1;fontSize=9;fontColor=#999999;fillColor=none;strokeColor=none;align=left;" vertex="1" parent="1">
+          <mxGeometry x="320" y="585" width="140" height="40" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -1,0 +1,187 @@
+{
+  "type": "excalidraw",
+  "version": 2,
+  "source": "claude-code",
+  "elements": [
+    {
+      "id": "title", "type": "text", "x": 60, "y": 70, "width": 520, "height": 40,
+      "angle": 0, "strokeColor": "#1e293b", "backgroundColor": "transparent",
+      "fillStyle": "solid", "strokeWidth": 1, "strokeStyle": "solid", "roughness": 0,
+      "opacity": 100, "seed": 400001, "text": "How it works", "fontSize": 28,
+      "fontFamily": 2, "textAlign": "left", "verticalAlign": "top",
+      "containerId": null, "boundElements": null
+    },
+    {
+      "id": "subtitle", "type": "text", "x": 60, "y": 116, "width": 640, "height": 22,
+      "angle": 0, "strokeColor": "#64748b", "backgroundColor": "transparent",
+      "fillStyle": "solid", "strokeWidth": 1, "strokeStyle": "solid", "roughness": 0,
+      "opacity": 100, "seed": 400002,
+      "text": "design system up front, then render-and-verify until clean",
+      "fontSize": 14, "fontFamily": 2, "textAlign": "left", "verticalAlign": "top",
+      "containerId": null, "boundElements": null
+    },
+
+    {
+      "id": "box_detect", "type": "rectangle", "x": 60, "y": 240, "width": 170, "height": 80,
+      "angle": 0, "strokeColor": "#c2410c", "backgroundColor": "#fed7aa",
+      "fillStyle": "solid", "strokeWidth": 2, "strokeStyle": "solid", "roughness": 0,
+      "opacity": 100, "seed": 100001, "roundness": { "type": 3 },
+      "boundElements": [{ "id": "lbl_detect", "type": "text" }, { "id": "a1", "type": "arrow" }]
+    },
+    {
+      "id": "lbl_detect", "type": "text", "x": 70, "y": 262, "width": 150, "height": 40,
+      "angle": 0, "strokeColor": "#1e293b", "backgroundColor": "transparent",
+      "fillStyle": "solid", "strokeWidth": 1, "strokeStyle": "solid", "roughness": 0,
+      "opacity": 100, "seed": 200001, "text": "1 · Detect\ncurl / CLI", "fontSize": 16,
+      "fontFamily": 2, "textAlign": "center", "verticalAlign": "middle",
+      "containerId": "box_detect", "boundElements": null
+    },
+
+    {
+      "id": "box_plan", "type": "rectangle", "x": 330, "y": 240, "width": 170, "height": 80,
+      "angle": 0, "strokeColor": "#1e40af", "backgroundColor": "#dbeafe",
+      "fillStyle": "solid", "strokeWidth": 2, "strokeStyle": "solid", "roughness": 0,
+      "opacity": 100, "seed": 100002, "roundness": { "type": 3 },
+      "boundElements": [{ "id": "lbl_plan", "type": "text" }, { "id": "a1", "type": "arrow" }, { "id": "a2", "type": "arrow" }]
+    },
+    {
+      "id": "lbl_plan", "type": "text", "x": 340, "y": 262, "width": 150, "height": 40,
+      "angle": 0, "strokeColor": "#1e293b", "backgroundColor": "transparent",
+      "fillStyle": "solid", "strokeWidth": 1, "strokeStyle": "solid", "roughness": 0,
+      "opacity": 100, "seed": 200002, "text": "2 · Plan\ntype + colors", "fontSize": 16,
+      "fontFamily": 2, "textAlign": "center", "verticalAlign": "middle",
+      "containerId": "box_plan", "boundElements": null
+    },
+
+    {
+      "id": "box_generate", "type": "rectangle", "x": 600, "y": 240, "width": 170, "height": 80,
+      "angle": 0, "strokeColor": "#0369a1", "backgroundColor": "#e0f2fe",
+      "fillStyle": "solid", "strokeWidth": 2, "strokeStyle": "solid", "roughness": 0,
+      "opacity": 100, "seed": 100003, "roundness": { "type": 3 },
+      "boundElements": [{ "id": "lbl_generate", "type": "text" }, { "id": "a2", "type": "arrow" }, { "id": "a3", "type": "arrow" }, { "id": "loop", "type": "arrow" }]
+    },
+    {
+      "id": "lbl_generate", "type": "text", "x": 610, "y": 262, "width": 150, "height": 40,
+      "angle": 0, "strokeColor": "#1e293b", "backgroundColor": "transparent",
+      "fillStyle": "solid", "strokeWidth": 1, "strokeStyle": "solid", "roughness": 0,
+      "opacity": 100, "seed": 200003, "text": "3 · Generate\n.excalidraw", "fontSize": 16,
+      "fontFamily": 2, "textAlign": "center", "verticalAlign": "middle",
+      "containerId": "box_generate", "boundElements": null
+    },
+
+    {
+      "id": "box_export", "type": "rectangle", "x": 870, "y": 240, "width": 170, "height": 80,
+      "angle": 0, "strokeColor": "#0369a1", "backgroundColor": "#e0f2fe",
+      "fillStyle": "solid", "strokeWidth": 2, "strokeStyle": "solid", "roughness": 0,
+      "opacity": 100, "seed": 100004, "roundness": { "type": 3 },
+      "boundElements": [{ "id": "lbl_export", "type": "text" }, { "id": "a3", "type": "arrow" }, { "id": "a4", "type": "arrow" }]
+    },
+    {
+      "id": "lbl_export", "type": "text", "x": 880, "y": 262, "width": 150, "height": 40,
+      "angle": 0, "strokeColor": "#1e293b", "backgroundColor": "transparent",
+      "fillStyle": "solid", "strokeWidth": 1, "strokeStyle": "solid", "roughness": 0,
+      "opacity": 100, "seed": 200004, "text": "4 · Export\nPNG / SVG", "fontSize": 16,
+      "fontFamily": 2, "textAlign": "center", "verticalAlign": "middle",
+      "containerId": "box_export", "boundElements": null
+    },
+
+    {
+      "id": "box_verify", "type": "rectangle", "x": 1140, "y": 240, "width": 170, "height": 80,
+      "angle": 0, "strokeColor": "#854d0e", "backgroundColor": "#fef9c3",
+      "fillStyle": "solid", "strokeWidth": 2, "strokeStyle": "solid", "roughness": 0,
+      "opacity": 100, "seed": 100005, "roundness": { "type": 3 },
+      "boundElements": [{ "id": "lbl_verify", "type": "text" }, { "id": "a4", "type": "arrow" }, { "id": "a5", "type": "arrow" }, { "id": "loop", "type": "arrow" }]
+    },
+    {
+      "id": "lbl_verify", "type": "text", "x": 1150, "y": 262, "width": 150, "height": 40,
+      "angle": 0, "strokeColor": "#1e293b", "backgroundColor": "transparent",
+      "fillStyle": "solid", "strokeWidth": 1, "strokeStyle": "solid", "roughness": 0,
+      "opacity": 100, "seed": 200005, "text": "5 · Verify\nview & fix", "fontSize": 16,
+      "fontFamily": 2, "textAlign": "center", "verticalAlign": "middle",
+      "containerId": "box_verify", "boundElements": null
+    },
+
+    {
+      "id": "box_report", "type": "rectangle", "x": 1410, "y": 240, "width": 170, "height": 80,
+      "angle": 0, "strokeColor": "#166534", "backgroundColor": "#dcfce7",
+      "fillStyle": "solid", "strokeWidth": 2, "strokeStyle": "solid", "roughness": 0,
+      "opacity": 100, "seed": 100006, "roundness": { "type": 3 },
+      "boundElements": [{ "id": "lbl_report", "type": "text" }, { "id": "a5", "type": "arrow" }]
+    },
+    {
+      "id": "lbl_report", "type": "text", "x": 1420, "y": 262, "width": 150, "height": 40,
+      "angle": 0, "strokeColor": "#1e293b", "backgroundColor": "transparent",
+      "fillStyle": "solid", "strokeWidth": 1, "strokeStyle": "solid", "roughness": 0,
+      "opacity": 100, "seed": 200006, "text": "6 · Report\nfile path", "fontSize": 16,
+      "fontFamily": 2, "textAlign": "center", "verticalAlign": "middle",
+      "containerId": "box_report", "boundElements": null
+    },
+
+    {
+      "id": "a1", "type": "arrow", "x": 230, "y": 280, "width": 100, "height": 0,
+      "angle": 0, "strokeColor": "#475569", "backgroundColor": "transparent",
+      "fillStyle": "solid", "strokeWidth": 2, "strokeStyle": "solid", "roughness": 0,
+      "opacity": 100, "seed": 300001, "points": [[0, 0], [100, 0]],
+      "startBinding": { "elementId": "box_detect", "gap": 4, "focus": 0 },
+      "endBinding": { "elementId": "box_plan", "gap": 4, "focus": 0 },
+      "startArrowhead": null, "endArrowhead": "arrow", "boundElements": null
+    },
+    {
+      "id": "a2", "type": "arrow", "x": 500, "y": 280, "width": 100, "height": 0,
+      "angle": 0, "strokeColor": "#475569", "backgroundColor": "transparent",
+      "fillStyle": "solid", "strokeWidth": 2, "strokeStyle": "solid", "roughness": 0,
+      "opacity": 100, "seed": 300002, "points": [[0, 0], [100, 0]],
+      "startBinding": { "elementId": "box_plan", "gap": 4, "focus": 0 },
+      "endBinding": { "elementId": "box_generate", "gap": 4, "focus": 0 },
+      "startArrowhead": null, "endArrowhead": "arrow", "boundElements": null
+    },
+    {
+      "id": "a3", "type": "arrow", "x": 770, "y": 280, "width": 100, "height": 0,
+      "angle": 0, "strokeColor": "#475569", "backgroundColor": "transparent",
+      "fillStyle": "solid", "strokeWidth": 2, "strokeStyle": "solid", "roughness": 0,
+      "opacity": 100, "seed": 300003, "points": [[0, 0], [100, 0]],
+      "startBinding": { "elementId": "box_generate", "gap": 4, "focus": 0 },
+      "endBinding": { "elementId": "box_export", "gap": 4, "focus": 0 },
+      "startArrowhead": null, "endArrowhead": "arrow", "boundElements": null
+    },
+    {
+      "id": "a4", "type": "arrow", "x": 1040, "y": 280, "width": 100, "height": 0,
+      "angle": 0, "strokeColor": "#475569", "backgroundColor": "transparent",
+      "fillStyle": "solid", "strokeWidth": 2, "strokeStyle": "solid", "roughness": 0,
+      "opacity": 100, "seed": 300004, "points": [[0, 0], [100, 0]],
+      "startBinding": { "elementId": "box_export", "gap": 4, "focus": 0 },
+      "endBinding": { "elementId": "box_verify", "gap": 4, "focus": 0 },
+      "startArrowhead": null, "endArrowhead": "arrow", "boundElements": null
+    },
+    {
+      "id": "a5", "type": "arrow", "x": 1310, "y": 280, "width": 100, "height": 0,
+      "angle": 0, "strokeColor": "#475569", "backgroundColor": "transparent",
+      "fillStyle": "solid", "strokeWidth": 2, "strokeStyle": "solid", "roughness": 0,
+      "opacity": 100, "seed": 300005, "points": [[0, 0], [100, 0]],
+      "startBinding": { "elementId": "box_verify", "gap": 4, "focus": 0 },
+      "endBinding": { "elementId": "box_report", "gap": 4, "focus": 0 },
+      "startArrowhead": null, "endArrowhead": "arrow", "boundElements": null
+    },
+
+    {
+      "id": "loop", "type": "arrow", "x": 1225, "y": 320, "width": 540, "height": 110,
+      "angle": 0, "strokeColor": "#854d0e", "backgroundColor": "transparent",
+      "fillStyle": "solid", "strokeWidth": 2, "strokeStyle": "dashed", "roughness": 0,
+      "opacity": 100, "seed": 300006, "roundness": { "type": 2 },
+      "points": [[0, 0], [0, 110], [-540, 110], [-540, 0]],
+      "startBinding": { "elementId": "box_verify", "gap": 4, "focus": 0 },
+      "endBinding": { "elementId": "box_generate", "gap": 4, "focus": 0 },
+      "startArrowhead": null, "endArrowhead": "arrow", "boundElements": null
+    },
+    {
+      "id": "loop_lbl", "type": "text", "x": 830, "y": 404, "width": 280, "height": 22,
+      "angle": 0, "strokeColor": "#854d0e", "backgroundColor": "transparent",
+      "fillStyle": "solid", "strokeWidth": 1, "strokeStyle": "solid", "roughness": 0,
+      "opacity": 100, "seed": 400003, "text": "fix & re-export until clean (1–3×)",
+      "fontSize": 14, "fontFamily": 2, "textAlign": "center", "verticalAlign": "top",
+      "containerId": null, "boundElements": null
+    }
+  ],
+  "appState": { "viewBackgroundColor": "#ffffff" },
+  "files": {}
+}

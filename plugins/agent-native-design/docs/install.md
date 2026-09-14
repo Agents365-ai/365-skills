@@ -1,6 +1,6 @@
 # Installation
 
-[← Back to README](../README.md)
+[← Back to README](https://github.com/Agents365-ai/365-skills/blob/main/plugins/agent-native-design/README.md)
 
 > **Note (v1.3.5):** The SKILL.md and reference files now live under `skills/agent-native-design/` inside the repo. The install commands below copy only that subdirectory into your skills path. Marketplace installs (`/plugin install`, `clawhub install`, `skills install`) handle this automatically.
 

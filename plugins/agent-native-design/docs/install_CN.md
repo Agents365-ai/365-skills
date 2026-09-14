@@ -1,6 +1,6 @@
 # 安装
 
-[← 返回 README](../README_CN.md)
+[← 返回 README](https://github.com/Agents365-ai/365-skills/blob/main/plugins/agent-native-design/README_CN.md)
 
 > **注意 (v1.3.5)：** SKILL.md 和参考文件现已移至仓库内的 `skills/agent-native-design/` 目录。以下安装命令仅将该子目录复制到你的 skills 路径中。通过 marketplace 安装（`/plugin install`、`clawhub install`、`skills install`）会自动处理。
 

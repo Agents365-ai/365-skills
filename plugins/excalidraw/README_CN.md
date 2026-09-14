@@ -9,7 +9,7 @@
 [![ClawHub](https://img.shields.io/badge/ClawHub-listed-ff6b35)](https://clawhub.ai/agents365-ai/excalidraw-skill)
 [![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-plugin-8a2be2)](https://github.com/Agents365-ai/365-skills)
 [![Agent Skills](https://img.shields.io/badge/Agent%20Skills-兼容-2ea44f)](https://agentskills.io)
-[English](README.md) · **中文** · [📖 在线文档](https://agents365-ai.github.io/excalidraw-skill/zh.html)
+[English](README.md) · **中文** · [📖 在线文档](https://agents365-ai.github.io/365-skills/excalidraw/zh.html)
 
 一个把自然语言描述变成简洁、专业的 `.excalidraw` JSON(需要时也能出手绘风格草图),并导出为 PNG / SVG 的技能 —— 既可走零安装的 [Kroki](https://kroki.io) API,也可走本地 [`excalidraw-brute-export-cli`](https://www.npmjs.com/package/excalidraw-brute-export-cli)。支持 **Claude Code、Cursor、Copilot、OpenClaw、Codex、Hermes** 等任何兼容 [Agent Skills](https://agentskills.io) 规范的 agent。
 

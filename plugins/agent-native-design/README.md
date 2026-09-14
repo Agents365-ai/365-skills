@@ -2,7 +2,7 @@
 
 ![One CLI · Three Audiences · Three Channels](docs/assets/concept-hero-en.png)
 
-[中文文档](README_CN.md) · [Docs site](https://agents365-ai.github.io/agent-native-design/)
+[中文文档](README_CN.md) · [Docs site](https://agents365-ai.github.io/365-skills/agent-native-design/)
 
 A skill that evaluates whether a CLI is reliably usable by AI agents and helps you design CLIs that serve humans, agents, and orchestration systems at the same time. Built around seven principles, a 14-criterion rubric, and a structured refactor playbook.
 

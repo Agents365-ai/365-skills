@@ -9,7 +9,7 @@
 [![ClawHub](https://img.shields.io/badge/ClawHub-listed-ff6b35)](https://clawhub.ai/agents365-ai/tldraw-pro-skill)
 [![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-plugin-8a2be2)](https://github.com/Agents365-ai/365-skills)
 [![Agent Skills](https://img.shields.io/badge/Agent%20Skills-兼容-2ea44f)](https://agentskills.io)
-[English](README.md) · **中文** · [📖 在线文档](https://agents365-ai.github.io/tldraw-skill/zh.html)
+[English](README.md) · **中文** · [📖 在线文档](https://agents365-ai.github.io/365-skills/tldraw/zh.html)
 
 一个把自然语言变成手绘白板风格 `.tldr` 图表,并通过 [`@kitschpatrol/tldraw-cli`](https://github.com/kitschpatrol/tldraw-cli) 自动导出 PNG / SVG 的技能。支持 **Claude Code、Cursor、Copilot、OpenClaw、Codex、Hermes** 等任何兼容 [Agent Skills](https://agentskills.io) 规范的 agent。
 

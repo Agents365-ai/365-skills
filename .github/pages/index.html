@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agents365-ai skill docs</title>
+<meta name="description" content="Documentation for the agent skills in Agents365-ai/365-skills: diagram, image, speech and CLI-design skills, each in English and Chinese.">
+<style>
+  :root {
+    --paper: #fafaf8;
+    --panel: #ffffff;
+    --ink: #12131a;
+    --muted: #6a6e7a;
+    --rule: #e7e6e1;
+    --diagram: #3d5afe;
+    --image: #c2185b;
+    --speech: #b26a00;
+    --contract: #00796b;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", inter, system-ui, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 44rem; margin: 0 auto; padding: 4rem 1.5rem 5rem; }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 1.25rem;
+  }
+
+  h1 {
+    font-size: clamp(2rem, 6vw, 2.75rem);
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    line-height: 1.05;
+    margin: 0 0 0.75rem;
+  }
+
+  .lede { font-size: 1.0625rem; color: var(--muted); margin: 0 0 1rem; max-width: 34rem; }
+
+  .source {
+    font-family: var(--mono);
+    font-size: 0.8125rem;
+    color: var(--muted);
+    border-top: 1px solid var(--rule);
+    padding-top: 1rem;
+    margin: 2rem 0 3rem;
+  }
+  .source a { color: var(--ink); }
+
+  ul { list-style: none; margin: 0; padding: 0; }
+
+  li {
+    display: grid;
+    grid-template-columns: 1.5rem 1fr;
+    gap: 0 1.25rem;
+    padding: 1.25rem 0;
+    border-top: 1px solid var(--rule);
+  }
+
+  .mark { color: var(--hue); padding-top: 0.2rem; }
+  .mark svg { display: block; }
+
+  .head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem 0.75rem; }
+
+  .slug {
+    font-family: var(--mono);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .kind {
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--hue);
+  }
+
+  .body p { margin: 0.35rem 0 0.5rem; color: var(--muted); font-size: 0.9375rem; }
+
+  .links { display: flex; gap: 1rem; font-size: 0.875rem; }
+  .links a { color: var(--hue); text-underline-offset: 0.2em; }
+
+  a:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; border-radius: 2px; }
+
+  footer {
+    margin-top: 3rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--rule);
+    font-size: 0.875rem;
+    color: var(--muted);
+  }
+  footer code { font-family: var(--mono); font-size: 0.8125rem; color: var(--ink); }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .links a, .source a { transition: color 120ms ease; }
+    .links a:hover, .source a:hover { color: var(--hue); }
+  }
+
+  @media (max-width: 30rem) {
+    li { grid-template-columns: 1fr; }
+    .mark { padding-top: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <p class="eyebrow">Agents365-ai</p>
+  <h1>Skill documentation</h1>
+  <p class="lede">Reference pages for the skills that live in this repository. Each one documents what the skill does, what it needs installed, and where it stops.</p>
+  <p class="source">Sources: <a href="https://github.com/Agents365-ai/365-skills">github.com/Agents365-ai/365-skills</a>, one folder per skill under <code>plugins/*/docs/</code>.</p>
+
+  <ul>
+    <li style="--hue: var(--diagram)">
+      <span class="mark" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6">
+          <rect x="1" y="2" width="7" height="6" rx="1"/><rect x="12" y="12" width="7" height="6" rx="1"/>
+          <path d="M8 5h4v10"/>
+        </svg>
+      </span>
+      <div class="body">
+        <div class="head"><span class="slug">mermaid</span><span class="kind">text to diagram</span></div>
+        <p>Mermaid source from a description, validated before export, rendered to PNG / SVG / PDF.</p>
+        <div class="links">
+          <a href="mermaid/index.html">English</a>
+          <a href="mermaid/zh.html" lang="zh-Hans">中文</a>
+        </div>
+      </div>
+    </li>
+
+    <li style="--hue: var(--diagram)">
+      <span class="mark" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+          <path d="M2 15c3-1 4-9 7-9s4 6 7 5"/>
+          <circle cx="4" cy="4" r="1.6"/><circle cx="16" cy="4" r="1.6"/>
+        </svg>
+      </span>
+      <div class="body">
+        <div class="head"><span class="slug">excalidraw</span><span class="kind">hand-drawn diagram</span></div>
+        <p>Excalidraw scenes written as JSON, exported through Kroki or the local CLI, sketchy or clean.</p>
+        <div class="links">
+          <a href="excalidraw/index.html">English</a>
+          <a href="excalidraw/zh.html" lang="zh-Hans">中文</a>
+        </div>
+      </div>
+    </li>
+
+    <li style="--hue: var(--diagram)">
+      <span class="mark" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6">
+          <rect x="1" y="1" width="8" height="5" rx="1"/><rect x="11" y="14" width="8" height="5" rx="1"/>
+          <path d="M5 6v9h6"/>
+        </svg>
+      </span>
+      <div class="body">
+        <div class="head"><span class="slug">plantuml</span><span class="kind">uml diagram</span></div>
+        <p>Sequence, class, ER, activity and C4 diagrams through Kroki, or a local jar when you are offline.</p>
+        <div class="links">
+          <a href="plantuml/index.html">English</a>
+          <a href="plantuml/zh.html" lang="zh-Hans">中文</a>
+        </div>
+      </div>
+    </li>
+
+    <li style="--hue: var(--diagram)">
+      <span class="mark" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round">
+          <path d="M2 4h9v6H2z"/><path d="M11 13h7v5h-7z"/><path d="M6 10v3h9"/>
+        </svg>
+      </span>
+      <div class="body">
+        <div class="head"><span class="slug">tldraw</span><span class="kind">whiteboard diagram</span></div>
+        <p>Whiteboard-style <code>.tldr</code> scenes with a vision self-check pass before you see the result.</p>
+        <div class="links">
+          <a href="tldraw/index.html">English</a>
+          <a href="tldraw/zh.html" lang="zh-Hans">中文</a>
+        </div>
+      </div>
+    </li>
+
+    <li style="--hue: var(--image)">
+      <span class="mark" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+          <rect x="1" y="1" width="5" height="5"/><rect x="8" y="1" width="5" height="5" opacity=".45"/><rect x="15" y="1" width="4" height="5"/>
+          <rect x="1" y="8" width="5" height="5" opacity=".45"/><rect x="8" y="8" width="5" height="5"/><rect x="15" y="8" width="4" height="5" opacity=".45"/>
+          <rect x="1" y="15" width="5" height="4"/><rect x="8" y="15" width="5" height="4" opacity=".45"/><rect x="15" y="15" width="4" height="4"/>
+        </svg>
+      </span>
+      <div class="body">
+        <div class="head"><span class="slug">imagencn</span><span class="kind">image generation</span></div>
+        <p>Every supported image model in one table: resolution, price and what each one is good at.</p>
+        <div class="links">
+          <a href="imagencn/models.html">Model reference</a>
+        </div>
+      </div>
+    </li>
+
+    <li style="--hue: var(--speech)">
+      <span class="mark" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+          <path d="M2 10v0"/><path d="M5 7v6"/><path d="M8 4v12"/><path d="M11 7v6"/><path d="M14 5v10"/><path d="M17 9v2"/>
+        </svg>
+      </span>
+      <div class="body">
+        <div class="head"><span class="slug">ttscn</span><span class="kind">text to speech</span></div>
+        <p>15 speech backends side by side: cost per 10k characters, voices, cloning, streaming support.</p>
+        <div class="links">
+          <a href="ttscn/index.html" lang="zh-Hans">Provider comparison</a>
+        </div>
+      </div>
+    </li>
+
+    <li style="--hue: var(--contract)">
+      <span class="mark" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+          <path d="M7 3H4v14h3"/><path d="M13 3h3v14h-3"/><circle cx="10" cy="10" r="1.6" fill="currentColor" stroke="none"/>
+        </svg>
+      </span>
+      <div class="body">
+        <div class="head"><span class="slug">agent-native-design</span><span class="kind">cli design contract</span></div>
+        <p>The 14-criterion contract for command-line tools an agent can actually operate, with a review workflow.</p>
+        <div class="links">
+          <a href="agent-native-design/index.html">English</a>
+          <a href="agent-native-design/zh.html" lang="zh-Hans">中文</a>
+        </div>
+      </div>
+    </li>
+  </ul>
+
+  <footer>
+    Built from the plugin folders in this repository: the Pages workflow copies every <code>plugins/*/docs/</code> directory into its own path here, so a site is edited next to the skill it documents.
+  </footer>
+
+</div>
+</body>
+</html>

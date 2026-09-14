@@ -1,0 +1,38 @@
+@startuml
+!theme aws-orange
+title E-commerce Schema
+
+entity "customer" as customer {
+  * id : int <<PK>>
+  --
+  name : varchar
+  email : varchar
+}
+
+entity "order" as order {
+  * id : int <<PK>>
+  --
+  * customer_id : int <<FK>>
+  total : decimal
+  status : varchar
+}
+
+entity "line_item" as li {
+  * id : int <<PK>>
+  --
+  * order_id : int <<FK>>
+  * product_id : int <<FK>>
+  qty : int
+}
+
+entity "product" as product {
+  * id : int <<PK>>
+  --
+  name : varchar
+  price : decimal
+}
+
+customer ||--o{ order : places
+order ||--|{ li : contains
+product ||--o{ li : "appears in"
+@enduml

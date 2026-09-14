@@ -1,0 +1,16 @@
+sequenceDiagram
+    autonumber
+    actor U as User
+    participant C as Client
+    participant A as Auth Server
+    participant R as Resource API
+    U->>C: Click "Log in"
+    C->>A: GET /authorize
+    A-->>U: Login page
+    U->>A: Submit credentials
+    A-->>C: Authorization code
+    C->>A: POST /token (code)
+    A-->>C: Access token
+    C->>R: GET /data (token)
+    R-->>C: 200 OK + data
+    C-->>U: Render dashboard

@@ -9,7 +9,7 @@
 [![ClawHub](https://img.shields.io/badge/ClawHub-listed-ff6b35)](https://clawhub.ai/agents365-ai/paper-fetch-pro-skill)
 [![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-plugin-8a2be2)](https://github.com/Agents365-ai/365-skills)
 [![Agent Skills](https://img.shields.io/badge/Agent%20Skills-compatible-2ea44f)](https://agentskills.io)
-[English](README.md) · **中文** · [📖 在线文档](https://agents365-ai.github.io/paper-fetch/zh.html)
+[English](README.md) · **中文**
 
 将 DOI（或标题）解析为 PDF — 7 源回退链：[Unpaywall](https://unpaywall.org) → [Semantic Scholar](https://www.semanticscholar.org) → [arXiv](https://arxiv.org) → [PubMed Central](https://pmc.ncbi.nlm.nih.gov) → [bioRxiv](https://www.biorxiv.org)/[medRxiv](https://www.medrxiv.org) → 出版商直链 → [Sci-Hub](https://www.sci-hub.pub) 镜像。纯 Python 标准库，agent 原生 CLI，稳定 JSON 信封。
 

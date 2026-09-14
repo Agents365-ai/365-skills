@@ -2,7 +2,7 @@
 
 ![一个 CLI · 三类观众 · 三条通道](docs/assets/concept-hero-zh.png)
 
-[English](README.md) · [文档站点](https://agents365-ai.github.io/agent-native-design/zh.html)
+[English](README.md) · [文档站点](https://agents365-ai.github.io/365-skills/agent-native-design/zh.html)
 
 一个评估 CLI 是否能被 AI 智能体可靠使用,并帮你设计同时服务人类、智能体、编排系统的 CLI 的技能。围绕 7 项原则、14 项评分标准、结构化重构剧本展开。
 

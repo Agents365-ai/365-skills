@@ -9,7 +9,7 @@
 [![ClawHub](https://img.shields.io/badge/ClawHub-listed-ff6b35)](https://clawhub.ai/agents365-ai/plantuml-pro-skill)
 [![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-plugin-8a2be2)](https://github.com/Agents365-ai/365-skills)
 [![Agent Skills](https://img.shields.io/badge/Agent%20Skills-兼容-2ea44f)](https://agentskills.io)
-[English](README.md) · **中文** · [📖 在线文档](https://agents365-ai.github.io/plantuml-skill/zh.html)
+[English](README.md) · **中文** · [📖 在线文档](https://agents365-ai.github.io/365-skills/plantuml/zh.html)
 
 一个把自然语言描述变成 `.puml` PlantUML 源文件,并通过 [Kroki](https://kroki.io) 渲染 API 导出为 PNG / SVG 的技能 —— 无需 Java、无需 Graphviz、无需本地安装(只要 `curl`)。离线 / 气隙场景可使用本地 Kroki Docker 或 `plantuml.jar`。支持 **Claude Code、Cursor、Copilot、OpenClaw、Codex、Hermes** 等任何兼容 [Agent Skills](https://agentskills.io) 规范的 agent。
 

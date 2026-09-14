@@ -1,0 +1,11 @@
+stateDiagram-v2
+    [*] --> Cart
+    Cart --> Pending: checkout
+    Pending --> Paid: payment ok
+    Pending --> Cancelled: timeout
+    Paid --> Shipped: dispatch
+    Shipped --> Delivered: received
+    Paid --> Refunded: refund
+    Delivered --> [*]
+    Cancelled --> [*]
+    Refunded --> [*]

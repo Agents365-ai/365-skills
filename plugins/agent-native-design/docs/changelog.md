@@ -1,6 +1,6 @@
 # Changelog
 
-[← Back to README](../README.md)
+[← Back to README](https://github.com/Agents365-ai/365-skills/blob/main/plugins/agent-native-design/README.md)
 
 ## v1.4.0 — September 1, 2026
 
