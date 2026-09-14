@@ -77,21 +77,17 @@ npx skills add Agents365-ai/365-skills -g
 | `imagencn` | AI 图像生成，接入阿里百炼、字节火山方舟与腾讯混元 —— 23 个模型，中文文字出图表现优秀，富终端 UI，智能配置 |
 | `videogencn` | 中国视频模型 AI 视频片段生成 —— 文生视频、图生视频、首尾帧与参考图生视频，覆盖百炼（Wan/PixVerse/Kling/Vidu）、即梦（doubao-seedance）、MiniMax（海螺）、混元 |
 | `assetseeker` | 免费商用创意素材检索 —— 照片、插画、图标、视频片段、音乐、音效与字体，覆盖 Pexels、Unsplash、Pixabay、Iconify、Freesound、Google Fonts 等 |
-| `video-podcast-maker` | 自动化主题驱动视频播客制作 —— 选题研究 → 脚本 → TTS（7 后端）→ 4K Remotion 渲染 → BGM 混音 → Remotion 原生字幕。多平台输出（B 站 / YouTube / 小红书 / 抖音 / 视频号），横版长视频（16:9 4K）与竖版 shorts（9:16），15 步工作流强制 Studio 预览 |
 | `bangumi-frames` | B 站番剧帧与角色整理 —— 下载番剧/UP 主视频（或本地文件），抽取场景切换关键帧，拆分风景与角色裁剪，按 CCIP 身份聚类或通过参考文件夹提取单个角色；可选 OCR+LaMa 去字幕/水印 |
 | `yt2bb` | YouTube 视频搬运至 B 站 —— yt-dlp 下载、whisper 转写、生成中英双语 SRT 字幕并用 ffmpeg 硬编码 |
 
 ## 开发
 
-各插件下的 skills 是源仓库的直接拷贝（非 submodule）。本仓库是集中分发点：先更新源 skill 仓库，再把更新拷贝到这里，并在 `.claude-plugin/marketplace.json` 中 bump 对应插件的 `version`：
+本仓库的插件就地维护：改 `plugins/<name>/` 下的文件，同时在 `.claude-plugin/marketplace.json` 中 bump 该插件的 `version`，两者一起提交。它们的源仓库多为私有或已冻结，所以本 marketplace 是这些插件唯一的分发渠道。
 
-```bash
-cp -r ../video-podcast-maker/skills/video-podcast-maker/* plugins/video-podcast-maker/skills/video-podcast-maker/
-# 在 .claude-plugin/marketplace.json 中 bump 对应插件版本
-git add plugins/video-podcast-maker && git commit -m "chore: sync video-podcast-maker"
-```
+有两个公开技能**不**通过本仓库分发，它们只在自己的独立仓库里维护、也从那里安装：
 
-多数源仓库现已转为私有；对这部分插件而言，本 marketplace 是唯一分发渠道。`drawio-skill` **不**通过本仓库分发：它有自己的独立仓库（[Agents365-ai/drawio-skill](https://github.com/Agents365-ai/drawio-skill)），从那里安装。
+- [Agents365-ai/drawio-skill](https://github.com/Agents365-ai/drawio-skill)：`npx skills add Agents365-ai/drawio-skill -g`
+- [Agents365-ai/video-podcast-maker](https://github.com/Agents365-ai/video-podcast-maker)：`npx skills add Agents365-ai/video-podcast-maker/skills/video-podcast-maker -g`
 
 ## 微信交流群
 
