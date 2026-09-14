@@ -14,11 +14,11 @@ A coding-agent skill that packages the **latest [Pi](https://pi.dev) documentati
 (`@earendil-works/pi-coding-agent`) as an on-demand reference, so an agent can install, configure,
 run, and **extend Pi** without re-fetching the docs.
 
-Mirrors <https://pi.dev/docs/latest> (fetched 2026-07-26).
+Mirrors <https://pi.dev/docs/latest> (fetched 2026-09-14).
 
 Works with Claude Code, Cursor, Codex, Copilot, Windsurf, Cline / Roo Code, Gemini CLI,
-Aider, Zed, OpenCode, OpenClaw / ClawHub, Hermes, pi-mono — plus major Chinese agents
-(Trae, Qwen Code / Tongyi Lingma, Baidu Comate, CodeGeeX) — and any agent that reads
+Aider, Zed, OpenCode, OpenClaw / ClawHub, Hermes, pi-mono, plus major Chinese agents
+(Trae, Qwen Code / Tongyi Lingma, Baidu Comate, CodeGeeX), and any agent that reads
 `AGENTS.md` or the [Agent Skills](https://agentskills.io) format.
 
 <p align="center">
@@ -27,22 +27,22 @@ Aider, Zed, OpenCode, OpenClaw / ClawHub, Hermes, pi-mono — plus major Chinese
 
 ## What's inside
 
-- `SKILL.md` — overview, when-to-use, cheat sheet, hard rules, reference index.
-- `references/cli-and-usage.md` — install, auth, CLI flags, slash commands, message queue, context
+- `SKILL.md`: overview, when-to-use, cheat sheet, hard rules, reference index.
+- `references/cli-and-usage.md`: install, auth, CLI flags, slash commands, message queue, context
   files, env vars, sessions, keybindings.
-- `references/providers-and-models.md` — providers (30+), `auth.json` (+ scoped `env`), cloud
+- `references/providers-and-models.md`: providers (30+), `auth.json` (+ scoped `env`), cloud
   providers, custom `models.json`, `compat`, custom-provider extensions.
-- `references/settings-and-compaction.md` — `settings.json` (trust/analytics/retry/transport),
+- `references/settings-and-compaction.md`: `settings.json` (trust/analytics/retry/transport),
   auto/manual compaction, branch summaries.
-- `references/extending-pi.md` — extensions API, skills (SKILL.md), prompt templates, themes, packages.
-- `references/tui-components.md` — TUI component system for custom extension/tool UIs.
-- `references/security-and-containerization.md` — project-trust model, no built-in sandbox, Gondolin
+- `references/extending-pi.md`: extensions API, skills (SKILL.md), prompt templates, themes, packages.
+- `references/tui-components.md`: TUI component system for custom extension/tool UIs.
+- `references/security-and-containerization.md`: project-trust model, no built-in sandbox, Gondolin
   micro-VM, Docker, OpenShell.
-- `references/session-format.md` — session JSONL schema, message/entry types, SessionManager API.
-- `references/programmatic.md` — SDK, RPC mode, JSON event-stream mode.
-- `references/platform-setup.md` — Windows, Termux, tmux, per-terminal setup, shell aliases,
+- `references/session-format.md`: session JSONL schema, message/entry types, SessionManager API.
+- `references/programmatic.md`: SDK, RPC mode, JSON event-stream mode.
+- `references/platform-setup.md`: Windows, Termux, tmux, per-terminal setup, shell aliases,
   build-from-source.
-- `references/development.md` — building Pi from source, monorepo structure, forking/rebranding,
+- `references/development.md`: building Pi from source, monorepo structure, forking/rebranding,
   debugging.
 - `references/philosophy-and-design.md` (the creator's design manifesto, Mario Zechner's blog post,
   2025-11-30): why minimal, the 4-tool philosophy, YOLO by default, the explicit non-features (no

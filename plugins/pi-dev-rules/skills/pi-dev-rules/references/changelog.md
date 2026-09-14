@@ -1,4 +1,4 @@
-# Pi — Changelog
+# Pi: Changelog
 
 Source: <https://pi.dev/news> · RSS: `https://pi.dev/news.xml`
 
@@ -13,6 +13,7 @@ to refresh both the package catalog and this changelog.
 
 | Version | Date | Highlights |
 | --------- | ------ | ----------- |
+| **0.85.1** | 2026-09-05 | New Features: GPT-6 Astra — Available through OpenAI API keys and OpenAI Codex subscriptions. See API Keys and OpenAI Co |
 | **0.85.0** | 2026-09-04 | New Features: Persistent Claude thinking effort — Supported Anthropic transports preserve per-turn effort and recover sa |
 | **0.84.4** | 2026-08-28 | New Features: Terminal capability overrides — Override detected terminal hyperlink, image, and truecolor support. See Ca |
 | **0.84.3** | 2026-08-24 | New Features: PowerShell tool — Use optional native PowerShell command execution on Windows. See PowerShell Tool.; Break |
@@ -32,7 +33,6 @@ to refresh both the package catalog and this changelog.
 | **0.80.4** | 2026-07-09 | New Features: Prompt cache miss visibility - Significant cache misses can be shown in transcripts via showCacheMissNotic |
 | **0.80.3** | 2026-06-30 | New Features: Anthropic Claude Sonnet 5 support - Claude Sonnet 5 is available through inherited Anthropic-compatible an |
 | **0.80.2** | 2026-06-23 | Changed: Changed inherited pi-ai ApiKeyCredential to use the auth.json-compatible discriminator type: "api_key" and prov |
-| **0.80.1** | 2026-06-23 | Release notes for Pi 0.80.1. |
 
 ---
 

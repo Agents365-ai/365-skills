@@ -1,9 +1,9 @@
 ---
 name: pi-dev-rules
-version: 0.2.1
-description: Authoritative reference for Pi (`@earendil-works/pi-coding-agent`): install, configure, run, and extend. Use when the user asks about Pi CLI/flags/commands, providers/models/auth, settings/compaction/sessions, security/trust, extensions, skills, prompt templates, themes, packages, custom providers, TUI components, the SDK, RPC mode, or JSON streaming. Also use for Pi's design philosophy and opinionated choices (why minimal, 4 tools, YOLO, no MCP/plan mode/to-dos/sub-agents) and the creator Mario Zechner's coding-agent blog post.
+version: 0.2.2
+description: "Authoritative reference for Pi (@earendil-works/pi-coding-agent): install, configure, run, and extend. Use when the user asks about Pi CLI/flags/commands, providers/models/auth, settings/compaction/sessions, security/trust, extensions, skills, prompt templates, themes, packages, custom providers, TUI components, the SDK, RPC mode, or JSON streaming. Also use for Pi's design philosophy and opinionated choices (why minimal, 4 tools, YOLO, no MCP/plan mode/to-dos/sub-agents) and the creator Mario Zechner's coding-agent blog post."
 license: MIT
-metadata: {"source":"https://pi.dev/docs/latest","docVersion":"latest","fetched":"2026-09-04","version":"0.2.1"}
+metadata: {"source":"https://pi.dev/docs/latest","docVersion":"latest","fetched":"2026-09-14","version":"0.2.2"}
 ---
 
 # Pi Dev Rules
@@ -27,7 +27,7 @@ and build Pi customizations without re-fetching.
   tools, YOLO by default, no MCP/plan mode/to-dos/sub-agents) and how to configure/extend Pi along
   those lines instead of against them.
 
-## Reference index — load the file you need
+## Reference index: load the file you need
 
 | File | Covers |
 | ------ | -------- |
@@ -36,13 +36,13 @@ and build Pi customizations without re-fetching.
 | `references/settings-and-compaction.md` | `settings.json` schema + example, trust/analytics/retry/transport keys, compaction (auto/manual) and branch summarization |
 | `references/extending-pi.md` | Extension API (events, tools, commands, UI), Skills (SKILL.md), Prompt Templates, Themes, Packages |
 | `references/tui-components.md` | TUI component system for custom extension/tool UIs (components, overlays, theming, custom editor) |
-| `references/security-and-containerization.md` | Project-trust model (`trust.json`, `defaultProjectTrust`), no built-in sandbox, Gondolin micro-VM, Docker, OpenShell |
-| `references/session-format.md` | Session JSONL schema — versions, content blocks, message/entry types, tree/context building, SessionManager API |
+| `references/security-and-containerization.md` | Project-trust model (`trust.json`, `defaultProjectTrust`), no built-in sandbox, Gondolin micro-VM, Docker, OpenShell, Docker Sandboxes |
+| `references/session-format.md` | Session JSONL schema: versions, content blocks, message/entry types, tree/context building, SessionManager API |
 | `references/programmatic.md` | SDK, RPC mode, JSON event-stream mode |
 | `references/platform-setup.md` | Windows, Termux, tmux, per-terminal modified-Enter setup, shell aliases, build-from-source |
 | `references/development.md` | Building Pi from source, monorepo structure, forking/rebranding, debugging |
 | `references/philosophy-and-design.md` | Creator Mario Zechner's design manifesto (blog, 2025-11-30): minimal prompt <1000 tokens, 4 tools, YOLO by default, non-features (no MCP/plan/to-dos/sub-agents/background bash) with their intended alternatives, multi-provider architecture, Terminal-Bench 2.0 results (manually curated, not auto-built) |
-| `references/changelog.md` | pi.dev/news release notes — recent versions, RSS feed, how to fetch latest |
+| `references/changelog.md` | pi.dev/news release notes: recent versions, RSS feed, how to fetch latest |
 
 ## Starter plugins
 
@@ -94,11 +94,11 @@ pi --mode rpc                                   # JSON-RPC over stdin/stdout
 
 - **Install package name is exactly** `@earendil-works/pi-coding-agent` with `--ignore-scripts`.
 - **Project context file is `AGENTS.md`** (Pi also reads `CLAUDE.md`); put it in the project root.
-- **Extensions run with full system permissions** — treat them as trusted code; gate dangerous
+- **Extensions run with full system permissions**: treat them as trusted code; gate dangerous
   ops (`rm`, `sudo`, sensitive paths) with `ctx.ui.confirm` or a `tool_call` block handler.
 - **Project trust is an input-loading guard, not a sandbox.** Pi ships no built-in sandbox; a project
   is "trusted" only to decide whether to load its `.pi/` resources (settings/extensions/skills/
-  prompts/themes) — decisions live in `~/.pi/agent/trust.json`, governed by `defaultProjectTrust`
+  prompts/themes); decisions live in `~/.pi/agent/trust.json`, governed by `defaultProjectTrust`
   (`ask`/`always`/`never`), overridable per run with `--approve`/`--no-approve`. For untrusted repos
   or unattended runs, isolate with a container/VM (Gondolin/Docker/OpenShell); don't mount host
   `~/.pi/agent` unless the sandbox should see host credentials.

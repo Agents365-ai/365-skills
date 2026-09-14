@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Refresh doc references and changelog.
 #
-# Intended cadence: weekly (Sundays) — Pi releases ship every few days, but a
+# Intended cadence: weekly (Sundays): Pi releases ship every few days, but a
 # weekly refresh keeps this reference skill current without churn.
 #
 # Usage: bash scripts/refresh.sh

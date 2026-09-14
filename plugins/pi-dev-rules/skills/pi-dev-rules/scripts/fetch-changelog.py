@@ -130,7 +130,7 @@ def parse_rss():
 
 def build_changelog(entries):
     lines = []
-    lines.append("# Pi — Changelog")
+    lines.append("# Pi: Changelog")
     lines.append("")
     lines.append("Source: <https://pi.dev/news> · RSS: `https://pi.dev/news.xml`")
     lines.append("")
