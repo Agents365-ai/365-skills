@@ -13,7 +13,7 @@
   <meta property="og:description" content="Agent Skills 技能,生成 Mermaid 图表、校验语法,通过 mmdc 或 Kroki API 导出 PNG/SVG/PDF。">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://agents365-ai.github.io/365-skills/mermaid/zh.html">
-  <meta property="og:image" content="https://raw.githubusercontent.com/Agents365-ai/mermaid-skill/main/assets/example.png">
+  <meta property="og:image" content="https://raw.githubusercontent.com/Agents365-ai/365-skills/main/plugins/mermaid/assets/example.png">
   <meta name="twitter:card" content="summary_large_image">
   <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -201,15 +201,15 @@ footer a:hover { color: var(--text); }
         <button class="copy-btn" data-copied="已复制!" onclick="copyInstall()">复制</button>
       </div>
       <div class="hero-links">
-        <a href="https://github.com/Agents365-ai/mermaid-skill" class="btn btn-primary">GitHub</a>
+        <a href="https://github.com/Agents365-ai/365-skills/tree/main/plugins/mermaid" class="btn btn-primary">GitHub</a>
         <a href="https://skillsmp.com/skills/agents365-ai-mermaid-skill-skills-mermaid-skill-skill-md" class="btn btn-outline">SkillsMP</a>
         <a href="https://discord.gg/79JF5Atuk" class="btn btn-outline">Discord</a>
       </div>
       <div style="margin-top:56px;">
-        <img src="https://raw.githubusercontent.com/Agents365-ai/mermaid-skill/main/assets/example.png"
+        <img src="https://raw.githubusercontent.com/Agents365-ai/365-skills/main/plugins/mermaid/assets/example.png"
              alt="mermaid-skill 用一条自然语言提示词生成的微服务架构图"
              style="width:100%;max-width:920px;height:auto;border-radius:12px;border:1px solid var(--border);box-shadow:0 8px 32px rgba(0,0,0,0.3);">
-        <p style="margin-top:14px;font-size:13px;color:var(--text-muted);">来自一条自然语言提示词 &mdash; 完整提示词见 <a href="https://github.com/Agents365-ai/mermaid-skill/blob/main/README_CN.md#%EF%B8%8F-%E7%A4%BA%E4%BE%8B">中文 README</a>。</p>
+        <p style="margin-top:14px;font-size:13px;color:var(--text-muted);">来自一条自然语言提示词 &mdash; 完整提示词见 <a href="https://github.com/Agents365-ai/365-skills/blob/main/plugins/mermaid/README_CN.md#%EF%B8%8F-%E7%A4%BA%E4%BE%8B">中文 README</a>。</p>
       </div>
     </div>
   </div>
@@ -270,19 +270,19 @@ footer a:hover { color: var(--text); }
 npx skills add Agents365-ai/365-skills -g
 
 # Manual install
-git clone https://github.com/Agents365-ai/mermaid-skill.git ~/.claude/skills/mermaid-skill</pre></div>
+git clone https://github.com/Agents365-ai/365-skills.git && cp -r 365-skills/plugins/mermaid/skills/mermaid-skill ~/.claude/skills/mermaid-skill</pre></div>
 <div id="tab-opencode" class="tab-content" role="tabpanel"><pre># Global
-git clone https://github.com/Agents365-ai/mermaid-skill.git ~/.config/opencode/skills/mermaid-skill
+git clone https://github.com/Agents365-ai/365-skills.git && cp -r 365-skills/plugins/mermaid/skills/mermaid-skill ~/.config/opencode/skills/mermaid-skill
 
 # Project
-git clone https://github.com/Agents365-ai/mermaid-skill.git .opencode/skills/mermaid-skill</pre></div>
+git clone https://github.com/Agents365-ai/365-skills.git && cp -r 365-skills/plugins/mermaid/skills/mermaid-skill .opencode/skills/mermaid-skill</pre></div>
 <div id="tab-skillsmp" class="tab-content" role="tabpanel"><pre># Via SkillsMP CLI
 skills install mermaid-skill</pre></div>
 <div id="tab-codex" class="tab-content" role="tabpanel"><pre># User-level
-git clone https://github.com/Agents365-ai/mermaid-skill.git ~/.agents/skills/mermaid-skill
+git clone https://github.com/Agents365-ai/365-skills.git && cp -r 365-skills/plugins/mermaid/skills/mermaid-skill ~/.agents/skills/mermaid-skill
 
 # Project-level
-git clone https://github.com/Agents365-ai/mermaid-skill.git .agents/skills/mermaid-skill</pre></div>
+git clone https://github.com/Agents365-ai/365-skills.git && cp -r 365-skills/plugins/mermaid/skills/mermaid-skill .agents/skills/mermaid-skill</pre></div>
     </div>
   </section>
 
@@ -297,17 +297,17 @@ git clone https://github.com/Agents365-ai/mermaid-skill.git .agents/skills/merma
           <h3>drawio-skill</h3>
           <p>XML、可手动控制布局 &mdash; 精修架构图、ML 模型图。</p>
         </a>
-        <a href="https://github.com/Agents365-ai/excalidraw-skill" class="feature-card" style="text-decoration:none;color:inherit;">
+        <a href="https://github.com/Agents365-ai/365-skills/tree/main/plugins/excalidraw" class="feature-card" style="text-decoration:none;color:inherit;">
           <div class="feature-icon">&#x270F;&#xFE0F;</div>
           <h3>excalidraw-skill</h3>
           <p>手绘 / 草图 &mdash; 白板原型、非正式图。</p>
         </a>
-        <a href="https://github.com/Agents365-ai/plantuml-skill" class="feature-card" style="text-decoration:none;color:inherit;">
+        <a href="https://github.com/Agents365-ai/365-skills/tree/main/plugins/plantuml" class="feature-card" style="text-decoration:none;color:inherit;">
           <div class="feature-icon">&#x1F9E9;</div>
           <h3>plantuml-skill</h3>
           <p>UML 专精 &mdash; CI 流水线里的类图 / 序列图。</p>
         </a>
-        <a href="https://github.com/Agents365-ai/tldraw-skill" class="feature-card" style="text-decoration:none;color:inherit;">
+        <a href="https://github.com/Agents365-ai/365-skills/tree/main/plugins/tldraw" class="feature-card" style="text-decoration:none;color:inherit;">
           <div class="feature-icon">&#x1F3A8;</div>
           <h3>tldraw-skill</h3>
           <p>白板协作 &mdash; 随手画、FigJam 风格。</p>
@@ -353,7 +353,7 @@ git clone https://github.com/Agents365-ai/mermaid-skill.git .agents/skills/merma
 
   <footer>
     <div class="container">
-      <p><a href="https://github.com/Agents365-ai/mermaid-skill/blob/main/LICENSE">MIT 协议</a> &middot; <a href="https://github.com/Agents365-ai/mermaid-skill">GitHub</a> &middot; <a href="https://github.com/Agents365-ai">Agents365-ai</a></p>
+      <p><a href="https://github.com/Agents365-ai/365-skills/blob/main/plugins/mermaid/LICENSE">MIT 协议</a> &middot; <a href="https://github.com/Agents365-ai/365-skills/tree/main/plugins/mermaid">GitHub</a> &middot; <a href="https://github.com/Agents365-ai">Agents365-ai</a></p>
     </div>
   </footer>
 
