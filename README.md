@@ -22,7 +22,7 @@ npx skills add Agents365-ai/365-skills -g
 /plugin marketplace add Agents365-ai/365-skills
 ```
 
-Install a single plugin (Claude Code): `/plugin install <plugin-name>`, e.g. `/plugin install drawio`.
+Install a single plugin (Claude Code): `/plugin install <plugin-name>`, e.g. `/plugin install mermaid`.
 
 ## Available plugins
 
@@ -37,7 +37,6 @@ Install a single plugin (Claude Code): `/plugin install <plugin-name>`, e.g. `/p
 
 | Plugin | Description |
 | --- | --- |
-| `drawio` | Draw.io diagrams — PNG/SVG/PDF export with visual review loop |
 | `mermaid` | Mermaid diagrams — text-based, GitHub-native, auto-layout |
 | `excalidraw` | Excalidraw — hand-drawn whiteboard style |
 | `plantuml` | PlantUML — UML, C4, sequence, class diagrams |
@@ -87,12 +86,12 @@ Install a single plugin (Claude Code): `/plugin install <plugin-name>`, e.g. `/p
 Plugin skills are direct copies of the source repos (not submodules). This repo is the central distribution point: update the source skill repo first, then copy the update here and bump the plugin's `version` in `.claude-plugin/marketplace.json`:
 
 ```bash
-cp -r ../drawio-skill/skills/drawio-skill/* plugins/drawio/skills/drawio-skill/
+cp -r ../video-podcast-maker/skills/video-podcast-maker/* plugins/video-podcast-maker/skills/video-podcast-maker/
 # bump "version" for the plugin in .claude-plugin/marketplace.json
-git add plugins/drawio && git commit -m "chore: sync drawio-skill"
+git add plugins/video-podcast-maker && git commit -m "chore: sync video-podcast-maker"
 ```
 
-Most source repos are now private; for those plugins this marketplace is the only distribution channel.
+Most source repos are now private; for those plugins this marketplace is the only distribution channel. `drawio-skill` is **not** distributed here: it lives in its own repo ([Agents365-ai/drawio-skill](https://github.com/Agents365-ai/drawio-skill)) and is installed from there.
 
 ## Support
 
