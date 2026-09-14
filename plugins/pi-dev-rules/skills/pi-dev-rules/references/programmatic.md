@@ -1,4 +1,4 @@
-# Pi — Programmatic Usage (SDK, RPC, JSON)
+# Pi: Programmatic Usage (SDK, RPC, JSON)
 
 Source: <https://pi.dev/docs/latest/sdk>, /rpc, /json
 

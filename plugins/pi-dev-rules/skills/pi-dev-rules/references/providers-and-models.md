@@ -1,4 +1,4 @@
-# Pi — Providers & Custom Models
+# Pi: Providers & Custom Models
 
 Source: <https://pi.dev/docs/latest/providers>, /llama-cpp, /models, /custom-provider
 

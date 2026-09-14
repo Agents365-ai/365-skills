@@ -76,43 +76,43 @@ BUNDLES = {
 # Map: output_file → (header_line, source_urls_comment_line)
 HEADER_DOCS = {
     "cli-and-usage.md": (
-        "# Pi — CLI, Usage, Sessions & Keybindings",
+        "# Pi: CLI, Usage, Sessions & Keybindings",
         "Source: https://pi.dev/docs/latest/quickstart, /usage, /environment-variables, /sessions, /keybindings",
     ),
     "providers-and-models.md": (
-        "# Pi — Providers & Custom Models",
+        "# Pi: Providers & Custom Models",
         "Source: https://pi.dev/docs/latest/providers, /llama-cpp, /models, /custom-provider",
     ),
     "settings-and-compaction.md": (
-        "# Pi — Settings & Compaction",
+        "# Pi: Settings & Compaction",
         "Source: https://pi.dev/docs/latest/settings, /compaction",
     ),
     "extending-pi.md": (
-        "# Extending Pi — Extensions, Skills, Prompt Templates, Themes, Packages",
+        "# Extending Pi: Extensions, Skills, Prompt Templates, Themes, Packages",
         "Source: https://pi.dev/docs/latest/extensions, /skills, /prompt-templates, /themes, /packages\nSee also: `tui-components.md` (custom UI), `session-format.md` (entry/message schema).",
     ),
     "tui-components.md": (
-        "# Pi — TUI Components",
+        "# Pi: TUI Components",
         "Source: https://pi.dev/docs/latest/tui",
     ),
     "security-and-containerization.md": (
-        "# Pi — Security & Containerization",
+        "# Pi: Security & Containerization",
         "Source: https://pi.dev/docs/latest/security, /containerization",
     ),
     "session-format.md": (
-        "# Pi — Session Format",
+        "# Pi: Session Format",
         "Source: https://pi.dev/docs/latest/session-format",
     ),
     "programmatic.md": (
-        "# Pi — Programmatic Usage (SDK, RPC, JSON)",
+        "# Pi: Programmatic Usage (SDK, RPC, JSON)",
         "Source: https://pi.dev/docs/latest/sdk, /rpc, /json",
     ),
     "platform-setup.md": (
-        "# Pi — Platform Setup & Development",
+        "# Pi: Platform Setup & Development",
         "Source: https://pi.dev/docs/latest/windows, /termux, /tmux, /terminal-setup, /shell-aliases",
     ),
     "development.md": (
-        "# Pi — Development (Build from Source)",
+        "# Pi: Development (Build from Source)",
         "Source: https://pi.dev/docs/latest/development",
     ),
 }

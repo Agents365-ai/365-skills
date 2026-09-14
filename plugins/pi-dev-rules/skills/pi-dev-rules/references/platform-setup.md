@@ -1,4 +1,4 @@
-# Pi — Platform Setup & Development
+# Pi: Platform Setup & Development
 
 Source: <https://pi.dev/docs/latest/windows>, /termux, /tmux, /terminal-setup, /shell-aliases
 

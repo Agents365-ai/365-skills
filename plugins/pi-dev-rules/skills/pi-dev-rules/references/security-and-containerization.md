@@ -1,4 +1,4 @@
-# Pi — Security & Containerization
+# Pi: Security & Containerization
 
 Source: <https://pi.dev/docs/latest/security>, /containerization
 

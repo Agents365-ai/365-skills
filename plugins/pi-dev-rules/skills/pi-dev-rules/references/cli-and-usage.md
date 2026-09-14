@@ -1,4 +1,4 @@
-# Pi — CLI, Usage, Sessions & Keybindings
+# Pi: CLI, Usage, Sessions & Keybindings
 
 Source: <https://pi.dev/docs/latest/quickstart>, /usage, /environment-variables, /sessions, /keybindings
 

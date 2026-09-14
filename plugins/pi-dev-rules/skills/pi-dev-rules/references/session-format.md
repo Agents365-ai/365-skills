@@ -1,4 +1,4 @@
-# Pi — Session Format
+# Pi: Session Format
 
 Source: <https://pi.dev/docs/latest/session-format>
 

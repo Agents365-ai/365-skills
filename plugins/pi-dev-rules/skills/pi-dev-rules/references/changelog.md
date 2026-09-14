@@ -1,4 +1,4 @@
-# Pi — Changelog
+# Pi: Changelog
 
 Source: <https://pi.dev/news> · RSS: `https://pi.dev/news.xml`
 

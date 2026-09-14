@@ -1,4 +1,4 @@
-# Extending Pi — Extensions, Skills, Prompt Templates, Themes, Packages
+# Extending Pi: Extensions, Skills, Prompt Templates, Themes, Packages
 
 Source: <https://pi.dev/docs/latest/extensions>, /skills, /prompt-templates, /themes, /packages
 See also: `tui-components.md` (custom UI), `session-format.md` (entry/message schema).

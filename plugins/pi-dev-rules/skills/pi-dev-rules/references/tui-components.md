@@ -1,4 +1,4 @@
-# Pi — TUI Components
+# Pi: TUI Components
 
 Source: <https://pi.dev/docs/latest/tui>
 

@@ -1,4 +1,4 @@
-# Pi — Development (Build from Source)
+# Pi: Development (Build from Source)
 
 Source: <https://pi.dev/docs/latest/development>
 

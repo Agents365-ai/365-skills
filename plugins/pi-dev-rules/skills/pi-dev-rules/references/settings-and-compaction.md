@@ -1,4 +1,4 @@
-# Pi — Settings & Compaction
+# Pi: Settings & Compaction
 
 Source: <https://pi.dev/docs/latest/settings>, /compaction
 

@@ -4,7 +4,7 @@
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="title" value="pi-dev-rules — 工作原理" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=18;fontStyle=1;fontColor=#333333;" vertex="1" parent="1">
+        <mxCell id="title" value="pi-dev-rules：工作原理" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=18;fontStyle=1;fontColor=#333333;" vertex="1" parent="1">
           <mxGeometry x="214" y="20" width="400" height="30" as="geometry" />
         </mxCell>
         <mxCell id="step1" value="用户提出 Pi 相关问题&lt;br&gt;（安装、配置、扩展、SDK…）" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;fontColor=#333333;" vertex="1" parent="1">
@@ -40,7 +40,7 @@
         <mxCell id="arrow3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#d6b656;" edge="1" parent="1" source="step3" target="result">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="result" value="助手基于参考内容回答&lt;br&gt;— 准确、最新、无需重新抓取" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;fontColor=#333333;fontStyle=1;" vertex="1" parent="1">
+        <mxCell id="result" value="助手基于参考内容回答&lt;br&gt;准确、最新、无需重新抓取" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;fontColor=#333333;fontStyle=1;" vertex="1" parent="1">
           <mxGeometry x="224" y="345" width="380" height="45" as="geometry" />
         </mxCell>
       </root>
