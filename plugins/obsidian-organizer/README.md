@@ -1,9 +1,9 @@
 # obsidian-organizer — Keep a Large Obsidian Vault Tidy
 
 [![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](LICENSE)
-[![GitHub stars](https://img.shields.io/github/stars/Agents365-ai/obsidian-organizer?style=flat&logo=github)](https://github.com/Agents365-ai/obsidian-organizer/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/Agents365-ai/obsidian-organizer?style=flat&logo=github)](https://github.com/Agents365-ai/obsidian-organizer/network/members)
-[![Last Commit](https://img.shields.io/github/last-commit/Agents365-ai/obsidian-organizer?logo=github)](https://github.com/Agents365-ai/obsidian-organizer/commits/main)
+[![GitHub stars](https://img.shields.io/github/stars/Agents365-ai/365-skills?style=flat&logo=github)](https://github.com/Agents365-ai/365-skills/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/Agents365-ai/365-skills?style=flat&logo=github)](https://github.com/Agents365-ai/365-skills/network/members)
+[![Last Commit](https://img.shields.io/github/last-commit/Agents365-ai/365-skills?logo=github)](https://github.com/Agents365-ai/365-skills/commits/main)
 
 **English** · [中文](README_CN.md)
 
@@ -38,8 +38,8 @@ The skill itself lives at [`skills/obsidian-organizer/SKILL.md`](skills/obsidian
 
 ```bash
 # Manual install
-git clone https://github.com/Agents365-ai/obsidian-organizer.git \
-  ~/.claude/skills/obsidian-organizer
+git clone https://github.com/Agents365-ai/365-skills.git
+cp -r 365-skills/plugins/obsidian-organizer/skills/obsidian-organizer ~/.claude/skills/
 ```
 
 Requires the `obsidian-cli` skill (from the

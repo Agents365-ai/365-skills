@@ -1,10 +1,9 @@
 # tldraw-skill —— 从文字到白板风格图表
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![GitHub stars](https://img.shields.io/github/stars/Agents365-ai/tldraw-skill?style=flat&logo=github)](https://github.com/Agents365-ai/tldraw-skill/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/Agents365-ai/tldraw-skill?style=flat&logo=github)](https://github.com/Agents365-ai/tldraw-skill/network/members)
-[![Latest Release](https://img.shields.io/github/v/release/Agents365-ai/tldraw-skill?logo=github)](https://github.com/Agents365-ai/tldraw-skill/releases/latest)
-[![Last Commit](https://img.shields.io/github/last-commit/Agents365-ai/tldraw-skill?logo=github)](https://github.com/Agents365-ai/tldraw-skill/commits/main)
+[![GitHub stars](https://img.shields.io/github/stars/Agents365-ai/365-skills?style=flat&logo=github)](https://github.com/Agents365-ai/365-skills/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/Agents365-ai/365-skills?style=flat&logo=github)](https://github.com/Agents365-ai/365-skills/network/members)
+[![Last Commit](https://img.shields.io/github/last-commit/Agents365-ai/365-skills?logo=github)](https://github.com/Agents365-ai/365-skills/commits/main)
 
 [![SkillsMP](https://img.shields.io/badge/SkillsMP-listed-1f6feb)](https://skillsmp.com/skills/agents365-ai-tldraw-skill-skills-tldraw-skill-skill-md)
 [![ClawHub](https://img.shields.io/badge/ClawHub-listed-ff6b35)](https://clawhub.ai/agents365-ai/tldraw-pro-skill)
@@ -119,13 +118,13 @@ npx skills add Agents365-ai/365-skills -g
 
 ```bash
 # 手动安装
-git clone https://github.com/Agents365-ai/tldraw-skill.git \
-  ~/.claude/skills/tldraw-skill
+git clone https://github.com/Agents365-ai/365-skills.git
+cp -r 365-skills/plugins/tldraw/skills/tldraw-skill ~/.claude/skills/
 ```
 
 同时索引于 [SkillsMP](https://skillsmp.com/skills/agents365-ai-tldraw-skill-skills-tldraw-skill-skill-md) 与 [ClawHub](https://clawhub.ai/agents365-ai/tldraw-pro-skill)。
 
-**更新:** `/plugin update tldraw`(Claude Code)、`skills update tldraw-skill`(SkillsMP)、`clawhub update tldraw-pro-skill`(OpenClaw),或 `git pull`(手动安装)。
+**更新:** `/plugin update tldraw`(Claude Code)、`skills update tldraw-skill`(SkillsMP)、`clawhub update tldraw-pro-skill`(OpenClaw),或 `git pull`(在克隆的 `365-skills` 仓库中)。。
 
 ## ⚡ 快速开始
 
@@ -193,8 +192,8 @@ Skill 会自动规划布局、生成 `.tldr` JSON、导出 PNG/SVG、自检结�
 
 - **Logo、实色图形、填充图标** —— tldraw **没有不透明填充**(`solid` 是淡色,白-on-深底的图案无法还原)→ [drawio-skill](https://github.com/Agents365-ai/drawio-skill) 或你的原始矢量图
 - **精确角面 / 严格矢量形状** → [drawio-skill](https://github.com/Agents365-ai/drawio-skill)
-- **严格、出版级的 UML**(空心继承箭头等)→ [plantuml-skill](https://github.com/Agents365-ai/plantuml-skill) 或 [drawio-skill](https://github.com/Agents365-ai/drawio-skill)
-- **多节点自动布局**(tldraw 要手填坐标)→ [mermaid-skill](https://github.com/Agents365-ai/mermaid-skill)
+- **严格、出版级的 UML**(空心继承箭头等)→ [plantuml-skill](https://github.com/Agents365-ai/365-skills/tree/main/plugins/plantuml) 或 [drawio-skill](https://github.com/Agents365-ai/drawio-skill)
+- **多节点自动布局**(tldraw 要手填坐标)→ [mermaid-skill](https://github.com/Agents365-ai/365-skills/tree/main/plugins/mermaid)
 - **像素级复刻现有图片** —— 不是任何绘图 skill 该干的事
 
 ## 🔗 相关 Skill
@@ -204,9 +203,9 @@ Skill 会自动规划布局、生成 `.tldr` JSON、导出 PNG/SVG、自检结�
 | Skill | 风格 | 适用场景 |
 | --- | --- | --- |
 | [drawio-skill](https://github.com/Agents365-ai/drawio-skill) | 商务正式 | 汇报材料、严格 UML、ML 论文、网络拓扑 |
-| [excalidraw-skill](https://github.com/Agents365-ai/excalidraw-skill) | 手绘 / 草图 | 白板原型、非正式图 |
-| [mermaid-skill](https://github.com/Agents365-ai/mermaid-skill) | 文本驱动、自动布局 | 可嵌入 README、易于版本管理 |
-| [plantuml-skill](https://github.com/Agents365-ai/plantuml-skill) | UML 专精 | CI 流水线里的类图 / 序列图 |
+| [excalidraw-skill](https://github.com/Agents365-ai/365-skills/tree/main/plugins/excalidraw) | 手绘 / 草图 | 白板原型、非正式图 |
+| [mermaid-skill](https://github.com/Agents365-ai/365-skills/tree/main/plugins/mermaid) | 文本驱动、自动布局 | 可嵌入 README、易于版本管理 |
+| [plantuml-skill](https://github.com/Agents365-ai/365-skills/tree/main/plugins/plantuml) | UML 专精 | CI 流水线里的类图 / 序列图 |
 
 ## ❤️ 支持作者
 

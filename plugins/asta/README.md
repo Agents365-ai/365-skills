@@ -1,10 +1,9 @@
 # asta-skill — Semantic Scholar via Ai2 Asta MCP
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![GitHub stars](https://img.shields.io/github/stars/Agents365-ai/asta-skill?style=flat&logo=github)](https://github.com/Agents365-ai/asta-skill/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/Agents365-ai/asta-skill?style=flat&logo=github)](https://github.com/Agents365-ai/asta-skill/network/members)
-[![Latest Release](https://img.shields.io/github/v/release/Agents365-ai/asta-skill?logo=github)](https://github.com/Agents365-ai/asta-skill/releases/latest)
-[![Last Commit](https://img.shields.io/github/last-commit/Agents365-ai/asta-skill?logo=github)](https://github.com/Agents365-ai/asta-skill/commits/main)
+[![GitHub stars](https://img.shields.io/github/stars/Agents365-ai/365-skills?style=flat&logo=github)](https://github.com/Agents365-ai/365-skills/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/Agents365-ai/365-skills?style=flat&logo=github)](https://github.com/Agents365-ai/365-skills/network/members)
+[![Last Commit](https://img.shields.io/github/last-commit/Agents365-ai/365-skills?logo=github)](https://github.com/Agents365-ai/365-skills/commits/main)
 
 [![SkillsMP](https://img.shields.io/badge/SkillsMP-listed-1f6feb)](https://skillsmp.com/skills/agents365-ai-asta-skill-skills-asta-skill-skill-md)
 [![ClawHub](https://img.shields.io/badge/ClawHub-listed-ff6b35)](https://clawhub.ai/agents365-ai/asta-skill)
@@ -372,8 +371,8 @@ Also indexed on [SkillsMP](https://skillsmp.com/) and [ClawHub](https://clawhub.
 #### Manual clone (any host)
 
 ```bash
-git clone https://github.com/Agents365-ai/asta-skill.git /tmp/asta-skill
-cp -r /tmp/asta-skill/skills/asta-skill <your-host's-skills-dir>/asta-skill
+git clone https://github.com/Agents365-ai/365-skills.git /tmp/365-skills
+cp -r /tmp/365-skills/plugins/asta/skills/asta-skill <your-host's-skills-dir>/asta-skill
 ```
 
 ### Verification
@@ -434,9 +433,9 @@ Part of the [Agents365-ai research-skill family](https://github.com/Agents365-ai
 
 | Skill | Niche | When to use |
 | --- | --- | --- |
-| [semanticscholar-skill](https://github.com/Agents365-ai/semanticscholar-skill) | Direct Semantic Scholar API (Python) | When MCP isn't available or you prefer scripted access |
-| [paper-fetch](https://github.com/Agents365-ai/paper-fetch) | DOI → PDF, 7-source fallback | When you need full text after finding citations |
-| [scholar-deep-research](https://github.com/Agents365-ai/scholar-deep-research) | 8-phase literature review pipeline | When the user wants a structured cited report |
+| [semanticscholar-skill](https://github.com/Agents365-ai/365-skills/tree/main/plugins/semanticscholar) | Direct Semantic Scholar API (Python) | When MCP isn't available or you prefer scripted access |
+| [paper-fetch](https://github.com/Agents365-ai/365-skills/tree/main/plugins/paper-fetch) | DOI → PDF, 7-source fallback | When you need full text after finding citations |
+| [scholar-deep-research](https://github.com/Agents365-ai/365-skills/tree/main/plugins/scholar-deep-research) | 8-phase literature review pipeline | When the user wants a structured cited report |
 
 ## ❤️ Support
 

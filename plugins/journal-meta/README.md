@@ -1,10 +1,9 @@
 # Journal Meta — Paper Metadata Lookup Skill
 
 [![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](LICENSE)
-[![GitHub stars](https://img.shields.io/github/stars/Agents365-ai/journal-meta?style=flat&logo=github)](https://github.com/Agents365-ai/journal-meta/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/Agents365-ai/journal-meta?style=flat&logo=github)](https://github.com/Agents365-ai/journal-meta/network/members)
-[![Latest Release](https://img.shields.io/github/v/release/Agents365-ai/journal-meta?logo=github)](https://github.com/Agents365-ai/journal-meta/releases/latest)
-[![Last Commit](https://img.shields.io/github/last-commit/Agents365-ai/journal-meta?logo=github)](https://github.com/Agents365-ai/journal-meta/commits/main)
+[![GitHub stars](https://img.shields.io/github/stars/Agents365-ai/365-skills?style=flat&logo=github)](https://github.com/Agents365-ai/365-skills/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/Agents365-ai/365-skills?style=flat&logo=github)](https://github.com/Agents365-ai/365-skills/network/members)
+[![Last Commit](https://img.shields.io/github/last-commit/Agents365-ai/365-skills?logo=github)](https://github.com/Agents365-ai/365-skills/commits/main)
 
 [![SkillsMP](https://img.shields.io/badge/SkillsMP-listed-1f6feb)](https://skillsmp.com)
 [![ClawHub](https://img.shields.io/badge/ClawHub-listed-ff6b35)](https://clawhub.ai)
@@ -41,8 +40,8 @@ and abstract.
    DOIs OpenAlex hasn't indexed yet.
 2. The journal name is enriched by **delegating to two sibling skills** when they
    are installed:
-   - [`journal-abbrev`](https://github.com/Agents365-ai/journal-abbrev) → ISO-4 abbreviation.
-   - [`journal-if`](https://github.com/Agents365-ai/journal-if) → curated JCR impact factor.
+   - [`journal-abbrev`](https://github.com/Agents365-ai/365-skills/tree/main/plugins/journal-abbrev) → ISO-4 abbreviation.
+   - [`journal-if`](https://github.com/Agents365-ai/365-skills/tree/main/plugins/journal-if) → curated JCR impact factor.
    - Fallbacks (AbbrevISO, OpenAlex 2-year mean citedness) kick in automatically
      if those skills aren't found. `meta.sources` always tells you which was used.
 

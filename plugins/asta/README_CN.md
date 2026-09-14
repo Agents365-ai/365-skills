@@ -1,10 +1,9 @@
 # asta-skill — 通过 Ai2 Asta MCP 访问 Semantic Scholar
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![GitHub stars](https://img.shields.io/github/stars/Agents365-ai/asta-skill?style=flat&logo=github)](https://github.com/Agents365-ai/asta-skill/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/Agents365-ai/asta-skill?style=flat&logo=github)](https://github.com/Agents365-ai/asta-skill/network/members)
-[![Latest Release](https://img.shields.io/github/v/release/Agents365-ai/asta-skill?logo=github)](https://github.com/Agents365-ai/asta-skill/releases/latest)
-[![Last Commit](https://img.shields.io/github/last-commit/Agents365-ai/asta-skill?logo=github)](https://github.com/Agents365-ai/asta-skill/commits/main)
+[![GitHub stars](https://img.shields.io/github/stars/Agents365-ai/365-skills?style=flat&logo=github)](https://github.com/Agents365-ai/365-skills/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/Agents365-ai/365-skills?style=flat&logo=github)](https://github.com/Agents365-ai/365-skills/network/members)
+[![Last Commit](https://img.shields.io/github/last-commit/Agents365-ai/365-skills?logo=github)](https://github.com/Agents365-ai/365-skills/commits/main)
 
 [![SkillsMP](https://img.shields.io/badge/SkillsMP-listed-1f6feb)](https://skillsmp.com/skills/agents365-ai-asta-skill-skills-asta-skill-skill-md)
 [![ClawHub](https://img.shields.io/badge/ClawHub-listed-ff6b35)](https://clawhub.ai/agents365-ai/asta-skill)
@@ -372,8 +371,8 @@ npx skills add Agents365-ai/365-skills -g
 #### 手动克隆(任意 host)
 
 ```bash
-git clone https://github.com/Agents365-ai/asta-skill.git /tmp/asta-skill
-cp -r /tmp/asta-skill/skills/asta-skill <你的-host-的-skills-目录>/asta-skill
+git clone https://github.com/Agents365-ai/365-skills.git /tmp/365-skills
+cp -r /tmp/365-skills/plugins/asta/skills/asta-skill <你的-host-的-skills-目录>/asta-skill
 ```
 
 ### 验证
@@ -434,9 +433,9 @@ cp -r /tmp/asta-skill/skills/asta-skill <你的-host-的-skills-目录>/asta-ski
 
 | 技能 | 定位 | 何时使用 |
 | --- | --- | --- |
-| [semanticscholar-skill](https://github.com/Agents365-ai/semanticscholar-skill) | 直连 Semantic Scholar API(Python) | 无法使用 MCP,或更想脚本化访问时 |
-| [paper-fetch](https://github.com/Agents365-ai/paper-fetch) | DOI → PDF,7 源回退 | 找到引用后需要全文时 |
-| [scholar-deep-research](https://github.com/Agents365-ai/scholar-deep-research) | 8 阶段文献综述流水线 | 用户需要结构化、带引用的综述报告时 |
+| [semanticscholar-skill](https://github.com/Agents365-ai/365-skills/tree/main/plugins/semanticscholar) | 直连 Semantic Scholar API(Python) | 无法使用 MCP,或更想脚本化访问时 |
+| [paper-fetch](https://github.com/Agents365-ai/365-skills/tree/main/plugins/paper-fetch) | DOI → PDF,7 源回退 | 找到引用后需要全文时 |
+| [scholar-deep-research](https://github.com/Agents365-ai/365-skills/tree/main/plugins/scholar-deep-research) | 8 阶段文献综述流水线 | 用户需要结构化、带引用的综述报告时 |
 
 ## ❤️ 支持
 
