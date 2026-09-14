@@ -48,7 +48,7 @@ python scripts/fetch.py schema           # machine-readable self-description
 The flags below are the ones an agent composes in normal use. For the complete contract — including `--dry-run`, `--pretty`, `--stream`, `--overwrite`, `--timeout`, `--version`, plus parameter types and exit-code mappings — run `python scripts/fetch.py schema` (machine-readable, drift-checked via `schema_version`).
 
 | Flag | Default | Description |
-|------|---------|-------------|
+| ------ | --------- | ------------- |
 | `doi` | — | DOI to fetch (positional). Use `-` to read a single DOI from stdin |
 | `--title TITLE` | — | Paper title; resolved to a DOI via Crossref before download. Mutually exclusive with positional DOI / `--batch` |
 | `--batch FILE` | — | File with one DOI per line for bulk download. Use `-` to read from stdin |
@@ -186,7 +186,7 @@ When `--format text`, stderr emits human-readable prose.
 ### Exit codes
 
 | Code | Meaning | Retryable class |
-|------|---------|-----------------|
+| ------ | --------- | ----------------- |
 | `0` | All DOIs resolved / previewed | — |
 | `1` | Unresolved — one or more DOIs had no OA copy; no transport failure | Not now (retry after `retry_after_hours`) |
 | `2` | Reserved for auth errors (currently unused) | — |
@@ -200,7 +200,7 @@ The taxonomy lets an orchestrator route failures deterministically: exit 4 is wo
 Every retryable error carries a `retry_after_hours` hint in the error object, so an orchestrator can schedule retries without guessing.
 
 | Code | Meaning | Retryable | `retry_after_hours` |
-|------|---------|-----------|---------------------|
+| ------ | --------- | ----------- | --------------------- |
 | `validation_error` | Bad arguments or empty input | No | — |
 | `title_resolve_failed` | Crossref returned no items for the given `--title` query (try a longer / cleaner title, or pass the DOI directly) | No | — |
 | `not_found` | No open-access PDF found | Yes | `168` (one week — OA lands on embargo / preprint timescale) |
@@ -255,7 +255,7 @@ python scripts/fetch.py 10.1038/s41586-020-2649-2
 ## Environment
 
 | Variable | Default | Purpose |
-|---|---|---|
+| --- | --- | --- |
 | `UNPAYWALL_EMAIL` | unset | Contact email for Unpaywall API. Optional but recommended. Without it, Unpaywall is skipped (remaining sources still work). |
 | `PAPER_FETCH_INSTITUTIONAL` | unset | Set to any value (e.g. `1`) to opt into **institutional mode** — activates a 1 req/s rate limiter and the publisher-direct fallback. See below. |
 | `PAPER_FETCH_NO_SCIHUB` | unset | Set to any value to disable the Sci-Hub fallback (step 7). |
@@ -266,7 +266,7 @@ python scripts/fetch.py 10.1038/s41586-020-2649-2
 
 ## CloakBrowser access (opt-in)
 
-Some publishers (e.g. `science.org`) sit behind Cloudflare, which answers a plain HTTP client with a `403`/`429` or a "Just a moment…" JS-challenge page instead of the PDF — so the default `urllib` download can't get through even when the URL is legitimately accessible from a browser. [CloakBrowser](https://github.com/CloakHQ/CloakBrowser) is a stealth Chromium that passes those challenges. This skill borrows the approach from [cloakFetch](https://github.com/Agents365-ai/cloakFetch).
+Some publishers (e.g. `science.org`) sit behind Cloudflare, which answers a plain HTTP client with a `403`/`429` or a "Just a moment…" JS-challenge page instead of the PDF — so the default `urllib` download can't get through even when the URL is legitimately accessible from a browser. [CloakBrowser](https://github.com/CloakHQ/CloakBrowser) is a stealth Chromium that passes those challenges. This skill borrows the approach from `cloakFetch`.
 
 **Opt in:** `export PAPER_FETCH_CLOAK=1` (plus a `cloakbrowser`-importable Python — see `CLOAKBROWSER_PYTHON`).
 
@@ -297,7 +297,7 @@ Host reachability does not differ between modes — public mode already trusts U
 **What changes in institutional mode:**
 
 | Aspect | Public (default) | Institutional |
-|---|---|---|
+| --- | --- | --- |
 | Host reachability | Any public HTTPS host passing SSRF defense | Same |
 | SSRF defense | Enforced (private IP / non-http(s) / non-80,443 / cloud metadata all blocked) | Enforced — same rules |
 | Publisher-direct fallback | Off | On — DOI-prefix → publisher PDF URL, last resort after all OA sources miss |
@@ -321,4 +321,3 @@ Host reachability does not differ between modes — public mode already trusts U
 - **Trust is directional.** CLI arguments are validated once at the entry point. SSRF defense, the `%PDF` magic-byte check, and the 50 MB size cap are enforced in the environment layer, not at the agent's request. An agent cannot loosen safety by passing a flag — opting into institutional mode (and its rate-limit risk profile) is an operator action via environment variable.
 - **Downloads are naturally idempotent.** Re-running against the same `--out` skips files that already exist (deterministic filename: `{first_author}_{year}_{journal_abbrev}_{short_title}.pdf`; the journal segment is omitted if metadata lacks a journal/venue). Pair with `--idempotency-key` to also replay the exact envelope without any network I/O.
 - **Default output directory:** `./pdfs/`.
-

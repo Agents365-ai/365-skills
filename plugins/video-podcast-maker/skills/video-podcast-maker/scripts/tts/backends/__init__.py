@@ -151,7 +151,7 @@ def init_backend(name):
         raise MissingPackageError(
             "ttscn component skill not found (required for all TTS backends) "
             "— set TTSCN_HOME or install under ~/.claude/skills/ttscn "
-            "(https://github.com/Agents365-ai/ttsCN)",
+            "(https://github.com/Agents365-ai/365-skills/tree/main/plugins/ttsCN)",
             package="ttscn",
             install_cmd="export TTSCN_HOME=<skill root>",
         )

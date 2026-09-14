@@ -69,7 +69,7 @@ If you upgraded to v1.3.2, this is the right reason to upgrade once more.
 - Verified all citations against their primary sources; corrected two metadata errors (Manveer Chawla, not "Chugh"; Ugo Enyioha's piece is Feb 2025, not Feb 2026).
 - Moved one-time review artifacts (`REVIEW_2026.md`, `IMPROVEMENTS_APPLIED.md`) into `docs/maintainers/` so they no longer appear at the repo root.
 
-## [v1.2.0](https://github.com/Agents365-ai/agent-native-design/releases/tag/v1.2.0) — April 26, 2026
+## v1.2.0 — April 26, 2026
 
 **2026 Research Update** — Aligned with latest agent-CLI design patterns and benchmarks.
 

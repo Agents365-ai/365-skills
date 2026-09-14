@@ -92,9 +92,9 @@ Updates flow through the plugin marketplace (`/plugin update`); direct git-clone
 
 **All rendering goes into `videos/{name}/`** — every `output.mp4`, `final_video.mp4`, and `thumbnail_*.png` lands directly in the per-video directory. Never render to an `out/` or `dist/` directory; the `--public-dir videos/{name}/` convention keeps everything self-contained.
 
-**TTS engine** — all 11 backends (`TTS_BACKEND=edge|azure|cosyvoice|doubao|tencent|baidu|minimax|xunfei|elevenlabs|openai|google`) synthesize through the **ttscn component skill**, which is **required**: install it under `~/.claude/skills/ttscn` or point `TTSCN_HOME` at its root ([Agents365-ai/ttsCN](https://github.com/Agents365-ai/ttsCN)). Each backend still needs only its own API keys (Edge needs none); `check_prereqs.py` validates both the install and the keys.
+**TTS engine** — all 11 backends (`TTS_BACKEND=edge|azure|cosyvoice|doubao|tencent|baidu|minimax|xunfei|elevenlabs|openai|google`) synthesize through the **ttscn component skill**, which is **required**: install it under `~/.claude/skills/ttscn` or point `TTSCN_HOME` at its root ([ttsCN](https://github.com/Agents365-ai/365-skills/tree/main/plugins/ttsCN)). Each backend still needs only its own API keys (Edge needs none); `check_prereqs.py` validates both the install and the keys.
 
-> **Pi users:** `ttscn` is not bundled with Pi — install `Agents365-ai/ttsCN` as a Pi skill (its `skills/ttscn/` layout is auto-detected) or set `TTSCN_HOME`; `check_prereqs.py` verifies the install before TTS.
+> **Pi users:** `ttscn` is not bundled with Pi — install the `ttscn` skill from `Agents365-ai/365-skills` (its `skills/ttscn/` layout is auto-detected) or set `TTSCN_HOME`; `check_prereqs.py` verifies the install before TTS.
 
 > **Design Learning shortcut**: If the user provides a reference video/image or asks to save/list/delete style profiles, see [references/design-learning.md](references/design-learning.md) instead of running the workflow below.
 

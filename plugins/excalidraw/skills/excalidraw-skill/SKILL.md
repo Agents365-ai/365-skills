@@ -1,7 +1,7 @@
 ---
 name: excalidraw
 description: Use when user requests diagrams, flowcharts, architecture charts, or visualizations. Also use proactively when explaining systems with 3+ components, complex data flows, or relationships that benefit from visual representation. Generates .excalidraw files and exports to PNG/SVG via Kroki API or locally using excalidraw-brute-export-cli.
-homepage: https://github.com/Agents365-ai/excalidraw-skill
+homepage: https://github.com/Agents365-ai/365-skills
 metadata: {"version":"1.3.0","openclaw":{"requires":{"bins":["curl"]},"emoji":"🎨"}}
 ---
 
@@ -12,6 +12,7 @@ metadata: {"version":"1.3.0","openclaw":{"requires":{"bins":["curl"]},"emoji":"�
 Generate `.excalidraw` JSON files and export to PNG/SVG.
 
 **Two export options:**
+
 - **Kroki API** (`curl`) — zero install, SVG output only
 - **excalidraw-brute-export-cli** — local Firefox-based, PNG + SVG
 
@@ -22,6 +23,7 @@ Generate `.excalidraw` JSON files and export to PNG/SVG.
 **Explicit triggers:** user says "画图", "diagram", "visualize", "flowchart", "draw", "架构图", "流程图"
 
 **Proactive triggers:**
+
 - Explaining a system with 3+ interacting components
 - Describing a multi-step process or decision tree
 - Comparing architectures or approaches side by side
@@ -29,6 +31,7 @@ Generate `.excalidraw` JSON files and export to PNG/SVG.
 **Skip when:** a simple list or table suffices, or user is in a quick Q&A flow
 
 **When NOT to use it — route elsewhere:**
+
 - Polished, precise diagrams, strict UML, or branded vendor icons → **drawio**.
 - Diagrams-as-code in git, auto-laid-out from text → **mermaid** (general) or **plantuml** (UML).
 - An infinite-canvas whiteboard or programmatic freehand strokes → **tldraw**.
@@ -54,6 +57,7 @@ npx playwright install firefox
 ```
 
 **macOS patch (one-time, required):**
+
 ```bash
 CLI_MAIN=$(npm root -g)/excalidraw-brute-export-cli/src/main.js
 sed -i '' 's/keyboard.press("Control+O")/keyboard.press("Meta+O")/' "$CLI_MAIN"
@@ -92,7 +96,7 @@ A box around every label makes a diagram look like a wireframe. The cleanest Exc
 ### Font size hierarchy
 
 | Level | Size | Use for |
-|-------|------|---------|
+| ------- | ------ | --------- |
 | Title | 28px | Diagram title |
 | Header | 24px | Section/group headers |
 | Label | 20px | Primary element labels |
@@ -106,7 +110,7 @@ Follow the **60-30-10 rule**: 60% whitespace/neutral, 30% primary accent, 10% hi
 **Semantic fill colors** (use with `strokeColor` one shade darker):
 
 | Category | Fill | Stroke | Use for |
-|----------|------|--------|---------|
+| ---------- | ------ | -------- | --------- |
 | Primary / Input | `#dbeafe` | `#1e40af` | Entry points, APIs, user-facing |
 | Success / Data | `#dcfce7` | `#166534` | Data stores, success states |
 | Warning / Decision | `#fef9c3` | `#854d0e` | Decision points, conditions |
@@ -129,7 +133,7 @@ Follow the **60-30-10 rule**: 60% whitespace/neutral, 30% primary accent, 10% hi
 ### Arrow semantics
 
 | Style | Meaning |
-|-------|---------|
+| ------- | --------- |
 | Solid (`strokeStyle: "solid"`) | Primary flow, main path |
 | Dashed (`"dashed"`) | Response, async, callback |
 | Dotted (`"dotted"`) | Optional, reference, weak dependency |
@@ -179,6 +183,7 @@ python scripts/excalidraw_lib.py merge scene.excalidraw \
 ```
 
 **Rules:**
+
 - **Vector only.** `merge` refuses any item containing an `image` element (won't render via the export path); `items` flags them up front.
 - **Use sparingly.** An icon is just a labeled node — keep the design system's spacing, labels, and arrow semantics. Icons accent a diagram; they don't replace it.
 - **Arrows don't bind to library groups** — draw connectors with explicit edge-to-edge `points` (bindings don't affect the static export anyway).
@@ -239,7 +244,7 @@ Give each element a unique `seed` (integer). Namespace by section: 100xxx, 200xx
 Use only these values — all verified to render via Kroki and the local CLI:
 
 | Property | Valid values |
-|----------|--------------|
+| ---------- | -------------- |
 | `fillStyle` | `"solid"`, `"hachure"`, `"cross-hatch"`, `"zigzag"` |
 | `strokeStyle` | `"solid"` (or omit), `"dashed"`, `"dotted"` |
 | `fontFamily` | `1` (Virgil, hand-drawn), `2` (Helvetica), `3` (Cascadia, code) |
@@ -272,6 +277,7 @@ When text belongs inside a shape, bind them bidirectionally:
 **CRITICAL: Text `strokeColor` is the text color.** Always set it explicitly to a dark color from the text color palette. Never omit it — omitting `strokeColor` on text can cause invisible text that blends with the shape background.
 
 The parent shape must list the text in its `boundElements`:
+
 ```json
 "boundElements": [{ "id": "label_auth", "type": "text" }]
 ```
@@ -291,6 +297,7 @@ Arrows must bind to shapes, and shapes must reference bound arrows:
 ```
 
 Both `api_gateway` and `auth_service` must include in their `boundElements`:
+
 ```json
 "boundElements": [{ "id": "arrow_gw_to_auth", "type": "arrow" }]
 ```
@@ -309,6 +316,7 @@ To label an arrow, bind a `text` element to it exactly like shape text: set the 
   "boundElements": [{ "id": "lbl_yes", "type": "text" }]
 }
 ```
+
 ```json
 {
   "id": "lbl_yes",
@@ -368,7 +376,7 @@ Choose the right visual pattern for each diagram type.
 Before locking in a *diagram type*, pick the *visual metaphor* that matches the relationship in the idea — it drives the layout more than the type label does:
 
 | Relationship in the idea | Visual metaphor | Build with |
-|---|---|---|
+| --- | --- | --- |
 | One → many (broadcast, dispatch) | **Fan-out** | one node, arrows radiating outward |
 | Many → one (aggregate, merge) | **Convergence** | several inputs, arrows into one node |
 | Parent → children (hierarchy) | **Tree** | trunk + branch *lines*, free-floating text |
@@ -381,7 +389,7 @@ Before locking in a *diagram type*, pick the *visual metaphor* that matches the 
 ### Spacing Reference
 
 | Scenario | Spacing |
-|----------|---------|
+| ---------- | --------- |
 | Labeled arrow gap (between shapes) | 150–200px |
 | Unlabeled arrow gap | 100–120px |
 | Column spacing (labeled arrows) | 400px (220px box + 180px gap) |
@@ -481,14 +489,16 @@ excalidraw-brute-export-cli -i diagram.excalidraw -o diagram.svg -f svg -s 1 -b 
 **You cannot judge a diagram from its JSON.** The JSON can look perfect while the image has clipped text, overlapping boxes, or an arrow slicing through a shape. After exporting, *look at the result and fix it* — this is the single highest-leverage step.
 
 1. **Render to PNG** (the image must be viewable — PNG, not SVG, even if the user ultimately wants SVG):
+
    ```bash
    excalidraw-brute-export-cli -i diagram.excalidraw -o /tmp/check.png -f png -s 2 -b true
    ```
+
    View `/tmp/check.png` (Claude can read PNGs directly). *Visual audit needs the local CLI; with Kroki-only (SVG), fall back to the structural checks below.*
 2. **Audit the image:**
 
    | Look for | Fix |
-   |----------|-----|
+   | ---------- | ----- |
    | Text clipped / overflowing its shape | Widen the shape (`max(160, charCount * 9)`, ×2 for CJK) or pre-wrap with `\n` |
    | Boxes or labels overlapping | Re-space using the Spacing Reference (≥40px gap) |
    | Arrow cutting straight through a shape | Move endpoints to the shape borders, not centers |
@@ -503,7 +513,7 @@ excalidraw-brute-export-cli -i diagram.excalidraw -o diagram.svg -f svg -s 1 -b 
 Verify-the-render fixes *defects*; the review loop incorporates *the user's* wishes. After the render is clean, show it and collect feedback, then apply the **minimal `.excalidraw` edit** for each request and re-export:
 
 | User request | Edit action |
-|---|---|
+| --- | --- |
 | Change a label | Edit the `text` (or the bound label element) |
 | Change a color | Update `backgroundColor` / `strokeColor` on the element |
 | Add / remove an element | Append or delete the element (fix any `boundElements` / binding refs) |
@@ -529,7 +539,7 @@ Verify-the-render fixes *defects*; the review loop incorporates *the user's* wis
 ## Common Mistakes
 
 | Mistake | Fix |
-|---------|-----|
+| --------- | ----- |
 | Kroki returns HTTP 400 | Send `-H "Content-Type: text/plain"` (NOT `application/json`, which Kroki reads as a `{"diagram_source": ...}` wrapper and rejects); ensure valid JSON with `"type": "excalidraw"` and `"elements"` array |
 | Kroki only outputs SVG | Use local CLI (`excalidraw-brute-export-cli`) for PNG |
 | Export fails with "Missing required flag" | Always pass `-f png` and `-s 2` |

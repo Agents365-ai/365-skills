@@ -50,8 +50,8 @@ ln -s "$(pwd)/365-skills/plugins/zotero-dev-rules/skills/zotero-dev-rules" ~/.cl
 
 ## 相关技能
 
-与 [`zotero-manager`](https://github.com/Agents365-ai/zotero-manager) 和
-[`zotero-research-assistant`](https://github.com/Agents365-ai/zotero-research-assistant)（工作流
+与 `zotero-manager` 和
+`zotero-research-assistant`（工作流
 技能）搭配使用；本技能是面向 API、插件、转换器和 CSL 的**开发者参考**。
 
 ## 更新

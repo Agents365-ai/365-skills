@@ -3,7 +3,6 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/Agents365-ai/365-skills?style=flat&logo=github)](https://github.com/Agents365-ai/365-skills/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/Agents365-ai/365-skills?style=flat&logo=github)](https://github.com/Agents365-ai/365-skills/network/members)
-[![Latest Release](https://img.shields.io/github/v/release/Agents365-ai/365-skills?logo=github)](https://github.com/Agents365-ai/365-skills/releases/latest)
 [![Last Commit](https://img.shields.io/github/last-commit/Agents365-ai/365-skills?logo=github)](https://github.com/Agents365-ai/365-skills/commits/main)
 
 [![SkillsMP](https://img.shields.io/badge/SkillsMP-listed-1f6feb)](https://skillsmp.com/skills/agents365-ai-paper-fetch-skills-paper-fetch-skill-md)
@@ -38,7 +37,7 @@
 
 **Cloudflare 拦截的 PDF** *(可选)*
 
-- `PAPER_FETCH_CLOAK=1` 会将被 403/429 拦截或遇到 JS 挑战的 PDF 链接,改用 [CloakBrowser](https://github.com/CloakHQ/CloakBrowser)(可通过挑战的隐身 Chromium)重试(方案借鉴自 [cloakFetch](https://github.com/Agents365-ai/cloakFetch))
+- `PAPER_FETCH_CLOAK=1` 会将被 403/429 拦截或遇到 JS 挑战的 PDF 链接,改用 [CloakBrowser](https://github.com/CloakHQ/CloakBrowser)(可通过挑战的隐身 Chromium)重试(方案借鉴自 `cloakFetch`)
 - 位于下载层,因此对所有源生效;默认关闭、失败时静默回退、仅由操作者控制
 - 返回的字节仍经过相同的 `%PDF` + 体积校验;结果带 `via: "cloak"` 标记
 
@@ -150,7 +149,7 @@ export PAPER_FETCH_INSTITUTIONAL=1
 
 ## 通过 CloakBrowser 抓取 Cloudflare 拦截的 PDF(可选)
 
-部分出版商(如 `science.org`)位于 Cloudflare 之后,会向普通 HTTP 客户端返回 `403`/`429` 或 "Just a moment…" JS 挑战页,而非 PDF。设 `PAPER_FETCH_CLOAK=1` 即可将这些链接改用 [CloakBrowser](https://github.com/CloakHQ/CloakBrowser)(可通过挑战的隐身 Chromium)重试。方案借鉴自 [cloakFetch](https://github.com/Agents365-ai/cloakFetch)。
+部分出版商(如 `science.org`)位于 Cloudflare 之后,会向普通 HTTP 客户端返回 `403`/`429` 或 "Just a moment…" JS 挑战页,而非 PDF。设 `PAPER_FETCH_CLOAK=1` 即可将这些链接改用 [CloakBrowser](https://github.com/CloakHQ/CloakBrowser)(可通过挑战的隐身 Chromium)重试。方案借鉴自 `cloakFetch`。
 
 ```bash
 # 需要一个可 import cloakbrowser 的 Python(pip install cloakbrowser)
@@ -176,10 +175,10 @@ export PAPER_FETCH_CLOAK_HEADED=1   # 针对 headless 无法通过的强挑战(�
 
 | Skill | 定位 | 何时使用 |
 | --- | --- | --- |
-| [semanticscholar-skill](https://github.com/Agents365-ai/semanticscholar-skill) | Semantic Scholar API 检索 | 下载前先 **找** 论文时 |
-| [asta-skill](https://github.com/Agents365-ai/asta-skill) | 经 Ai2 Asta MCP 访问相同语料 | 宿主支持 MCP 且有 Asta API key 时 |
-| [scholar-deep-research](https://github.com/Agents365-ai/scholar-deep-research) | 8 阶段文献综述流水线 | 需要的不只是 PDF，而是带引用的结构化报告 |
-| [zotero-research-assistant](https://github.com/Agents365-ai/zotero-research-assistant) | Zotero 文献库工作流 | 把文献存进 Zotero 时 |
+| [semanticscholar-skill](https://github.com/Agents365-ai/365-skills/tree/main/plugins/semanticscholar) | Semantic Scholar API 检索 | 下载前先 **找** 论文时 |
+| [asta-skill](https://github.com/Agents365-ai/365-skills/tree/main/plugins/asta) | 经 Ai2 Asta MCP 访问相同语料 | 宿主支持 MCP 且有 Asta API key 时 |
+| [scholar-deep-research](https://github.com/Agents365-ai/365-skills/tree/main/plugins/scholar-deep-research) | 8 阶段文献综述流水线 | 需要的不只是 PDF，而是带引用的结构化报告 |
+| `zotero-research-assistant` | Zotero 文献库工作流 | 把文献存进 Zotero 时 |
 
 ## ❤️ 支持作者
 

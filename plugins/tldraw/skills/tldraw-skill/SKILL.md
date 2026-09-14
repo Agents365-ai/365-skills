@@ -2,7 +2,7 @@
 name: tldraw-skill
 description: Use when user requests diagrams, flowcharts, architecture charts, or visualizations. Also use proactively when explaining systems with 3+ components, complex data flows, or relationships that benefit from visual representation. Generates .tldr JSON files and exports to PNG/SVG locally using @kitschpatrol/tldraw-cli.
 license: MIT
-homepage: https://github.com/Agents365-ai/tldraw-skill
+homepage: https://github.com/Agents365-ai/365-skills
 compatibility: Requires Node.js + @kitschpatrol/tldraw-cli on PATH (macOS/Linux/Windows). Self-check step requires a vision-enabled model (e.g., Claude Sonnet/Opus); gracefully skipped if unavailable.
 platforms: [macos, linux, windows]
 metadata: {"openclaw":{"requires":{"bins":["tldraw"]},"emoji":"📝","os":["darwin","linux","win32"],"install":[{"id":"npm-tldraw","kind":"npm","package":"@kitschpatrol/tldraw-cli","global":true,"bins":["tldraw"],"label":"Install tldraw-cli via npm"}]},"hermes":{"tags":["tldraw","diagram","flowchart","architecture","whiteboard","visualization"],"category":"design","requires_tools":["tldraw"],"related_skills":["drawio","mermaid","excalidraw","plantuml"]},"author":"Agents365-ai","version":"1.2.1"}
@@ -23,6 +23,7 @@ Generate modern whiteboard-style diagrams as `.tldr` JSON files and export to PN
 **Explicit triggers:** user says "diagram", "flowchart", "draw", "visualize", "whiteboard diagram", "tldraw diagram", "architecture diagram", "sketch this out".
 
 **Proactive triggers:**
+
 - Explaining a system with 3+ interacting components
 - Describing a multi-step process, data flow, or pipeline
 - Showing relationships between services/modules
@@ -31,6 +32,7 @@ Generate modern whiteboard-style diagrams as `.tldr` JSON files and export to PN
 **Skip when:** a simple list or table suffices, the user wants a polished business-presentation diagram (prefer drawio-skill), or the user is in a quick Q&A flow.
 
 **When NOT to use it — route elsewhere:**
+
 - Logos / solid-color graphics / filled icons: tldraw has **no opaque fill** (`solid` = light tint; white-on-dark can't be reproduced) → use the **drawio** skill or the original vector file.
 - Precise vector geometry or strict (hollow-arrow) UML → **drawio** (or **plantuml** for UML).
 - Auto-layout of many nodes → **mermaid** (tldraw needs manual coordinates).
@@ -60,6 +62,7 @@ npx puppeteer browsers install chrome@<version-from-error>
 ## Workflow
 
 Before starting, assess whether the user's request is specific enough. If key details are missing, ask 1-3 focused questions:
+
 - **Diagram type** — which preset? (Architecture, Flowchart, Sequence, ML/DL, ERD, UML, or general)
 - **Output format** — PNG (default), SVG?
 - **Output location** — default is the user's working dir; honor any explicit path the user gives (e.g. "put it in `./artifacts/`"). Don't ask if they didn't mention one.
@@ -82,7 +85,7 @@ After exporting the draft PNG, use the agent's vision capability (e.g., Claude's
 tldraw's own AI agent flags exactly three structural defects — **text overflow** (a box too small for its label), **overlapping text**, and **friendless arrows** (an arrow with an unbound end). The first three rows below target those; size boxes correctly up front (see "Sizing boxes to fit labels") and they rarely occur.
 
 | Check | What to look for | Auto-fix action |
-|-------|-----------------|-----------------|
+| ------- | ----------------- | ----------------- |
 | Text overflow | Label spills past the shape's border, or the box looks taller than you set (tldraw auto-grows an undersized box) | Increase `w`/`h` to fit the label — see the sizing formula below |
 | Overlapping text | Two text-bearing shapes' labels touch or overlap, hurting legibility | Shift shapes apart by ≥200px |
 | Friendless arrow | An arrow with one end not connected to a shape (floats loose) | Bind both ends: every arrow's `start` and `end` need a `boundShapeId` matching an existing shape |
@@ -100,7 +103,7 @@ After self-check, show the exported image and ask the user for feedback.
 **Targeted edit rules** — for each type of feedback, apply the minimal JSON change:
 
 | User request | JSON edit action |
-|-------------|-----------------|
+| ------------- | ----------------- |
 | Change color of X | Find shape by `props.text` matching X, update `props.color` |
 | Add a new node | Append a new shape record with next available index, position near related nodes |
 | Remove a node | Delete the shape record and any arrow records bound to it |
@@ -111,6 +114,7 @@ After self-check, show the exported image and ask the user for feedback.
 | Change layout direction | **Full regeneration** — replan the grid and rebuild |
 
 **Rules:**
+
 - For single-element changes: edit the existing JSON in place — preserves layout tuning from prior iterations.
 - For layout-wide changes (e.g., swap LR↔TB, "start over"): regenerate full JSON.
 - Overwrite the same `{name}.png` each iteration — do not create `v1`, `v2`, `v3` files.
@@ -151,6 +155,7 @@ After self-check, show the exported image and ask the user for feedback.
 ```
 
 **Critical rules:**
+
 - `document:document` and `page:page1` records are ALWAYS required.
 - All shapes go in the `records` array after the page record.
 - All shapes have `"parentId": "page:page1"`.
@@ -197,7 +202,7 @@ After self-check, show the exported image and ask the user for feedback.
 ### Geo Types
 
 | `geo` value | Use for |
-|-------------|---------|
+| ------------- | --------- |
 | `rectangle` | services, modules, components |
 | `ellipse` | databases, start/end nodes |
 | `oval` | pill-shaped start/end terminators (flowcharts) |
@@ -220,7 +225,7 @@ All 20 `geo` values are valid; the above are the useful subset for technical dia
 ### Color Palette
 
 | `color` | Use for |
-|---------|---------|
+| --------- | --------- |
 | `blue` | clients, core services |
 | `green` | success, databases, storage |
 | `orange` | queues, event buses, warnings |
@@ -240,7 +245,7 @@ Full palette (13): `black`, `grey`, `light-violet`, `violet`, `blue`, `light-blu
 ### Style Options
 
 | Property | Values | Notes |
-|----------|--------|-------|
+| ---------- | -------- | ------- |
 | `fill` | `semi`, `solid`, `none`, `pattern` | `semi` = tinted fill (recommended) |
 | `dash` | `draw`, `solid`, `dashed`, `dotted` | `draw` = hand-drawn default |
 | `size` | `s`, `m`, `l`, `xl` | `m` = default |
@@ -310,7 +315,7 @@ Full palette (13): `black`, `grey`, `light-violet`, `violet`, `blue`, `light-blu
 `arrowheadStart` and `arrowheadEnd` each accept any of these 9 values (all render in `@kitschpatrol/tldraw-cli`):
 
 | Value | Looks like | Use for |
-|-------|-----------|---------|
+| ------- | ----------- | --------- |
 | `none` | (no head) | start of a one-way arrow |
 | `arrow` | open V | default flow direction |
 | `triangle` | filled ▶ | UML inheritance / "is-a" |
@@ -328,7 +333,7 @@ Default arrows use `"arrowheadStart": "none"`, `"arrowheadEnd": "arrow"`. For bi
 When multiple arrows connect to the same shape, assign different `normalizedAnchor` points to prevent stacking:
 
 | Position | x | y | Use when |
-|----------|---|---|----------|
+| ---------- | --- | --- | ---------- |
 | Top center | 0.5 | 0 | connecting to node above |
 | Top-left | 0.25 | 0 | 2nd connection from top |
 | Top-right | 0.75 | 0 | 3rd connection from top |
@@ -396,12 +401,14 @@ A `note` is a sticky note — ideal for TODOs, callouts, and comments layered on
 ## Index Ordering Rules
 
 Indices control z-order (stacking). Use this sequence:
+
 ```
 a1, a2, a3, a4, a5, a6, a7, a8, a9,
 aA, aB, aC, aD, aE, aF, aG, aH, aI, aJ, aK, aL, aM,
 aN, aO, aP, aQ, aR, aS, aT, aU, aV, aW, aX, aY, aZ,
 aa, ab, ac, ... az          ← continue here past aZ; never "a10"
 ```
+
 - Geo shapes first: `a1` through `aF` (or as many as needed).
 - Arrow shapes after: `aG`, `aH`, etc.
 - Every shape must have a **unique** index.
@@ -413,7 +420,7 @@ aa, ab, ac, ... az          ← continue here past aZ; never "a10"
 **Spacing — scale with complexity:**
 
 | Diagram complexity | Nodes | Horizontal gap | Vertical gap |
-|-------------------|-------|----------------|--------------|
+| ------------------- | ------- | ---------------- | -------------- |
 | Simple | ≤5 | 200px | 150px |
 | Medium | 6–10 | 280px | 200px |
 | Complex | >10 | 350px | 250px |
@@ -421,13 +428,14 @@ aa, ab, ac, ... az          ← continue here past aZ; never "a10"
 **Sizing boxes to fit labels (do this up front, not in self-check):** the `draw` font is wide. Compute `w`/`h` from the label so text never clips. Approximate per-character width and line height for the default `draw` font:
 
 | `size` | char width (px) | line height (px) |
-|--------|-----------------|------------------|
+| -------- | ----------------- | ------------------ |
 | `s` | 11 | 18 |
 | `m` (default) | 15 | 28 |
 | `l` | 22 | 40 |
 | `xl` | 32 | 56 |
 
 With `padding = 16` on each side:
+
 - `w = ceil(longest_line_chars * char_width + 2*padding)`, then round up to the next multiple of 10.
 - `h = ceil(num_lines * line_height + 2*padding)`, rounded up to a multiple of 10.
 
@@ -440,6 +448,7 @@ Example: a size-`m` box labeled `"API Gateway"` (11 chars, 1 line) → `w ≈ 11
 **Grid alignment:** snap all `x`, `y`, `w`, `h` values to **multiples of 10** — this matches tldraw's default `gridSize: 10` and makes manual editing easier.
 
 **General rules:**
+
 - Plan the grid before assigning x/y coordinates — sketch node positions mentally first.
 - Group related nodes in the same horizontal or vertical band.
 - Place heavily-connected "hub" nodes centrally so arrows radiate outward instead of crossing.
@@ -449,6 +458,7 @@ Example: a size-`m` box labeled `"API Gateway"` (11 chars, 1 line) → `w ≈ 11
 - Horizontal connections never cross vertical nodes in the same row; use them for peer-to-peer and publish connections.
 
 **Avoiding arrow-shape overlap:**
+
 - Before finalizing coordinates, trace each arrow path mentally — if it must cross an unrelated shape, either move the shape or use `bend` to curve around.
 - For tree/hierarchical layouts: assign nodes to layers (rows), connect only between adjacent layers to minimize crossings.
 - For star/hub layouts: place the hub center, satellites around it — arrows stay short and radial.
@@ -462,7 +472,7 @@ When the user requests a specific diagram type, apply the matching preset below 
 ### Architecture Diagram
 
 | Element | `geo` | `color` | Notes |
-|---------|-------|---------|-------|
+| --------- | ------- | --------- | ------- |
 | Client (web/mobile) | `rectangle` | `blue` | Top row, label by client type |
 | Service / module | `rectangle` | `blue` | Mid rows, group by tier |
 | Database | `ellipse` | `green` | Bottom row, one per service |
@@ -477,7 +487,7 @@ When the user requests a specific diagram type, apply the matching preset below 
 ### Flowchart
 
 | Element | `geo` | `color` | Notes |
-|---------|-------|---------|-------|
+| --------- | ------- | --------- | ------- |
 | Start / End | `ellipse` | `green` | Always at top and bottom |
 | Process step | `rectangle` | `blue` | Default action box |
 | Decision | `diamond` | `yellow` | Always label outgoing arrows (Yes / No) |
@@ -491,7 +501,7 @@ When the user requests a specific diagram type, apply the matching preset below 
 tldraw doesn't have native lifeline shapes. Approximate with:
 
 | Element | `geo` | `color` | Notes |
-|---------|-------|---------|-------|
+| --------- | ------- | --------- | ------- |
 | Actor / object header | `rectangle` | `blue` | Top of column |
 | Lifeline | `rectangle` (`w: 2`, `fill: solid`, `color: grey`) | `grey` | Thin vertical line under each actor header |
 | Sync message | arrow with `arrowheadEnd: arrow` | `black` | Solid horizontal arrow |
@@ -505,7 +515,7 @@ tldraw doesn't have native lifeline shapes. Approximate with:
 For neural network architecture diagrams — useful for paper figures and explainers.
 
 | Element | `geo` | `color` | Notes |
-|---------|-------|---------|-------|
+| --------- | ------- | --------- | ------- |
 | Input / Output | `rectangle` | `green` | Top and bottom of stack |
 | Conv / Pooling | `rectangle` | `blue` | Standard layer block |
 | Attention / Transformer | `rectangle` | `violet` | Distinct color for self-attention blocks |
@@ -527,7 +537,7 @@ For neural network architecture diagrams — useful for paper figures and explai
 tldraw lacks native table/row shapes. Approximate each entity as a tall rectangle with multi-line text.
 
 | Element | `geo` | `color` | Notes |
-|---------|-------|---------|-------|
+| --------- | ------- | --------- | ------- |
 | Entity | `rectangle` (`fill: solid`, `color: light-blue`) | `light-blue` | Title + columns as one multi-line text label |
 | Column list | embedded in `props.text` with `\n` between rows | — | Mark PK with `*` prefix, FK with `>` |
 | Relationship | arrow with `arrowheadStart: arrow`, `arrowheadEnd: arrow` | `black` | Both ends arrowed for many-to-many |
@@ -540,7 +550,7 @@ Label the arrow with cardinality (e.g., `1..*`, `0..1`) via `props.text`.
 ### UML Class Diagram
 
 | Element | `geo` | `color` | Notes |
-|---------|-------|---------|-------|
+| --------- | ------- | --------- | ------- |
 | Class | `rectangle` (`fill: solid`, `color: light-blue`) | `light-blue` | Title + attributes + methods as one multi-line `text` |
 | Inheritance | arrow with `arrowheadEnd: triangle` | `black` | tldraw renders a filled `triangle` arrowhead — point it at the parent class |
 | Composition | arrow with `arrowheadStart: diamond`, `arrowheadEnd: none` | `black` | tldraw renders a filled `diamond` head — put it on the owner (whole) end |
@@ -582,19 +592,19 @@ mkdir -p ./artifacts && tldraw export diagram.tldr -f png --scale 2 -o ./artifac
 Offer to open the `.tldr` file in the user's default tldraw viewer/editor:
 
 | OS | Command |
-|----|---------|
+| ---- | --------- |
 | macOS | `open diagram.tldr` |
 | Linux | `xdg-open diagram.tldr` |
 | Windows | `start diagram.tldr` |
 
-Or upload to https://tldraw.com (drag-and-drop the `.tldr` file) for browser editing.
+Or upload to <https://tldraw.com> (drag-and-drop the `.tldr` file) for browser editing.
 
 ---
 
 ## Common Mistakes
 
 | Mistake | Fix |
-|---------|-----|
+| --------- | ----- |
 | `tldraw` command not found | Run `npm install -g @kitschpatrol/tldraw-cli` |
 | `Could not find Chrome (ver. X)` on export | Install the pinned build: `npx puppeteer browsers install chrome@X` (use the exact version from the error) |
 | `invalidRecords` on export | Use single-character `a` keys (`a1`…`a9`, `aA`…`aZ`, `aa`…`az`); `a10`, `b1`, `c1` are malformed fractional-index keys |
@@ -618,7 +628,7 @@ Or upload to https://tldraw.com (drag-and-drop the `.tldr` file) for browser edi
 When tools are unavailable, degrade gracefully:
 
 | Scenario | Behavior |
-|----------|----------|
-| `tldraw-cli` missing | Generate `.tldr` JSON only; instruct user to drag-and-drop into https://tldraw.com or install the CLI |
+| ---------- | ---------- |
+| `tldraw-cli` missing | Generate `.tldr` JSON only; instruct user to drag-and-drop into <https://tldraw.com> or install the CLI |
 | Vision unavailable for self-check | Skip self-check (step 5); proceed directly to showing user the exported PNG |
 | Export fails | Validate JSON with `python3 -m json.tool`; deliver the `.tldr` file and suggest opening in tldraw.com |

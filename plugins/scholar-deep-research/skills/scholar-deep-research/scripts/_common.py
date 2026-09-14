@@ -25,9 +25,10 @@ import os
 import sys
 import time
 import uuid
+from collections.abc import Callable
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, NoReturn
 
 # Module logger for diagnostic-only paths (cache corruption, advisory
 # writes, retryable IO). Emits to stderr when the host has configured a
@@ -40,7 +41,7 @@ VERSION = "0.17.0"
 
 USER_AGENT = (
     f"scholar-deep-research/{VERSION} "
-    "(+https://github.com/Agents365-ai/scholar-deep-research; "
+    "(+https://github.com/Agents365-ai/365-skills; "
     "polite-pool)"
 )
 
@@ -276,7 +277,7 @@ def ok(data: Any = None, *, meta: dict[str, Any] | None = None,
 
 
 def err(code: str, message: str, *, retryable: bool = False,
-        exit_code: int = EXIT_RUNTIME, **ctx: Any) -> None:
+        exit_code: int = EXIT_RUNTIME, **ctx: Any) -> NoReturn:
     """Print an error envelope to stdout and exit with `exit_code`.
 
     `code` is a stable snake_case routing key (e.g. "state_not_found",
@@ -365,11 +366,13 @@ def safe_get(url: str, **kwargs: Any):
 
     import httpx
 
+    timeout = kwargs.pop("timeout", 60.0)
+
     parsed = urlparse(url)
     host = parsed.hostname
     if not host:
         # Malformed URL — let httpx handle it via its own error type.
-        return httpx.get(url, **kwargs)
+        return httpx.get(url, timeout=timeout, **kwargs)
 
     try:
         infos = socket.getaddrinfo(host, parsed.port or None,
@@ -393,7 +396,7 @@ def safe_get(url: str, **kwargs: Any):
                 or ip.is_unspecified):
             raise SSRFRefused(url, host, str(ip))
 
-    return httpx.get(url, **kwargs)
+    return httpx.get(url, timeout=timeout, **kwargs)
 
 
 def record_search_failure(state_path: str | None, source: str, message: str,
@@ -430,7 +433,7 @@ PAPER_FIELDS = (
 
 def make_paper(**kwargs: Any) -> dict[str, Any]:
     """Build a paper dict with all standard fields, missing → None."""
-    p: dict[str, Any] = {f: None for f in PAPER_FIELDS}
+    p: dict[str, Any] = dict.fromkeys(PAPER_FIELDS)
     p.update({k: v for k, v in kwargs.items() if v is not None})
     # type discipline
     if p.get("authors") and not isinstance(p["authors"], list):

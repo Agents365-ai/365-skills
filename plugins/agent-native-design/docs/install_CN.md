@@ -9,7 +9,7 @@
 最简单的方式是请任意一个具备编码能力的 Agent(Claude Code、Codex、Cursor、Aider、Gemini CLI……)把仓库克隆到你所在平台的 skills 目录。把 URL 和目标路径一起写在提示里:
 
 ```
-帮我把 https://github.com/Agents365-ai/agent-native-design 克隆到 ~/.claude/skills/agent-native-design。
+帮我把 https://github.com/Agents365-ai/365-skills 克隆到 /tmp/365-skills,然后把 plugins/agent-native-design/skills/agent-native-design 复制到 ~/.claude/skills/agent-native-design。
 ```
 
 把示例中的目标路径替换为你所在平台的路径 —— 见本页末尾的 **安装路径汇总** 表。由于提示中已经写明了目标路径,这种方式对任何 Agent 都通用,无需依赖 Agent 是否内置 skills 目录约定。对于手边没有 Agent 的场景(CI、全新机器、无人值守脚本),请使用下面各小节里的手动 `git clone` 指令。
@@ -18,14 +18,14 @@
 
 ```bash
 # 全局安装(在所有项目中可用)
-git clone https://github.com/Agents365-ai/agent-native-design.git /tmp/agent-native-design && \
-  cp -r /tmp/agent-native-design/skills/agent-native-design ~/.claude/skills/ && \
-  rm -rf /tmp/agent-native-design
+git clone https://github.com/Agents365-ai/365-skills.git /tmp/365-skills && \
+  cp -r /tmp/365-skills/plugins/agent-native-design/skills/agent-native-design ~/.claude/skills/ && \
+  rm -rf /tmp/365-skills
 
 # 项目级安装
-git clone https://github.com/Agents365-ai/agent-native-design.git /tmp/agent-native-design && \
-  cp -r /tmp/agent-native-design/skills/agent-native-design .claude/skills/ && \
-  rm -rf /tmp/agent-native-design
+git clone https://github.com/Agents365-ai/365-skills.git /tmp/365-skills && \
+  cp -r /tmp/365-skills/plugins/agent-native-design/skills/agent-native-design .claude/skills/ && \
+  rm -rf /tmp/365-skills
 ```
 
 ## OpenClaw / ClawHub
@@ -35,22 +35,22 @@ git clone https://github.com/Agents365-ai/agent-native-design.git /tmp/agent-nat
 clawhub install agent-native-design
 
 # 手动安装
-git clone https://github.com/Agents365-ai/agent-native-design.git /tmp/agent-native-design && \
-  cp -r /tmp/agent-native-design/skills/agent-native-design ~/.openclaw/skills/ && \
-  rm -rf /tmp/agent-native-design
+git clone https://github.com/Agents365-ai/365-skills.git /tmp/365-skills && \
+  cp -r /tmp/365-skills/plugins/agent-native-design/skills/agent-native-design ~/.openclaw/skills/ && \
+  rm -rf /tmp/365-skills
 
 # 项目级安装
-git clone https://github.com/Agents365-ai/agent-native-design.git /tmp/agent-native-design && \
-  cp -r /tmp/agent-native-design/skills/agent-native-design skills/ && \
-  rm -rf /tmp/agent-native-design
+git clone https://github.com/Agents365-ai/365-skills.git /tmp/365-skills && \
+  cp -r /tmp/365-skills/plugins/agent-native-design/skills/agent-native-design skills/ && \
+  rm -rf /tmp/365-skills
 ```
 
 ## Hermes Agent
 
 ```bash
-git clone https://github.com/Agents365-ai/agent-native-design.git /tmp/agent-native-design && \
-  cp -r /tmp/agent-native-design/skills/agent-native-design ~/.hermes/skills/engineering/ && \
-  rm -rf /tmp/agent-native-design
+git clone https://github.com/Agents365-ai/365-skills.git /tmp/365-skills && \
+  cp -r /tmp/365-skills/plugins/agent-native-design/skills/agent-native-design ~/.hermes/skills/engineering/ && \
+  rm -rf /tmp/365-skills
 ```
 
 或在 `~/.hermes/config.yaml` 中添加:
@@ -64,23 +64,23 @@ skills:
 ## pi-mono
 
 ```bash
-git clone https://github.com/Agents365-ai/agent-native-design.git /tmp/agent-native-design && \
-  cp -r /tmp/agent-native-design/skills/agent-native-design ~/.pimo/skills/ && \
-  rm -rf /tmp/agent-native-design
+git clone https://github.com/Agents365-ai/365-skills.git /tmp/365-skills && \
+  cp -r /tmp/365-skills/plugins/agent-native-design/skills/agent-native-design ~/.pimo/skills/ && \
+  rm -rf /tmp/365-skills
 ```
 
 ## OpenAI Codex
 
 ```bash
 # 用户级安装(默认 CODEX_HOME)
-git clone https://github.com/Agents365-ai/agent-native-design.git /tmp/agent-native-design && \
-  cp -r /tmp/agent-native-design/skills/agent-native-design ~/.codex/skills/ && \
-  rm -rf /tmp/agent-native-design
+git clone https://github.com/Agents365-ai/365-skills.git /tmp/365-skills && \
+  cp -r /tmp/365-skills/plugins/agent-native-design/skills/agent-native-design ~/.codex/skills/ && \
+  rm -rf /tmp/365-skills
 
 # 项目级安装
-git clone https://github.com/Agents365-ai/agent-native-design.git /tmp/agent-native-design && \
-  cp -r /tmp/agent-native-design/skills/agent-native-design .codex/skills/ && \
-  rm -rf /tmp/agent-native-design
+git clone https://github.com/Agents365-ai/365-skills.git /tmp/365-skills && \
+  cp -r /tmp/365-skills/plugins/agent-native-design/skills/agent-native-design .codex/skills/ && \
+  rm -rf /tmp/365-skills
 ```
 
 ## SkillsMP

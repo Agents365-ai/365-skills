@@ -9,7 +9,7 @@
 The simplest install is to ask any code-capable agent (Claude Code, Codex, Cursor, Aider, Gemini CLI, …) to clone the repo and copy the skill into your platform's skills directory:
 
 ```
-Clone https://github.com/Agents365-ai/agent-native-design into /tmp/agent-native-design, then copy skills/agent-native-design into ~/.claude/skills/agent-native-design for me.
+Clone https://github.com/Agents365-ai/365-skills into /tmp/365-skills, then copy plugins/agent-native-design/skills/agent-native-design into ~/.claude/skills/agent-native-design for me.
 ```
 
 Substitute the destination for your platform — see the **Installation paths summary** table at the end of this page. For environments without an agent handy (CI, fresh machines, headless scripts), use the per-platform commands below.
@@ -18,14 +18,14 @@ Substitute the destination for your platform — see the **Installation paths su
 
 ```bash
 # Global install (available in all projects)
-git clone https://github.com/Agents365-ai/agent-native-design.git /tmp/agent-native-design && \
-  cp -r /tmp/agent-native-design/skills/agent-native-design ~/.claude/skills/ && \
-  rm -rf /tmp/agent-native-design
+git clone https://github.com/Agents365-ai/365-skills.git /tmp/365-skills && \
+  cp -r /tmp/365-skills/plugins/agent-native-design/skills/agent-native-design ~/.claude/skills/ && \
+  rm -rf /tmp/365-skills
 
 # Project-level install
-git clone https://github.com/Agents365-ai/agent-native-design.git /tmp/agent-native-design && \
-  cp -r /tmp/agent-native-design/skills/agent-native-design .claude/skills/ && \
-  rm -rf /tmp/agent-native-design
+git clone https://github.com/Agents365-ai/365-skills.git /tmp/365-skills && \
+  cp -r /tmp/365-skills/plugins/agent-native-design/skills/agent-native-design .claude/skills/ && \
+  rm -rf /tmp/365-skills
 ```
 
 ## OpenClaw / ClawHub
@@ -35,22 +35,22 @@ git clone https://github.com/Agents365-ai/agent-native-design.git /tmp/agent-nat
 clawhub install agent-native-design
 
 # Manual install
-git clone https://github.com/Agents365-ai/agent-native-design.git /tmp/agent-native-design && \
-  cp -r /tmp/agent-native-design/skills/agent-native-design ~/.openclaw/skills/ && \
-  rm -rf /tmp/agent-native-design
+git clone https://github.com/Agents365-ai/365-skills.git /tmp/365-skills && \
+  cp -r /tmp/365-skills/plugins/agent-native-design/skills/agent-native-design ~/.openclaw/skills/ && \
+  rm -rf /tmp/365-skills
 
 # Project-level install
-git clone https://github.com/Agents365-ai/agent-native-design.git /tmp/agent-native-design && \
-  cp -r /tmp/agent-native-design/skills/agent-native-design skills/ && \
-  rm -rf /tmp/agent-native-design
+git clone https://github.com/Agents365-ai/365-skills.git /tmp/365-skills && \
+  cp -r /tmp/365-skills/plugins/agent-native-design/skills/agent-native-design skills/ && \
+  rm -rf /tmp/365-skills
 ```
 
 ## Hermes Agent
 
 ```bash
-git clone https://github.com/Agents365-ai/agent-native-design.git /tmp/agent-native-design && \
-  cp -r /tmp/agent-native-design/skills/agent-native-design ~/.hermes/skills/engineering/ && \
-  rm -rf /tmp/agent-native-design
+git clone https://github.com/Agents365-ai/365-skills.git /tmp/365-skills && \
+  cp -r /tmp/365-skills/plugins/agent-native-design/skills/agent-native-design ~/.hermes/skills/engineering/ && \
+  rm -rf /tmp/365-skills
 ```
 
 Or add to `~/.hermes/config.yaml`:
@@ -64,23 +64,23 @@ skills:
 ## pi-mono
 
 ```bash
-git clone https://github.com/Agents365-ai/agent-native-design.git /tmp/agent-native-design && \
-  cp -r /tmp/agent-native-design/skills/agent-native-design ~/.pimo/skills/ && \
-  rm -rf /tmp/agent-native-design
+git clone https://github.com/Agents365-ai/365-skills.git /tmp/365-skills && \
+  cp -r /tmp/365-skills/plugins/agent-native-design/skills/agent-native-design ~/.pimo/skills/ && \
+  rm -rf /tmp/365-skills
 ```
 
 ## OpenAI Codex
 
 ```bash
 # User-level install (default CODEX_HOME)
-git clone https://github.com/Agents365-ai/agent-native-design.git /tmp/agent-native-design && \
-  cp -r /tmp/agent-native-design/skills/agent-native-design ~/.codex/skills/ && \
-  rm -rf /tmp/agent-native-design
+git clone https://github.com/Agents365-ai/365-skills.git /tmp/365-skills && \
+  cp -r /tmp/365-skills/plugins/agent-native-design/skills/agent-native-design ~/.codex/skills/ && \
+  rm -rf /tmp/365-skills
 
 # Project-level install
-git clone https://github.com/Agents365-ai/agent-native-design.git /tmp/agent-native-design && \
-  cp -r /tmp/agent-native-design/skills/agent-native-design .codex/skills/ && \
-  rm -rf /tmp/agent-native-design
+git clone https://github.com/Agents365-ai/365-skills.git /tmp/365-skills && \
+  cp -r /tmp/365-skills/plugins/agent-native-design/skills/agent-native-design .codex/skills/ && \
+  rm -rf /tmp/365-skills
 ```
 
 ## SkillsMP

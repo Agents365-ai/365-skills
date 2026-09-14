@@ -53,8 +53,8 @@ ln -s "$(pwd)/365-skills/plugins/zotero-dev-rules/skills/zotero-dev-rules" ~/.cl
 
 ## Related skills
 
-Pairs with [`zotero-manager`](https://github.com/Agents365-ai/zotero-manager) and
-[`zotero-research-assistant`](https://github.com/Agents365-ai/zotero-research-assistant) (workflow
+Pairs with `zotero-manager` and
+`zotero-research-assistant` (workflow
 skills); this one is the **developer reference** for the API, plugins, translators, and CSL.
 
 ## Updating

@@ -468,7 +468,7 @@ python3 scripts/tts.py \
 
 ## Agent-Native CLI Reference
 
-ttscn follows the [agent-native-design](https://github.com/Agents365-ai/agent-native-design) contract.
+ttscn follows the [agent-native-design](https://github.com/Agents365-ai/365-skills/tree/main/plugins/agent-native-design) contract.
 It serves **humans** (readable terminal output), **AI agents** (structured JSON on stdout), and
 **orchestrators** (distinct exit codes + idempotency) simultaneously.
 
