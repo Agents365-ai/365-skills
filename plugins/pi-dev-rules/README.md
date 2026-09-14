@@ -14,7 +14,7 @@ A coding-agent skill that packages the **latest [Pi](https://pi.dev) documentati
 (`@earendil-works/pi-coding-agent`) as an on-demand reference, so an agent can install, configure,
 run, and **extend Pi** without re-fetching the docs.
 
-Mirrors <https://pi.dev/docs/latest> (fetched 2026-07-26).
+Mirrors <https://pi.dev/docs/latest> (fetched 2026-09-14).
 
 Works with Claude Code, Cursor, Codex, Copilot, Windsurf, Cline / Roo Code, Gemini CLI,
 Aider, Zed, OpenCode, OpenClaw / ClawHub, Hermes, pi-mono — plus major Chinese agents

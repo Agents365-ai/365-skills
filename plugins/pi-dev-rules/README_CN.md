@@ -13,7 +13,7 @@
 一个编程助手技能，将最新的 [Pi](https://pi.dev) 文档（`@earendil-works/pi-coding-agent`）
 打包为按需参考库，让助手无需重新抓取文档即可安装、配置、运行和**扩展 Pi**。
 
-镜像 <https://pi.dev/docs/latest（抓取日期：2026-07-26）。>
+镜像 <https://pi.dev/docs/latest>（抓取日期：2026-09-14）。
 
 适用于 Claude Code、Cursor、Codex、Copilot、Windsurf、Cline / Roo Code、Gemini CLI、
 Aider、Zed、OpenCode、OpenClaw / ClawHub、Hermes、pi-mono — 以及主流国产编程助手

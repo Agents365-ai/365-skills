@@ -1,9 +1,9 @@
 ---
 name: pi-dev-rules
-version: 0.2.1
-description: Authoritative reference for Pi (`@earendil-works/pi-coding-agent`): install, configure, run, and extend. Use when the user asks about Pi CLI/flags/commands, providers/models/auth, settings/compaction/sessions, security/trust, extensions, skills, prompt templates, themes, packages, custom providers, TUI components, the SDK, RPC mode, or JSON streaming. Also use for Pi's design philosophy and opinionated choices (why minimal, 4 tools, YOLO, no MCP/plan mode/to-dos/sub-agents) and the creator Mario Zechner's coding-agent blog post.
+version: 0.2.2
+description: "Authoritative reference for Pi (@earendil-works/pi-coding-agent): install, configure, run, and extend. Use when the user asks about Pi CLI/flags/commands, providers/models/auth, settings/compaction/sessions, security/trust, extensions, skills, prompt templates, themes, packages, custom providers, TUI components, the SDK, RPC mode, or JSON streaming. Also use for Pi's design philosophy and opinionated choices (why minimal, 4 tools, YOLO, no MCP/plan mode/to-dos/sub-agents) and the creator Mario Zechner's coding-agent blog post."
 license: MIT
-metadata: {"source":"https://pi.dev/docs/latest","docVersion":"latest","fetched":"2026-09-04","version":"0.2.1"}
+metadata: {"source":"https://pi.dev/docs/latest","docVersion":"latest","fetched":"2026-09-14","version":"0.2.2"}
 ---
 
 # Pi Dev Rules
@@ -36,7 +36,7 @@ and build Pi customizations without re-fetching.
 | `references/settings-and-compaction.md` | `settings.json` schema + example, trust/analytics/retry/transport keys, compaction (auto/manual) and branch summarization |
 | `references/extending-pi.md` | Extension API (events, tools, commands, UI), Skills (SKILL.md), Prompt Templates, Themes, Packages |
 | `references/tui-components.md` | TUI component system for custom extension/tool UIs (components, overlays, theming, custom editor) |
-| `references/security-and-containerization.md` | Project-trust model (`trust.json`, `defaultProjectTrust`), no built-in sandbox, Gondolin micro-VM, Docker, OpenShell |
+| `references/security-and-containerization.md` | Project-trust model (`trust.json`, `defaultProjectTrust`), no built-in sandbox, Gondolin micro-VM, Docker, OpenShell, Docker Sandboxes |
 | `references/session-format.md` | Session JSONL schema — versions, content blocks, message/entry types, tree/context building, SessionManager API |
 | `references/programmatic.md` | SDK, RPC mode, JSON event-stream mode |
 | `references/platform-setup.md` | Windows, Termux, tmux, per-terminal modified-Enter setup, shell aliases, build-from-source |

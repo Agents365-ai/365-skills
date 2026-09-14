@@ -573,8 +573,6 @@ These variables are read by Pi itself:
 | `PI_CODING_AGENT_DIR` | Override the config directory; default is `~/.pi/agent` |
 | `PI_CODING_AGENT_SESSION_DIR` | Override session storage; overridden by `--session-dir` |
 | `PI_PACKAGE_DIR` | Override the package directory, useful for Nix/Guix store paths |
-| `PI_SERVER_DIR` | Override the experimental server profile and socket directory; default is `~/.pi/server` |
-| `PI_SERVER_ID` | Select the logical experimental server ID when `--server-id` is omitted |
 | `PI_OFFLINE` | Disable startup network operations, including update checks, package updates, and install/update telemetry |
 | `PI_SKIP_VERSION_CHECK` | Disable the `pi.dev` latest-version request |
 | `PI_TELEMETRY` | Override install/update telemetry and provider attribution headers: `1`/`true`/`yes` or `0`/`false`/`no` |
@@ -589,6 +587,8 @@ These variables are read by Pi itself:
 | `HTTP_PROXY`, `HTTPS_PROXY` | Proxy outbound HTTP requests |
 
 Provider credentials such as `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, and cloud-provider configuration are listed in [Providers](providers.md#environment-variables-or-auth-file).
+
+`PI_SERVER_DIR` and `PI_SERVER_ID` apply only to the source-only [experimental remote harness](development.md#experimental-remote-harness), not distributed builds.
 
 ---
 
@@ -893,7 +893,9 @@ This routing remains configurable through the ordinary action bindings. For exam
 | `app.model.select` | `ctrl+l` | Open model selector |
 | `app.model.cycleForward` | `ctrl+p` | Cycle to next model |
 | `app.model.cycleBackward` | `shift+ctrl+p` (`alt+p` on Windows and WSL) | Cycle to previous model |
+| `app.models.save` | `ctrl+s` | Save the selected default model or scoped model configuration to settings |
 | `app.thinking.cycle` | `shift+tab` | Cycle thinking level |
+| `app.thinking.save` | `ctrl+s` | Save current thinking level to settings |
 | `app.thinking.toggle` | `ctrl+t` | Collapse or expand thinking blocks |
 
 ### Display and Message Queue
@@ -927,7 +929,6 @@ Used inside the scoped models selector (opened via `/scoped-models`).
 
 | Keybinding id | Default | Description |
 | -------- | --------- | ------------- |
-| `app.models.save` | `ctrl+s` | Save current model selection to settings |
 | `app.models.enableAll` | `ctrl+a` | Enable all models (or all matching the current search) |
 | `app.models.clearAll` | `ctrl+x` | Clear all models (or all matching the current search) |
 | `app.models.toggleProvider` | `ctrl+p` | Toggle all models for the current provider |
