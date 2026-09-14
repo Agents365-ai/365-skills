@@ -49,5 +49,5 @@ checkout to rebuild this file and the reference bundles.
 Read the complete, untruncated history there:
 
 ```bash
-less "$PI_REPO/packages/coding-agent/CHANGELOG.md"   # PI_REPO defaults to ~/github/pi
+less "$PI_REPO/packages/coding-agent/CHANGELOG.md"   # PI_REPO is the pi checkout root
 ```

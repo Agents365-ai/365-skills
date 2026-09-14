@@ -4,18 +4,23 @@
 # Requires the pi monorepo (https://github.com/earendil-works/pi) on disk.
 # Nothing is fetched from the network.
 #
-# Usage: PI_REPO=/path/to/pi bash scripts/refresh.sh
-#        PI_REPO defaults to ~/github/pi
+# Usage: bash scripts/refresh.sh [/path/to/pi]
+#        PI_REPO=/path/to/pi bash scripts/refresh.sh
+#
+# The checkout root is taken from the first argument, then from PI_REPO, then
+# from the directory the script was started in.
 #
 # Intended cadence: weekly, since Pi releases ship every few days.
 set -euo pipefail
+
+START_DIR="$PWD"
 cd "$(dirname "$0")/.."
 
-PI_REPO="${PI_REPO:-$HOME/github/pi}"
+PI_REPO="${1:-${PI_REPO:-$START_DIR}}"
 if [ ! -d "$PI_REPO/packages/coding-agent/docs" ]; then
 	echo "not a Pi checkout: $PI_REPO" >&2
-	echo "set PI_REPO to the pi monorepo root, for example:" >&2
-	echo "  PI_REPO=\$HOME/github/pi bash scripts/refresh.sh" >&2
+	echo "pass the pi monorepo root, for example:" >&2
+	echo "  bash scripts/refresh.sh /path/to/pi" >&2
 	exit 1
 fi
 
