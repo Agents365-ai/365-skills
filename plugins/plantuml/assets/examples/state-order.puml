@@ -1,0 +1,14 @@
+@startuml
+!theme vibrant
+title Order Lifecycle
+
+[*] --> Pending
+Pending --> Paid : payment_received
+Pending --> Cancelled : cancel
+Paid --> Shipped : dispatch
+Shipped --> Delivered : confirm
+Paid --> Refunded : refund
+Delivered --> [*]
+Cancelled --> [*]
+Refunded --> [*]
+@enduml

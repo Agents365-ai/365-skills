@@ -9,7 +9,7 @@
 [![ClawHub](https://img.shields.io/badge/ClawHub-listed-ff6b35)](https://clawhub.ai/agents365-ai/excalidraw-skill)
 [![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-plugin-8a2be2)](https://github.com/Agents365-ai/365-skills)
 [![Agent Skills](https://img.shields.io/badge/Agent%20Skills-compatible-2ea44f)](https://agentskills.io)
-**English** · [中文](README_CN.md) · [📖 Online Docs](https://agents365-ai.github.io/excalidraw-skill/)
+**English** · [中文](README_CN.md) · [📖 Online Docs](https://agents365-ai.github.io/365-skills/excalidraw/)
 
 A skill that turns natural-language descriptions into clean, professional `.excalidraw` JSON files — or hand-drawn sketches when you want them — and exports them to PNG / SVG, either via the zero-install [Kroki](https://kroki.io) API or the local [`excalidraw-brute-export-cli`](https://www.npmjs.com/package/excalidraw-brute-export-cli). Works with **Claude Code, Cursor, Copilot, OpenClaw, Codex, Hermes**, and any agent compatible with the [Agent Skills](https://agentskills.io) format.
 

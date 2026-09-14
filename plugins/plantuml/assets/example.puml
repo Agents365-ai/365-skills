@@ -1,0 +1,56 @@
+@startuml Microservices Architecture
+!theme plain
+
+skinparam backgroundColor #FAFAFA
+skinparam ArrowColor #555555
+skinparam FontName Arial
+skinparam roundCorner 8
+
+title Microservices E-Commerce Architecture
+
+actor "Mobile Client" as mobile #AED6F1
+actor "Web Client" as web #AED6F1
+actor "Admin Portal" as admin #AED6F1
+
+rectangle "API Gateway" as gateway #D7BDE2
+
+rectangle "Microservices" {
+  component "User Service" as user #AED6F1
+  component "Order Service" as order #AED6F1
+  component "Product Service" as product #AED6F1
+  component "Payment Service" as payment #AED6F1
+}
+
+rectangle "Event Layer" {
+  queue "Kafka" as kafka #FAD7A0
+  component "Notification" as notif #FAD7A0
+}
+
+cloud "Stripe API" as stripe #F1948A
+
+rectangle "Storage" {
+  database "User DB" as userdb #A9DFBF
+  database "Order DB" as orderdb #A9DFBF
+  database "Product DB" as productdb #A9DFBF
+  database "Redis Cache" as redis #F9E79F
+}
+
+mobile --> gateway
+web --> gateway
+admin --> gateway
+
+gateway --> user
+gateway --> order
+gateway --> product
+gateway --> payment
+
+user --> userdb
+order --> orderdb
+product --> productdb
+payment --> redis
+
+order --> kafka : events
+kafka --> notif
+payment --> stripe : charge
+
+@enduml

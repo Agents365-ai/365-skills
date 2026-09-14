@@ -1,0 +1,38 @@
+flowchart TD
+  subgraph Clients["Clients"]
+    M[Mobile]
+    W[Web]
+    A[Admin]
+  end
+
+  GW[API Gateway]
+
+  subgraph Services["Services"]
+    US[User Service]
+    OS[Order Service]
+    PS[Product Service]
+    PAY[Payment Service]
+  end
+
+  K[[Kafka Event Bus]]
+  N[Notification Service]
+
+  subgraph Storage["Storage"]
+    UDB[(User DB)]
+    ODB[(Order DB)]
+    PDB[(Product DB)]
+    REDIS[(Redis Cache)]
+  end
+
+  STRIPE[Stripe API]
+
+  M & W & A --> GW
+  GW --> US & OS & PS & PAY
+  US --> UDB
+  OS --> ODB
+  PS --> PDB
+  PAY --> REDIS
+  PAY --> STRIPE
+  OS -->|publish event| K
+  PAY -->|publish event| K
+  K --> N

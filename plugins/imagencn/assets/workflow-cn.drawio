@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="drawio" version="26.0.0">
+  <diagram name="imagenCN Workflow">
+    <mxGraphModel dx="900" dy="900" grid="1" gridSize="10" pageWidth="600" pageHeight="900">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- Actor labels (left column) -->
+        <mxCell id="actor-user" value="用户" style="text;html=1;fontSize=10;fontStyle=1;fontColor=#6c8ebf;fillColor=none;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="20" y="55" width="50" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="actor-claude" value="AI / Claude" style="text;html=1;fontSize=10;fontStyle=1;fontColor=#82b366;fillColor=none;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="20" y="335" width="50" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="actor-api" value="API" style="text;html=1;fontSize=10;fontStyle=1;fontColor=#d79b00;fillColor=none;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="20" y="575" width="50" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="actor-output" value="输出" style="text;html=1;fontSize=10;fontStyle=1;fontColor=#666666;fillColor=none;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="20" y="695" width="50" height="20" as="geometry" />
+        </mxCell>
+
+        <!-- 1. User provides casual prompt -->
+        <mxCell id="2" value="简短 / 随意的提示词&#xa;(如: '生成一只猫')" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#333333;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="80" y="40" width="220" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- 2. Claude refines to 3 options -->
+        <mxCell id="3" value="优化提示词 → 3 个方案&#xa;A / B / C (不同风格方向)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#333333;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="80" y="130" width="220" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- 3. Show options to user -->
+        <mxCell id="4" value="展示 A / B / C 给用户&#xa;(选择一个、自由组合或要求新的)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#333333;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="80" y="215" width="220" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- 4. Decision: Satisfied? -->
+        <mxCell id="5" value="满意吗？" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#333333;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="50" y="300" width="280" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- 5. 用户确认 -->
+        <mxCell id="6" value="用户确认&#xa;('go' / 'generate' / 'ok')" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#333333;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="80" y="410" width="220" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- 6. 加载配置 + select platform/model/size -->
+        <mxCell id="7" value="加载配置 (~/.imagenCN.json)&#xa;选择平台、模型和尺寸" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#333333;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="80" y="500" width="220" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- 7. Call API -->
+        <mxCell id="8" value="通过 API 生成图像&#xa;(5 平台 / 27 模型)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontColor=#333333;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="80" y="585" width="220" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- 8. Save output -->
+        <mxCell id="9" value="智能文件名保存&#xa;平台-模型-时间戳.png" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="80" y="670" width="220" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- 9. Success -->
+        <mxCell id="10" value="&#x2713; 图像已生成并保存" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#333333;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="755" width="220" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- EDGES -->
+
+        <!-- 1→2: User prompt → Claude refine -->
+        <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6c8ebf;endArrow=block;endFill=1;" edge="1" parent="1" source="2" target="3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 2→3: Claude refine → Show options -->
+        <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#82b366;endArrow=block;endFill=1;" edge="1" parent="1" source="3" target="4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 3→4: Show options → Decision -->
+        <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6c8ebf;endArrow=block;endFill=1;" edge="1" parent="1" source="4" target="5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 4→5 (Yes): Decision → 用户确认 -->
+        <mxCell id="e4" value="是" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#82b366;endArrow=block;endFill=1;fontColor=#82b366;fontStyle=1;fontSize=11;" edge="1" parent="1" source="5" target="6">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 4→2 (No loop-back): Decision → Claude refine -->
+        <mxCell id="e5" value="否 — 重新打磨" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#d6b656;endArrow=block;endFill=1;fontColor=#d6b656;fontStyle=1;fontSize=11;exitX=0;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="5" target="3">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="10" y="335" />
+              <mxPoint x="10" y="155" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- 5→6: 用户确认 → Config -->
+        <mxCell id="e6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6c8ebf;endArrow=block;endFill=1;" edge="1" parent="1" source="6" target="7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 6→7: Config → API call -->
+        <mxCell id="e7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#82b366;endArrow=block;endFill=1;" edge="1" parent="1" source="7" target="8">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 7→8: API → Save -->
+        <mxCell id="e8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#d79b00;endArrow=block;endFill=1;" edge="1" parent="1" source="8" target="9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 8→9: Save → Success -->
+        <mxCell id="e9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;endArrow=block;endFill=1;" edge="1" parent="1" source="9" target="10">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Annotation: 5 platforms -->
+        <mxCell id="note1" value="DashScope · Volcano Ark&#xa;Tencent Hunyuan · Zhipu&#xa;StepFun" style="text;html=1;fontSize=9;fontColor=#999999;fillColor=none;strokeColor=none;align=left;" vertex="1" parent="1">
+          <mxGeometry x="320" y="585" width="130" height="40" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -11,7 +11,7 @@
 
 自然语言生成高质量图像的 Claude Code / OpenClaw 技能，支持阿里云百炼、字节火山方舟、腾讯混元、智谱 BigModel、阶跃星辰以及 Google Gemini、Grok（xAI）、OpenAI、Black Forest Labs（FLUX）九大平台。
 
-📋 **[模型参考](https://agents365-ai.github.io/imagenCN/docs/models.html)** — 浏览全部 44 个模型，含价格、分辨率、功能对比。
+📋 **[模型参考](https://agents365-ai.github.io/365-skills/imagencn/models.html)**：浏览全部 44 个模型，含价格、分辨率、功能对比。
 
 ## 工作流程
 

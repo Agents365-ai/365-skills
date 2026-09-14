@@ -9,7 +9,7 @@
 [![ClawHub](https://img.shields.io/badge/ClawHub-listed-ff6b35)](https://clawhub.ai/agents365-ai/plantuml-pro-skill)
 [![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-plugin-8a2be2)](https://github.com/Agents365-ai/365-skills)
 [![Agent Skills](https://img.shields.io/badge/Agent%20Skills-compatible-2ea44f)](https://agentskills.io)
-**English** · [中文](README_CN.md) · [📖 Online Docs](https://agents365-ai.github.io/plantuml-skill/)
+**English** · [中文](README_CN.md) · [📖 Online Docs](https://agents365-ai.github.io/365-skills/plantuml/)
 
 A skill that turns natural-language descriptions into `.puml` PlantUML source and exports diagrams to PNG / SVG via the [Kroki](https://kroki.io) rendering API — no Java, no Graphviz, no local install (just `curl`). Local Kroki Docker and `plantuml.jar` fallbacks are available for offline / air-gapped use. Works with **Claude Code, Cursor, Copilot, OpenClaw, Codex, Hermes**, and any agent compatible with the [Agent Skills](https://agentskills.io) format.
 

@@ -1,0 +1,34 @@
+@startuml
+!theme cerulean
+title Blog Domain Model
+
+class User {
+  +id : UUID
+  +name : String
+  +email : String
+  +register()
+}
+
+class Post {
+  +id : UUID
+  +title : String
+  +body : Text
+  +publish()
+}
+
+class Comment {
+  +id : UUID
+  +body : Text
+  +createdAt : DateTime
+}
+
+class Tag {
+  +id : UUID
+  +label : String
+}
+
+User "1" --> "*" Post : authors
+Post "1" --> "*" Comment : has
+User "1" --> "*" Comment : writes
+Post "*" --> "*" Tag : tagged
+@enduml

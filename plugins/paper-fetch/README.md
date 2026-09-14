@@ -9,7 +9,7 @@
 [![ClawHub](https://img.shields.io/badge/ClawHub-listed-ff6b35)](https://clawhub.ai/agents365-ai/paper-fetch-pro-skill)
 [![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-plugin-8a2be2)](https://github.com/Agents365-ai/365-skills)
 [![Agent Skills](https://img.shields.io/badge/Agent%20Skills-compatible-2ea44f)](https://agentskills.io)
-**English** · [中文](README_CN.md) · [📖 Online Docs](https://agents365-ai.github.io/paper-fetch/)
+**English** · [中文](README_CN.md)
 
 Resolve a DOI (or title) to a PDF via a 7-source fallback chain — [Unpaywall](https://unpaywall.org) → [Semantic Scholar](https://www.semanticscholar.org) → [arXiv](https://arxiv.org) → [PubMed Central](https://pmc.ncbi.nlm.nih.gov) → [bioRxiv](https://www.biorxiv.org)/[medRxiv](https://www.medrxiv.org) → publisher direct → [Sci-Hub](https://www.sci-hub.pub) mirrors. Pure Python stdlib, agent-native CLI with stable JSON envelopes.
 

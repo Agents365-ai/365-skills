@@ -1,0 +1,14 @@
+@startuml
+!include <C4/C4_Context>
+title System Context — Internet Banking
+
+Person(customer, "Banking Customer", "Views accounts and makes payments")
+System(banking, "Internet Banking System", "Lets customers manage their finances")
+System_Ext(mainframe, "Mainframe Banking System", "Stores core account data")
+System_Ext(email, "E-mail System", "Sends notifications")
+
+Rel(customer, banking, "Uses", "HTTPS")
+Rel(banking, mainframe, "Reads/writes account data", "XML/HTTPS")
+Rel(banking, email, "Sends e-mail via", "SMTP")
+Rel(email, customer, "Delivers notifications to")
+@enduml

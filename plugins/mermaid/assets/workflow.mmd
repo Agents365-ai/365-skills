@@ -1,0 +1,32 @@
+flowchart TD
+  Start([User requests diagram]):::input --> CheckDeps{Check deps}:::decision
+
+  CheckDeps -->|mmdc available| UseMmdc[Use mmdc locally]:::process
+  CheckDeps -->|mmdc unavailable| UseKroki[Use Kroki API]:::process
+
+  UseMmdc --> PickType
+  UseKroki --> PickType
+
+  PickType[Pick diagram type]:::process --> Generate[Generate .mmd file]:::process
+
+  Generate --> Validate{Validate syntax}:::decision
+
+  Validate -->|Error| Fix[Fix .mmd file]:::warning
+  Fix --> Validate
+
+  Validate -->|Pass| Export[Export PNG/SVG/PDF]:::process
+
+  Export --> SelfCheck{Vision self-check}:::decision
+  SelfCheck -->|Defect found, round <= 2| SelfFix[Fix readability / layout]:::warning
+  SelfFix --> Validate
+  SelfCheck -->|Pass, or rounds maxed| Review[Show image to user]:::process
+
+  Review -->|Change request, round <= 5| Edit[Minimal .mmd edit]:::warning
+  Edit --> Validate
+  Review -->|Approved, or rounds maxed| Report([Report output paths]):::output
+
+  classDef input fill:#d4edda,stroke:#28a745,color:#155724
+  classDef process fill:#cce5ff,stroke:#007bff,color:#004085
+  classDef decision fill:#fff3cd,stroke:#ffc107,color:#856404
+  classDef warning fill:#f8d7da,stroke:#dc3545,color:#721c24
+  classDef output fill:#e2d5f1,stroke:#6f42c1,color:#4a235a

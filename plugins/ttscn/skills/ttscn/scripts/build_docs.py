@@ -324,7 +324,7 @@ tts.py schema version            # Version + data freshness</code></pre>
     <p>
       <a href="https://github.com/Agents365-ai/365-skills">📦 GitHub Repo</a> &nbsp;·&nbsp;
       <a href="providers.md">📄 Markdown Comparison</a> &nbsp;·&nbsp;
-      <a href="https://agents365-ai.github.io/ttsCN/">🌐 GitHub Pages</a> &nbsp;·&nbsp;
+      <a href="https://agents365-ai.github.io/365-skills/ttscn/">🌐 GitHub Pages</a> &nbsp;·&nbsp;
       <a href="https://github.com/Agents365-ai/365-skills/tree/main/plugins/agent-native-design">📐 agent-native-design</a>
     </p>
   </div>

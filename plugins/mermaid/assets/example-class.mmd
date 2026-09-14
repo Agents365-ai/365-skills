@@ -1,0 +1,25 @@
+classDiagram
+    class User {
+        +int id
+        +string name
+        +string email
+        +login()
+    }
+    class Post {
+        +int id
+        +string title
+        +string body
+        +publish()
+    }
+    class Comment {
+        +int id
+        +string text
+    }
+    class Tag {
+        +int id
+        +string label
+    }
+    User "1" --> "*" Post : writes
+    Post "1" --> "*" Comment : has
+    Post "*" --> "*" Tag : tagged
+    Comment "*" --> "1" User : by

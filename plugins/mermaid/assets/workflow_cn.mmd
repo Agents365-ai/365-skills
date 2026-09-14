@@ -1,0 +1,32 @@
+flowchart TD
+  Start([用户请求图表]):::input --> CheckDeps{检查依赖}:::decision
+
+  CheckDeps -->|有 mmdc| UseMmdc[本地 mmdc 导出]:::process
+  CheckDeps -->|无 mmdc| UseKroki[使用 Kroki API]:::process
+
+  UseMmdc --> PickType
+  UseKroki --> PickType
+
+  PickType[选择图表类型]:::process --> Generate[生成 .mmd 源码]:::process
+
+  Generate --> Validate{校验语法}:::decision
+
+  Validate -->|出错| Fix[修复 .mmd 文件]:::warning
+  Fix --> Validate
+
+  Validate -->|通过| Export[导出 PNG/SVG/PDF]:::process
+
+  Export --> SelfCheck{视觉自检}:::decision
+  SelfCheck -->|有缺陷 (<2轮)| SelfFix[修复可读性 / 排版]:::warning
+  SelfFix --> Validate
+  SelfCheck -->|无缺陷或轮数用尽| Review[展示图片给用户]:::process
+
+  Review -->|要修改 (<5轮)| Edit[最小化修改 .mmd]:::warning
+  Edit --> Validate
+  Review -->|通过或轮数用尽| Report([报告输出路径]):::output
+
+  classDef input fill:#d4edda,stroke:#28a745,color:#155724
+  classDef process fill:#cce5ff,stroke:#007bff,color:#004085
+  classDef decision fill:#fff3cd,stroke:#ffc107,color:#856404
+  classDef warning fill:#f8d7da,stroke:#dc3545,color:#721c24
+  classDef output fill:#e2d5f1,stroke:#6f42c1,color:#4a235a

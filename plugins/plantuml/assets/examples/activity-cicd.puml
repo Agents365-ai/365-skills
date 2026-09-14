@@ -1,0 +1,21 @@
+@startuml
+!theme blueprint
+title CI/CD Pipeline
+
+start
+:Push to main;
+:Run unit tests;
+if (Tests pass?) then (yes)
+  :Build image;
+  :Push to registry;
+  :Deploy to staging;
+  if (Smoke tests OK?) then (yes)
+    :Promote to production;
+  else (no)
+    :Rollback;
+  endif
+else (no)
+  :Notify developer;
+endif
+stop
+@enduml
