@@ -22,7 +22,7 @@ npx skills add Agents365-ai/365-skills -g
 /plugin marketplace add Agents365-ai/365-skills
 ```
 
-单插件的 Claude Code 安装：`/plugin install <插件名>`，例如 `/plugin install drawio`。
+单插件的 Claude Code 安装：`/plugin install <插件名>`，例如 `/plugin install mermaid`。
 
 ## 可用插件
 
@@ -37,7 +37,6 @@ npx skills add Agents365-ai/365-skills -g
 
 | 插件 | 说明 |
 | --- | --- |
-| `drawio` | Draw.io 流程图 —— 支持 PNG/SVG/PDF 导出与可视化审阅闭环 |
 | `mermaid` | Mermaid 图表 —— 文本驱动、GitHub 原生支持、自动布局 |
 | `excalidraw` | Excalidraw —— 手绘白板风格 |
 | `plantuml` | PlantUML —— UML、C4、时序图、类图 |
@@ -87,12 +86,12 @@ npx skills add Agents365-ai/365-skills -g
 各插件下的 skills 是源仓库的直接拷贝（非 submodule）。本仓库是集中分发点：先更新源 skill 仓库，再把更新拷贝到这里，并在 `.claude-plugin/marketplace.json` 中 bump 对应插件的 `version`：
 
 ```bash
-cp -r ../drawio-skill/skills/drawio-skill/* plugins/drawio/skills/drawio-skill/
+cp -r ../video-podcast-maker/skills/video-podcast-maker/* plugins/video-podcast-maker/skills/video-podcast-maker/
 # 在 .claude-plugin/marketplace.json 中 bump 对应插件版本
-git add plugins/drawio && git commit -m "chore: sync drawio-skill"
+git add plugins/video-podcast-maker && git commit -m "chore: sync video-podcast-maker"
 ```
 
-多数源仓库现已转为私有；对这部分插件而言，本 marketplace 是唯一分发渠道。
+多数源仓库现已转为私有；对这部分插件而言，本 marketplace 是唯一分发渠道。`drawio-skill` **不**通过本仓库分发：它有自己的独立仓库（[Agents365-ai/drawio-skill](https://github.com/Agents365-ai/drawio-skill)），从那里安装。
 
 ## 微信交流群
 

@@ -28,27 +28,6 @@
       ]
     },
     {
-      "name": "drawio",
-      "source": "./plugins/drawio",
-      "description": "Draw.io diagrams — generate .drawio XML, export to PNG/SVG/PDF via local CLI, with visual review loop and editable embedded XML",
-      "version": "3.3.0",
-      "author": {
-        "name": "Agents365-ai"
-      },
-      "repository": "https://github.com/Agents365-ai/drawio-skill",
-      "license": "MIT",
-      "keywords": [
-        "drawio",
-        "diagram",
-        "flowchart",
-        "architecture",
-        "visualization",
-        "uml",
-        "erd",
-        "sequence"
-      ]
-    },
-    {
       "name": "mermaid",
       "source": "./plugins/mermaid",
       "description": "Mermaid diagrams — text-based charts with auto-layout, GitHub-native rendering, and CLI export to PNG/SVG/PDF",
