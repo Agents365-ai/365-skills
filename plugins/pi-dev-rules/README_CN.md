@@ -71,17 +71,9 @@ cp -r pi-dev-rules ~/.claude/skills/      # 示例：Claude Code，全局
 
 ## 更新
 
-参考文件全部从本地 pi 源码检出重建，不访问网络：
-
-```bash
-PI_REPO=~/github/pi bash scripts/refresh.sh    # PI_REPO 默认为 ~/github/pi
-```
-
-该脚本会根据各参考包头部的源文件列表重建 12 个自动生成的参考包与 `changelog.md`（手工维护的
-`philosophy-and-design.md` 不受影响），在 changelog 中固定修订号，并打印提交提醒。检查 diff 后，
-在 `SKILL.md`（以及 marketplace 条目）中更新 `version` 与 `metadata.fetched` /
-`metadata.piRevision` 再发布。官网镜像与源码树保持同步，因为同一批文档页就在
-`packages/coding-agent/docs/` 下。
+`references/*.md` 是生成物，不是手写文档：12 个自动生成的参考包与 `changelog.md` 来自 pi 源码
+检出，`philosophy-and-design.md` 为手工整理。用户直接使用随包文件即可，无需执行任何命令；重建属于
+维护者工具，说明见 [`scripts/README.md`](skills/pi-dev-rules/scripts/README.md)。
 
 ## 支持
 

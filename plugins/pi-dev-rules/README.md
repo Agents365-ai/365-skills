@@ -73,18 +73,10 @@ cp -r pi-dev-rules ~/.claude/skills/      # example: Claude Code, global
 
 ## Updating
 
-The references are rebuilt from a local pi checkout, with no network access:
-
-```bash
-PI_REPO=~/github/pi bash scripts/refresh.sh    # PI_REPO defaults to ~/github/pi
-```
-
-That regenerates the 12 auto-built bundles plus `changelog.md` from the files listed in their
-headers, leaving the manually curated `philosophy-and-design.md` untouched. It pins the revision
-in the changelog and prints the commit reminder. Review the diff, then bump `version` and
-`metadata.fetched` / `metadata.piRevision` in `SKILL.md` (and in the marketplace entry) before
-releasing. The website mirror stays in sync because the same doc pages live in
-`packages/coding-agent/docs/`.
+`references/*.md` are generated, not hand-written: the 12 auto-built bundles and `changelog.md`
+come from a pi checkout, and `philosophy-and-design.md` is curated by hand. Users only need the
+files as shipped and never have to run anything. Rebuilding is maintainer tooling, documented in
+[`scripts/README.md`](skills/pi-dev-rules/scripts/README.md).
 
 ## Support
 

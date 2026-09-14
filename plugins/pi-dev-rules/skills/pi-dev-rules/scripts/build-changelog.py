@@ -125,7 +125,7 @@ def build(releases, total):
         "Read the complete, untruncated history there:",
         "",
         "```bash",
-        f'less "$PI_REPO/{CHANGELOG_REL}"   # PI_REPO defaults to ~/github/pi',
+        f'less "$PI_REPO/{CHANGELOG_REL}"   # PI_REPO is the pi checkout root',
         "```",
         "",
     ]
