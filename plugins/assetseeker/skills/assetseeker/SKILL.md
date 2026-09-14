@@ -7,7 +7,7 @@ category: Content Creation
 version: 1.0.0
 created: 2026-07-09
 updated: 2026-07-09
-homepage: https://github.com/Agents365-ai/assetSeeker
+homepage: https://github.com/Agents365-ai/365-skills
 metadata: {"openclaw":{"requires":{"bins":["python3"],"env":["PEXELS_API_KEY"]},"primaryEnv":"PEXELS_API_KEY","emoji":"🔍"}}
 ---
 

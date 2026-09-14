@@ -2,7 +2,7 @@
 name: plantuml-skill
 description: Use when user requests diagrams, flowcharts, sequence diagrams, class diagrams, component diagrams, ER diagrams, architecture charts, or visualizations — including generating a diagram from existing source code, or rendering/extracting PlantUML embedded in a Markdown file to images (e.g. preparing docs for Confluence/Notion). Also use proactively when explaining systems with 3+ components, APIs, data flows, or class hierarchies. Generates .puml files and exports to PNG/SVG via Kroki API (no local install required).
 license: MIT
-homepage: https://github.com/Agents365-ai/plantuml-skill
+homepage: https://github.com/Agents365-ai/365-skills
 compatibility: Requires curl on PATH (pre-installed on macOS/Linux/Windows Git Bash). Default renderer is the public Kroki API at https://kroki.io; can also point to a local Kroki Docker instance, or fall back to a local PlantUML jar + Java + Graphviz.
 platforms: [macos, linux, windows]
 metadata: {"openclaw":{"requires":{"bins":["curl"]},"emoji":"🧩","os":["darwin","linux","win32"]},"hermes":{"tags":["plantuml","diagram","flowchart","sequence","class","uml","architecture","kroki"],"category":"design","requires_tools":["curl"],"related_skills":["drawio","mermaid","excalidraw","tldraw"]},"author":"Agents365-ai","version":"1.5.0"}
@@ -22,17 +22,20 @@ Generate `.puml` PlantUML diagram files and export to PNG/SVG using **Kroki** �
 ## When to Use
 
 **Explicit triggers:**
+
 - "plantuml diagram", "sequence diagram", "class diagram", "component diagram"
 - "UML", "activity diagram", "use case diagram", "state machine"
 - "visualize", "draw", "diagram", "flowchart", "architecture chart"
 
 **Proactive triggers:**
+
 - Explaining a system with 3+ interacting components
 - Describing API flows, authentication sequences, message passing
 - Showing class hierarchies, database schemas, or ER models
 - Illustrating state machines or lifecycle flows
 
 **When NOT to use it — route elsewhere:**
+
 - General, non-UML quick diagrams embedded in Markdown → **mermaid**.
 - Freeform, heavily-styled, or branded diagrams needing pixel control → **drawio**.
 - A hand-drawn / sketchy look → **excalidraw** or **tldraw**.
@@ -42,7 +45,7 @@ Generate `.puml` PlantUML diagram files and export to PNG/SVG using **Kroki** �
 Once triggered, route by what the user actually wants — then run the shared render loop (Steps 4–8):
 
 | Mode | The user wants… | Entry point |
-|---|---|---|
+| --- | --- | --- |
 | **Generate** (default) | a diagram from a text description | Steps 1–8 below |
 | **From code** | a diagram of existing source code | [`references/from-source-code.md`](references/from-source-code.md) → Steps 4–8 |
 | **Embed** | the PlantUML inside a Markdown doc rendered to images | [`references/markdown-embed.md`](references/markdown-embed.md) |
@@ -52,18 +55,21 @@ Once triggered, route by what the user actually wants — then run the shared re
 ## Prerequisites
 
 **Option A: Kroki API (recommended — no install)**
+
 ```bash
 # Just needs curl (pre-installed on macOS/Linux/Windows Git Bash)
 curl --version
 ```
 
 **Option B: Local Kroki via Docker (for offline use)**
+
 ```bash
 docker run -d -p 8000:8000 yuzutech/kroki
 # Then replace https://kroki.io with http://localhost:8000 in commands
 ```
 
 **Option C: Local PlantUML jar (traditional)**
+
 ```bash
 # Requires Java + Graphviz
 brew install graphviz   # macOS
@@ -75,18 +81,23 @@ java -jar plantuml.jar diagram.puml
 ## Workflow
 
 ### Step 1: Check Dependencies
+
 ```bash
 curl --version
 ```
+
 curl is available on all modern systems. If missing, install via package manager.
 
 ### Step 2: Pick Diagram Type
+
 Choose the most appropriate PlantUML diagram type (see reference below).
 
 ### Step 3: Generate .puml File
+
 Write the PlantUML source file with `@startuml` / `@enduml` markers.
 
 ### Step 4: Export via Kroki (capture the HTTP status)
+
 Pick the backend first. The default below (public Kroki) **uploads the `.puml` source to kroki.io** — for sensitive diagrams use a local backend instead, and never silently fall back. See [`references/rendering-backends.md`](references/rendering-backends.md). For local Kroki, swap `https://kroki.io` → `http://localhost:8000`.
 
 ```bash
@@ -106,7 +117,9 @@ echo "HTTP $http"
 ```
 
 ### Step 5: Validate & self-correct (loop — do NOT skip)
+
 Never report success on a blind `curl`. Verify the output first; treat the export as **failed** if any of these hold:
+
 - `$http` is not `200`. Kroki returns `400` on a syntax error and writes the error text into the output file, so a `.png` can exist yet be broken.
 - The file is empty: `[ -s diagram.png ]` fails.
 - The bytes aren't a real image: `file diagram.png` should report `PNG image data`; for SVG the file should start with `<svg` or `<?xml`.
@@ -134,7 +147,7 @@ For a per-diagram-type error catalog and the Kroki safe subset, read [`reference
 The Step 5 loop only proves Kroki returned a **valid image** — not that the diagram is **readable**. After it renders, use the agent's vision capability to read the PNG and catch what auto-layout (Graphviz) can't prevent. PlantUML positions everything itself, so the failures here are about readability, not your coordinates:
 
 | Check | What to look for | Fix |
-|---|---|---|
+| --- | --- | --- |
 | Label truncation / overrun | Text clipped or spilling past a box | Shorten the label, wrap in `"…"`, or break with `\n` |
 | Component overlap / cramped | Boxes touching or crowded; unreadable | Add `together { }`, layout hints, or split the diagram |
 | Wrong orientation / aspect | Diagram far too wide or too tall to read | Switch `left to right direction` ↔ `top to bottom direction` |
@@ -151,7 +164,7 @@ The Step 5 loop only proves Kroki returned a **valid image** — not that the di
 After self-check, show the exported image and collect feedback. Apply the **minimal `.puml` edit** for each request, then re-render and re-validate:
 
 | User request | Edit action |
-|---|---|
+| --- | --- |
 | Change a label | Edit the element / message text in the `.puml` |
 | Add / remove an element or relation | Add or delete the matching line |
 | Change a color | `skinparam`, `!theme`, or an inline `#color` on the element |
@@ -162,7 +175,9 @@ After self-check, show the exported image and collect feedback. Apply the **mini
 - **Safety valve:** after 5 rounds, suggest the user fine-tune the `.puml` directly or at [plantuml.com](https://www.plantuml.com/plantuml/uml/).
 
 ### Step 8: Report to User
+
 Only after Steps 5–7 pass. Tell the user:
+
 - Path to the `.puml` source file
 - Path to the exported PNG/SVG
 - Brief description of what was generated
@@ -182,7 +197,7 @@ Two non-default modes — load the linked playbook when triggered, then run the 
 ## Diagram Types
 
 | Type | Keyword | Use for |
-|------|---------|---------|
+| ------ | --------- | --------- |
 | Sequence | `@startuml` + sequence syntax | API calls, protocol flows, message passing |
 | Component | `@startuml` + components | service architecture, module dependencies |
 | Class | `@startuml` + class syntax | OOP models, data structures |
@@ -229,6 +244,7 @@ order --> kafka : events
 ```
 
 **Shape types:**
+
 - `actor "Name" as id` — stick figure (user, external actor)
 - `component "Name" as id` — component box with [brackets]
 - `rectangle "Name" as id` — plain rectangle (for groups/layers)
@@ -240,6 +256,7 @@ order --> kafka : events
 - `package "Name" { }` — package grouping
 
 **Arrows:**
+
 - `A --> B` — solid arrow
 - `A -> B` — thin arrow
 - `A ..> B` — dashed arrow
@@ -247,6 +264,7 @@ order --> kafka : events
 - `A <--> B` — bidirectional
 
 **Colors:**
+
 - `#LightBlue`, `#LightGreen`, `#LightYellow`, `#Pink`, `#Violet`
 - `#AED6F1` (blue), `#A9DFBF` (green), `#FAD7A0` (orange), `#F1948A` (red)
 - `#D7BDE2` (purple), `#F9E79F` (yellow), `#D3D3D3` (grey)
@@ -276,6 +294,7 @@ G --> C : { token: "..." }
 ```
 
 **Arrow types:**
+
 - `A -> B` — synchronous call
 - `A --> B` — return / dashed
 - `A ->> B` — async message
@@ -319,6 +338,7 @@ Order "*" --> "*" Product : contains
 ```
 
 **Relationships:**
+
 - `A --> B` — association
 - `A --|> B` — inheritance
 - `A ..|> B` — implements interface
@@ -479,6 +499,7 @@ java -jar plantuml.jar diagram.puml
 ```
 
 Or use `skinparam` for custom styling:
+
 ```plantuml
 skinparam backgroundColor #FAFAFA
 skinparam componentBorderColor #555555
@@ -493,9 +514,9 @@ skinparam FontName Arial
 Quick table below; for a per-diagram-type error catalog, the Kroki safe subset, and the failure-degradation ladder, see [`references/kroki-troubleshooting.md`](references/kroki-troubleshooting.md).
 
 | Mistake | Fix |
-|---------|-----|
+| --------- | ----- |
 | `curl` POST returns HTML error page | Check network; try `curl -v` to see error details |
-| Kroki returns 400 Bad Request | `cat` the output file — Kroki wrote the offending line + reason there; fix it and re-render via the Step 5 loop. Validate syntax at https://www.plantuml.com/plantuml/uml/ |
+| Kroki returns 400 Bad Request | `cat` the output file — Kroki wrote the offending line + reason there; fix it and re-render via the Step 5 loop. Validate syntax at <https://www.plantuml.com/plantuml/uml/> |
 | Arrow direction unexpected | Use `-->` for downward/right; explicitly use `-up->`, `-down->`, `-left->`, `-right->` |
 | Diagram too large/crowded | Split into multiple diagrams or use `package`/`rectangle` grouping |
 | Missing `@startuml` / `@enduml` | Always wrap diagram in these markers |

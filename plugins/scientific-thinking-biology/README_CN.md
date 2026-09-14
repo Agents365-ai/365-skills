@@ -2,7 +2,7 @@
 
 [English](README.md)
 
-本 skill 是 [scientific-thinking-general](https://github.com/Agents365-ai/365-skills/tree/main/plugins/scientific-thinking-biology/skills/scientific-thinking-biology) 的生物学专项适配版，针对分子生物学、遗传学、基因组学、细胞生物学、免疫学、神经科学、生态学等生命科学研究领域，加入了领域专属的推理层次与常见陷阱检查。
+本 skill 是 [scientific-thinking-general](https://github.com/Agents365-ai/365-skills/tree/main/plugins/scientific-thinking-general) 的生物学专项适配版，针对分子生物学、遗传学、基因组学、细胞生物学、免疫学、神经科学、生态学等生命科学研究领域，加入了领域专属的推理层次与常见陷阱检查。
 
 ## 功能说明
 
@@ -130,8 +130,8 @@ skills install scientific-thinking-biology
 
 ## 相关 skill
 
-- [scientific-thinking-general](https://github.com/Agents365-ai/365-skills/tree/main/plugins/scientific-thinking-biology/skills/scientific-thinking-biology) — 本 skill 所基于的通用领域版本
-- [literature-review](https://github.com/Agents365-ai/zotero-research-assistant) — 系统性文献综述工作流
+- [scientific-thinking-general](https://github.com/Agents365-ai/365-skills/tree/main/plugins/scientific-thinking-general) — 本 skill 所基于的通用领域版本
+- literature-review — 系统性文献综述工作流
 - [nh-bioinfo-practice-skill](https://github.com/Agents365-ai) — 单细胞与空间组学分析
 
 ## GitHub Topics

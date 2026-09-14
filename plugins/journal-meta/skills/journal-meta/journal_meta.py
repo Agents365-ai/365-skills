@@ -26,7 +26,7 @@ import urllib.request
 
 CLI_VERSION = "0.1.0"
 SCHEMA_VERSION = "0.1.0"
-UA = "journal-meta/%s (https://github.com/Agents365-ai/journal-meta)" % CLI_VERSION
+UA = "journal-meta/%s (https://github.com/Agents365-ai/365-skills)" % CLI_VERSION
 
 
 # --------------------------------------------------------------------------- #

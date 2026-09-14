@@ -8,8 +8,8 @@ category: Academic Research
 version: 1.3.1
 created: 2026-03-29
 updated: 2026-07-14
-github: https://github.com/Agents365-ai/journal-abbrev
-homepage: https://github.com/Agents365-ai/journal-abbrev
+github: https://github.com/Agents365-ai/365-skills
+homepage: https://github.com/Agents365-ai/365-skills
 metadata:
   version: 1.3.1
   openclaw:
@@ -17,7 +17,7 @@ metadata:
       bins:
         - python3
     emoji: "📖"
-    homepage: https://github.com/Agents365-ai/journal-abbrev
+    homepage: https://github.com/Agents365-ai/365-skills
     os: ["macos", "linux", "windows"]
 ---
 

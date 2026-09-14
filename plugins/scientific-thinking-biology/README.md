@@ -2,7 +2,7 @@
 
 [中文文档](README_CN.md)
 
-A biology-specific adaptation of [scientific-thinking-general](https://github.com/Agents365-ai/365-skills/tree/main/plugins/scientific-thinking-biology/skills/scientific-thinking-biology), with domain-specific reasoning layers for molecular biology, genetics, genomics, cell biology, immunology, neuroscience, ecology, and all life science research.
+A biology-specific adaptation of [scientific-thinking-general](https://github.com/Agents365-ai/365-skills/tree/main/plugins/scientific-thinking-general), with domain-specific reasoning layers for molecular biology, genetics, genomics, cell biology, immunology, neuroscience, ecology, and all life science research.
 
 ## What it does
 
@@ -130,8 +130,8 @@ skills install scientific-thinking-biology
 
 ## Related Skills
 
-- [scientific-thinking-general](https://github.com/Agents365-ai/365-skills/tree/main/plugins/scientific-thinking-biology/skills/scientific-thinking-biology) — the general-domain version this skill is based on
-- [literature-review](https://github.com/Agents365-ai/zotero-research-assistant) — systematic literature review workflows
+- [scientific-thinking-general](https://github.com/Agents365-ai/365-skills/tree/main/plugins/scientific-thinking-general) — the general-domain version this skill is based on
+- literature-review — systematic literature review workflows
 - [nh-bioinfo-practice-skill](https://github.com/Agents365-ai) — single-cell and spatial omics analysis
 
 ## GitHub Topics

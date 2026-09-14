@@ -5,7 +5,7 @@ author: Agents365-ai
 version: 1.1.0
 created: 2026-07-05
 updated: 2026-08-08
-homepage: https://github.com/Agents365-ai/videogenCN
+homepage: https://github.com/Agents365-ai/365-skills
 metadata: {"openclaw":{"requires":{"bins":["python3"],"env":["DASHSCOPE_API_KEY"]},"primaryEnv":"DASHSCOPE_API_KEY","emoji":"🎬"}}
 ---
 

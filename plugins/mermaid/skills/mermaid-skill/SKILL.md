@@ -1,7 +1,7 @@
 ---
 name: mermaid-skill
 description: Generate Mermaid diagrams (.mmd) and export to PNG/SVG/PDF using mmdc CLI or Kroki API. USE THIS SKILL when user mentions diagram, flowchart, sequence diagram, class diagram, ER diagram, state machine, architecture, visualize, git graph, 画图, 架构图, 流程图, 时序图, 类图, ER图, 甘特图, 状态机. PROACTIVELY USE when explaining ANY system with 3+ components, API flows, authentication sequences, class hierarchies, database schemas, or state machines. Supports 17+ diagram types with fully automatic layout.
-homepage: https://github.com/Agents365-ai/creating-mermaid-diagrams
+homepage: https://github.com/Agents365-ai/365-skills
 version: 1.3.0
 ---
 

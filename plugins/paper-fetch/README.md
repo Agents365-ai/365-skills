@@ -3,7 +3,6 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/Agents365-ai/365-skills?style=flat&logo=github)](https://github.com/Agents365-ai/365-skills/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/Agents365-ai/365-skills?style=flat&logo=github)](https://github.com/Agents365-ai/365-skills/network/members)
-[![Latest Release](https://img.shields.io/github/v/release/Agents365-ai/365-skills?logo=github)](https://github.com/Agents365-ai/365-skills/releases/latest)
 [![Last Commit](https://img.shields.io/github/last-commit/Agents365-ai/365-skills?logo=github)](https://github.com/Agents365-ai/365-skills/commits/main)
 
 [![SkillsMP](https://img.shields.io/badge/SkillsMP-listed-1f6feb)](https://skillsmp.com/skills/agents365-ai-paper-fetch-skills-paper-fetch-skill-md)
@@ -38,7 +37,7 @@ Resolve a DOI (or title) to a PDF via a 7-source fallback chain — [Unpaywall](
 
 **Cloudflare-blocked PDFs** *(opt-in)*
 
-- `PAPER_FETCH_CLOAK=1` retries any 403/429-blocked or JS-challenged PDF URL through [CloakBrowser](https://github.com/CloakHQ/CloakBrowser), a stealth Chromium that passes the challenge (approach borrowed from [cloakFetch](https://github.com/Agents365-ai/cloakFetch))
+- `PAPER_FETCH_CLOAK=1` retries any 403/429-blocked or JS-challenged PDF URL through [CloakBrowser](https://github.com/CloakHQ/CloakBrowser), a stealth Chromium that passes the challenge (approach borrowed from `cloakFetch`)
 - Sits at the download layer, so it applies to every source; off by default, fails closed, operator-controlled
 - Returned bytes re-validated through the same `%PDF` + size checks; result carries `via: "cloak"`
 
@@ -150,7 +149,7 @@ export PAPER_FETCH_INSTITUTIONAL=1
 
 ## Cloudflare-blocked PDFs via CloakBrowser (opt-in)
 
-Some publishers (e.g. `science.org`) sit behind Cloudflare, which serves a `403`/`429` or a "Just a moment…" JS challenge to plain HTTP clients instead of the PDF. Set `PAPER_FETCH_CLOAK=1` to retry those URLs through [CloakBrowser](https://github.com/CloakHQ/CloakBrowser) — a stealth Chromium that passes the challenge. The approach is borrowed from [cloakFetch](https://github.com/Agents365-ai/cloakFetch).
+Some publishers (e.g. `science.org`) sit behind Cloudflare, which serves a `403`/`429` or a "Just a moment…" JS challenge to plain HTTP clients instead of the PDF. Set `PAPER_FETCH_CLOAK=1` to retry those URLs through [CloakBrowser](https://github.com/CloakHQ/CloakBrowser) — a stealth Chromium that passes the challenge. The approach is borrowed from `cloakFetch`.
 
 ```bash
 # Requires a Python with `cloakbrowser` importable (pip install cloakbrowser)
@@ -176,10 +175,10 @@ Part of the [Agents365-ai research-skill family](https://github.com/Agents365-ai
 
 | Skill | Niche | When to use |
 | --- | --- | --- |
-| [semanticscholar-skill](https://github.com/Agents365-ai/semanticscholar-skill) | Semantic Scholar API search | When you need to FIND papers before fetching |
-| [asta-skill](https://github.com/Agents365-ai/asta-skill) | Same corpus via Ai2 Asta MCP | When your host supports MCP and you have an Asta API key |
-| [scholar-deep-research](https://github.com/Agents365-ai/scholar-deep-research) | 8-phase literature review pipeline | When you want a structured cited report, not just PDFs |
-| [zotero-research-assistant](https://github.com/Agents365-ai/zotero-research-assistant) | Zotero library workflows | When references go into Zotero |
+| [semanticscholar-skill](https://github.com/Agents365-ai/365-skills/tree/main/plugins/semanticscholar) | Semantic Scholar API search | When you need to FIND papers before fetching |
+| [asta-skill](https://github.com/Agents365-ai/365-skills/tree/main/plugins/asta) | Same corpus via Ai2 Asta MCP | When your host supports MCP and you have an Asta API key |
+| [scholar-deep-research](https://github.com/Agents365-ai/365-skills/tree/main/plugins/scholar-deep-research) | 8-phase literature review pipeline | When you want a structured cited report, not just PDFs |
+| `zotero-research-assistant` | Zotero library workflows | When references go into Zotero |
 
 ## ❤️ Support
 

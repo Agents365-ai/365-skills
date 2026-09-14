@@ -158,7 +158,7 @@
       "author": {
         "name": "Agents365-ai"
       },
-      "repository": "https://github.com/Agents365-ai/semanticscholar-skill",
+      "repository": "https://github.com/Agents365-ai/365-skills",
       "license": "MIT",
       "keywords": [
         "semantic-scholar",
@@ -221,7 +221,7 @@
       "author": {
         "name": "Agents365-ai"
       },
-      "repository": "https://github.com/Agents365-ai/scholar-deep-research",
+      "repository": "https://github.com/Agents365-ai/365-skills",
       "license": "MIT",
       "keywords": [
         "literature-review",
@@ -271,7 +271,7 @@
       "author": {
         "name": "Agents365-ai"
       },
-      "repository": "https://github.com/Agents365-ai/journal-abbrev",
+      "repository": "https://github.com/Agents365-ai/365-skills",
       "license": "MIT",
       "keywords": [
         "journal",
@@ -335,7 +335,7 @@
       "author": {
         "name": "Agents365-ai"
       },
-      "repository": "https://github.com/Agents365-ai/target-prioritization",
+      "repository": "https://github.com/Agents365-ai/365-skills",
       "license": "MIT",
       "keywords": [
         "drug-discovery",
@@ -356,7 +356,7 @@
       "author": {
         "name": "Agents365-ai"
       },
-      "repository": "https://github.com/Agents365-ai/pi-plugin-cc",
+      "repository": "https://github.com/Agents365-ai/365-skills",
       "license": "MIT",
       "keywords": [
         "pi",
@@ -377,7 +377,7 @@
       "author": {
         "name": "Agents365-ai"
       },
-      "repository": "https://github.com/Agents365-ai/videogencn",
+      "repository": "https://github.com/Agents365-ai/365-skills",
       "license": "MIT",
       "keywords": [
         "video-generation",
@@ -402,7 +402,7 @@
       "author": {
         "name": "Agents365-ai"
       },
-      "repository": "https://github.com/Agents365-ai/assetseeker",
+      "repository": "https://github.com/Agents365-ai/365-skills",
       "license": "MIT",
       "keywords": [
         "assets",
@@ -501,7 +501,7 @@
       "author": {
         "name": "Agents365-ai"
       },
-      "repository": "https://github.com/Agents365-ai/agent-native-design",
+      "repository": "https://github.com/Agents365-ai/365-skills",
       "license": "MIT",
       "keywords": [
         "cli",
@@ -565,7 +565,7 @@
       "author": {
         "name": "Agents365-ai"
       },
-      "repository": "https://github.com/Agents365-ai/xfetch-skill",
+      "repository": "https://github.com/Agents365-ai/365-skills",
       "license": "MIT",
       "keywords": [
         "xfetch",

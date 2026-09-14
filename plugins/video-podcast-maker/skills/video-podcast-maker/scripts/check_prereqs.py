@@ -159,7 +159,7 @@ def main():
         hint = (
             " The ttscn component skill is required for all TTS backends — "
             "install it next to this skill or under ~/.claude/skills/ttscn, "
-            "or set TTSCN_HOME (https://github.com/Agents365-ai/ttsCN)."
+            "or set TTSCN_HOME (https://github.com/Agents365-ai/365-skills/tree/main/plugins/ttsCN)."
         )
 
     if cli_envelope.use_json(args):

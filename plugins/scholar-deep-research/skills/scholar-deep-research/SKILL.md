@@ -2,7 +2,7 @@
 name: scholar-deep-research
 description: Use when the user asks for a literature review, academic deep dive, research report, state-of-the-art survey, topic scoping, comparative analysis of methods/papers, grant background, or any request that needs multi-source scholarly evidence with citations. Also trigger proactively when a user question clearly requires academic grounding (e.g. "what's known about X", "compare approach A vs B in the literature", "summarize the field of Y"). Runs an 8-phase (Phase 0..7), script-driven research workflow across 7 federated sources (OpenAlex, arXiv, Crossref, PubMed, DBLP, bioRxiv, Exa) with optional Semantic Scholar / Brave MCP enrichment, with deduplication, transparent ranking, dual-backend citation chasing (OpenAlex + Semantic Scholar), self-critique, and structured report output with verifiable citations.
 license: MIT
-homepage: https://github.com/Agents365-ai/scholar-deep-research
+homepage: https://github.com/Agents365-ai/365-skills
 compatibility: Requires Python 3.9+ with httpx and pypdf (see requirements.txt). Optional: `pip install docling` to enable layout-aware markdown PDF extraction (`extract_pdf.py --engine docling`); auto-used as a fallback for scanned/sparse PDFs. Works offline-first (no MCP required) but enriches with Semantic Scholar / Brave MCP tools when available.
 platforms: [macos, linux, windows]
 metadata: {"openclaw":{"requires":{"bins":["python3"]},"emoji":"🔬"},"hermes":{"tags":["research","literature-review","academic","papers","citations","survey"],"category":"research"},"pimo":{"tags":["research","literature-review","academic"],"category":"research"},"author":"Agents365-ai","version":"0.17.0"}
@@ -17,6 +17,7 @@ End-to-end academic research workflow that turns a question into a cited, struct
 **Explicit triggers:** "literature review", "research report", "state of the art", "survey the field", "what's known about X", "deep research on Y", "systematic review", "scoping review", "compare papers on Z".
 
 **Proactive triggers (use without being asked):**
+
 - User asks a factual question whose honest answer is "it depends on the literature"
 - User frames a research plan and needs the background section
 - User is drafting a paper intro/related-work and hasn't yet scoped prior work
@@ -66,11 +67,13 @@ Before searching anything, decompose the question.
    - `grant_background` — narrative background + gap for a proposal
 4. **Draft keyword clusters** — 3-5 Boolean clusters covering synonyms, acronyms, and variant spellings. Include a "negative" cluster (terms to exclude).
 5. **Initialize state:**
+
    ```bash
    python scripts/research_state.py --state research_state.json init \
      --question "<restated question>" \
      --archetype literature_review
    ```
+
    (`--state` is top-level and applies to every subcommand; `init` itself takes `--question`, `--archetype`, and optional `--force`.)
 
 When in doubt about archetype, ask the user. The choice shapes everything downstream.
@@ -80,6 +83,7 @@ When in doubt about archetype, ask the user. The choice shapes everything downst
 Run searches across all available sources, in parallel where the source can take it. OpenAlex is primary; the others fill gaps.
 
 **Where parallelism actually pays off.** The right place to fan out is **Phase 3** (one agent per paper to read PDFs concurrently — see `references/agent_prompts/phase3_deep_read.md`). At Phase 1 the bottleneck is the upstream API, not local compute, and parallel fan-out across the same source mostly buys 429s and sticky cooldowns. The skill's bias should be: parallel between *different* sources, serial within *one* source. Concretely:
+
 - **Parallel-friendly**: OpenAlex (polite-pool, very tolerant), Crossref (polite-pool), Exa (paid quota), bioRxiv (Europe PMC).
 - **Self-serialised** (file-locked, automatic): arXiv (≥3s/req), PubMed (≥0.34s/req without `NCBI_API_KEY`, ≥0.10s with), DBLP (1s buffer to avoid SSL EOF flakes).
 
@@ -288,7 +292,7 @@ ended up not cited inline.
 ## Report archetype selection
 
 | Archetype | When to use | Primary output shape |
-|-----------|-------------|----------------------|
+| ----------- | ------------- | ---------------------- |
 | `literature_review` | User wants to know what's established about a topic | Thematic sections + synthesis + gap |
 | `systematic_review` | Narrow question, many studies, need rigorous comparison | PRISMA-lite flow + extraction table + pooled findings |
 | `scoping_review` | Broad topic, "what has been studied?" | Coverage map + methods inventory + research gap |
@@ -300,7 +304,7 @@ Templates live in `assets/templates/<archetype>.md`. Load only the one you need.
 ## Scripts reference
 
 | Script | Purpose |
-|--------|---------|
+| -------- | --------- |
 | `research_state.py` | Init, read, write, query the state file. Central to every phase. |
 | `search_openalex.py` | Primary search (no key, 240M works, citation counts). |
 | `search_arxiv.py` | arXiv API — preprints and CS/ML/physics. |
@@ -315,7 +319,7 @@ Templates live in `assets/templates/<archetype>.md`. Load only the one you need.
 | `skim_papers.py` | Phase-3 triage. Splits selected papers into `deep` / `skim` / `defer` tiers on cheap deterministic signals, refines `selected_ids`, auto-fills evidence stubs for skim tier. Runs at the close of Phase 2 before G3. |
 | `prefetch_pdfs.py` | Optional. Pulls deep-tier PDFs into a stable cache via paper-fetch (with Unpaywall fallback) before Phase 3 agent fan-out. Concurrent (`--concurrency`), idempotent on re-run, fail-soft per paper. Writes `pdf_path` / `pdf_status` per paper so agents read a local file instead of re-downloading. |
 | `build_citation_graph.py` | Forward/backward snowballing via OpenAlex. |
-| `extract_pdf.py` | Full-text extraction. `--engine auto` (default) tries pypdf first and auto-upgrades to **docling** (markdown output, layout-aware, OCR for scanned regions) when pypdf result looks scanned/sparse — install with `pip install docling`. Force with `--engine pypdf\|docling`. Tune docling's OCR with `--ocr-backend {auto,rapidocr,ocrmac,easyocr,tesseract,none}` and `--ocr-lang <list>` (per-backend lang vocab — see `--help`). Accepts `--input`, `--url`, or `--doi`. DOI mode resolves via [paper-fetch](https://github.com/Agents365-ai/paper-fetch) skill if installed, falls back to Unpaywall. `--idempotency-key` caches extracted text so retries skip re-extraction. |
+| `extract_pdf.py` | Full-text extraction. `--engine auto` (default) tries pypdf first and auto-upgrades to **docling** (markdown output, layout-aware, OCR for scanned regions) when pypdf result looks scanned/sparse — install with `pip install docling`. Force with `--engine pypdf\|docling`. Tune docling's OCR with `--ocr-backend {auto,rapidocr,ocrmac,easyocr,tesseract,none}` and `--ocr-lang <list>` (per-backend lang vocab — see `--help`). Accepts `--input`, `--url`, or `--doi`. DOI mode resolves via [paper-fetch](https://github.com/Agents365-ai/365-skills/tree/main/plugins/paper-fetch) skill if installed, falls back to Unpaywall. `--idempotency-key` caches extracted text so retries skip re-extraction. |
 | `export_bibtex.py` | BibTeX / CSL-JSON / RIS export from state. |
 | `render_report.py` | Phase 7 — render an archetype scaffold from `state.themes` / `state.tensions` / `state.queries` / `state.ranking` / `state.self_critique`, with `<!-- AGENT: ... -->` slots for prose. `--lint <report.md>` validates every `[^id]` anchor against `state.papers`. |
 
@@ -341,7 +345,7 @@ python scripts/research_state.py --state <path> advance --check-only   # preview
 The gate predicates are enforced in `scripts/_gates.py`. Direct `set --field phase` is rejected — the `phase` field is no longer settable. If the gate fails, the envelope lists the failing checks by name so you know exactly what's missing.
 
 | Target | Gate (enforced) |
-|--------|-----------------|
+| -------- | ----------------- |
 | G1 (→ 1) | Question set, archetype valid, state initialized. *`≥3 keyword clusters` is host-checked.* |
 | G2 (→ 2) | `overall_saturated == true` across all queried sources AND ≥3 distinct sources in `state.queries`. |
 | G3 (→ 3) | `state.ranking` recorded; `selected_ids` non-empty; every selected paper has `score_components`; `state.triage_complete=true` (run `skim_papers.py`). |
@@ -370,7 +374,7 @@ Some host runtimes ship built-in web tools that work zero-config — no MCP serv
 Known surfaces (verify what your host actually exposes — tool names drift):
 
 | Host | Web search | Web fetch | Notes |
-|------|-----------|-----------|-------|
+| ------ | ----------- | ----------- | ------- |
 | Claude Code | `WebSearch` | `WebFetch` | Zero-config, no API key needed |
 | OpenCode | `webfetch` | `webfetch` | Single tool covers fetch; search may require an MCP |
 | Codex CLI | varies by version | varies | Toolset depends on Codex profile + plugins |
