@@ -32,6 +32,7 @@ npx skills add Agents365-ai/365-skills -g
 | --- | --- |
 | `agent-native-design` | AI 智能体 CLI 设计 —— 评估、设计和重构 CLI，使其能同时服务人类、AI 智能体和编排系统 |
 | `pi-plugin-cc` | 从 Claude Code 驱动 Pi coding agent —— 模型无关的任务委派与代码审查。`/pi:review` 结构化发现、`/pi:adversarial-review`、`/pi:rescue`、`/pi:parallel-rescue`，跨 provider 竞速/回退，增量审查 |
+| `tmux` | 让编程助手驱动并监控终端程序：固定尺寸的分离会话、`send-keys` 输入注入、带竞态安全哨兵的 `capture-pane` 轮询、formats 检视、四种完成检测策略，以及会击垮粗暴 tmux 脚本的各类坑 |
 
 ### 绘图与图表
 
