@@ -77,21 +77,17 @@ Install a single plugin (Claude Code): `/plugin install <plugin-name>`, e.g. `/p
 | `imagencn` | AI image generation via Alibaba Bailian, ByteDance Volcano Ark & Tencent Hunyuan — 23 models, Chinese text excellence, rich terminal UI, smart config |
 | `videogencn` | AI video clip generation with Chinese video models — text-to-video, image-to-video, first/last-frame and reference-to-video across Bailian (Wan/PixVerse/Kling/Vidu), Jimeng (doubao-seedance), MiniMax (Hailuo), Hunyuan |
 | `assetseeker` | Search free commercial-use creative assets — photos, illustrations, icons, video footage, music, sound effects, and fonts across Pexels, Unsplash, Pixabay, Iconify, Freesound, Google Fonts and more |
-| `video-podcast-maker` | Automated topic-driven video podcast creation — research → script → TTS (7 backends) → 4K Remotion render → BGM mix → Remotion-native subtitles. Multi-platform output (Bilibili / YouTube / Xiaohongshu / Douyin / WeChat Channels), horizontal long-form (16:9 4K) and vertical shorts (9:16), 15-step workflow with mandatory Studio preview |
 | `bangumi-frames` | Bilibili anime frame & character organizer — download a bangumi/UP video (or local file), extract scene-change keyframes, split scenery vs character crops, cluster by CCIP identity or pull one character via a reference folder; optional OCR+LaMa subtitle/watermark removal |
 | `yt2bb` | Repurpose YouTube videos for Bilibili — download via yt-dlp, transcribe with whisper, generate bilingual (English-Chinese) SRT subtitles, hardcode them with ffmpeg |
 
 ## Development
 
-Plugin skills are direct copies of the source repos (not submodules). This repo is the central distribution point: update the source skill repo first, then copy the update here and bump the plugin's `version` in `.claude-plugin/marketplace.json`:
+Plugins here are edited in place: change the files under `plugins/<name>/`, bump that plugin's `version` in `.claude-plugin/marketplace.json`, and commit both together. Their original source repos are private or frozen, so this marketplace is the only distribution channel for them.
 
-```bash
-cp -r ../video-podcast-maker/skills/video-podcast-maker/* plugins/video-podcast-maker/skills/video-podcast-maker/
-# bump "version" for the plugin in .claude-plugin/marketplace.json
-git add plugins/video-podcast-maker && git commit -m "chore: sync video-podcast-maker"
-```
+Two public skills are deliberately **not** distributed from here; they live in their own repos and are installed from there:
 
-Most source repos are now private; for those plugins this marketplace is the only distribution channel. `drawio-skill` is **not** distributed here: it lives in its own repo ([Agents365-ai/drawio-skill](https://github.com/Agents365-ai/drawio-skill)) and is installed from there.
+- [Agents365-ai/drawio-skill](https://github.com/Agents365-ai/drawio-skill): `npx skills add Agents365-ai/drawio-skill -g`
+- [Agents365-ai/video-podcast-maker](https://github.com/Agents365-ai/video-podcast-maker): `npx skills add Agents365-ai/video-podcast-maker/skills/video-podcast-maker -g`
 
 ## Support
 
