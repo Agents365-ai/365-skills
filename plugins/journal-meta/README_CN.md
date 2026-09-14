@@ -1,10 +1,9 @@
 # Journal Meta — 论文元数据查询技能
 
 [![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](LICENSE)
-[![GitHub stars](https://img.shields.io/github/stars/Agents365-ai/journal-meta?style=flat&logo=github)](https://github.com/Agents365-ai/journal-meta/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/Agents365-ai/journal-meta?style=flat&logo=github)](https://github.com/Agents365-ai/journal-meta/network/members)
-[![Latest Release](https://img.shields.io/github/v/release/Agents365-ai/journal-meta?logo=github)](https://github.com/Agents365-ai/journal-meta/releases/latest)
-[![Last Commit](https://img.shields.io/github/last-commit/Agents365-ai/journal-meta?logo=github)](https://github.com/Agents365-ai/journal-meta/commits/main)
+[![GitHub stars](https://img.shields.io/github/stars/Agents365-ai/365-skills?style=flat&logo=github)](https://github.com/Agents365-ai/365-skills/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/Agents365-ai/365-skills?style=flat&logo=github)](https://github.com/Agents365-ai/365-skills/network/members)
+[![Last Commit](https://img.shields.io/github/last-commit/Agents365-ai/365-skills?logo=github)](https://github.com/Agents365-ai/365-skills/commits/main)
 
 [![SkillsMP](https://img.shields.io/badge/SkillsMP-listed-1f6feb)](https://skillsmp.com)
 [![ClawHub](https://img.shields.io/badge/ClawHub-listed-ff6b35)](https://clawhub.ai)
@@ -37,8 +36,8 @@ ISO-4 缩写、影响因子、卷/期/页码、DOI/PMID、被引次数和摘要�
 1. **OpenAlex**（免费、无需密钥）解析标识并提供几乎所有字段，包括通讯作者标记；
    对 OpenAlex 尚未收录的 DOI，用 **Crossref** 兜底。
 2. 期刊名称在两个同级技能已安装时**委托它们**做增强：
-   - [`journal-abbrev`](https://github.com/Agents365-ai/journal-abbrev) → ISO-4 期刊缩写；
-   - [`journal-if`](https://github.com/Agents365-ai/journal-if) → JCR 精选影响因子；
+   - [`journal-abbrev`](https://github.com/Agents365-ai/365-skills/tree/main/plugins/journal-abbrev) → ISO-4 期刊缩写；
+   - [`journal-if`](https://github.com/Agents365-ai/365-skills/tree/main/plugins/journal-if) → JCR 精选影响因子；
    - 若未找到这两个技能，则自动回退到 AbbrevISO（缩写）与 OpenAlex 两年平均被引
      （近似影响因子）。`meta.sources` 始终标明数据来源。
 

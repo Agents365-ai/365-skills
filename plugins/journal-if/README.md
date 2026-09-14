@@ -1,10 +1,9 @@
 # Journal IF — Journal Impact Factor Lookup Skill
 
 [![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](LICENSE)
-[![GitHub stars](https://img.shields.io/github/stars/Agents365-ai/journal-if?style=flat&logo=github)](https://github.com/Agents365-ai/journal-if/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/Agents365-ai/journal-if?style=flat&logo=github)](https://github.com/Agents365-ai/journal-if/network/members)
-[![Latest Release](https://img.shields.io/github/v/release/Agents365-ai/journal-if?logo=github)](https://github.com/Agents365-ai/journal-if/releases/latest)
-[![Last Commit](https://img.shields.io/github/last-commit/Agents365-ai/journal-if?logo=github)](https://github.com/Agents365-ai/journal-if/commits/main)
+[![GitHub stars](https://img.shields.io/github/stars/Agents365-ai/365-skills?style=flat&logo=github)](https://github.com/Agents365-ai/365-skills/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/Agents365-ai/365-skills?style=flat&logo=github)](https://github.com/Agents365-ai/365-skills/network/members)
+[![Last Commit](https://img.shields.io/github/last-commit/Agents365-ai/365-skills?logo=github)](https://github.com/Agents365-ai/365-skills/commits/main)
 
 [![SkillsMP](https://img.shields.io/badge/SkillsMP-listed-1f6feb)](https://skillsmp.com)
 [![ClawHub](https://img.shields.io/badge/ClawHub-listed-ff6b35)](https://clawhub.ai)
@@ -15,7 +14,7 @@
 
 A Claude Code skill for looking up journal impact factors (JCR IF). Bundled with ~200 top journals and backed by OpenAlex API fallback for any journal worldwide.
 
-<img src="https://raw.githubusercontent.com/Agents365-ai/journal-if/main/docs/workflow.drawio.png" width="600" alt="Workflow">
+<img src="https://raw.githubusercontent.com/Agents365-ai/365-skills/main/plugins/journal-if/assets/workflow.drawio.png" width="600" alt="Workflow">
 
 ## Features
 
@@ -56,8 +55,8 @@ Or install the skill bundle manually into any `SKILL.md`-aware platform:
 
 | Platform | Install |
 | --- | --- |
-| **Claude Code** (global) | `git clone https://github.com/Agents365-ai/journal-if.git /tmp/ji && cp -r /tmp/ji/skills/journal-if ~/.claude/skills/ && rm -rf /tmp/ji` |
-| **Claude Code** (project) | `git clone https://github.com/Agents365-ai/journal-if.git /tmp/ji && cp -r /tmp/ji/skills/journal-if .claude/skills/ && rm -rf /tmp/ji` |
+| **Claude Code** (global) | `git clone https://github.com/Agents365-ai/365-skills.git /tmp/ji && cp -r /tmp/ji/plugins/journal-if/skills/journal-if ~/.claude/skills/ && rm -rf /tmp/ji` |
+| **Claude Code** (project) | `git clone https://github.com/Agents365-ai/365-skills.git /tmp/ji && cp -r /tmp/ji/plugins/journal-if/skills/journal-if .claude/skills/ && rm -rf /tmp/ji` |
 | **OpenClaw** (global) | replace `~/.claude/skills/` with `~/.openclaw/skills/` in the recipe above |
 
 Or just clone the repo and run the CLI directly — it is pure Python 3.9+
@@ -65,8 +64,8 @@ standard library with no third-party dependencies, and works on macOS, Linux,
 and Windows:
 
 ```bash
-git clone https://github.com/Agents365-ai/journal-if.git
-cd journal-if/skills/journal-if
+git clone https://github.com/Agents365-ai/365-skills.git
+cd 365-skills/plugins/journal-if/skills/journal-if
 python3 journal_if.py lookup "Nature Medicine"
 python3 journal_if.py schema              # full machine-readable CLI contract
 ```

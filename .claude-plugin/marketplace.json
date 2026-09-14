@@ -56,7 +56,7 @@
       "author": {
         "name": "Agents365-ai"
       },
-      "repository": "https://github.com/Agents365-ai/mermaid-skill",
+      "repository": "https://github.com/Agents365-ai/365-skills",
       "license": "MIT",
       "keywords": [
         "mermaid",
@@ -75,7 +75,7 @@
       "author": {
         "name": "Agents365-ai"
       },
-      "repository": "https://github.com/Agents365-ai/excalidraw-skill",
+      "repository": "https://github.com/Agents365-ai/365-skills",
       "license": "MIT",
       "keywords": [
         "excalidraw",
@@ -93,7 +93,7 @@
       "author": {
         "name": "Agents365-ai"
       },
-      "repository": "https://github.com/Agents365-ai/plantuml-skill",
+      "repository": "https://github.com/Agents365-ai/365-skills",
       "license": "MIT",
       "keywords": [
         "plantuml",
@@ -112,7 +112,7 @@
       "author": {
         "name": "Agents365-ai"
       },
-      "repository": "https://github.com/Agents365-ai/tldraw-skill",
+      "repository": "https://github.com/Agents365-ai/365-skills",
       "license": "MIT",
       "keywords": [
         "tldraw",
@@ -249,7 +249,7 @@
       "author": {
         "name": "Agents365-ai"
       },
-      "repository": "https://github.com/Agents365-ai/asta-skill",
+      "repository": "https://github.com/Agents365-ai/365-skills",
       "license": "MIT",
       "keywords": [
         "asta",
@@ -293,7 +293,7 @@
       "author": {
         "name": "Agents365-ai"
       },
-      "repository": "https://github.com/Agents365-ai/journal-if",
+      "repository": "https://github.com/Agents365-ai/365-skills",
       "license": "MIT",
       "keywords": [
         "journal-impact-factor",
@@ -312,7 +312,7 @@
       "author": {
         "name": "Agents365-ai"
       },
-      "repository": "https://github.com/Agents365-ai/journal-meta",
+      "repository": "https://github.com/Agents365-ai/365-skills",
       "license": "MIT",
       "keywords": [
         "paper-metadata",
@@ -542,7 +542,7 @@
       "author": {
         "name": "Agents365-ai"
       },
-      "repository": "https://github.com/Agents365-ai/obsidian-organizer",
+      "repository": "https://github.com/Agents365-ai/365-skills",
       "license": "CC-BY-NC-4.0",
       "keywords": [
         "obsidian",

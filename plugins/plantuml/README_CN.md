@@ -1,10 +1,9 @@
 # plantuml-skill —— 从文字到专业 UML 图表
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![GitHub stars](https://img.shields.io/github/stars/Agents365-ai/plantuml-skill?style=flat&logo=github)](https://github.com/Agents365-ai/plantuml-skill/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/Agents365-ai/plantuml-skill?style=flat&logo=github)](https://github.com/Agents365-ai/plantuml-skill/network/members)
-[![Latest Release](https://img.shields.io/github/v/release/Agents365-ai/plantuml-skill?logo=github)](https://github.com/Agents365-ai/plantuml-skill/releases/latest)
-[![Last Commit](https://img.shields.io/github/last-commit/Agents365-ai/plantuml-skill?logo=github)](https://github.com/Agents365-ai/plantuml-skill/commits/main)
+[![GitHub stars](https://img.shields.io/github/stars/Agents365-ai/365-skills?style=flat&logo=github)](https://github.com/Agents365-ai/365-skills/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/Agents365-ai/365-skills?style=flat&logo=github)](https://github.com/Agents365-ai/365-skills/network/members)
+[![Last Commit](https://img.shields.io/github/last-commit/Agents365-ai/365-skills?logo=github)](https://github.com/Agents365-ai/365-skills/commits/main)
 
 [![SkillsMP](https://img.shields.io/badge/SkillsMP-listed-1f6feb)](https://skillsmp.com/skills/agents365-ai-plantuml-skill-skills-plantuml-skill-skill-md)
 [![ClawHub](https://img.shields.io/badge/ClawHub-listed-ff6b35)](https://clawhub.ai/agents365-ai/plantuml-pro-skill)
@@ -86,13 +85,13 @@ npx skills add Agents365-ai/365-skills -g
 
 ```bash
 # 手动安装
-git clone https://github.com/Agents365-ai/plantuml-skill.git \
-  ~/.claude/skills/plantuml-skill
+git clone https://github.com/Agents365-ai/365-skills.git
+cp -r 365-skills/plugins/plantuml/skills/plantuml-skill ~/.claude/skills/
 ```
 
 常用路径:`~/.claude/skills/`(Claude Code)、`~/.config/opencode/skills/`(Opencode)、`~/.openclaw/skills/`(OpenClaw)、`~/.agents/skills/`(Codex)。同时索引于 [SkillsMP](https://skillsmp.com/skills/agents365-ai-plantuml-skill-skills-plantuml-skill-skill-md) 与 [ClawHub](https://clawhub.ai/agents365-ai/plantuml-pro-skill)。
 
-**更新:** `/plugin update plantuml`(Claude Code)、`skills update plantuml-skill`(SkillsMP)、`clawhub update plantuml-pro-skill`(OpenClaw),或 `git pull`(手动安装)。
+**更新:** `/plugin update plantuml`(Claude Code)、`skills update plantuml-skill`(SkillsMP)、`clawhub update plantuml-pro-skill`(OpenClaw),或 `git pull`(在克隆的 `365-skills` 仓库中)。。
 
 ## ⚡ 快速开始
 
@@ -153,9 +152,9 @@ Skill 会自动挑选合适的图表类型,生成 `.puml` 源文件,并通过 Kr
 
 **这些情况请改用同系列的其它 skill:**
 
-- **通用的、非 UML 的、嵌入 Markdown 的快速图** → [mermaid-skill](https://github.com/Agents365-ai/mermaid-skill)
+- **通用的、非 UML 的、嵌入 Markdown 的快速图** → [mermaid-skill](https://github.com/Agents365-ai/365-skills/tree/main/plugins/mermaid)
 - **自由排布、重样式、带品牌图标且要像素级控制的图** → [drawio-skill](https://github.com/Agents365-ai/drawio-skill)
-- **手绘 / 潦草观感** → [excalidraw-skill](https://github.com/Agents365-ai/excalidraw-skill) 或 [tldraw-skill](https://github.com/Agents365-ai/tldraw-skill)
+- **手绘 / 潦草观感** → [excalidraw-skill](https://github.com/Agents365-ai/365-skills/tree/main/plugins/excalidraw) 或 [tldraw-skill](https://github.com/Agents365-ai/365-skills/tree/main/plugins/tldraw)
 
 ## 🔗 相关 Skill
 
@@ -164,9 +163,9 @@ Skill 会自动挑选合适的图表类型,生成 `.puml` 源文件,并通过 Kr
 | Skill | 风格 | 适用场景 |
 | --- | --- | --- |
 | [drawio-skill](https://github.com/Agents365-ai/drawio-skill) | 专业 / 矢量 | 架构图、ML/DL、ER 图,带自检循环 |
-| [excalidraw-skill](https://github.com/Agents365-ai/excalidraw-skill) | 手绘 / 草图 | 白板原型、非正式图 |
-| [mermaid-skill](https://github.com/Agents365-ai/mermaid-skill) | 文本驱动、自动布局 | 可嵌入 README、易于版本管理 |
-| [tldraw-skill](https://github.com/Agents365-ai/tldraw-skill) | 白板协作 | 随手画、FigJam 风格 |
+| [excalidraw-skill](https://github.com/Agents365-ai/365-skills/tree/main/plugins/excalidraw) | 手绘 / 草图 | 白板原型、非正式图 |
+| [mermaid-skill](https://github.com/Agents365-ai/365-skills/tree/main/plugins/mermaid) | 文本驱动、自动布局 | 可嵌入 README、易于版本管理 |
+| [tldraw-skill](https://github.com/Agents365-ai/365-skills/tree/main/plugins/tldraw) | 白板协作 | 随手画、FigJam 风格 |
 
 ## ❤️ 支持作者
 

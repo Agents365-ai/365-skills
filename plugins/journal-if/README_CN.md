@@ -1,10 +1,9 @@
 # Journal IF — 期刊影响因子查询技能
 
 [![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](LICENSE)
-[![GitHub stars](https://img.shields.io/github/stars/Agents365-ai/journal-if?style=flat&logo=github)](https://github.com/Agents365-ai/journal-if/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/Agents365-ai/journal-if?style=flat&logo=github)](https://github.com/Agents365-ai/journal-if/network/members)
-[![Latest Release](https://img.shields.io/github/v/release/Agents365-ai/journal-if?logo=github)](https://github.com/Agents365-ai/journal-if/releases/latest)
-[![Last Commit](https://img.shields.io/github/last-commit/Agents365-ai/journal-if?logo=github)](https://github.com/Agents365-ai/journal-if/commits/main)
+[![GitHub stars](https://img.shields.io/github/stars/Agents365-ai/365-skills?style=flat&logo=github)](https://github.com/Agents365-ai/365-skills/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/Agents365-ai/365-skills?style=flat&logo=github)](https://github.com/Agents365-ai/365-skills/network/members)
+[![Last Commit](https://img.shields.io/github/last-commit/Agents365-ai/365-skills?logo=github)](https://github.com/Agents365-ai/365-skills/commits/main)
 
 [![SkillsMP](https://img.shields.io/badge/SkillsMP-listed-1f6feb)](https://skillsmp.com)
 [![ClawHub](https://img.shields.io/badge/ClawHub-listed-ff6b35)](https://clawhub.ai)
@@ -15,7 +14,7 @@
 
 一个用于查询期刊影响因子（JCR IF）的 Claude Code 技能。内置 ~200 本顶级期刊数据，并通过 OpenAlex API 回退覆盖全球任意期刊。
 
-<img src="https://raw.githubusercontent.com/Agents365-ai/journal-if/main/docs/workflow_CN.drawio.png" width="600" alt="工作流程">
+<img src="https://raw.githubusercontent.com/Agents365-ai/365-skills/main/plugins/journal-if/assets/workflow_CN.drawio.png" width="600" alt="工作流程">
 
 ## 功能特性
 
@@ -54,16 +53,16 @@ npx skills add Agents365-ai/365-skills -g
 
 | 平台 | 安装命令 |
 | --- | --- |
-| **Claude Code**（全局） | `git clone https://github.com/Agents365-ai/journal-if.git /tmp/ji && cp -r /tmp/ji/skills/journal-if ~/.claude/skills/ && rm -rf /tmp/ji` |
-| **Claude Code**（项目） | `git clone https://github.com/Agents365-ai/journal-if.git /tmp/ji && cp -r /tmp/ji/skills/journal-if .claude/skills/ && rm -rf /tmp/ji` |
+| **Claude Code**（全局） | `git clone https://github.com/Agents365-ai/365-skills.git /tmp/ji && cp -r /tmp/ji/plugins/journal-if/skills/journal-if ~/.claude/skills/ && rm -rf /tmp/ji` |
+| **Claude Code**（项目） | `git clone https://github.com/Agents365-ai/365-skills.git /tmp/ji && cp -r /tmp/ji/plugins/journal-if/skills/journal-if .claude/skills/ && rm -rf /tmp/ji` |
 | **OpenClaw**（全局） | 把上面命令里的 `~/.claude/skills/` 换成 `~/.openclaw/skills/` |
 
 或者直接克隆仓库运行 CLI —— 纯 Python 3.9+ 标准库实现，
 无任何第三方依赖，在 macOS、Linux、Windows 上均可运行：
 
 ```bash
-git clone https://github.com/Agents365-ai/journal-if.git
-cd journal-if/skills/journal-if
+git clone https://github.com/Agents365-ai/365-skills.git
+cd 365-skills/plugins/journal-if/skills/journal-if
 python3 journal_if.py lookup "Nature Medicine"
 python3 journal_if.py schema              # 完整机器可读的 CLI 契约
 ```

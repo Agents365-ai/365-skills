@@ -1,10 +1,9 @@
 # mermaid-skill — From Code to Image, Automatically
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![GitHub stars](https://img.shields.io/github/stars/Agents365-ai/mermaid-skill?style=flat&logo=github)](https://github.com/Agents365-ai/mermaid-skill/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/Agents365-ai/mermaid-skill?style=flat&logo=github)](https://github.com/Agents365-ai/mermaid-skill/network/members)
-[![Latest Release](https://img.shields.io/github/v/release/Agents365-ai/mermaid-skill?logo=github)](https://github.com/Agents365-ai/mermaid-skill/releases/latest)
-[![Last Commit](https://img.shields.io/github/last-commit/Agents365-ai/mermaid-skill?logo=github)](https://github.com/Agents365-ai/mermaid-skill/commits/main)
+[![GitHub stars](https://img.shields.io/github/stars/Agents365-ai/365-skills?style=flat&logo=github)](https://github.com/Agents365-ai/365-skills/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/Agents365-ai/365-skills?style=flat&logo=github)](https://github.com/Agents365-ai/365-skills/network/members)
+[![Last Commit](https://img.shields.io/github/last-commit/Agents365-ai/365-skills?logo=github)](https://github.com/Agents365-ai/365-skills/commits/main)
 
 [![SkillsMP](https://img.shields.io/badge/SkillsMP-listed-1f6feb)](https://skillsmp.com/skills/agents365-ai-mermaid-skill-skills-mermaid-skill-skill-md)
 [![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-plugin-8a2be2)](https://github.com/Agents365-ai/365-skills)
@@ -86,13 +85,13 @@ npx skills add Agents365-ai/365-skills -g
 
 ```bash
 # Manual install
-git clone https://github.com/Agents365-ai/mermaid-skill.git \
-  ~/.claude/skills/mermaid-skill
+git clone https://github.com/Agents365-ai/365-skills.git
+cp -r 365-skills/plugins/mermaid/skills/mermaid-skill ~/.claude/skills/
 ```
 
 Also indexed on [SkillsMP](https://skillsmp.com/skills/agents365-ai-mermaid-skill-skills-mermaid-skill-skill-md).
 
-**Updating:** `/plugin update mermaid` (Claude Code), `skills update mermaid-skill` (SkillsMP), or `git pull` for manual installs.
+**Updating:** `/plugin update mermaid` (Claude Code), `skills update mermaid-skill` (SkillsMP), or `git pull` in the `365-skills` clone for manual installs.
 
 ## ⚡ Quick Start
 
@@ -150,9 +149,9 @@ Behind the scenes: **check deps (`mmdc` or Kroki) → pick diagram type → writ
 **Reach for a sibling skill instead when you need:**
 
 - **Pixel-precise placement, custom layout, branded icons, or heavy styling** → [drawio-skill](https://github.com/Agents365-ai/drawio-skill)
-- **A hand-drawn / sketchy aesthetic** → [excalidraw-skill](https://github.com/Agents365-ai/excalidraw-skill) or [tldraw-skill](https://github.com/Agents365-ai/tldraw-skill)
-- **A freeform whiteboard or freehand drawing** → [tldraw-skill](https://github.com/Agents365-ai/tldraw-skill)
-- **Strict, conventional UML notation** → [plantuml-skill](https://github.com/Agents365-ai/plantuml-skill)
+- **A hand-drawn / sketchy aesthetic** → [excalidraw-skill](https://github.com/Agents365-ai/365-skills/tree/main/plugins/excalidraw) or [tldraw-skill](https://github.com/Agents365-ai/365-skills/tree/main/plugins/tldraw)
+- **A freeform whiteboard or freehand drawing** → [tldraw-skill](https://github.com/Agents365-ai/365-skills/tree/main/plugins/tldraw)
+- **Strict, conventional UML notation** → [plantuml-skill](https://github.com/Agents365-ai/365-skills/tree/main/plugins/plantuml)
 
 ## 🔗 Related Skills
 
@@ -161,9 +160,9 @@ Part of the [Agents365-ai diagram-skill family](https://github.com/Agents365-ai)
 | Skill | Style | Best for |
 | --- | --- | --- |
 | [drawio-skill](https://github.com/Agents365-ai/drawio-skill) | XML, manual layout control | Polished architecture diagrams, ML model figures |
-| [excalidraw-skill](https://github.com/Agents365-ai/excalidraw-skill) | Hand-drawn / sketchy | Whiteboard mockups, informal diagrams |
-| [plantuml-skill](https://github.com/Agents365-ai/plantuml-skill) | UML-focused | Class / sequence diagrams in CI pipelines |
-| [tldraw-skill](https://github.com/Agents365-ai/tldraw-skill) | Whiteboard collaboration | Casual sketches, FigJam-style boards |
+| [excalidraw-skill](https://github.com/Agents365-ai/365-skills/tree/main/plugins/excalidraw) | Hand-drawn / sketchy | Whiteboard mockups, informal diagrams |
+| [plantuml-skill](https://github.com/Agents365-ai/365-skills/tree/main/plugins/plantuml) | UML-focused | Class / sequence diagrams in CI pipelines |
+| [tldraw-skill](https://github.com/Agents365-ai/365-skills/tree/main/plugins/tldraw) | Whiteboard collaboration | Casual sketches, FigJam-style boards |
 
 ## ❤️ Support
 

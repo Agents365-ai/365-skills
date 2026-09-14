@@ -1,10 +1,9 @@
 # excalidraw-skill —— 自然语言生成简洁 / 手绘风格图表
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![GitHub stars](https://img.shields.io/github/stars/Agents365-ai/excalidraw-skill?style=flat&logo=github&cacheSeconds=86400)](https://github.com/Agents365-ai/excalidraw-skill/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/Agents365-ai/excalidraw-skill?style=flat&logo=github&cacheSeconds=86400)](https://github.com/Agents365-ai/excalidraw-skill/network/members)
-[![Latest Release](https://img.shields.io/github/v/release/Agents365-ai/excalidraw-skill?logo=github&cacheSeconds=86400)](https://github.com/Agents365-ai/excalidraw-skill/releases/latest)
-[![Last Commit](https://img.shields.io/github/last-commit/Agents365-ai/excalidraw-skill?logo=github&cacheSeconds=3600)](https://github.com/Agents365-ai/excalidraw-skill/commits/main)
+[![GitHub stars](https://img.shields.io/github/stars/Agents365-ai/365-skills?style=flat&logo=github&cacheSeconds=86400)](https://github.com/Agents365-ai/365-skills/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/Agents365-ai/365-skills?style=flat&logo=github&cacheSeconds=86400)](https://github.com/Agents365-ai/365-skills/network/members)
+[![Last Commit](https://img.shields.io/github/last-commit/Agents365-ai/365-skills?logo=github&cacheSeconds=3600)](https://github.com/Agents365-ai/365-skills/commits/main)
 
 [![SkillsMP](https://img.shields.io/badge/SkillsMP-listed-1f6feb)](https://skillsmp.com/skills/agents365-ai-excalidraw-skill-skills-excalidraw-skill-skill-md)
 [![ClawHub](https://img.shields.io/badge/ClawHub-listed-ff6b35)](https://clawhub.ai/agents365-ai/excalidraw-skill)
@@ -139,8 +138,8 @@ npx skills add Agents365-ai/365-skills -g
 
 ```bash
 # 手动安装
-git clone https://github.com/Agents365-ai/excalidraw-skill.git \
-  ~/.claude/skills/excalidraw-skill
+git clone https://github.com/Agents365-ai/365-skills.git
+cp -r 365-skills/plugins/excalidraw/skills/excalidraw-skill ~/.claude/skills/
 ```
 
 同时索引于 [SkillsMP](https://skillsmp.com/skills/agents365-ai-excalidraw-skill-skills-excalidraw-skill-skill-md) 与 [ClawHub](https://clawhub.ai/agents365-ai/excalidraw-skill)。
@@ -260,8 +259,8 @@ Excalidraw skill 赛道很挤。星标最高的两个 —— **[coleam00/excalid
 **这些情况请改用同系列的其它 skill:**
 
 - **精致、精确的图,严格 UML,或品牌厂商图标** → [drawio-skill](https://github.com/Agents365-ai/drawio-skill)
-- **以代码形式存进 git、从文本自动布局的图** → [mermaid-skill](https://github.com/Agents365-ai/mermaid-skill)(通用)或 [plantuml-skill](https://github.com/Agents365-ai/plantuml-skill)(UML)
-- **无限画布白板或程序化自由笔迹** → [tldraw-skill](https://github.com/Agents365-ai/tldraw-skill)
+- **以代码形式存进 git、从文本自动布局的图** → [mermaid-skill](https://github.com/Agents365-ai/365-skills/tree/main/plugins/mermaid)(通用)或 [plantuml-skill](https://github.com/Agents365-ai/365-skills/tree/main/plugins/plantuml)(UML)
+- **无限画布白板或程序化自由笔迹** → [tldraw-skill](https://github.com/Agents365-ai/365-skills/tree/main/plugins/tldraw)
 
 ## 🔗 相关 Skill
 
@@ -270,9 +269,9 @@ Excalidraw skill 赛道很挤。星标最高的两个 —— **[coleam00/excalid
 | Skill | 风格 | 适用场景 |
 | --- | --- | --- |
 | [drawio-skill](https://github.com/Agents365-ai/drawio-skill) | 精修、汇报级 | 架构图、UML、ML/DL 图、正式文档 |
-| [mermaid-skill](https://github.com/Agents365-ai/mermaid-skill) | 文本驱动、自动布局 | 可嵌入 README、易于版本管理 |
-| [plantuml-skill](https://github.com/Agents365-ai/plantuml-skill) | UML 专精 | CI 流水线里的类图 / 序列图 |
-| [tldraw-skill](https://github.com/Agents365-ai/tldraw-skill) | 白板协作 | 随手画、FigJam 风格 |
+| [mermaid-skill](https://github.com/Agents365-ai/365-skills/tree/main/plugins/mermaid) | 文本驱动、自动布局 | 可嵌入 README、易于版本管理 |
+| [plantuml-skill](https://github.com/Agents365-ai/365-skills/tree/main/plugins/plantuml) | UML 专精 | CI 流水线里的类图 / 序列图 |
+| [tldraw-skill](https://github.com/Agents365-ai/365-skills/tree/main/plugins/tldraw) | 白板协作 | 随手画、FigJam 风格 |
 
 ## ❤️ 支持作者
 

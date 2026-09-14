@@ -1,10 +1,9 @@
 # plantuml-skill — From Text to Professional UML Diagrams
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![GitHub stars](https://img.shields.io/github/stars/Agents365-ai/plantuml-skill?style=flat&logo=github)](https://github.com/Agents365-ai/plantuml-skill/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/Agents365-ai/plantuml-skill?style=flat&logo=github)](https://github.com/Agents365-ai/plantuml-skill/network/members)
-[![Latest Release](https://img.shields.io/github/v/release/Agents365-ai/plantuml-skill?logo=github)](https://github.com/Agents365-ai/plantuml-skill/releases/latest)
-[![Last Commit](https://img.shields.io/github/last-commit/Agents365-ai/plantuml-skill?logo=github)](https://github.com/Agents365-ai/plantuml-skill/commits/main)
+[![GitHub stars](https://img.shields.io/github/stars/Agents365-ai/365-skills?style=flat&logo=github)](https://github.com/Agents365-ai/365-skills/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/Agents365-ai/365-skills?style=flat&logo=github)](https://github.com/Agents365-ai/365-skills/network/members)
+[![Last Commit](https://img.shields.io/github/last-commit/Agents365-ai/365-skills?logo=github)](https://github.com/Agents365-ai/365-skills/commits/main)
 
 [![SkillsMP](https://img.shields.io/badge/SkillsMP-listed-1f6feb)](https://skillsmp.com/skills/agents365-ai-plantuml-skill-skills-plantuml-skill-skill-md)
 [![ClawHub](https://img.shields.io/badge/ClawHub-listed-ff6b35)](https://clawhub.ai/agents365-ai/plantuml-pro-skill)
@@ -87,13 +86,13 @@ npx skills add Agents365-ai/365-skills -g
 
 ```bash
 # Manual install
-git clone https://github.com/Agents365-ai/plantuml-skill.git \
-  ~/.claude/skills/plantuml-skill
+git clone https://github.com/Agents365-ai/365-skills.git
+cp -r 365-skills/plugins/plantuml/skills/plantuml-skill ~/.claude/skills/
 ```
 
 Common paths: `~/.claude/skills/` (Claude Code), `~/.config/opencode/skills/` (Opencode), `~/.openclaw/skills/` (OpenClaw), `~/.agents/skills/` (Codex). Also indexed on [SkillsMP](https://skillsmp.com/skills/agents365-ai-plantuml-skill-skills-plantuml-skill-skill-md) and [ClawHub](https://clawhub.ai/agents365-ai/plantuml-pro-skill).
 
-**Updating:** `/plugin update plantuml` (Claude Code), `skills update plantuml-skill` (SkillsMP), `clawhub update plantuml-pro-skill` (OpenClaw), or `git pull` for manual installs.
+**Updating:** `/plugin update plantuml` (Claude Code), `skills update plantuml-skill` (SkillsMP), `clawhub update plantuml-pro-skill` (OpenClaw), or `git pull` in the `365-skills` clone for manual installs.
 
 ## ⚡ Quick Start
 
@@ -154,9 +153,9 @@ Full comparison + key-advantages summary in [docs/features.md](docs/features.md)
 
 **Reach for a sibling skill instead when you need:**
 
-- **General, non-UML quick diagrams embedded in Markdown** → [mermaid-skill](https://github.com/Agents365-ai/mermaid-skill)
+- **General, non-UML quick diagrams embedded in Markdown** → [mermaid-skill](https://github.com/Agents365-ai/365-skills/tree/main/plugins/mermaid)
 - **Freeform, heavily-styled, or branded diagrams with pixel control** → [drawio-skill](https://github.com/Agents365-ai/drawio-skill)
-- **A hand-drawn / sketchy look** → [excalidraw-skill](https://github.com/Agents365-ai/excalidraw-skill) or [tldraw-skill](https://github.com/Agents365-ai/tldraw-skill)
+- **A hand-drawn / sketchy look** → [excalidraw-skill](https://github.com/Agents365-ai/365-skills/tree/main/plugins/excalidraw) or [tldraw-skill](https://github.com/Agents365-ai/365-skills/tree/main/plugins/tldraw)
 
 ## 🔗 Related Skills
 
@@ -165,9 +164,9 @@ Part of the [Agents365-ai diagram-skill family](https://github.com/Agents365-ai)
 | Skill | Style | Best for |
 | --- | --- | --- |
 | [drawio-skill](https://github.com/Agents365-ai/drawio-skill) | Professional / vector | Architecture, ML/DL, ER diagrams with self-check loop |
-| [excalidraw-skill](https://github.com/Agents365-ai/excalidraw-skill) | Hand-drawn / sketchy | Whiteboard mockups, informal diagrams |
-| [mermaid-skill](https://github.com/Agents365-ai/mermaid-skill) | Text-based, auto-layout | README-embeddable, version-control friendly |
-| [tldraw-skill](https://github.com/Agents365-ai/tldraw-skill) | Whiteboard collaboration | Casual sketches, FigJam-style boards |
+| [excalidraw-skill](https://github.com/Agents365-ai/365-skills/tree/main/plugins/excalidraw) | Hand-drawn / sketchy | Whiteboard mockups, informal diagrams |
+| [mermaid-skill](https://github.com/Agents365-ai/365-skills/tree/main/plugins/mermaid) | Text-based, auto-layout | README-embeddable, version-control friendly |
+| [tldraw-skill](https://github.com/Agents365-ai/365-skills/tree/main/plugins/tldraw) | Whiteboard collaboration | Casual sketches, FigJam-style boards |
 
 ## ❤️ Support
 
