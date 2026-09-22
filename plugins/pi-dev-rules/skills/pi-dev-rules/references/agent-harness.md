@@ -1,12 +1,11 @@
 # Pi Agent Harness, Facets, and Services
-
 Source: `packages/agent/docs/harness.md`, `plugins.md`, `values.md`, `rpc.md`, `telemetry-schema.md`, `telemetry.md`
 Internal architecture of the agent harness, not user documentation. `harness.md`, `plugins.md`, and `rpc.md` are implementation specifications; `telemetry.md` is design input and `telemetry-schema.md` is generated. See the shipped CLI docs in the other reference files for user-facing behavior.
 
 ---
 
 > **Auto-built from individual doc pages.**
-> Sources: <https://raw.githubusercontent.com/earendil-works/pi/main/packages/agent/docs/harness.md>, <https://raw.githubusercontent.com/earendil-works/pi/main/packages/agent/docs/plugins.md>, <https://raw.githubusercontent.com/earendil-works/pi/main/packages/agent/docs/values.md>, <https://raw.githubusercontent.com/earendil-works/pi/main/packages/agent/docs/rpc.md>, <https://raw.githubusercontent.com/earendil-works/pi/main/packages/agent/docs/telemetry-schema.md>, <https://raw.githubusercontent.com/earendil-works/pi/main/packages/agent/docs/telemetry.md>
+> Sources: https://raw.githubusercontent.com/earendil-works/pi/main/packages/agent/docs/harness.md, https://raw.githubusercontent.com/earendil-works/pi/main/packages/agent/docs/plugins.md, https://raw.githubusercontent.com/earendil-works/pi/main/packages/agent/docs/values.md, https://raw.githubusercontent.com/earendil-works/pi/main/packages/agent/docs/rpc.md, https://raw.githubusercontent.com/earendil-works/pi/main/packages/agent/docs/telemetry-schema.md, https://raw.githubusercontent.com/earendil-works/pi/main/packages/agent/docs/telemetry.md
 
 ## AgentHarness Implementation Specification
 
@@ -254,7 +253,7 @@ Complete built-in inventory:
 Exactly five exported scan-prefix constructors encapsulate lane inventory and operation-cleanup grammar. Their results are valid only as namespace-scoped `scanValues()` inputs, never exact get/set/delete addresses:
 
 | Prefix constructor | Namespace | Prefix key |
-| --- | --- | --- |
+|---|---|---|
 | `branchTipInventoryPrefix()` | `pi.branch.tip` | `""` (all lanes) |
 | `operationToolArgsPrefix(opId, stepId?)` | `pi.op.tool_args` | `{opId}:` or `{opId}:{stepId}:` |
 | `operationToolMemoPrefix(opId, invocationId?)` | `pi.op.tool_memo` | `{opId}:` or `{opId}:{invocationId}:` |
@@ -435,7 +434,6 @@ In per-session-file mode a precise rewrite (§2.9) may build a fresh database (`
 Consequences relied on throughout: attachment is bounded (fixed projection point reads per lane, §4.4; one compaction-bounded watch scan plus exact state-directed reads, §5.4; the only reducer on a durable path is pi-ai's frame reducer over one exact bounded list, §3.7); crash states are enumerable — between transactions, never inside one; cleanup is deletion, not collection — a 30-turn run replaces `operationState` ~30 times then deletes it, leaving exactly the conversation, ledger, and a few lane/session values (JSONL defers physical reclamation to J1; logical state is identical); recovery never repairs by rewrite — it appends entries and replaces only values it owns with the same transitions normal execution would commit, so interrupting and rerunning gives the same result; readers never see partial state. Staging writes are deliberate: queued content serializes into `pi.pending.entry` at enqueue and again into its entry at placement; finalized tool outcomes stage before source-ordered materialization, preventing a completed parallel effect from replaying after a crash; assistant settlements are born placed, their frames dying atomically with settlement. Staging always has one owner and dies atomically with placement or cleanup.
 
 ---
-
 # Part 2 — The conversation tree
 
 ## 2.1 Entries
@@ -729,7 +727,7 @@ stateDiagram-v2
 `accept(request, context)` normalizes immutable input off the mutation line, then performs one acceptance command: check the lane is idle, validate durable inputs, commit metadata plus the initial leaf, publish events, return `OperationAdmission`. It installs no Drive and invokes no hook, provider, tool, timer, or process owner. Run acceptance selects eligible items from the lane's one ordered inbox:
 
 | Tag | Idle acceptance |
-| --- | --- |
+|---|---|
 | `write` | all |
 | `nextRun` | all |
 | `steer` | all or oldest according to `steeringMode` |
@@ -738,7 +736,7 @@ stateDiagram-v2
 Selected items place in global admission order regardless of tag; request prompt entries are newer and follow them. Selection deletes each `pendingEntry(id)` and removes only selected inbox ids in the same transaction; mode remainders and late admissions stay queued. An empty public prompt is valid only when captured queued content places at least one conversational message — the ordinary continuation-run acceptance used after structural convenience operations.
 
 | Request | Initial durable leaf and acceptance writes |
-| --- | --- |
+|---|---|
 | prompt, skill, template | selected queued entries + normalized prompt entries; `OperationMeta`; payload-free `starting`; lane current id |
 | compaction | durable preparation + `OperationMeta`; `summary.deciding` with boundary `finish`; lane current id |
 | summarized navigation | preparation + `OperationMeta`; `summary.deciding` with boundary `commit_navigation`; lane current id |
@@ -755,7 +753,7 @@ The request identity is the stable lane identity `Session metadata id + ":" + la
 Settlement commits the complete response entry, usage row, branch tip, deletion of `pendingAssistantFrames(O, R)`, and exactly one successor:
 
 | Settled response | Successor |
-| --- | --- |
+|---|---|
 | accepted tool calls | `tools` with reserved result ids |
 | retryable error with attempts remaining | `assistant.retry_wait` |
 | first overflow with preparation | `summary.deciding` with `resume_checkpoint` |
@@ -789,11 +787,11 @@ Overflow is checked before retryability. Error, aborted, and deferred assistant 
 Tool execution separates effect completion from source-ordered tree placement:
 
 | From | Trigger | Transaction | To |
-| --- | --- | --- | --- |
-| call *i* `planned` | clearance passed (`before_tool`, lookup, arg validation) | `TX[ upsert pi.op.tool_args/O:{stepId}:{i} = effective args, S(call i = effect_pending, replay) ]` | dispatch |
-| call *i* `effect_pending` | tool calls `onUpdate(partial, { checkpoint:true })` | `TX[ upsert pi.pending.tool_output/O:{resultEntryId} = partial ]` after invocation fencing; state unchanged | `effect_pending` |
-| call *i* `effect_pending` | effect settled; latest update delivery and latest checkpoint write awaited; `after_tool` applied | `TX[ upsert pi.pending.entry/{resultEntryId} = finalized result, delete pi.pending.tool_output/O:{resultEntryId}, delete pi.op.tool_memo/O:{resultEntryId}:*, S(call i = outcome_ready, terminate) ]`, with post-commit `tool_end` | `outcome_ready` |
-| call *i* `planned` | unknown tool / invalid args / `before_tool` blocks or throws / control cancelled | `TX[ upsert pi.pending.entry/{resultEntryId} = complete synthetic result, S(call i = outcome_ready, terminate) ]`, with post-commit `tool_start` followed by `tool_end`; no effect intent | `outcome_ready` |
+|---|---|---|---|
+| call _i_ `planned` | clearance passed (`before_tool`, lookup, arg validation) | `TX[ upsert pi.op.tool_args/O:{stepId}:{i} = effective args, S(call i = effect_pending, replay) ]` | dispatch |
+| call _i_ `effect_pending` | tool calls `onUpdate(partial, { checkpoint:true })` | `TX[ upsert pi.pending.tool_output/O:{resultEntryId} = partial ]` after invocation fencing; state unchanged | `effect_pending` |
+| call _i_ `effect_pending` | effect settled; latest update delivery and latest checkpoint write awaited; `after_tool` applied | `TX[ upsert pi.pending.entry/{resultEntryId} = finalized result, delete pi.pending.tool_output/O:{resultEntryId}, delete pi.op.tool_memo/O:{resultEntryId}:*, S(call i = outcome_ready, terminate) ]`, with post-commit `tool_end` | `outcome_ready` |
+| call _i_ `planned` | unknown tool / invalid args / `before_tool` blocks or throws / control cancelled | `TX[ upsert pi.pending.entry/{resultEntryId} = complete synthetic result, S(call i = outcome_ready, terminate) ]`, with post-commit `tool_start` followed by `tool_end`; no effect intent | `outcome_ready` |
 | source-ready prefix | first non-completed calls are `outcome_ready` | `TX[ insert result entries in source order, delete their pi.pending.entry values, insert reported usage, upsert pi.branch.tip, S(calls = completed / next checkpoint) ]` | `completed` or checkpoint |
 
 **Updates and checkpoints.** Every `onUpdate` is a process-local `tool_update` observation: the synchronous callback emits the event and retains the latest delivery promise internally; tools neither receive nor await it. `checkpoint:true` additionally requests replacement of the invocation's bounded durable progress snapshot: each such call synchronously enqueues one invocation-fenced value replacement on the mutation line, attaches the ordinary harness-fault observer, and replaces only the process-local latest checkpoint-write promise reference. No checkpoint write is dropped or coalesced; Session FIFO preserves request order, and each mutation verifies the same call is still `effect_pending` when it executes. The tool alone controls cadence, duplicate suppression, and bounding — requesting checkpoints faster than storage commits queues memory under the trusted-tool contract, and the API imposes no generic byte cap or truncation. When the tool promise settles, the harness stops accepting updates and closes checkpoint admission; a late request returns without committing. Before `after_tool`, the procedure awaits the latest update-delivery promise **and** the latest checkpoint-write promise — each implies completion of everything earlier in its queue. Checkpoint writes order before outcome staging, and staging deletes the value; a failed checkpoint commit follows the ordinary storage-fault path and prevents staging.
@@ -815,7 +813,7 @@ Calls are tracked internally by `sourceIndex` (position in the assistant message
 Compaction and navigation summaries share one durable quadruple, `summary.deciding → summary.ready → summary.effect_pending ↔ summary.retry_wait`. `SummaryTask.boundary` determines semantics:
 
 | Boundary | Use | Successful publication |
-| --- | --- | --- |
+|---|---|---|
 | `resume_checkpoint` | threshold/overflow inside a run | compaction entry, then one atomic boundary plan for queued input and run continuation |
 | `finish` | standalone compaction | compaction entry plus terminal compaction result |
 | `commit_navigation` | summarized navigation | move, summary entry, optional label, and terminal navigation result in one commit |
@@ -837,7 +835,7 @@ Unsummarized navigation accepts directly into `navigation.ready_to_commit`; summ
 Every queued admission mints an entry id and atomically writes `pendingEntry(id)` plus one tagged item into the lane's single ordered inbox. Enqueue is accepted while idle, during any operation family, during deferred suspension, and after durable cancellation. Tags determine eligibility, not ownership:
 
 | Drain point | Eligible tags |
-| --- | --- |
+|---|---|
 | idle acceptance | all `write` and `nextRun`; mode-selected `steer` and `followUp` |
 | run boundary | all `write`; mode-selected `steer`; mode-selected `followUp` only at `may_finish` |
 | idle direct append | all earlier `write`, then the new direct entry |
@@ -982,7 +980,7 @@ Recovery begins only when an open operation has no `Drive` and a matching `drive
 The pass first inspects the owned control projection: cancellation requested → invoke neither `before_drive` nor `before_run`, enter §4.6. Otherwise gate and invoke `before_drive`; failure rejects the pass without faulting the harness or writing durable progress. Model/tool implementations resolve only at the boundary that needs them: an unavailable provider/model or configured request tool is a non-retryable configuration failure before request intent, an unavailable requested tool a synthetic error result; neither suspends the operation. Durable phase then decides the work: `starting` runs and settles `before_run` per §3.6; a pending effect with no owner is an orphan and follows the table; all other phases continue ordinarily.
 
 | Orphaned restart point | Activation recovery |
-| --- | --- |
+|---|---|
 | assistant generation `effect_pending` | Read bounded pages from `pendingAssistantFrames(O, R)`, reduce with `reduceAssistantMessageFrames`, and commit under the reserved ids a synthetic zero-usage `error` response carrying the reconstructed partial (no committed start frame → `api:"unknown"`, captured provider/model strings, empty content). Include an explicit warning: request interrupted, preceding content is the latest committed partial, newer live output may be missing, external outcome unknown. The same transaction deletes the frame list. The committed error then follows ordinary classification: attempts remaining → retry wait and a later numbered attempt under fresh ids; cap reached → terminal failure. Partial tool calls inside it never execute, and `after_response` never runs — there is no trustworthy complete provider result to transform. |
 | structural generation `effect_pending` | Treat the entire attempt as uncertain, including any completed first split-turn request whose intermediate text was process-local. Advance to a later `ready` attempt under the captured policy or fail at the cap. Committed request-usage rows remain in the ledger. |
 | tool call `effect_pending` | Stored and current declarations both `safe`: delete any old progress checkpoint and re-execute persisted arguments with the same invocation memos/id. Implementation absent, current declaration no longer safe, or stored declaration `never`: synthesize interruption instead of suspending — preserve checkpoint content/details/usage when present, ignore its added-tool/termination hints, append the explicit latest-durable/newer-live-may-be-missing/unknown-outcome warning, and stage a non-terminating error without `after_tool` (no checkpoint → omit `details`). |
@@ -993,7 +991,7 @@ After orphan recovery removes or takes live ownership of every pending effect, t
 Atomic transactions have no internal prefix, so every repeat-sensitive effect has the same four durable crash positions:
 
 | Crash point | Durable restart point | Activation behavior |
-| --- | --- | --- |
+|---|---|---|
 | before intent commit | previous ordinary state | run the ordinary procedure as if nothing happened |
 | after intent, before effect admission | `effect_pending` | outcome indistinguishable from a crash during the effect; apply the table above |
 | during/after effect, before settlement | `effect_pending` | same unknown-outcome policy |
@@ -1157,7 +1155,7 @@ Operation-terminal events are `run_end`, `navigation_end`, and `compaction_end` 
 Events are passive committed-state/lifecycle observations: they never drive execution and are not replayed from durable history. `HarnessEvent` adds `lane` to lane-scoped payloads and may add `recovery: true` for actual orphan recovery/replay. Full payload unions: `agent-harness.ts`. The authoritative groups:
 
 | Group | Events and required data |
-| --- | --- |
+|---|---|
 | operation | `run_start{runId,startedAt}`, `compaction_start{runId,reason,startedAt}`, `navigation_start{runId,targetId,startedAt}`, `operation_abort{operationId,steer,followUp}` |
 | terminal/segment | `run_end{runId,status,fromTipId,tipId,endedAt,error?}`, `compaction_end{runId,reason,status,endedAt,entryId?,error?}`, `navigation_end{runId,status,fromTipId,tipId,endedAt,error?}` |
 | suspended/retry | `run_suspend{runId,reason:"deferred",deferred,poll}`, `run_resume{runId}`, `retry_scheduled{step,attempt,maxAttempts,delayMs,notBefore,errorMessage}`, `retry_start`, `retry_end` |
@@ -1181,7 +1179,7 @@ Hooks are awaited interception points. Registration is harness-global: `Hooks.on
 The canonical hook contract (event/result field shapes as declared in `agent-harness.ts`):
 
 | Hook | Event | Result | Durability |
-| --- | --- | --- | --- |
+|---|---|---|---|
 | `before_run` | `{ prompt: AgentMessage[], resources }` | `{ messages? }` | transition-consumed: injected messages and the checkpoint commit together |
 | `before_drive` | `{ operation: "run"\|"compaction"\|"navigation" }` | `void`; failure rejects the pass with no durable progress | pass-local |
 | `before_run_end` | `{ runId, messages }` | `{ followUp?: string }` | transition-consumed: a follow-up and continuation commit together, or the terminal transaction consumes the no-follow-up decision |
@@ -1197,7 +1195,7 @@ The canonical hook contract (event/result field shapes as declared in `agent-har
 Timing and repetition:
 
 | Hook | When it runs / repetition |
-| --- | --- |
+|---|---|
 | `before_drive` | once per newly installed real drive pass, after the cancellation check and before recovery or ordinary work; repeats after every wait/suspension or process loss; joiners do not rerun it |
 | `before_run` | while a run is durably `starting`, after `before_drive`; may rerun until its consuming commit succeeds; never after that transition |
 | `transform_context`, `before_request`, `before_payload` | once per request attempt, including retry and replay; `transform_context` at `AgentMessage` level before `toProviderMessages`; `before_payload` on the provider-specific wire payload |
@@ -1297,7 +1295,7 @@ A rolling plan, not a history. `harness.md` remains the normative behavior contr
 Workflow: keep a future package's row here until actionable; move exact files/tests/ordering/exclusions into one handoff; move newly discovered normative behavior into Parts 0–7 or Part 9; only then reduce the row to a link. Every package implements its named concern end to end and tests its normal path, introduced states, owned crash boundaries, and both orders of owned races. Consumption-time dereference checks, implementation resolution, hooks, events, and deterministic effect controls land with the package that first needs them; earlier packages do not build generic future machinery. If implementation exposes a contradiction or a materially simpler boundary, stop for review.
 
 | ID | Status | Outcome | Handoff |
-| --- | --- | --- | --- |
+|---|---|---|---|
 | WP00 | complete | Reconciled acceptance/hooks, harvested runtime1 scenarios, switched the public factory, deleted runtime1. | [Runtime1 removal](work-packages/00-runtime1-removal.md) |
 | WP01 | complete | Bound values/lists across Session, Memory, JSONL, SQLite, instrumentation, conformance, public application access. | [Bound values and lists](work-packages/01-bound-values-lists.md) |
 | WP02 | complete | Atomic prompt/skill/template acceptance, minimal open-operation attachment, Session mutation inspection, gap-free lane watch capture. | [Atomic acceptance and coherent attachment](work-packages/02-atomic-run-acceptance.md) |
@@ -1329,49 +1327,49 @@ Storage:
 
 Tree:
 
-1. An entry's parent chain never changes. Branches share prefixes; nothing is copied.
-2. Entries are trusted typed internal values. Only a custom entry may omit payload data; external shape corruption is unsupported rather than revalidated on internal reads.
-3. Configuration and orchestration never enter the tree. Deleting every operation-owned value and list must leave a complete, valid conversation and ledger.
-4. A lane's tip moves only by append or navigation.
-5. A branch segment chain, followed to its end, yields the full root path (§2.6).
-6. A missing parent is corruption — always (§1.2).
+6. An entry's parent chain never changes. Branches share prefixes; nothing is copied.
+7. Entries are trusted typed internal values. Only a custom entry may omit payload data; external shape corruption is unsupported rather than revalidated on internal reads.
+8. Configuration and orchestration never enter the tree. Deleting every operation-owned value and list must leave a complete, valid conversation and ledger.
+9. A lane's tip moves only by append or navigation.
+10. A branch segment chain, followed to its end, yields the full root path (§2.6).
+11. A missing parent is corruption — always (§1.2).
 
 Operations:
 
- 1. `laneState(lane)` confers lane ownership and `operationState(operationId)` operation-state ownership. An open lane names operation O, `operationMeta(O)` holds that lane's compatible `OperationMeta`, and `operationState(O)` holds an `OperationState` compatible with O's intent kind; state values carry no duplicate owner metadata. While a harness owns the session, exactly one live `Lane` owns each lane's authoritative projection and every supported write to that lane's control addresses commits through it.
- 2. Operation-owned values and lists may exist only while their operation is open: the terminal transaction deletes them atomically with clearing `currentOperationId` (§3.13). The lane inbox and its `pendingEntry` payloads are lane-owned and never deleted by terminal cleanup.
- 3. Acceptance must observe `currentOperationId === null`, commits no `Drive`, and returns before any hook/provider/tool/timer work begins. Run acceptance commits payload-free `starting`; only its consuming command may apply `before_run` output and replace it with `checkpoint`. A supplied operation id obeys §1.2 and is the exact id written to `pi.op.meta`, events, and its eventual `pi.result` record.
- 4. A reserved id may exist only with the content its intent named. Queued-content ids begin in `pi.pending.entry`; settlement-family ids begin as strings in `pi.op.state`. A tool-result id may then move through `string only → outcome-ready pi.pending.entry → immutable entry`; no two representations coexist at a commit boundary (§2.2). An effect-pending response id may additionally key its auxiliary frame list (§3.7); frames are observation, not a content representation, and die with settlement.
- 5. Only terminal transitions construct `OperationResultRecord`. Exactly one immutable `pi.result/{operationId}` is retained per terminal operation; older records remain readable after later operations, and recovery never reads any record.
- 6. At most one operation is open per lane. Two is corruption.
- 7. `overflowRecoveryUsed` is `true` only after overflow compaction. A transition that adds projecting conversational input or tool results and requires an assistant writes `false`; an unprojected custom write preserves it.
- 8. A response committed with `stopReason: "aborted"` has `control.status === "cancel_requested"`; every terminal transaction under cancelled control records `status: "aborted"`. Equivalently, a terminal `completed`, `declined`, or `failed` record proves control was still running at its terminal commit. Providers must comply with the harness-owned signal contract; violation is corruption.
- 9. Attachment restores and validates only the small lane/operation projection (§3.3, §4.4). That owned projection is authoritative until close, fault, or process loss. Detailed presentation references are validated by `watch(context)` under the Session mutation line; drive payload references are validated by their consuming procedure. Missing or contradictory required data faults that consumer, while optional frame/checkpoint absence is legal. Top-level operation state has one live writer; only parallel tool-call status and queued progress/memo writes require child-state fencing. `pi.result` never determines an open operation's next procedure.
-10. At most one terminal transaction and one immutable result-record write commit per operation. The one lane-owned Drive is the sole top-level state-advance writer, and every terminal candidate serializes on the Session mutation line. Administrative mutation of a live Lane's reserved control values is unsupported; offline administration first acquires exclusive Session ownership.
-11. At most one `Drive` exists per lane. Acceptance and taskless `requestAbort` never install one. A matching `drive` installs it before releasing the Session mutation line; another matching drive joins that pass, and a stale id starts nothing. Caller cancellation ends only that caller's observation. A live Drive is never replaced in-process. Close/fault seal mutation admission and reject observations without writing operation state. Each newly installed pass invokes `before_drive` once after the cancellation check; joiners do not. `starting` under cancelled control invokes neither `before_drive` nor `before_run`.
-12. The §4.2 `Gate.admit()` catalog is complete. Every listed hook/provider/tool/timer integration calls `admit(() => operation())` after preparation; no unlisted code calls it. Admitted asynchronous provider setup/delegation owns `drive.gate.signal`.
-13. `drive` and `requestAbort` are fenced by expected operation id. They may affect only that current operation; `drive` may also return any matching immutable terminal result, including records older than the lane's latest. A stale wake for A cannot drive or cancel B.
-14. No public drive option encodes a wall-clock budget or partial-progress return. An admitted effect settles normally or is recovered from durable state after task loss; host scheduling and process termination remain outside the harness contract.
-15. Convenience operations and their explicit primitive compositions produce the same durable writes, events, results, and recovery behavior. Structural continuation is an ordinary empty-prompt acceptance with a fresh operation id; a competing acceptance may win the idle window. Convenience adds only process-local waiting/scheduling policy.
-16. Each logical tool call's public `invocationId` is its reserved `resultEntryId`: unique within the session and unchanged across safe replay. Tools must await invocation-memo writes. Such writes synchronously enqueue, verify effect-pending ownership on the Session mutation line, and are deleted with outcome staging.
-17. Completed tool calls form a source-ordered prefix. A sequential suffix permits at most one effect-pending or outcome-ready call before planned calls; a parallel suffix may mix `planned`, `effect_pending`, and `outcome_ready`. Completion-order outcome staging never extends the prefix; source-ordered materialization does.
-18. Every outcome-ready call has exactly one matching finalized `pi.pending.entry`, no immutable result entry, no invocation memos, and no tool-output checkpoint. Outcome-ready and completed calls never execute again.
-19. A tool progress checkpoint is an optional bounded complete `AgentToolResult` snapshot, selected with `checkpoint:true`. It never proves completion. Every selected checkpoint synchronously enqueues one invocation-fenced value replacement; no write is dropped or coalesced, only the latest write promise reference is retained, and awaiting it implies completion of every earlier write. Staging or terminal cleanup deletes the value and fences late recreation.
-20. Assistant/deferred operation state is the sole restart authority for streamed partials. One effect-pending response id constructs exactly one `pendingAssistantFrames(operationId, responseEntryId)` address; every element is an exported pi-ai `AssistantMessageFrame`; frame order is a subsequence of provider event order because already-covered queued events produce no frame; terminal `done`/`error` events are never stored; frames never establish provider completion or suppress unknown-outcome recovery.
-21. Every final or synthetic response settlement — normal, recovery, or cancellation — atomically deletes its exact frame list. Idle forks contain no frame lists. A restored partial may appear in `streamingMessage` but never in `transcript` before settlement.
-22. The provider loop never awaits storage per frame; frame appends are enqueued synchronously in provider-event order, and awaiting the latest frame-write promise at stream settlement implies every accepted append completed.
-23. Successful attachment publishes only complete lane projections and an open-operation inventory. It resolves no model/tool identity and starts no work. A later drive uses the authoritative owned projection; storage reads only dereference payloads named by that projection.
-24. Every event-producing committing harness lane job publishes its owned projection and calls `emitBatch` with its complete event batch in the exact continuation that observes commit, as the callback's final action; this includes AgentLane appends, lane and metadata setters, acceptance, and AgentLane acquisition/attachment. The mutation never awaits delivery, but the public operation does. A lane watch registers buffering and clones live presentation synchronously, then performs bounded durable reads while holding the line. Snapshot plus buffered events has no gap or duplicate and replays no pre-registration lifecycle. `emitBatch` binds recipients and the emitting Context immediately; a delayed watcher receives the object-identical source Context, never its start Context. For non-navigation histories, `reduceLaneSnapshot` folding those events equals a later snapshot; navigation explicitly rebases through `resnapshot`.
-25. Shared Harness/AgentLane/Session/Branch receivers retain no invocation Context and expose no receiver-level telemetry default. Concurrent calls preserve independent telemetry and cancellation lineage. Context and its values are neither durable operation data nor serialized business arguments. RPC cancel/disconnect reaches only the matching invocation through `context.abortSignal` and never becomes durable cancellation.
-26. Process-local model/tool registry absence never becomes durable waiting state or an acceptance error. Pre-intent request-configuration absence fails in-band without fabricating a response/usage; missing requested tools stage `isError` tool-result messages with no invented details; uncertain effects settle under their existing recovery rules first.
-27. `beginMutation()` acquires exactly one Session mutation line, `commit()` consumes at most one commit capability without releasing that line, and `end()` alone invalidates and releases it after any admitted commit settles. `Session.mutate()` always ends in `finally`; its callback cannot end early; direct `beginMutation()` callers end in `finally`. Local — and, if C1 commissions one, remote — implementations preserve the same read → decide → commit → process-local publication → end order (§2.8).
+12. `laneState(lane)` confers lane ownership and `operationState(operationId)` operation-state ownership. An open lane names operation O, `operationMeta(O)` holds that lane's compatible `OperationMeta`, and `operationState(O)` holds an `OperationState` compatible with O's intent kind; state values carry no duplicate owner metadata. While a harness owns the session, exactly one live `Lane` owns each lane's authoritative projection and every supported write to that lane's control addresses commits through it.
+13. Operation-owned values and lists may exist only while their operation is open: the terminal transaction deletes them atomically with clearing `currentOperationId` (§3.13). The lane inbox and its `pendingEntry` payloads are lane-owned and never deleted by terminal cleanup.
+14. Acceptance must observe `currentOperationId === null`, commits no `Drive`, and returns before any hook/provider/tool/timer work begins. Run acceptance commits payload-free `starting`; only its consuming command may apply `before_run` output and replace it with `checkpoint`. A supplied operation id obeys §1.2 and is the exact id written to `pi.op.meta`, events, and its eventual `pi.result` record.
+15. A reserved id may exist only with the content its intent named. Queued-content ids begin in `pi.pending.entry`; settlement-family ids begin as strings in `pi.op.state`. A tool-result id may then move through `string only → outcome-ready pi.pending.entry → immutable entry`; no two representations coexist at a commit boundary (§2.2). An effect-pending response id may additionally key its auxiliary frame list (§3.7); frames are observation, not a content representation, and die with settlement.
+16. Only terminal transitions construct `OperationResultRecord`. Exactly one immutable `pi.result/{operationId}` is retained per terminal operation; older records remain readable after later operations, and recovery never reads any record.
+17. At most one operation is open per lane. Two is corruption.
+18. `overflowRecoveryUsed` is `true` only after overflow compaction. A transition that adds projecting conversational input or tool results and requires an assistant writes `false`; an unprojected custom write preserves it.
+19. A response committed with `stopReason: "aborted"` has `control.status === "cancel_requested"`; every terminal transaction under cancelled control records `status: "aborted"`. Equivalently, a terminal `completed`, `declined`, or `failed` record proves control was still running at its terminal commit. Providers must comply with the harness-owned signal contract; violation is corruption.
+20. Attachment restores and validates only the small lane/operation projection (§3.3, §4.4). That owned projection is authoritative until close, fault, or process loss. Detailed presentation references are validated by `watch(context)` under the Session mutation line; drive payload references are validated by their consuming procedure. Missing or contradictory required data faults that consumer, while optional frame/checkpoint absence is legal. Top-level operation state has one live writer; only parallel tool-call status and queued progress/memo writes require child-state fencing. `pi.result` never determines an open operation's next procedure.
+21. At most one terminal transaction and one immutable result-record write commit per operation. The one lane-owned Drive is the sole top-level state-advance writer, and every terminal candidate serializes on the Session mutation line. Administrative mutation of a live Lane's reserved control values is unsupported; offline administration first acquires exclusive Session ownership.
+22. At most one `Drive` exists per lane. Acceptance and taskless `requestAbort` never install one. A matching `drive` installs it before releasing the Session mutation line; another matching drive joins that pass, and a stale id starts nothing. Caller cancellation ends only that caller's observation. A live Drive is never replaced in-process. Close/fault seal mutation admission and reject observations without writing operation state. Each newly installed pass invokes `before_drive` once after the cancellation check; joiners do not. `starting` under cancelled control invokes neither `before_drive` nor `before_run`.
+23. The §4.2 `Gate.admit()` catalog is complete. Every listed hook/provider/tool/timer integration calls `admit(() => operation())` after preparation; no unlisted code calls it. Admitted asynchronous provider setup/delegation owns `drive.gate.signal`.
+24. `drive` and `requestAbort` are fenced by expected operation id. They may affect only that current operation; `drive` may also return any matching immutable terminal result, including records older than the lane's latest. A stale wake for A cannot drive or cancel B.
+25. No public drive option encodes a wall-clock budget or partial-progress return. An admitted effect settles normally or is recovered from durable state after task loss; host scheduling and process termination remain outside the harness contract.
+26. Convenience operations and their explicit primitive compositions produce the same durable writes, events, results, and recovery behavior. Structural continuation is an ordinary empty-prompt acceptance with a fresh operation id; a competing acceptance may win the idle window. Convenience adds only process-local waiting/scheduling policy.
+27. Each logical tool call's public `invocationId` is its reserved `resultEntryId`: unique within the session and unchanged across safe replay. Tools must await invocation-memo writes. Such writes synchronously enqueue, verify effect-pending ownership on the Session mutation line, and are deleted with outcome staging.
+28. Completed tool calls form a source-ordered prefix. A sequential suffix permits at most one effect-pending or outcome-ready call before planned calls; a parallel suffix may mix `planned`, `effect_pending`, and `outcome_ready`. Completion-order outcome staging never extends the prefix; source-ordered materialization does.
+29. Every outcome-ready call has exactly one matching finalized `pi.pending.entry`, no immutable result entry, no invocation memos, and no tool-output checkpoint. Outcome-ready and completed calls never execute again.
+30. A tool progress checkpoint is an optional bounded complete `AgentToolResult` snapshot, selected with `checkpoint:true`. It never proves completion. Every selected checkpoint synchronously enqueues one invocation-fenced value replacement; no write is dropped or coalesced, only the latest write promise reference is retained, and awaiting it implies completion of every earlier write. Staging or terminal cleanup deletes the value and fences late recreation.
+31. Assistant/deferred operation state is the sole restart authority for streamed partials. One effect-pending response id constructs exactly one `pendingAssistantFrames(operationId, responseEntryId)` address; every element is an exported pi-ai `AssistantMessageFrame`; frame order is a subsequence of provider event order because already-covered queued events produce no frame; terminal `done`/`error` events are never stored; frames never establish provider completion or suppress unknown-outcome recovery.
+32. Every final or synthetic response settlement — normal, recovery, or cancellation — atomically deletes its exact frame list. Idle forks contain no frame lists. A restored partial may appear in `streamingMessage` but never in `transcript` before settlement.
+33. The provider loop never awaits storage per frame; frame appends are enqueued synchronously in provider-event order, and awaiting the latest frame-write promise at stream settlement implies every accepted append completed.
+34. Successful attachment publishes only complete lane projections and an open-operation inventory. It resolves no model/tool identity and starts no work. A later drive uses the authoritative owned projection; storage reads only dereference payloads named by that projection.
+35. Every event-producing committing harness lane job publishes its owned projection and calls `emitBatch` with its complete event batch in the exact continuation that observes commit, as the callback's final action; this includes AgentLane appends, lane and metadata setters, acceptance, and AgentLane acquisition/attachment. The mutation never awaits delivery, but the public operation does. A lane watch registers buffering and clones live presentation synchronously, then performs bounded durable reads while holding the line. Snapshot plus buffered events has no gap or duplicate and replays no pre-registration lifecycle. `emitBatch` binds recipients and the emitting Context immediately; a delayed watcher receives the object-identical source Context, never its start Context. For non-navigation histories, `reduceLaneSnapshot` folding those events equals a later snapshot; navigation explicitly rebases through `resnapshot`.
+36. Shared Harness/AgentLane/Session/Branch receivers retain no invocation Context and expose no receiver-level telemetry default. Concurrent calls preserve independent telemetry and cancellation lineage. Context and its values are neither durable operation data nor serialized business arguments. RPC cancel/disconnect reaches only the matching invocation through `context.abortSignal` and never becomes durable cancellation.
+37. Process-local model/tool registry absence never becomes durable waiting state or an acceptance error. Pre-intent request-configuration absence fails in-band without fabricating a response/usage; missing requested tools stage `isError` tool-result messages with no invented details; uncertain effects settle under their existing recovery rules first.
+38. `beginMutation()` acquires exactly one Session mutation line, `commit()` consumes at most one commit capability without releasing that line, and `end()` alone invalidates and releases it after any admitted commit settles. `Session.mutate()` always ends in `finally`; its callback cannot end early; direct `beginMutation()` callers end in `finally`. Local — and, if C1 commissions one, remote — implementations preserve the same read → decide → commit → process-local publication → end order (§2.8).
 
 ## 9.2 Race catalog
 
 Each durable mutation race has exactly two durable histories. Matching callers install or join one lane-owned Drive; stale operation ids are rejected. Test every listed order with test-only commit gating and controlled hooks, providers, tools, and timers.
 
 | Race | Orders |
-| --- | --- |
+|---|---|
 | `prompt` vs `prompt` on one lane | both compose `accept`; one accepts, one gets `LaneBusy` |
 | `accept(A)` vs process loss before `drive(A)` | acceptance absent → serving layer retries; acceptance present → restored `starting` drives normally, with no unknown effect |
 | `drive(A)` vs `drive(A)` | one installs the pass; the other joins exactly that pass and may drive again after its outcome |
@@ -1432,7 +1430,7 @@ For each recovery prefix: close, reopen, drive, and compare against uninterrupte
 Shorthand vocabulary only; common terms already defined clearly in the body are omitted.
 
 | Term | Meaning / defined in |
-| --- | --- |
+|---|---|
 | **Pending entry** | Complete unplaced content in `pi.pending.entry` until placement/cancellation/cleanup (§2.2). |
 | **Inbox** | Lane-owned globally ordered tagged queue (§3.11). |
 | **Result record** | Immutable `pi.result/{operationId}` terminal disposition (§3.13). |
@@ -1531,8 +1529,8 @@ The in-process unit is one facet:
 
 ```ts
 interface Facet {
- readonly id: string;
- setup(env: FacetEnvironment): void;
+	readonly id: string;
+	setup(env: FacetEnvironment): void;
 }
 ```
 
@@ -1572,12 +1570,12 @@ The loader abstraction is intentionally smaller than an extension manifest:
 
 ```ts
 interface LoadedFacets {
- readonly facets: readonly Facet[];
- dispose(): Promise<void>;
+	readonly facets: readonly Facet[];
+	dispose(): Promise<void>;
 }
 
 interface FacetLoader {
- load(): Promise<LoadedFacets>;
+	load(): Promise<LoadedFacets>;
 }
 ```
 
@@ -1603,7 +1601,7 @@ The declaration lives in the shared contract module and creates nothing. Service
 
 ```ts
 interface ServiceSpawner<T> {
- spawn(key: string, implementation: T): () => void;
+	spawn(key: string, implementation: T): () => void;
 }
 ```
 
@@ -1643,23 +1641,23 @@ The models service — the authority behind the model picker and thinking-level 
 
 ```ts
 export interface ModelRef {
- provider: string;
- modelId: string;
+	provider: string;
+	modelId: string;
 }
 
 export interface ModelsState {
- catalog: { revision: number; availableModels: Array<ModelRef & { name: string; reasoning: boolean }> };
- configuration: { model: ModelRef | null; thinkingLevel: "off" | "low" | "high" };
- refresh:
-  | { status: "idle" | "refreshing" | "done" }
-  | { status: "warning"; errors: Record<string, string> };
+	catalog: { revision: number; availableModels: Array<ModelRef & { name: string; reasoning: boolean }> };
+	configuration: { model: ModelRef | null; thinkingLevel: "off" | "low" | "high" };
+	refresh:
+		| { status: "idle" | "refreshing" | "done" }
+		| { status: "warning"; errors: Record<string, string> };
 }
 
 export interface Models {
- readonly state: ReplicatedState<ModelsState>;
- cycleThinking(context: Context): Promise<void>;
- refresh(context: Context): Promise<void>;
- select(model: ModelRef, context: Context): Promise<void>;
+	readonly state: ReplicatedState<ModelsState>;
+	cycleThinking(context: Context): Promise<void>;
+	refresh(context: Context): Promise<void>;
+	select(model: ModelRef, context: Context): Promise<void>;
 }
 
 export const Models = defineService<Models>("pi.models");
@@ -1673,48 +1671,48 @@ The snippets below use the facet shape but compress application details.
 
 ```ts
 export const providersBuiltinSessionFacet = defineFacet({
- id: "@pi/providers-builtin",
+	id: "@pi/providers-builtin",
 
- setup(env) {
-  const providers = new ProviderRegistry(); // process-local, non-JSON
-  const state = env.replicatedState<ModelsState>(initialModelsState());
+	setup(env) {
+		const providers = new ProviderRegistry(); // process-local, non-JSON
+		const state = env.replicatedState<ModelsState>(initialModelsState());
 
-  env.provide(Models, {
-   state,
+		env.provide(Models, {
+			state,
 
-   async cycleThinking(context) {
-    const { catalog, configuration } = state.value;
-    if (configuration.model === null) return;
-    const spec = findSpec(catalog, configuration.model);
-    if (spec === undefined || !spec.reasoning) return;
-    state.set(
-     {
-      ...state.value,
-      configuration: {
-       ...configuration,
-       thinkingLevel: nextThinkingLevel(configuration.thinkingLevel),
-      },
-     },
-     context,
-    );
-   },
+			async cycleThinking(context) {
+				const { catalog, configuration } = state.value;
+				if (configuration.model === null) return;
+				const spec = findSpec(catalog, configuration.model);
+				if (spec === undefined || !spec.reasoning) return;
+				state.change(context, (draft) => {
+					draft.configuration.thinkingLevel = nextThinkingLevel(configuration.thinkingLevel);
+				});
+			},
 
-   async select(model, context) {
-    const spec = findSpec(state.value.catalog, model);
-    if (spec === undefined) throw new Error(`Unknown model: ${model.provider}/${model.modelId}`);
-    const thinkingLevel = spec.reasoning ? state.value.configuration.thinkingLevel : "off";
-    state.set({ ...state.value, configuration: { model, thinkingLevel } }, context);
-   },
+			async select(model, context) {
+				const spec = findSpec(state.value.catalog, model);
+				if (spec === undefined) throw new Error(`Unknown model: ${model.provider}/${model.modelId}`);
+				const thinkingLevel = spec.reasoning ? state.value.configuration.thinkingLevel : "off";
+				state.change(context, (draft) => {
+					draft.configuration = { model, thinkingLevel };
+				});
+			},
 
-   async refresh(context) {
-    state.set({ ...state.value, refresh: { status: "refreshing" } }, context);
-    const errors = await providers.refresh(context.abortSignal);
-    state.set({ ...state.value, catalog: providers.snapshot(), refresh: toRefreshStatus(errors) }, context);
-   },
-  });
+			async refresh(context) {
+				state.change(context, (draft) => {
+					draft.refresh = { status: "refreshing" };
+				});
+				const errors = await providers.refresh(context.abortSignal);
+				state.change(context, (draft) => {
+					draft.catalog = providers.snapshot();
+					draft.refresh = toRefreshStatus(errors);
+				});
+			},
+		});
 
-  env.onActivate(() => providers.rebuild());
- },
+		env.onActivate(() => providers.rebuild());
+	},
 });
 ```
 
@@ -1724,28 +1722,28 @@ This shows the generic command-service pattern.
 
 ```ts
 export const modelSelectionTuiFacet = defineFacet({
- id: "@pi/model-selection",
+	id: "@pi/model-selection",
 
- setup(env) {
-  const models = env.use(Models);
-  const tui = env.use(Tui);
+	setup(env) {
+		const models = env.use(Models);
+		const tui = env.use(Tui);
 
-  tui.commands.register("models.select", async (context) => {
-   const current = models.state.value;
-   if (current === undefined) return;
-   const selected = await tui.select(
-    "Models",
-    current.catalog.availableModels.map((model) => ({
-     label: model.name,
-     value: { provider: model.provider, modelId: model.modelId },
-    })),
-    { signal: context.abortSignal },
-   );
-   if (selected !== undefined) await models.select(selected, context);
-  });
-  tui.commands.register("models.cycle-thinking", (context) => models.cycleThinking(context));
-  env.own(models.state.subscribe((next) => renderModelSelector(next)));
- },
+		tui.commands.register("models.select", async (context) => {
+			const current = models.state.value;
+			if (current === undefined) return;
+			const selected = await tui.select(
+				"Models",
+				current.catalog.availableModels.map((model) => ({
+					label: model.name,
+					value: { provider: model.provider, modelId: model.modelId },
+				})),
+				{ signal: context.abortSignal },
+			);
+			if (selected !== undefined) await models.select(selected, context);
+		});
+		tui.commands.register("models.cycle-thinking", (context) => models.cycleThinking(context));
+		env.own(models.state.subscribe((next) => renderModelSelector(next)));
+	},
 });
 ```
 
@@ -1774,16 +1772,16 @@ This is the most important boundary in the design.
 
 ```ts
 interface ScopedSessionData {
- readonly metadata: SessionMetadata;
- getValue<T>(address: Value<T>, context: Context): Promise<StoredValue<T> | undefined>;
- setValue<T>(address: Value<T>, value: T, context: Context): Promise<void>;
+	readonly metadata: SessionMetadata;
+	getValue<T>(address: Value<T>, context: Context): Promise<StoredValue<T> | undefined>;
+	setValue<T>(address: Value<T>, value: T, context: Context): Promise<void>;
 }
 
 interface AgentFacetScope {
- readonly identity: SessionIdentity;
- readonly session: ScopedSessionData;
- readonly hooks: ScopedHooks;
- lane(name: string, context: Context): Promise<AgentLaneFacetView>;
+	readonly identity: SessionIdentity;
+	readonly session: ScopedSessionData;
+	readonly hooks: ScopedHooks;
+	lane(name: string, context: Context): Promise<AgentLaneFacetView>;
 }
 
 const Agent = defineService<AgentFacetScope>("pi.local.agent", { local: true });
@@ -1797,36 +1795,36 @@ const Tools = defineService<ToolContributionRegistry>("pi.local.tools", { local:
 
 ```ts
 interface FacetEnvironment extends FacetLifecycle {
- use<T>(service: Service<T>): T;
- observe<T>(
-  service: Service<T>,
-  handler: (service: T, context: Context) => void | Promise<void>,
- ): void;
- provide<T>(service: Service<T>, implementation: T): void;
- provideMany<T>(service: Service<T>): ServiceSpawner<T>;
- replicatedState<T>(initial: T): MutableReplicatedState<T>;
+	use<T>(service: Service<T>): T;
+	observe<T>(
+		service: Service<T>,
+		handler: (service: T, context: Context) => void | Promise<void>,
+	): void;
+	provide<T>(service: Service<T>, implementation: T): void;
+	provideMany<T>(service: Service<T>): ServiceSpawner<T>;
+	replicatedState<T>(initial: T): MutableReplicatedState<T>;
 }
 
 type AttachmentState = { status: "detached" } | { status: "attaching" | "attached" | "degraded"; sessionId: string };
 
 interface SelectItem<T> {
- label: string;
- description?: string;
- value: T;
+	label: string;
+	description?: string;
+	value: T;
 }
 
 interface TuiModal {
- select<T>(title: string, items: SelectItem<T>[]): Promise<T | undefined>;
- input(title: string): Promise<string | undefined>;
- close(): void;
+	select<T>(title: string, items: SelectItem<T>[]): Promise<T | undefined>;
+	input(title: string): Promise<string | undefined>;
+	close(): void;
 }
 
 interface TuiHost {
- readonly attachment: ReplicatedState<AttachmentState>;
- readonly commands: CommandContributions;
- readonly toolRenderers: ToolRendererContributions;
- acquireModal(signal: AbortSignal): Promise<TuiModal>;
- select<T>(title: string, items: SelectItem<T>[], options: { signal: AbortSignal }): Promise<T | undefined>;
+	readonly attachment: ReplicatedState<AttachmentState>;
+	readonly commands: CommandContributions;
+	readonly toolRenderers: ToolRendererContributions;
+	acquireModal(signal: AbortSignal): Promise<TuiModal>;
+	select<T>(title: string, items: SelectItem<T>[], options: { signal: AbortSignal }): Promise<T | undefined>;
 }
 
 const Tui = defineService<TuiHost>("pi.local.tui", { local: true });
@@ -1846,12 +1844,12 @@ The runtime form is:
 
 ```ts
 export function createAgentControllerRuntimeFacet(lane: AgentLane) {
- return defineFacet({
-  id: "@pi/agent-controller-runtime",
-  setup(env) {
-   env.provide(AgentController, createAgentController(lane));
-  },
- });
+	return defineFacet({
+		id: "@pi/agent-controller-runtime",
+		setup(env) {
+			env.provide(AgentController, createAgentController(lane));
+		},
+	});
 }
 ```
 
@@ -1865,8 +1863,8 @@ Not every dependency should be remotely reachable. A **local service** is a toke
 const Credentials = defineService<CredentialStore>("credentials", { local: true }); // get/set provider secrets
 
 interface Accounts {
- readonly state: ReplicatedState<{ providers: Array<{ provider: string; configured: boolean }> }>;
- remove(provider: string, context: Context): Promise<void>;
+	readonly state: ReplicatedState<{ providers: Array<{ provider: string; configured: boolean }> }>;
+	remove(provider: string, context: Context): Promise<void>;
 }
 const Accounts = defineService<Accounts>("pi.accounts");
 ```
@@ -1879,17 +1877,19 @@ The auth extension's Session facet uses `Credentials` directly; presentations se
 
 ```ts
 interface ReplicatedState<T> {
- /** Borrowed immutable value, or `undefined` until hydration. Do not mutate or retain it. */
- readonly value: T | undefined;
- /** Listener values are borrowed and must not be mutated or retained. */
- subscribe(listener: (value: T, context: Context) => void): () => void;
+	/** Borrowed immutable value, or `undefined` until hydration. Do not mutate or retain it. */
+	readonly value: T | undefined;
+	/** Listener values are borrowed and must not be mutated or retained. */
+	subscribe(listener: (value: T, context: Context) => void): () => void;
 }
 
-interface MutableReplicatedState<T> extends ReplicatedState<T> {
- /** A providing state is always initialized. */
- readonly value: T;
- /** Transfers the JSON value to the state; the caller must not subsequently mutate it. */
- set(value: T, context: Context): void;
+interface MutableReplicatedState<T extends object> extends ReplicatedState<T> {
+	/** A providing state is always initialized and immutable. */
+	readonly value: T;
+	/** Atomically publishes one copy-on-write transaction. */
+	change(context: Context, mutate: (draft: Draft<T>) => void): void;
+	/** Atomically replaces the complete value with a detached snapshot. */
+	replace(context: Context, value: T): void;
 }
 ```
 
@@ -1899,9 +1899,9 @@ Required behavior:
 2. A cold remote replica has no value. Its `.value` is `undefined`, and `subscribe()` registers the listener without invoking it. This `undefined` is local readiness state and never crosses the wire.
 3. **Hydration** installs a complete snapshot atomically before updates flow. Subscribing before hydration is valid, and updates emitted concurrently with the snapshot are buffered, so the listener observes snapshot then updates with no gap.
 4. Once hydrated, `.value` is synchronously readable and `subscribe()` immediately reports the current value, then future updates. Snapshot hydration uses a fresh delivery context parented to the subscription; later updates reconstruct fresh delivery contexts from source trace metadata.
-5. State values are borrowed immutable JSON. The state runtime does not defensively clone reads, writes, snapshots, or listener deliveries. Callers transfer ownership to `set()` and must not mutate or retain values returned by `.value` or passed to listeners; copy explicitly when ownership is required. Process and transport serialization may naturally produce a detached value, but callers must not depend on object identity or detachment.
+5. State values are immutable JSON. Reads and listener deliveries return the immutable revision directly. `change()` creates lazy copy-on-write draft proxies, copies assigned containers by value, structurally shares unchanged subtrees, and revokes every draft when the callback returns.
 6. Disconnect, provider withdrawal, and route switching clear readiness, so `.value` becomes `undefined`. Reconnect or singleton replacement installs a complete fresh snapshot in the existing member facade before later updates flow. A presentation that wants stale display data must retain it separately alongside connection or attachment health.
-7. `set(value, context)` passes its context to local source listeners and publishes source trace metadata. Remote delivery reconstructs a fresh local `Context`; it never retains the source context object.
+7. A successful `change()` or `replace()` passes its context to local source listeners and publishes source trace metadata. If a change callback throws, the original value and sequence remain unchanged. Remote delivery reconstructs a fresh local `Context`; it never retains the source context object.
 
 Anything a consumer must recover after reconnect is exposed as replicated state or pulled through a remote method. Replicated state is latest-value replication, not by itself durable session storage; the providing facet must reconstruct its authoritative value after a worker restart.
 
@@ -1924,11 +1924,11 @@ Removing an extension removes its contribution and rebuilds; nothing runs an inv
 
 ```ts
 sessionContext.tools.add((draft) => {
- draft.set("review_add", reviewAddTool);
- draft.wrap("bash", (next) => async (invocation) => {
-  await authorize(invocation);
-  return next(invocation);
- });
+	draft.set("review_add", reviewAddTool);
+	draft.wrap("bash", (next) => async (invocation) => {
+		await authorize(invocation);
+		return next(invocation);
+	});
 });
 ```
 
@@ -1943,8 +1943,8 @@ The model refresh shows the whole author-visible surface:
 ```ts
 const controller = new AbortController();
 await uiTelemetry.startSpan({ name: "ui.models.refresh" }, async (span) => {
- const context = withAbortSignal(controller.signal, withTelemetryContext(span, BACKGROUND_CONTEXT));
- await models.refresh(context);
+	const context = withAbortSignal(controller.signal, withTelemetryContext(span, BACKGROUND_CONTEXT));
+	await models.refresh(context);
 });
 ```
 
@@ -1975,9 +1975,9 @@ A possible long-running job contract is:
 
 ```ts
 interface IndexJob {
- readonly progress: ReplicatedState<IndexProgress>;
- wait(context: Context): Promise<IndexProgress>; // aborting this context cancels only this wait
- cancel(context: Context): Promise<void>;        // cancels the job itself, for everyone
+	readonly progress: ReplicatedState<IndexProgress>;
+	wait(context: Context): Promise<IndexProgress>; // aborting this context cancels only this wait
+	cancel(context: Context): Promise<void>;        // cancels the job itself, for everyone
 }
 ```
 
@@ -1993,8 +1993,8 @@ A server facet is shared by every session and presentation connected to the serv
 
 ```ts
 interface FleetFacetScope {
- readonly managed: ManagedSessionsView;  // sessions managed by this server
- readonly attachments: AttachmentsView;  // bind/unbind a client's selected session
+	readonly managed: ManagedSessionsView;  // sessions managed by this server
+	readonly attachments: AttachmentsView;  // bind/unbind a client's selected session
 }
 
 const Fleet = defineService<FleetFacetScope>("pi.local.fleet", { local: true });
@@ -2004,20 +2004,20 @@ The raw `SessionRepo`, storage handles, unrestricted process-kill authority, rou
 
 ```ts
 interface ManagedSessionRecord {
- sessionId: string;
- title: string;
- workspaceId: string;
- ownerId: string;
- cwd: string; // ownerId and cwd never leave the server
+	sessionId: string;
+	title: string;
+	workspaceId: string;
+	ownerId: string;
+	cwd: string; // ownerId and cwd never leave the server
 }
 
 type ManagedSessionChange = { type: "created" | "changed" | "deleted"; record: ManagedSessionRecord };
 
 interface ManagedSessionsView {
- snapshot(): ManagedSessionRecord[];
- onChanged(listener: (change: ManagedSessionChange, context: Context) => void): () => void;
- create(options: { title: string; workspaceId: string }, context: Context): Promise<ManagedSessionRecord>;
- remove(sessionId: string, context: Context): Promise<void>;
+	snapshot(): ManagedSessionRecord[];
+	onChanged(listener: (change: ManagedSessionChange, context: Context) => void): () => void;
+	create(options: { title: string; workspaceId: string }, context: Context): Promise<ManagedSessionRecord>;
+	remove(sessionId: string, context: Context): Promise<void>;
 }
 ```
 
@@ -2027,21 +2027,21 @@ The directory is read; management mutates and selects. Both are presentation-saf
 
 ```ts
 export interface SessionRecordSummary {
- sessionId: string;
- title: string;
+	sessionId: string;
+	title: string;
 }
 
 export interface SessionDirectory {
- readonly state: ReplicatedState<{ revision: number; sessions: SessionRecordSummary[] }>;
+	readonly state: ReplicatedState<{ revision: number; sessions: SessionRecordSummary[] }>;
 }
 
 export const SessionDirectory = defineService<SessionDirectory>("pi.session-directory");
 
 export interface SessionManagement {
- create(options: { title: string }, context: Context): Promise<SessionRecordSummary>;
- remove(sessionId: string, context: Context): Promise<void>;
- attach(sessionId: string, context: Context): Promise<void>;
- detach(context: Context): Promise<void>;
+	create(options: { title: string }, context: Context): Promise<SessionRecordSummary>;
+	remove(sessionId: string, context: Context): Promise<void>;
+	attach(sessionId: string, context: Context): Promise<void>;
+	detach(context: Context): Promise<void>;
 }
 
 export const SessionManagement = defineService<SessionManagement>("pi.session-management");
@@ -2052,53 +2052,59 @@ export const SessionManagement = defineService<SessionManagement>("pi.session-ma
 ```ts
 // server.ts
 export const sessionDirectoryServerFacet = defineFacet({
- id: "@pi/session-directory",
- setup(env) {
-  const { managed, attachments } = env.use(Fleet);
-  const state = env.replicatedState({ revision: 0, sessions: [] as SessionRecordSummary[] });
+	id: "@pi/session-directory",
+	setup(env) {
+		const { managed, attachments } = env.use(Fleet);
+		const state = env.replicatedState({ revision: 0, sessions: [] as SessionRecordSummary[] });
 
-  function publish(_change: ManagedSessionChange, context: Context) {
-   state.set({ revision: state.value.revision + 1, sessions: managed.snapshot().map(toSummary) }, context);
-  }
+		function publish(_change: ManagedSessionChange, context: Context) {
+			state.change(context, (draft) => {
+				draft.revision += 1;
+				draft.sessions = managed.snapshot().map(toSummary);
+			});
+		}
 
-  env.own(managed.onChanged(publish));
-  env.onActivate(() =>
-   state.set({ revision: 1, sessions: managed.snapshot().map(toSummary) }, BACKGROUND_CONTEXT),
-  );
+		env.own(managed.onChanged(publish));
+		env.onActivate(() =>
+			state.change(BACKGROUND_CONTEXT, (draft) => {
+				draft.revision = 1;
+				draft.sessions = managed.snapshot().map(toSummary);
+			}),
+		);
 
-  env.provide(SessionDirectory, { state });
-  env.provide(SessionManagement, {
-   async create(options, context) {
-    const client = requireClientIdentity(context);
-    return toSummary(
-     await managed.create({ title: options.title, workspaceId: client.workspaceId }, context),
-    );
-   },
-   async remove(sessionId, context) {
-    authorizeTarget(requireClientIdentity(context), managed.snapshot(), sessionId);
-    await managed.remove(sessionId, context);
-   },
-   async attach(sessionId, context) {
-    const client = requireClientIdentity(context);
-    authorizeTarget(client, managed.snapshot(), sessionId);
-    await attachments.bind(client.clientId, sessionId, context);
-   },
-   async detach(context) {
-    await attachments.unbind(requireClientIdentity(context).clientId, context);
-   },
-  });
- },
+		env.provide(SessionDirectory, { state });
+		env.provide(SessionManagement, {
+			async create(options, context) {
+				const client = requireClientIdentity(context);
+				return toSummary(
+					await managed.create({ title: options.title, workspaceId: client.workspaceId }, context),
+				);
+			},
+			async remove(sessionId, context) {
+				authorizeTarget(requireClientIdentity(context), managed.snapshot(), sessionId);
+				await managed.remove(sessionId, context);
+			},
+			async attach(sessionId, context) {
+				const client = requireClientIdentity(context);
+				authorizeTarget(client, managed.snapshot(), sessionId);
+				await attachments.bind(client.clientId, sessionId, context);
+			},
+			async detach(context) {
+				await attachments.unbind(requireClientIdentity(context).clientId, context);
+			},
+		});
+	},
 });
 
 function authorizeTarget(client: ClientIdentity, records: ManagedSessionRecord[], sessionId: string) {
- const record = records.find((candidate) => candidate.sessionId === sessionId);
- if (record === undefined || record.workspaceId !== client.workspaceId) {
-  throw new RemoteServiceError("not_authorized", `Not accessible: ${sessionId}`);
- }
+	const record = records.find((candidate) => candidate.sessionId === sessionId);
+	if (record === undefined || record.workspaceId !== client.workspaceId) {
+		throw new RemoteServiceError("not_authorized", `Not accessible: ${sessionId}`);
+	}
 }
 
 function toSummary({ sessionId, title }: ManagedSessionRecord): SessionRecordSummary {
- return { sessionId, title };
+	return { sessionId, title };
 }
 ```
 
@@ -2109,29 +2115,29 @@ Every call is authorized against the client identity that transport policy insta
 ```ts
 // tui.ts
 export const sessionPickerTuiFacet = defineFacet({
- id: "@pi/session-picker",
- setup(env) {
-  const directory = env.use(SessionDirectory);
-  const management = env.use(SessionManagement);
-  const tui = env.use(Tui);
+	id: "@pi/session-picker",
+	setup(env) {
+		const directory = env.use(SessionDirectory);
+		const management = env.use(SessionManagement);
+		const tui = env.use(Tui);
 
-  tui.commands.register("sessions.switch", async (context) => {
-   const current = directory.state.value;
-   const attachment = tui.attachment.value;
-   if (current === undefined || attachment === undefined) return;
-   const selected = await tui.select(
-    "Sessions",
-    current.sessions.map((session) => ({
-     label: pickerLabel(session, attachment),
-     value: session.sessionId,
-    })),
-    { signal: context.abortSignal },
-   );
-   if (selected !== undefined) await management.attach(selected, context);
-  });
+		tui.commands.register("sessions.switch", async (context) => {
+			const current = directory.state.value;
+			const attachment = tui.attachment.value;
+			if (current === undefined || attachment === undefined) return;
+			const selected = await tui.select(
+				"Sessions",
+				current.sessions.map((session) => ({
+					label: pickerLabel(session, attachment),
+					value: session.sessionId,
+				})),
+				{ signal: context.abortSignal },
+			);
+			if (selected !== undefined) await management.attach(selected, context);
+		});
 
-  env.own(directory.state.subscribe((next) => renderSessionList(next)));
- },
+		env.own(directory.state.subscribe((next) => renderSessionList(next)));
+	},
 });
 ```
 
@@ -2175,31 +2181,31 @@ A question is not a reverse RPC routed to one eligible presentation. The Session
 
 ```ts
 const QuestionParamsSchema = Type.Object({
- question: Type.String(),
- options: Type.Array(
-  Type.Object({
-   label: Type.String(),
-   description: Type.Union([Type.String(), Type.Null()]),
-  }),
- ),
+	question: Type.String(),
+	options: Type.Array(
+		Type.Object({
+			label: Type.String(),
+			description: Type.Union([Type.String(), Type.Null()]),
+		}),
+	),
 });
 type QuestionRequest = Static<typeof QuestionParamsSchema>;
 
 type QuestionResponse =
- | { outcome: "selected"; index: number }
- | { outcome: "custom"; answer: string }
- | { outcome: "cancelled" };
+	| { outcome: "selected"; index: number }
+	| { outcome: "custom"; answer: string }
+	| { outcome: "cancelled" };
 
 interface QuestionDetails {
- question: string;
- options: string[];
- answer: string | null;
- wasCustom: boolean;
+	question: string;
+	options: string[];
+	answer: string | null;
+	wasCustom: boolean;
 }
 
 interface QuestionDialogs {
- readonly request: ReplicatedState<QuestionRequest>;
- submitAnswer(response: QuestionResponse, context: Context): Promise<void>;
+	readonly request: ReplicatedState<QuestionRequest>;
+	submitAnswer(response: QuestionResponse, context: Context): Promise<void>;
 }
 
 const QuestionDialogs = defineService<QuestionDialogs>("pi.question-dialog");
@@ -2211,10 +2217,10 @@ The tool-result helper remains session-local:
 
 ```ts
 function questionResult(request: QuestionRequest, answer: string | null, wasCustom: boolean, text: string) {
- return {
-  content: [{ type: "text", text }],
-  details: { question: request.question, options: request.options.map((o) => o.label), answer, wasCustom },
- } satisfies AgentToolResult<QuestionDetails>;
+	return {
+		content: [{ type: "text", text }],
+		details: { question: request.question, options: request.options.map((o) => o.label), answer, wasCustom },
+	} satisfies AgentToolResult<QuestionDetails>;
 }
 ```
 
@@ -2225,62 +2231,62 @@ function questionResult(request: QuestionRequest, answer: string | null, wasCust
 ```ts
 // session.ts
 export const questionSessionFacet = defineFacet({
- id: "@pi/question",
- setup(env) {
-  const dialogs = env.provideMany(QuestionDialogs);
-  const tools = env.use(Tools);
+	id: "@pi/question",
+	setup(env) {
+		const dialogs = env.provideMany(QuestionDialogs);
+		const tools = env.use(Tools);
 
-  tools.add((draft) => {
-   draft.set("question", {
-    label: "Question",
-    description: "Ask users a question and wait for an answer.",
-    executionMode: "sequential",
-    replay: "safe",
-    parameters: QuestionParamsSchema,
+		tools.add((draft) => {
+			draft.set("question", {
+				label: "Question",
+				description: "Ask users a question and wait for an answer.",
+				executionMode: "sequential",
+				replay: "safe",
+				parameters: QuestionParamsSchema,
 
-    async execute(_toolCallId, params, _onUpdate, _toolContext, invocation, context) {
-     if (params.options.length === 0) {
-      return questionResult(params, null, false, "No options provided");
-     }
+				async execute(_toolCallId, params, _onUpdate, _toolContext, invocation, context) {
+					if (params.options.length === 0) {
+						return questionResult(params, null, false, "No options provided");
+					}
 
-     const memoName = "pi.question.answer";
-     let response = (await invocation.getMemo(memoName)) as QuestionResponse | undefined;
+					const memoName = "pi.question.answer";
+					let response = (await invocation.getMemo(memoName)) as QuestionResponse | undefined;
 
-     if (response === undefined) {
-      const completion = Promise.withResolvers<QuestionResponse>();
-      const request = env.replicatedState<QuestionRequest>(params);
-      const close = dialogs.spawn(invocation.invocationId, {
-       request,
-       async submitAnswer(candidate, _answerContext) {
-        if (candidate.outcome === "selected" && params.options[candidate.index] === undefined) {
-         throw new Error("Question response selected an invalid option");
-        }
-        const committed = invocation.memoOnce(memoName, candidate);
-        completion.resolve(committed);
-        await committed;
-       },
-      });
+					if (response === undefined) {
+						const completion = Promise.withResolvers<QuestionResponse>();
+						const request = env.replicatedState<QuestionRequest>(params);
+						const close = dialogs.spawn(invocation.invocationId, {
+							request,
+							async submitAnswer(candidate, _answerContext) {
+								if (candidate.outcome === "selected" && params.options[candidate.index] === undefined) {
+									throw new Error("Question response selected an invalid option");
+								}
+								const committed = invocation.memoOnce(memoName, candidate);
+								completion.resolve(committed);
+								await committed;
+							},
+						});
 
-      try {
-       response = await awaitAbortable(completion.promise, context.abortSignal);
-      } finally {
-       close();
-      }
-     }
+						try {
+							response = await awaitAbortable(completion.promise, context.abortSignal);
+						} finally {
+							close();
+						}
+					}
 
-     if (response.outcome === "cancelled") {
-      return questionResult(params, null, false, "User cancelled the question");
-     }
-     if (response.outcome === "custom") {
-      return questionResult(params, response.answer, true, `User wrote: ${response.answer}`);
-     }
-     const selected = params.options[response.index];
-     if (selected === undefined) throw new Error("Question response selected an invalid option");
-     return questionResult(params, selected.label, false, `User selected: ${response.index + 1}. ${selected.label}`);
-    },
-   });
-  });
- },
+					if (response.outcome === "cancelled") {
+						return questionResult(params, null, false, "User cancelled the question");
+					}
+					if (response.outcome === "custom") {
+						return questionResult(params, response.answer, true, `User wrote: ${response.answer}`);
+					}
+					const selected = params.options[response.index];
+					if (selected === undefined) throw new Error("Question response selected an invalid option");
+					return questionResult(params, selected.label, false, `User selected: ${response.index + 1}. ${selected.label}`);
+				},
+			});
+		});
+	},
 });
 ```
 
@@ -2291,49 +2297,49 @@ export const questionSessionFacet = defineFacet({
 ```ts
 // tui.ts
 type QuestionChoice =
- | { outcome: "selected"; index: number }
- | { outcome: "custom" };
+	| { outcome: "selected"; index: number }
+	| { outcome: "custom" };
 
 export const questionTuiFacet = defineFacet({
- id: "@pi/question",
- setup(env) {
-  const tui = env.use(Tui);
-  env.observe(QuestionDialogs, async (dialog, context) => {
-   const request = dialog.request.value;
-   if (request === undefined) throw new Error("Question dialog was observed before hydration");
+	id: "@pi/question",
+	setup(env) {
+		const tui = env.use(Tui);
+		env.observe(QuestionDialogs, async (dialog, context) => {
+			const request = dialog.request.value;
+			if (request === undefined) throw new Error("Question dialog was observed before hydration");
 
-   const modal = await tui.acquireModal(context.abortSignal);
-   try {
-    const choice = await modal.select<QuestionChoice>(
-     request.question,
-     [
-      ...request.options.map((option, index) => ({
-       label: option.label,
-       ...(option.description === null ? {} : { description: option.description }),
-       value: { outcome: "selected" as const, index },
-      })),
-      { label: "Write a custom answer", value: { outcome: "custom" as const } },
-     ],
-    );
+			const modal = await tui.acquireModal(context.abortSignal);
+			try {
+				const choice = await modal.select<QuestionChoice>(
+					request.question,
+					[
+						...request.options.map((option, index) => ({
+							label: option.label,
+							...(option.description === null ? {} : { description: option.description }),
+							value: { outcome: "selected" as const, index },
+						})),
+						{ label: "Write a custom answer", value: { outcome: "custom" as const } },
+					],
+				);
 
-    let response: QuestionResponse;
-    if (choice === undefined) {
-     response = { outcome: "cancelled" };
-    } else if (choice.outcome === "selected") {
-     response = choice;
-    } else {
-     const answer = await modal.input(request.question);
-     response = answer === undefined ? { outcome: "cancelled" } : { outcome: "custom", answer };
-    }
+				let response: QuestionResponse;
+				if (choice === undefined) {
+					response = { outcome: "cancelled" };
+				} else if (choice.outcome === "selected") {
+					response = choice;
+				} else {
+					const answer = await modal.input(request.question);
+					response = answer === undefined ? { outcome: "cancelled" } : { outcome: "custom", answer };
+				}
 
-    await dialog.submitAnswer(response, context);
-   } finally {
-    modal.close();
-   }
-  });
+				await dialog.submitAnswer(response, context);
+			} finally {
+				modal.close();
+			}
+		});
 
-  tui.toolRenderers.add<QuestionDetails>("question", questionRenderer);
- },
+		tui.toolRenderers.add<QuestionDetails>("question", questionRenderer);
+	},
 });
 ```
 
@@ -2478,38 +2484,38 @@ The keyed instance is the live, reactive projection. An extension-owned record i
 
 ```ts
 interface DiffCommentInput {
- commentId: string; // stable across an uncertain retry
- path: string;
- side: "old" | "new";
- line: number;
- body: string;
+	commentId: string; // stable across an uncertain retry
+	path: string;
+	side: "old" | "new";
+	line: number;
+	body: string;
 }
 
 interface DiffComment extends DiffCommentInput {
- author: { userId: string; displayName: string };
- createdAt: string;
+	author: { userId: string; displayName: string };
+	createdAt: string;
 }
 
 interface DiffReviewDocument {
- reviewId: string;
- patch: string;
+	reviewId: string;
+	patch: string;
 }
 
 interface DiffReviewActivity {
- revision: number;
- comments: DiffComment[];
- status: "open" | "submitting";
+	revision: number;
+	comments: DiffComment[];
+	status: "open" | "submitting";
 }
 
 interface DiffReviewManager {
- createReview(context: Context): Promise<void>;
+	createReview(context: Context): Promise<void>;
 }
 
 interface DiffReviews {
- readonly document: ReplicatedState<DiffReviewDocument>;
- readonly activity: ReplicatedState<DiffReviewActivity>;
- addComment(input: DiffCommentInput, context: Context): Promise<void>;
- submit(context: Context): Promise<void>;
+	readonly document: ReplicatedState<DiffReviewDocument>;
+	readonly activity: ReplicatedState<DiffReviewActivity>;
+	addComment(input: DiffCommentInput, context: Context): Promise<void>;
+	submit(context: Context): Promise<void>;
 }
 
 const DiffReviewManager = defineService<DiffReviewManager>("pi.diff-review-manager");
@@ -2544,26 +2550,26 @@ In the one-authoritative-worker model, the simplest fix is a per-review **critic
 
 ```ts
 async freezeForSubmission(reviewId, context) {
- return regionFor(reviewId).run(context.abortSignal, async () => {
-  const stored = await session.getValue(reviewRecord(reviewId), context);
-  if (stored === undefined) throw new RemoteServiceError("review_not_found", `Unknown review: ${reviewId}`);
+	return regionFor(reviewId).run(context.abortSignal, async () => {
+		const stored = await session.getValue(reviewRecord(reviewId), context);
+		if (stored === undefined) throw new RemoteServiceError("review_not_found", `Unknown review: ${reviewId}`);
 
-  const current = stored.value;
-  if (current.status === "submission_pending") return current; // idempotent retry
+		const current = stored.value;
+		if (current.status === "submission_pending") return current; // idempotent retry
 
-  const submissionId = newSubmissionId();
-  const frozen = {
-   ...current,
-   revision: current.revision + 1,
-   status: "submission_pending",
-   submission: {
-    submissionId,
-    prompt: renderReviewPrompt(current.patch, current.comments),
-   },
-  };
-  await session.setValue(reviewRecord(reviewId), frozen, context);
-  return frozen;
- });
+		const submissionId = newSubmissionId();
+		const frozen = {
+			...current,
+			revision: current.revision + 1,
+			status: "submission_pending",
+			submission: {
+				submissionId,
+				prompt: renderReviewPrompt(current.patch, current.comments),
+			},
+		};
+		await session.setValue(reviewRecord(reviewId), frozen, context);
+		return frozen;
+	});
 }
 ```
 
@@ -3527,20 +3533,20 @@ The directory and management services are normal server services. Their contract
 
 ```ts
 interface SessionSummary {
- serverId: string;
- sessionId: string;
- createdAt: string;
+	serverId: string;
+	sessionId: string;
+	createdAt: string;
 }
 
 interface SessionDirectory {
- readonly state: ReplicatedState<{ revision: number; sessions: SessionSummary[] }>;
+	readonly state: ReplicatedState<{ revision: number; sessions: SessionSummary[] }>;
 }
 
 interface SessionManagement {
- create(options: { id?: string }, context: Context): Promise<SessionSummary>;
- remove(sessionId: string, context: Context): Promise<void>;
- attach(sessionId: string, context: Context): Promise<void>;
- detach(context: Context): Promise<void>;
+	create(options: { id?: string }, context: Context): Promise<SessionSummary>;
+	remove(sessionId: string, context: Context): Promise<void>;
+	attach(sessionId: string, context: Context): Promise<void>;
+	detach(context: Context): Promise<void>;
 }
 
 const SessionDirectory = defineService<SessionDirectory>("pi.session-directory");
@@ -3552,14 +3558,14 @@ A server facet derives the client from an authenticated `Context`, authorizes th
 ```ts
 serverContext.provide(SessionDirectory, { state: directoryState });
 serverContext.provide(SessionManagement, {
- async attach(sessionId, context) {
-  const client = requireClientIdentity(context);
-  authorizeSession(client, sessionId);
-  await attachments.bind(client.clientId, sessionId, context);
- },
- async detach(context) {
-  await attachments.unbind(requireClientIdentity(context).clientId, context);
- },
+	async attach(sessionId, context) {
+		const client = requireClientIdentity(context);
+		authorizeSession(client, sessionId);
+		await attachments.bind(client.clientId, sessionId, context);
+	},
+	async detach(context) {
+		await attachments.unbind(requireClientIdentity(context).clientId, context);
+	},
 });
 ```
 
@@ -3567,20 +3573,20 @@ A presentation facet renders and selects Sessions:
 
 ```ts
 setup(env) {
- const directory = env.use(SessionDirectory);
- const management = env.use(SessionManagement);
- const tui = env.use(Tui);
+	const directory = env.use(SessionDirectory);
+	const management = env.use(SessionManagement);
+	const tui = env.use(Tui);
 
- tui.commands.register("sessions.switch", async (operation) => {
-  const snapshot = directory.state.value;
-  if (snapshot === undefined) return;
-  const sessionId = await tui.select(
-   "Sessions",
-   snapshot.sessions.map((session) => ({ label: session.sessionId, value: session.sessionId })),
-   { signal: operation.abortSignal },
-  );
-  if (sessionId !== undefined) await management.attach(sessionId, operation);
- });
+	tui.commands.register("sessions.switch", async (operation) => {
+		const snapshot = directory.state.value;
+		if (snapshot === undefined) return;
+		const sessionId = await tui.select(
+			"Sessions",
+			snapshot.sessions.map((session) => ({ label: session.sessionId, value: session.sessionId })),
+			{ signal: operation.abortSignal },
+		);
+		if (sessionId !== undefined) await management.attach(sessionId, operation);
+	});
 }
 ```
 
@@ -3588,8 +3594,8 @@ Another facet in the same presentation acquires Session services through the sam
 
 ```ts
 setup(env) {
- const models = env.use(Models);
- // After attach() settles, `models` addresses the selected worker.
+	const models = env.use(Models);
+	// After attach() settles, `models` addresses the selected worker.
 }
 ```
 
@@ -3598,8 +3604,6 @@ The presentation never routes `models` with a selected `sessionId`; its host rou
 ---
 
 ## Telemetry Schemas
-
-<!-- Generated by generate-telemetry-docs.ts. Do not edit manually. -->
 
 ## AI request schema
 
@@ -3616,34 +3620,34 @@ One logical request to an AI provider
 #### Start attributes
 
 | Name | Type | Required | Values | Notes | Description |
-| --- | --- | ---: | --- | --- | --- |
-| `pi.ai.operation` | `string` | yes | stream, fetch_deferred, cancel_deferred, generate_images | | Logical provider operation |
-| `pi.ai.provider` | `string` | yes | | | Selected provider id |
-| `pi.ai.model` | `string` | yes | | | Requested model id |
-| `pi.ai.api` | `string` | yes | | | Provider API id |
-| `pi.ai.streaming` | `boolean` | yes | | | Whether this operation returns a stream |
-| `pi.ai.deferred` | `boolean` | no | | | Whether the operation requests or participates in deferred execution |
+|---|---|---:|---|---|---|
+| `pi.ai.operation` | `string` | yes | stream, fetch_deferred, cancel_deferred, generate_images |  | Logical provider operation |
+| `pi.ai.provider` | `string` | yes |  |  | Selected provider id |
+| `pi.ai.model` | `string` | yes |  |  | Requested model id |
+| `pi.ai.api` | `string` | yes |  |  | Provider API id |
+| `pi.ai.streaming` | `boolean` | yes |  |  | Whether this operation returns a stream |
+| `pi.ai.deferred` | `boolean` | no |  |  | Whether the operation requests or participates in deferred execution |
 
 #### End attributes
 
 All end attributes are optional completion enrichment.
 
 | Name | Type | Values | Notes | Description |
-| --- | --- | --- | --- | --- |
-| `pi.ai.response.model` | `string` | | | Concrete response model |
-| `pi.ai.response.id` | `string` | | high cardinality | Provider response id |
-| `pi.ai.response.stop_reason` | `string` | stop, length, tool_use, error, aborted, deferred | | Normalized terminal response reason |
-| `pi.ai.http.status_code` | `number` | | | Final HTTP status |
-| `pi.ai.usage.input_tokens` | `number` | | | Reported input tokens |
-| `pi.ai.usage.output_tokens` | `number` | | | Reported output tokens |
-| `pi.ai.usage.cache_read_tokens` | `number` | | | Reported cache-read tokens |
-| `pi.ai.usage.cache_write_tokens` | `number` | | | Reported cache-write tokens |
-| `pi.ai.usage.reasoning_tokens` | `number` | | | Reported reasoning tokens |
-| `pi.ai.usage.total_tokens` | `number` | | | Reported total tokens |
-| `pi.ai.usage.cost` | `number` | | | Reported total cost |
-| `pi.ai.stream.chunk_count` | `number` | | | Streamed update chunk count |
-| `pi.ai.stream.time_to_first_chunk_ms` | `number` | | | Elapsed milliseconds to first update chunk |
-| `pi.ai.error.type` | `string` | | low cardinality | Provider or transport error class |
+|---|---|---|---|---|
+| `pi.ai.response.model` | `string` |  |  | Concrete response model |
+| `pi.ai.response.id` | `string` |  | high cardinality | Provider response id |
+| `pi.ai.response.stop_reason` | `string` | stop, length, tool_use, error, aborted, deferred |  | Normalized terminal response reason |
+| `pi.ai.http.status_code` | `number` |  |  | Final HTTP status |
+| `pi.ai.usage.input_tokens` | `number` |  |  | Reported input tokens |
+| `pi.ai.usage.output_tokens` | `number` |  |  | Reported output tokens |
+| `pi.ai.usage.cache_read_tokens` | `number` |  |  | Reported cache-read tokens |
+| `pi.ai.usage.cache_write_tokens` | `number` |  |  | Reported cache-write tokens |
+| `pi.ai.usage.reasoning_tokens` | `number` |  |  | Reported reasoning tokens |
+| `pi.ai.usage.total_tokens` | `number` |  |  | Reported total tokens |
+| `pi.ai.usage.cost` | `number` |  |  | Reported total cost |
+| `pi.ai.stream.chunk_count` | `number` |  |  | Streamed update chunk count |
+| `pi.ai.stream.time_to_first_chunk_ms` | `number` |  |  | Elapsed milliseconds to first update chunk |
+| `pi.ai.error.type` | `string` |  | low cardinality | Provider or transport error class |
 
 #### Events
 
@@ -3664,22 +3668,22 @@ One admitted in-process run invocation
 #### Start attributes
 
 | Name | Type | Required | Values | Notes | Description |
-| --- | --- | ---: | --- | --- | --- |
-| `pi.session.id` | `string` | yes | | high cardinality | Session id |
-| `pi.lane.name` | `string` | yes | | high cardinality | Lane name |
-| `pi.operation.id` | `string` | yes | | high cardinality | Durable operation id |
-| `pi.operation.recovery` | `boolean` | yes | | | Whether this invocation resumes durable work |
-| `pi.operation.kind` | `string` | yes | run | | Run operation kind |
+|---|---|---:|---|---|---|
+| `pi.session.id` | `string` | yes |  | high cardinality | Session id |
+| `pi.lane.name` | `string` | yes |  | high cardinality | Lane name |
+| `pi.operation.id` | `string` | yes |  | high cardinality | Durable operation id |
+| `pi.operation.recovery` | `boolean` | yes |  |  | Whether this invocation resumes durable work |
+| `pi.operation.kind` | `string` | yes | run |  | Run operation kind |
 
 #### End attributes
 
 All end attributes are optional completion enrichment.
 
 | Name | Type | Values | Notes | Description |
-| --- | --- | --- | --- | --- |
-| `pi.operation.outcome` | `string` | completed, aborted, failed, suspended | | Run invocation outcome |
-| `pi.error.code` | `string` | | low cardinality | Stable operation error code |
-| `pi.error.type` | `string` | | low cardinality | Low-cardinality operation error class |
+|---|---|---|---|---|
+| `pi.operation.outcome` | `string` | completed, aborted, failed, suspended |  | Run invocation outcome |
+| `pi.error.code` | `string` |  | low cardinality | Stable operation error code |
+| `pi.error.type` | `string` |  | low cardinality | Low-cardinality operation error class |
 
 #### Events
 
@@ -3696,22 +3700,22 @@ One admitted in-process manual compaction invocation
 #### Start attributes
 
 | Name | Type | Required | Values | Notes | Description |
-| --- | --- | ---: | --- | --- | --- |
-| `pi.session.id` | `string` | yes | | high cardinality | Session id |
-| `pi.lane.name` | `string` | yes | | high cardinality | Lane name |
-| `pi.operation.id` | `string` | yes | | high cardinality | Durable operation id |
-| `pi.operation.recovery` | `boolean` | yes | | | Whether this invocation resumes durable work |
-| `pi.operation.kind` | `string` | yes | compaction | | Compaction operation kind |
+|---|---|---:|---|---|---|
+| `pi.session.id` | `string` | yes |  | high cardinality | Session id |
+| `pi.lane.name` | `string` | yes |  | high cardinality | Lane name |
+| `pi.operation.id` | `string` | yes |  | high cardinality | Durable operation id |
+| `pi.operation.recovery` | `boolean` | yes |  |  | Whether this invocation resumes durable work |
+| `pi.operation.kind` | `string` | yes | compaction |  | Compaction operation kind |
 
 #### End attributes
 
 All end attributes are optional completion enrichment.
 
 | Name | Type | Values | Notes | Description |
-| --- | --- | --- | --- | --- |
-| `pi.operation.outcome` | `string` | completed, declined, aborted, failed | | Compaction invocation outcome |
-| `pi.error.code` | `string` | | low cardinality | Stable operation error code |
-| `pi.error.type` | `string` | | low cardinality | Low-cardinality operation error class |
+|---|---|---|---|---|
+| `pi.operation.outcome` | `string` | completed, declined, aborted, failed |  | Compaction invocation outcome |
+| `pi.error.code` | `string` |  | low cardinality | Stable operation error code |
+| `pi.error.type` | `string` |  | low cardinality | Low-cardinality operation error class |
 
 #### Events
 
@@ -3728,22 +3732,22 @@ One admitted in-process navigation invocation
 #### Start attributes
 
 | Name | Type | Required | Values | Notes | Description |
-| --- | --- | ---: | --- | --- | --- |
-| `pi.session.id` | `string` | yes | | high cardinality | Session id |
-| `pi.lane.name` | `string` | yes | | high cardinality | Lane name |
-| `pi.operation.id` | `string` | yes | | high cardinality | Durable operation id |
-| `pi.operation.recovery` | `boolean` | yes | | | Whether this invocation resumes durable work |
-| `pi.operation.kind` | `string` | yes | navigation | | Navigation operation kind |
+|---|---|---:|---|---|---|
+| `pi.session.id` | `string` | yes |  | high cardinality | Session id |
+| `pi.lane.name` | `string` | yes |  | high cardinality | Lane name |
+| `pi.operation.id` | `string` | yes |  | high cardinality | Durable operation id |
+| `pi.operation.recovery` | `boolean` | yes |  |  | Whether this invocation resumes durable work |
+| `pi.operation.kind` | `string` | yes | navigation |  | Navigation operation kind |
 
 #### End attributes
 
 All end attributes are optional completion enrichment.
 
 | Name | Type | Values | Notes | Description |
-| --- | --- | --- | --- | --- |
-| `pi.operation.outcome` | `string` | completed, declined, aborted, failed | | Navigation invocation outcome |
-| `pi.error.code` | `string` | | low cardinality | Stable operation error code |
-| `pi.error.type` | `string` | | low cardinality | Low-cardinality operation error class |
+|---|---|---|---|---|
+| `pi.operation.outcome` | `string` | completed, declined, aborted, failed |  | Navigation invocation outcome |
+| `pi.error.code` | `string` |  | low cardinality | Stable operation error code |
+| `pi.error.type` | `string` |  | low cardinality | Low-cardinality operation error class |
 
 #### Events
 
@@ -3760,10 +3764,10 @@ One run checkpoint
 #### Start attributes
 
 | Name | Type | Required | Values | Notes | Description |
-| --- | --- | ---: | --- | --- | --- |
-| `pi.lane.name` | `string` | yes | | high cardinality | Lane name |
-| `pi.operation.id` | `string` | yes | | high cardinality | Durable operation id |
-| `pi.checkpoint.kind` | `string` | yes | normal, abort_reconcile | | Checkpoint purpose |
+|---|---|---:|---|---|---|
+| `pi.lane.name` | `string` | yes |  | high cardinality | Lane name |
+| `pi.operation.id` | `string` | yes |  | high cardinality | Durable operation id |
+| `pi.checkpoint.kind` | `string` | yes | normal, abort_reconcile |  | Checkpoint purpose |
 
 #### End attributes
 
@@ -3771,7 +3775,7 @@ All end attributes are optional completion enrichment.
 
 | Name | Type | Values | Notes | Description |
 |---|---|---|---|---|
-| *none* | | | | |
+| _none_ | | | | |
 
 #### Events
 
@@ -3788,10 +3792,10 @@ One assistant response and its tool batch
 #### Start attributes
 
 | Name | Type | Required | Values | Notes | Description |
-| --- | --- | ---: | --- | --- | --- |
-| `pi.lane.name` | `string` | yes | | high cardinality | Lane name |
-| `pi.operation.id` | `string` | yes | | high cardinality | Durable operation id |
-| `pi.turn.id` | `string` | yes | | high cardinality | Invocation-local turn id |
+|---|---|---:|---|---|---|
+| `pi.lane.name` | `string` | yes |  | high cardinality | Lane name |
+| `pi.operation.id` | `string` | yes |  | high cardinality | Durable operation id |
+| `pi.turn.id` | `string` | yes |  | high cardinality | Invocation-local turn id |
 
 #### End attributes
 
@@ -3799,7 +3803,7 @@ All end attributes are optional completion enrichment.
 
 | Name | Type | Values | Notes | Description |
 |---|---|---|---|---|
-| *none* | | | | |
+| _none_ | | | | |
 
 #### Events
 
@@ -3816,12 +3820,12 @@ One durable retry attempt
 #### Start attributes
 
 | Name | Type | Required | Values | Notes | Description |
-| --- | --- | ---: | --- | --- | --- |
-| `pi.lane.name` | `string` | yes | | high cardinality | Lane name |
-| `pi.operation.id` | `string` | yes | | high cardinality | Durable operation id |
-| `pi.step.kind` | `string` | yes | assistant, compaction, branch_summary | | Retryable step kind |
-| `pi.step.attempt` | `number` | yes | | | One-based durable attempt number |
-| `pi.compaction.reason` | `string` | no | manual, threshold, overflow | | Compaction trigger |
+|---|---|---:|---|---|---|
+| `pi.lane.name` | `string` | yes |  | high cardinality | Lane name |
+| `pi.operation.id` | `string` | yes |  | high cardinality | Durable operation id |
+| `pi.step.kind` | `string` | yes | assistant, compaction, branch_summary |  | Retryable step kind |
+| `pi.step.attempt` | `number` | yes |  |  | One-based durable attempt number |
+| `pi.compaction.reason` | `string` | no | manual, threshold, overflow |  | Compaction trigger |
 
 #### End attributes
 
@@ -3846,14 +3850,14 @@ One raw phase-2 tool execution
 #### Start attributes
 
 | Name | Type | Required | Values | Notes | Description |
-| --- | --- | ---: | --- | --- | --- |
-| `pi.lane.name` | `string` | yes | | high cardinality | Lane name |
-| `pi.operation.id` | `string` | yes | | high cardinality | Durable operation id |
-| `pi.turn.id` | `string` | no | | high cardinality | Invocation-local live turn id |
-| `pi.tool.name` | `string` | yes | | | Tool name |
-| `pi.tool.call_id` | `string` | yes | | high cardinality | Tool call id |
-| `pi.tool.replay` | `string` | yes | never, safe | | Declared replay policy |
-| `pi.tool.recovery` | `boolean` | yes | | | Whether this is recovery execution |
+|---|---|---:|---|---|---|
+| `pi.lane.name` | `string` | yes |  | high cardinality | Lane name |
+| `pi.operation.id` | `string` | yes |  | high cardinality | Durable operation id |
+| `pi.turn.id` | `string` | no |  | high cardinality | Invocation-local live turn id |
+| `pi.tool.name` | `string` | yes |  |  | Tool name |
+| `pi.tool.call_id` | `string` | yes |  | high cardinality | Tool call id |
+| `pi.tool.replay` | `string` | yes | never, safe |  | Declared replay policy |
+| `pi.tool.recovery` | `boolean` | yes |  |  | Whether this is recovery execution |
 
 #### End attributes
 
@@ -3878,11 +3882,11 @@ One registered hook handler invocation
 #### Start attributes
 
 | Name | Type | Required | Values | Notes | Description |
-| --- | --- | ---: | --- | --- | --- |
-| `pi.lane.name` | `string` | yes | | high cardinality | Lane name |
-| `pi.operation.id` | `string` | no | | high cardinality | Durable operation id when accepted |
-| `pi.hook.name` | `string` | yes | before_run, before_drive, before_run_end, transform_context, before_request, before_payload, after_response, before_tool, after_tool, before_compaction, before_navigation | | Hook name |
-| `pi.hook.registration_id` | `string` | no | | | Optional hook registration metadata |
+|---|---|---:|---|---|---|
+| `pi.lane.name` | `string` | yes |  | high cardinality | Lane name |
+| `pi.operation.id` | `string` | no |  | high cardinality | Durable operation id when accepted |
+| `pi.hook.name` | `string` | yes | before_run, before_drive, before_run_end, transform_context, before_request, before_payload, after_response, before_tool, after_tool, before_compaction, before_navigation |  | Hook name |
+| `pi.hook.registration_id` | `string` | no |  |  | Optional hook registration metadata |
 
 #### End attributes
 
@@ -3934,9 +3938,9 @@ One passive event listener invocation
 #### Start attributes
 
 | Name | Type | Required | Values | Notes | Description |
-| --- | --- | ---: | --- | --- | --- |
+|---|---|---:|---|---|---|
 | `pi.event.type` | `string` | yes | run_start, run_resume, run_suspend, operation_abort, run_end, fault, handler_error, turn_start, turn_end, retry_scheduled, retry_start, retry_end, message_start, message_update, message_end, tool_start, tool_update, tool_end, entry_added, queue_update, value_update, config_update, compaction_start, compaction_end, navigation_start, navigation_end, lane_created, usage | low cardinality | Delivered harness event type |
-| `pi.lane.name` | `string` | no | | high cardinality | Lane name for lane-scoped events |
+| `pi.lane.name` | `string` | no |  | high cardinality | Lane name for lane-scoped events |
 
 #### End attributes
 
@@ -3944,7 +3948,7 @@ All end attributes are optional completion enrichment.
 
 | Name | Type | Values | Notes | Description |
 |---|---|---|---|---|
-| *none* | | | | |
+| _none_ | | | | |
 
 #### Events
 
@@ -3961,12 +3965,12 @@ One committed session transaction
 #### Start attributes
 
 | Name | Type | Required | Values | Notes | Description |
-| --- | --- | ---: | --- | --- | --- |
-| `pi.session.id` | `string` | yes | | high cardinality | Session id |
-| `pi.lane.name` | `string` | no | | high cardinality | Lane name when supplied by the caller |
-| `pi.operation.id` | `string` | no | | high cardinality | Durable operation id when supplied by the caller |
-| `pi.session.item_count` | `number` | yes | | | Number of writes in the transaction |
-| `pi.session.item_kinds` | `string[]` | yes | elements: entry, usage, value, list | | Distinct write kinds in the transaction |
+|---|---|---:|---|---|---|
+| `pi.session.id` | `string` | yes |  | high cardinality | Session id |
+| `pi.lane.name` | `string` | no |  | high cardinality | Lane name when supplied by the caller |
+| `pi.operation.id` | `string` | no |  | high cardinality | Durable operation id when supplied by the caller |
+| `pi.session.item_count` | `number` | yes |  |  | Number of writes in the transaction |
+| `pi.session.item_kinds` | `string[]` | yes | elements: entry, usage, value, list |  | Distinct write kinds in the transaction |
 
 #### End attributes
 
@@ -4002,15 +4006,15 @@ The implemented public types are:
 
 ```ts
 interface ContextKey<T> {
- readonly token: symbol;
- readonly valueType?: (value: T) => T;
+	readonly token: symbol;
+	readonly valueType?: (value: T) => T;
 }
 
 interface Context {
- readonly abortSignal: AbortSignal | undefined;
- readonly telemetryContext: TelemetryContext;
- value<T>(key: ContextKey<T>): T | undefined;
- toString(): string;
+	readonly abortSignal: AbortSignal | undefined;
+	readonly telemetryContext: TelemetryContext;
+	value<T>(key: ContextKey<T>): T | undefined;
+	toString(): string;
 }
 ```
 
@@ -4068,12 +4072,12 @@ The design retains:
 
 ```ts
 return startHarnessSpan(
- "pi.harness.run",
- attributes,
- async (span, runContext) => {
-  return runDrive(runContext);
- },
- context,
+	"pi.harness.run",
+	attributes,
+	async (span, runContext) => {
+		return runDrive(runContext);
+	},
+	context,
 );
 ```
 
@@ -4087,11 +4091,11 @@ Explicit propagation supports concurrent sibling calls:
 
 ```ts
 await parent.telemetryContext.startSpan({ name: "caller" }, async (callerSpan) => {
- const callerContext = withTelemetryContext(callerSpan, parent);
- await Promise.all([
-  laneA.drive(optionsA, callerContext),
-  laneB.drive(optionsB, callerContext),
- ]);
+	const callerContext = withTelemetryContext(callerSpan, parent);
+	await Promise.all([
+		laneA.drive(optionsA, callerContext),
+		laneB.drive(optionsB, callerContext),
+	]);
 });
 ```
 
@@ -4155,10 +4159,10 @@ The runtime must track the stop cause instead of interpreting every aborted prov
 
 ```ts
 type ExecutionStopCause =
- | "no_drive_waiters"
- | "invocation_cancelled"
- | "harness_closed"
- | "durable_cancel_requested";
+	| "no_drive_waiters"
+	| "invocation_cancelled"
+	| "harness_closed"
+	| "durable_cancel_requested";
 ```
 
 Only `durable_cancel_requested` may normalize and commit a durable aborted outcome. An invocation/disconnect abort must not produce an assistant `stopReason: "aborted"` settlement while durable control remains `running`; that path would violate the durable state machine.
@@ -4182,8 +4186,8 @@ A transport-facing adapter boundary is required:
 
 ```ts
 interface TelemetryPropagation {
- inject(context: TelemetryContext): JsonValue | undefined;
- extract(carrier: JsonValue | undefined): TelemetryContext;
+	inject(context: TelemetryContext): JsonValue | undefined;
+	extract(carrier: JsonValue | undefined): TelemetryContext;
 }
 ```
 

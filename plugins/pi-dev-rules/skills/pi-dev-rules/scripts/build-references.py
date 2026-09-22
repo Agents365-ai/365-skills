@@ -23,7 +23,10 @@ OUT = (
 BUNDLES = {
     "cli-and-usage.md": [
         ("packages/coding-agent/docs/quickstart.md", "Quickstart"),
+        ("packages/coding-agent/docs/how-pi-works.md", "How Pi Works"),
         ("packages/coding-agent/docs/usage.md", "Using Pi"),
+        ("packages/coding-agent/docs/cli.md", "Command Line"),
+        ("packages/coding-agent/docs/slash-commands.md", "Slash Commands"),
         (
             "packages/coding-agent/docs/environment-variables.md",
             "Environment Variables",
@@ -38,6 +41,7 @@ BUNDLES = {
         ("packages/coding-agent/docs/custom-provider.md", "Custom Providers"),
     ],
     "settings-and-compaction.md": [
+        ("packages/coding-agent/docs/configuration.md", "Configuration"),
         ("packages/coding-agent/docs/settings.md", "Settings"),
         ("packages/coding-agent/docs/compaction.md", "Compaction"),
     ],
@@ -56,12 +60,16 @@ BUNDLES = {
         ("packages/coding-agent/docs/containerization.md", "Containerization"),
     ],
     "session-format.md": [
-        ("packages/coding-agent/docs/session-format.md", "Session Format"),
+        ("packages/coding-agent/docs/session-format.md", "Session File Format"),
+        ("packages/coding-agent/docs/message-types.md", "Message Types"),
     ],
     "programmatic.md": [
         ("packages/coding-agent/docs/sdk.md", "SDK"),
-        ("packages/coding-agent/docs/rpc.md", "RPC Mode"),
-        ("packages/coding-agent/docs/json.md", "JSON Event Stream Mode"),
+        ("packages/coding-agent/docs/cli-integration.md", "CLI Integration"),
+        ("packages/coding-agent/docs/json.md", "JSON Event Stream"),
+        ("packages/coding-agent/docs/rpc.md", "RPC Protocol"),
+        ("packages/coding-agent/docs/rpc-commands.md", "RPC Commands"),
+        ("packages/coding-agent/docs/rpc-extension-ui.md", "RPC Extension UI"),
     ],
     "platform-setup.md": [
         ("packages/coding-agent/docs/windows.md", "Windows"),
@@ -71,7 +79,9 @@ BUNDLES = {
         ("packages/coding-agent/docs/shell-aliases.md", "Shell Aliases"),
     ],
     "development.md": [
-        ("packages/coding-agent/docs/development.md", "Development"),
+        ("README.md", "Monorepo Overview"),
+        ("AGENTS.md", "Development Rules"),
+        ("CONTRIBUTING.md", "Contributing"),
     ],
     "chord.md": [
         ("packages/chord/README.md", "Overview"),
@@ -92,15 +102,15 @@ BUNDLES = {
 HEADER_DOCS = {
     "cli-and-usage.md": (
         "# Pi: CLI, Usage, Sessions & Keybindings",
-        "Source: https://pi.dev/docs/latest/quickstart, /usage, /environment-variables, /sessions, /keybindings",
+        "Source: https://pi.dev/docs/latest/quickstart, /how-pi-works, /usage, /cli, /slash-commands, /environment-variables, /sessions, /keybindings",
     ),
     "providers-and-models.md": (
         "# Pi: Providers & Custom Models",
         "Source: https://pi.dev/docs/latest/providers, /llama-cpp, /models, /custom-provider",
     ),
     "settings-and-compaction.md": (
-        "# Pi: Settings & Compaction",
-        "Source: https://pi.dev/docs/latest/settings, /compaction",
+        "# Pi: Configuration, Settings & Compaction",
+        "Source: https://pi.dev/docs/latest/configuration, /settings, /compaction",
     ),
     "extending-pi.md": (
         "# Extending Pi: Extensions, Skills, Prompt Templates, Themes, Packages",
@@ -115,20 +125,20 @@ HEADER_DOCS = {
         "Source: https://pi.dev/docs/latest/security, /containerization",
     ),
     "session-format.md": (
-        "# Pi: Session Format",
-        "Source: https://pi.dev/docs/latest/session-format",
+        "# Pi: Session Format & Message Types",
+        "Source: https://pi.dev/docs/latest/session-format, /message-types",
     ),
     "programmatic.md": (
-        "# Pi: Programmatic Usage (SDK, RPC, JSON)",
-        "Source: https://pi.dev/docs/latest/sdk, /rpc, /json",
+        "# Pi: Programmatic Usage (SDK, CLI, RPC, JSON)",
+        "Source: https://pi.dev/docs/latest/sdk, /cli-integration, /json, /rpc, /rpc-commands, /rpc-extension-ui",
     ),
     "platform-setup.md": (
-        "# Pi: Platform Setup & Development",
+        "# Pi: Platform Setup",
         "Source: https://pi.dev/docs/latest/windows, /termux, /tmux, /terminal-setup, /shell-aliases",
     ),
     "development.md": (
-        "# Pi: Development (Build from Source)",
-        "Source: https://pi.dev/docs/latest/development",
+        "# Pi: Monorepo, Development & Contributing",
+        "Source: repository-root `README.md`, `AGENTS.md`, `CONTRIBUTING.md`\nUpstream folded the `docs/development.md` page into `docs/index.md`; the package list, build-from-source commands, and contribution rules now live in the repository-root files bundled here.",
     ),
     "chord.md": (
         "# Chord: Application-Composition Runtime",
@@ -169,10 +179,15 @@ def strip_source_comment(lines):
 
 
 def strip_leading_meta(lines):
-    """Remove leading h1 (# Title) and leading blockquote (> ...) lines."""
+    """Remove leading h1 (# Title), blockquote (> ...), and HTML anchor/badge lines."""
     while lines:
         stripped = lines[0].strip()
-        if stripped == "" or stripped.startswith("# ") or stripped.startswith(">"):
+        if (
+            stripped == ""
+            or stripped.startswith("# ")
+            or stripped.startswith(">")
+            or stripped.startswith("<")
+        ):
             lines.pop(0)
         else:
             break
