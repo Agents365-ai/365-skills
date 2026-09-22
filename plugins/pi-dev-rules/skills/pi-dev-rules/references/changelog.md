@@ -1,6 +1,6 @@
 # Pi: Changelog
 
-Source: `packages/coding-agent/CHANGELOG.md` at pi@71dca871b. Built locally from the repository changelog; no network access.
+Source: `packages/coding-agent/CHANGELOG.md` at pi@2c2cd63. Built locally from the repository changelog; no network access.
 
 A reverse-chronological release list, newest first. The highlight column is the first
 bullet of each release's `### New Features` section, or its first bullet when that
@@ -15,7 +15,10 @@ checkout to rebuild this file and the reference bundles.
 
 | Version | Date | Highlights |
 | --------- | ------ | ----------- |
-| Unreleased | unreleased | ctx.modelRegistry.stream() and streamSimple() for extension model calls through configured providers with resolved authentication (#8964). |
+| Unreleased | unreleased | the default xAI model to Grok 4.7. |
+| **0.87.0** | 2026-09-21 | Canonical session context and extension boundaries — Edit model context without rewriting history and add actionable lifecycle hooks. See ContextEd... |
+| **0.86.1** | 2026-09-20 | Meta Muse provider — Sign in with Meta using /login meta or use META_API_KEY to access Muse Spark models. See Meta (Muse subscription). |
+| **0.86.0** | 2026-09-19 | Prompt cache warming — Keep valuable prompt caches alive during long tool runs and optionally while idle using cost-aware refreshes. See Cache Warm... |
 | **0.85.1** | 2026-09-05 | GPT-6 Astra — Available through OpenAI API keys and OpenAI Codex subscriptions. See API Keys and OpenAI Codex. |
 | **0.85.0** | 2026-09-04 | Persistent Claude thinking effort — Supported Anthropic transports preserve per-turn effort and recover safely from signed-thinking mismatches. See... |
 | **0.84.4** | 2026-08-28 | Terminal capability overrides — Override detected terminal hyperlink, image, and truecolor support. See Capability Overrides. |
@@ -37,15 +40,12 @@ checkout to rebuild this file and the reference bundles.
 | **0.80.4** | 2026-07-09 | Prompt cache miss visibility - Significant cache misses can be shown in transcripts via showCacheMissNotices. See Model & Thinking. |
 | **0.80.3** | 2026-06-30 | Anthropic Claude Sonnet 5 support - Claude Sonnet 5 is available through inherited Anthropic-compatible and Bedrock provider catalogs with adaptive... |
 | **0.80.2** | 2026-06-23 | inherited pi-ai ApiKeyCredential to use the auth.json-compatible discriminator type: "api_key" and provider-scoped env values instead of type: "api... |
-| **0.80.1** | 2026-06-23 | inherited Amazon Bedrock scoped AWS_PROFILE endpoint resolution for built-in inference profile endpoints. |
-| **0.80.0** | 2026-06-23 | Changed: Added Ctrl+J as a default newline keybinding alongside Shift+Enter. |
-| **0.79.10** | 2026-06-22 | Extension compaction event context - Extension session_before_compact and session_compact events now include reason and willRetry, so extensions ca... |
 
 ---
 
 ## Full changelog
 
-275 release sections are recorded in the Pi repository, including `[Unreleased]`.
+278 release sections are recorded in the Pi repository, including `[Unreleased]`.
 Read the complete, untruncated history there:
 
 ```bash

@@ -12,9 +12,9 @@
 一个编程助手技能，将最新的 [Pi](https://pi.dev) 文档（`@earendil-works/pi-coding-agent`）
 打包为按需参考库，让助手无需重新抓取文档即可安装、配置、运行和**扩展 Pi**。
 
-镜像 <https://pi.dev/docs/latest>（抓取日期：2026-09-14）。另外两个参考文件（`chord.md`、
-`agent-harness.md`）覆盖 Pi 的**内部 monorepo 架构**，从 `pi@71dca871b` 的本地源码树构建，
-因为这些包在官网没有对应页面。
+镜像 <https://pi.dev/docs/latest>（抓取日期：2026-09-22，已包含本次文档改版）。另外三个参考文件
+（`development.md`、`chord.md`、`agent-harness.md`）覆盖官网没有页面的内容：仓库的构建/开发/贡献
+规则，以及 Pi 的**内部 monorepo 架构**，从 `pi@2c2cd63` 的源码树构建。
 
 适用于 Claude Code、Cursor、Codex、Copilot、Windsurf、Cline / Roo Code、Gemini CLI、
 Aider、Zed、OpenCode、OpenClaw / ClawHub、Hermes、pi-mono，以及主流国产编程助手
@@ -28,22 +28,23 @@ Aider、Zed、OpenCode、OpenClaw / ClawHub、Hermes、pi-mono，以及主流国
 ## 包含内容
 
 - `SKILL.md`：概述、使用时机、速查表、硬性规则、参考索引。
-- `references/cli-and-usage.md`：安装、认证、CLI 参数、斜杠命令、消息队列、上下文
-  文件、环境变量、会话、快捷键。
+- `references/cli-and-usage.md`：安装、认证、启动、Pi 的工作原理（agent 循环、上下文、
+  会话）、CLI 参考（命令、参数、模式）、斜杠命令、消息队列、上下文文件、环境变量、会话、快捷键。
 - `references/providers-and-models.md`：提供商（30+）、`auth.json`（+ scoped `env`）、云
   提供商、自定义 `models.json`、`compat`、自定义提供商扩展。
-- `references/settings-and-compaction.md`：`settings.json`（trust/analytics/retry/transport）、
-  自动/手动压缩、分支摘要。
+- `references/settings-and-compaction.md`：配置布局（agent 目录与项目 `.pi/`、上下文文件）、
+  `settings.json`（trust/analytics/retry/transport）、自动/手动压缩、分支摘要。
 - `references/extending-pi.md`：扩展 API、技能（SKILL.md）、提示模板、主题、包。
 - `references/tui-components.md`：自定义扩展/工具 UI 的 TUI 组件系统。
 - `references/security-and-containerization.md`：项目信任模型、无内置沙箱、Gondolin
   微型虚拟机、Docker、OpenShell。
-- `references/session-format.md`：会话 JSONL 架构、消息/条目类型、SessionManager API。
-- `references/programmatic.md`：SDK、RPC 模式、JSON 事件流模式。
-- `references/platform-setup.md`：Windows、Termux、tmux、终端设置、shell 别名、
-  从源码构建。
-- `references/development.md`：从源码构建 Pi、monorepo 结构、fork/重命名、
-  调试。
+- `references/session-format.md`：会话 JSONL 架构、条目类型、SessionManager API，以及面向模型的
+  消息类型。
+- `references/programmatic.md`：SDK、CLI 集成（模式选择、`RpcClient`、fork 与重命名）、
+  JSON 事件流模式、RPC 协议、RPC 命令参考、RPC 扩展 UI。
+- `references/platform-setup.md`：Windows、Termux、tmux、终端设置、shell 别名。
+- `references/development.md`：monorepo 包列表、从源码构建与独立二进制构建、供应链规则、
+  `AGENTS.md` 开发规则、`CONTRIBUTING.md` 准入门槛。
 - `references/philosophy-and-design.md`（作者的设计宣言，Mario Zechner 的博客文章，2025-11-30）：
   为何极简、4 工具哲学、默认 YOLO、明确的非功能特性（无 MCP / 无计划模式 / 无待办 / 无子代理 /
   无后台 bash）及其预期替代方案。
@@ -72,7 +73,10 @@ cp -r pi-dev-rules ~/.claude/skills/      # 示例：Claude Code，全局
 
 `references/*.md` 是生成物，不是手写文档：12 个自动生成的参考包与 `changelog.md` 来自 pi 源码
 检出，`philosophy-and-design.md` 为手工整理。用户直接使用随包文件即可，无需执行任何命令；重建属于
-维护者工具，说明见 [`scripts/README.md`](skills/pi-dev-rules/scripts/README.md)。
+维护者工具，说明见 [`scripts/README.md`](skills/pi-dev-rules/scripts/README.md)。上游于
+2026-09-22 改版了文档（拆分为 `cli.md`、`slash-commands.md`、`configuration.md`、
+`message-types.md`、`rpc-commands.md`、`rpc-extension-ui.md`、`cli-integration.md`、
+`how-pi-works.md`；`docs/development.md` 并入 `docs/index.md`）。
 
 ## 支持
 

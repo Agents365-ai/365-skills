@@ -1,426 +1,217 @@
-# Pi: Settings & Compaction
-
-Source: <https://pi.dev/docs/latest/settings>, /compaction
+# Pi: Configuration, Settings & Compaction
+Source: https://pi.dev/docs/latest/configuration, /settings, /compaction
 
 ---
 
 > **Auto-built from individual doc pages.**
-> Sources: <https://raw.githubusercontent.com/earendil-works/pi/main/packages/coding-agent/docs/settings.md>, <https://raw.githubusercontent.com/earendil-works/pi/main/packages/coding-agent/docs/compaction.md>
+> Sources: https://raw.githubusercontent.com/earendil-works/pi/main/packages/coding-agent/docs/configuration.md, https://raw.githubusercontent.com/earendil-works/pi/main/packages/coding-agent/docs/settings.md, https://raw.githubusercontent.com/earendil-works/pi/main/packages/coding-agent/docs/compaction.md
+
+## Configuration
+
+Pi supports user-level and project configuration. User-level configuration lives in the agent directory, which defaults to `~/.pi/agent`. Project configuration lives in `.pi` under the working directory and loads after [project trust](security.md#understand-project-trust) is granted. The only exception is `sessionDir`, which Pi reads before resolving trust so it can locate sessions.
+
+In interactive mode, use `/settings` to change common preferences. For other options, ask Pi to update the configuration or edit the relevant files directly. Run `/reload` after manually changing settings, keybindings, instructions, or resources.
+
+## Agent directory
+
+The agent directory is shown as `<agent-dir>` below. Set its location with the `PI_CODING_AGENT_DIR` environment variable or the SDK's [`agentDir`](sdk.md) option.
+
+| Path | Responsibility |
+|---|---|
+| `<agent-dir>/settings.json` | User-level [settings](settings.md), including preferences, defaults, resource paths, and Pi package declarations. |
+| `<agent-dir>/keybindings.json` | Custom terminal UI and application [keybindings](keybindings.md). |
+| `<agent-dir>/models.json` | [Compatible endpoints, models, and model overrides](models.md#configure-a-compatible-endpoint). |
+| `<agent-dir>/auth.json` | Saved API keys and OAuth credentials. |
+| `<agent-dir>/AGENTS.override.md`, `AGENTS.md`, `AGENTS.MD`, `CLAUDE.md`, or `CLAUDE.MD` | User instructions applied across working directories. |
+| `<agent-dir>/SYSTEM.md` | Replaces Pi’s default system prompt. |
+| `<agent-dir>/APPEND_SYSTEM.md` | Adds instructions to Pi’s system prompt. |
+| `<agent-dir>/extensions/` | User [extensions](extensions.md). |
+| `<agent-dir>/skills/` | User [skills](skills.md) and supporting files. |
+| `<agent-dir>/prompts/` | User [prompt templates](prompt-templates.md) exposed as slash commands. |
+| `<agent-dir>/themes/` | User [theme](themes.md) files. |
+
+## Project `.pi` directory
+
+| Path | Responsibility |
+|---|---|
+| `.pi/settings.json` | Project-level [settings](settings.md), resource paths, and Pi package declarations. |
+| `.pi/SYSTEM.md` | Replaces the system prompt for the project. |
+| `.pi/APPEND_SYSTEM.md` | Adds project-specific instructions to the system prompt. |
+| `.pi/extensions/` | Project extensions. |
+| `.pi/skills/` | Project skills and supporting files. |
+| `.pi/prompts/` | Project prompt templates exposed as slash commands. |
+| `.pi/themes/` | Project theme files. |
+
+For `SYSTEM.md` and `APPEND_SYSTEM.md`, the trusted project file takes precedence over the corresponding agent-directory file. Files with the same name are not combined.
+
+## Context files
+
+Context files are separate from project `.pi` configuration. Pi loads them from the agent directory, the working directory, and its parent directories. A context file applies whenever Pi runs in its directory or anywhere below it.
+
+An `AGENTS.override.md` replaces `AGENTS.md` or `CLAUDE.md` only in the same directory. It does not suppress context files from the agent directory or other directories.
+
+Context-file discovery does not require project trust.
+
+---
 
 ## Settings
 
-Pi uses JSON settings files with project settings overriding global settings.
+This reference lists user-configurable settings, their types, defaults, and purposes. Project settings override agent-directory settings. Resource lists are combined. See [Configuration](configuration.md) for file locations and trust behavior.
 
-| Location | Scope |
-|----------|-------|
-| `~/.pi/agent/settings.json` | Global (all projects) |
-| `.pi/settings.json` | Project (current directory) |
+## Model and thinking
 
-Edit directly or use `/settings` for common options. To save startup model defaults interactively, use `/model` and press Ctrl+S on the desired model. To save the startup thinking level, use `/thinking` and press Ctrl+S.
-
-## Project Trust
-
-On interactive startup, pi asks before trusting a project folder that contains project-local settings, resources, or project `.agents/skills` and has no saved decision for the folder or a parent folder in `~/.pi/agent/trust.json`. Trusting a project allows pi to load `.pi/settings.json` and `.pi` resources, install missing project packages, and execute project extensions.
-
-Non-interactive modes (`-p`, `--mode json`, and `--mode rpc`) do not show a trust prompt. Without an applicable saved trust decision, they use `defaultProjectTrust` from global settings: `ask` (default) and `never` ignore those project resources, while `always` trusts them. Pass `--approve`/`-a` or `--no-approve`/`-na` to override project trust for one run.
-
-If no extension or saved decision applies, `defaultProjectTrust` controls the fallback behavior. Set it to `"ask"`, `"always"`, or `"never"` in `~/.pi/agent/settings.json`, or change it with `/settings`.
-
-`pi config` and package commands use the same project trust flow, except `pi update` never prompts. Pass `--approve` to trust project-local settings for one command or `--no-approve` to ignore them.
-
-Use `/trust` in interactive mode to save a project trust decision for future sessions, including trust for the immediate parent folder. It writes `~/.pi/agent/trust.json` only; the current session is not reloaded, so restart pi for changes to take effect.
-
-## All Settings
-
-### Model & Thinking
+<a id="model-cycling"></a>
 
 | Setting | Type | Default | Description |
-| --------- | ------ | --------- | ------------- |
-| `defaultProvider` | string | - | Startup provider (e.g., `"anthropic"`, `"openai"`; saved with Ctrl+S in `/model`, or edited manually) |
-| `defaultModel` | string | - | Startup model ID (saved with Ctrl+S in `/model`, or edited manually) |
-| `defaultThinkingLevel` | string | - | Startup thinking level (saved with Ctrl+S in `/thinking`, or edited manually): `"off"`, `"minimal"`, `"low"`, `"medium"`, `"high"`, `"xhigh"`, `"max"` |
-| `modelThinkingLevels` | object | - | Per-model startup thinking levels keyed by `"provider/modelId"`; configure from `/settings` → Default thinking level per model or edit manually |
-| `hideThinkingBlock` | boolean | `false` | Hide thinking blocks in output |
-| `showCacheMissNotices` | boolean | `false` | Show transcript notices for significant prompt-cache misses, compaction or branch-summary usage, and provider recovery diagnostics such as dropped Anthropic thinking blocks |
-| `thinkingBudgets` | object | - | Custom token budgets per thinking level. Anthropic, Google, and Bedrock use these natively. OpenAI-compatible models use them when `compat.thinkingTokenBudgetField` (or `supportsThinkingTokenBudget`) is set. |
+|---|---|---|---|
+| `defaultProvider` | string | Automatic | Startup AI provider. |
+| `defaultModel` | string | Automatic | Startup model ID. |
+| `defaultThinkingLevel` | `"off" \| "minimal" \| "low" \| "medium" \| "high" \| "xhigh" \| "max"` | `"medium"` | Startup thinking level. |
+| `modelThinkingLevels` | object | None | Per-model startup thinking levels keyed by exact `provider/modelId`. |
+| `thinkingBudgets` | object | Built-in budgets | Token budgets for `minimal`, `low`, `medium`, and `high` thinking levels. |
+| `enabledModels` | `string[]` | All available models | Model patterns used for startup selection and model cycling. Uses the same format as `--models`. |
+| `hideThinkingBlock` | boolean | `false` | Hide thinking blocks in the transcript. |
+| `showCacheMissNotices` | boolean | `false` | Show notices for significant cache misses, successful cache warming, compaction usage, and provider recovery. |
+| `cacheWarming` | `"off" \| "streaming" \| "idle"` | `"streaming"` | Keep eligible provider prompt caches warm during active runs or, with `"idle"`, between runs. Global setting only. |
 
-#### thinkingBudgets
+Cache warming runs only when the model declares a cache lifetime and Pi estimates at least $0.05 in avoided cache-miss cost. Refresh usage counts toward session totals but does not enter model context. `/session` shows the next decision; extensions can override it with `cache_warming_decision`. See [Prompt Cache Lifetimes](models.md#prompt-cache-lifetimes).
 
-```json
-{
-  "thinkingBudgets": {
-    "minimal": 1024,
-    "low": 4096,
-    "medium": 10240,
-    "high": 32768
-  }
-}
-```
+See [Choose a Model](models.md) for model selection and thinking controls.
 
-### UI & Display
+## Interaction
 
 | Setting | Type | Default | Description |
-| --------- | ------ | --------- | ------------- |
-| `theme` | string | `"dark"` | Theme name (`"dark"`, `"light"`, or custom) |
-| `externalEditor` | string | `$VISUAL`, then `$EDITOR`, then Notepad on Windows or `nano` elsewhere | Command for Ctrl+G external editor; takes precedence over environment variables |
-| `quietStartup` | boolean | `false` | Hide startup header |
-| `defaultProjectTrust` | string | `"ask"` | Fallback project trust behavior: `"ask"`, `"always"`, or `"never"`. Global setting only |
-| `collapseChangelog` | boolean | `false` | Show condensed changelog after updates |
-| `enableInstallTelemetry` | boolean | `true` | Send the anonymous install/update ping and selected provider attribution headers. This does not control update checks |
-| `enableAnalytics` | boolean | `false` | Opt-in analytics data sharing. Currently only asked for during the experimental first-time setup (`PI_EXPERIMENTAL=1`) |
-| `trackingId` | string | - | Analytics tracking identifier, generated when `enableAnalytics` is turned on |
-| `doubleEscapeAction` | string | `"tree"` | Action for double-escape: `"tree"`, `"fork"`, or `"none"` |
-| `treeFilterMode` | string | `"default"` | Default filter for `/tree`: `"default"`, `"no-tools"`, `"user-only"`, `"labeled-only"`, `"all"` |
-| `editorPaddingX` | number | `0` | Horizontal padding for input editor (0-3) |
-| `outputPad` | number | `1` | Horizontal padding for user messages, assistant messages, and thinking (0 or 1) |
-| `autocompleteMaxVisible` | number | `5` | Max visible items in autocomplete dropdown (3-20) |
-| `showHardwareCursor` | boolean | `false` | Show the terminal cursor while TUI positions it for IME support |
-| `tuiMode` | string | `"regular"` | Interactive TUI mode: `"regular"` or experimental `"fullscreen"`. Changes from `/settings` apply immediately; `--tui-mode` overrides this setting at startup |
-| `fullscreenExitOutput` | string | `"transcript"` | Fullscreen exit output: `"transcript"` prints the final transcript and resume hint, while `"resume-hint"` restores the previous screen and prints only the resume hint. Has no effect in regular TUI mode |
-| `fullscreenScrollbar` | string | `"auto"` | Fullscreen transcript scrollbar: `"auto"` shows it temporarily while scrolling or while the pointer is over its rightmost-column track, `"always"` reserves that column and keeps it visible, and `"hidden"` hides it. Has no effect in regular TUI mode |
-| `fullscreenCopyOnSelect` | boolean | `true` | Automatically copy selected text in fullscreen mode. When disabled, selections stay highlighted and `Ctrl+X` copies the active selection |
+|---|---|---|---|
+| `steeringMode` | `"all" \| "one-at-a-time"` | `"one-at-a-time"` | How queued steering messages are delivered. |
+| `followUpMode` | `"all" \| "one-at-a-time"` | `"one-at-a-time"` | How queued follow-up messages are delivered. |
+| `externalEditor` | string | `$VISUAL`, `$EDITOR`, then platform default | Command opened by the external-editor keybinding. |
+| `doubleEscapeAction` | `"tree" \| "fork" \| "none"` | `"tree"` | Action for double Escape with an empty editor. |
+| `treeFilterMode` | `"default" \| "no-tools" \| "user-only" \| "labeled-only" \| "all"` | `"default"` | Initial filter used by `/tree`. |
+| `defaultProjectTrust` | `"ask" \| "always" \| "never"` | `"ask"` | Fallback project-trust behavior. **Can only be set in agent-directory settings.** |
 
-For VS Code, include `--wait` so pi resumes after the editor exits:
-
-```json
-{
-  "externalEditor": "code --wait"
-}
-```
-
-### Telemetry and update checks
-
-`enableInstallTelemetry` controls the anonymous install/update ping to `https://pi.dev/api/report-install` and Pi attribution headers for OpenRouter, NVIDIA NIM, and Cloudflare provider requests. Opting out disables both. It does not disable update checks; Pi can still fetch `https://pi.dev/api/latest-version` to look for the latest version.
-
-Set `PI_SKIP_VERSION_CHECK=1` to disable the Pi version update check. Use `--offline` or `PI_OFFLINE=1` to disable all startup network operations described here, including update checks, package update checks, and install/update telemetry.
-
-### Network
+## Tools
 
 | Setting | Type | Default | Description |
-|---------|------|---------|-------------|
-| `httpProxy` | string | - | HTTP proxy URL applied as `HTTP_PROXY` and `HTTPS_PROXY`. Global setting only. |
+|---|---|---|---|
+| `defaultTools` | `string[]` | `read`, `bash`, `edit`, `write` | Built-in tools enabled at startup. An empty array disables all built-in tools but not extension or SDK tools. |
 
-```json
-{
-  "httpProxy": "http://127.0.0.1:7890"
-}
-```
+Available built-in tools are `read`, `bash`, `powershell`, `edit`, `write`, `grep`, `find`, and `ls`. CLI tool options override this setting for one invocation. See [Command Line](cli.md#tools).
 
-### Warnings
+## Sessions and context
 
 | Setting | Type | Default | Description |
-|---------|------|---------|-------------|
-| `warnings.anthropicExtraUsage` | boolean | `true` | Show a warning when Anthropic subscription auth may use paid extra usage |
-
-```json
-{
-  "warnings": {
-    "anthropicExtraUsage": false
-  }
-}
-```
+|---|---|---|---|
+| `sessionDir` | string | Agent session directory | Session storage directory. Relative paths resolve from the working directory. `PI_CODING_AGENT_SESSION_DIR` and `--session-dir` override this setting. |
 
 ### Compaction
 
 | Setting | Type | Default | Description |
-| --------- | ------ | --------- | ------------- |
-| `compaction.enabled` | boolean | `true` | Enable auto-compaction |
-| `compaction.reserveTokens` | number | `16384` | Tokens reserved for LLM response |
-| `compaction.keepRecentTokens` | number | `20000` | Recent tokens to keep (not summarized) |
-| `compaction.modelOverrides` | object | - | Per-model `reserveTokens` and `keepRecentTokens` overrides keyed by exact `"provider/modelId"` |
+|---|---|---|---|
+| `compaction.enabled` | boolean | `true` | Enable automatic compaction. |
+| `compaction.reserveTokens` | number | `16384` | Tokens reserved for the model response. |
+| `compaction.keepRecentTokens` | number | `20000` | Recent tokens retained without summarization. |
+| `compaction.modelOverrides` | object | None | Per-model token settings keyed by exact `provider/modelId`. |
 
-```json
-{
-  "compaction": {
-    "enabled": true,
-    "reserveTokens": 16384,
-    "keepRecentTokens": 20000
-  }
-}
-```
+<a id="per-model-compaction-overrides"></a>
 
-#### Per-model compaction overrides
+Compaction token values must be non-negative safe integers. Each value resolves independently from the matching model override, then the ordinary compaction setting, then the built-in default. Project and user objects merge before model lookup.
 
-```json
-{
-  "compaction": {
-    "enabled": true,
-    "reserveTokens": 16384,
-    "keepRecentTokens": 20000,
-    "modelOverrides": {
-      "some-provider/big-model": {
-        "reserveTokens": 400000
-      },
-      "local/small-model": {
-        "reserveTokens": 2048,
-        "keepRecentTokens": 4096
-      }
-    }
-  }
-}
-```
+See [Compaction Reference](compaction.md) for trigger, summarization, and validation behavior.
 
-Keys match exact, case-sensitive `provider/modelId` values, not names or glob patterns. Model IDs may contain slashes (for example, `openrouter/anthropic/claude-sonnet-4`).
-
-Each token setting resolves independently: matching model override → ordinary `compaction` setting → built-in default. In the example, `some-provider/big-model` keeps the ordinary 20000 recent tokens. Token values must be non-negative safe integers. Invalid values in the matching model override produce an error when read; only omitted fields fall back to the ordinary setting. Model override entries must be objects. Invalid ordinary token settings produce an error when read, even if the active model has a valid override. Only omitted ordinary values use built-in defaults. Zero is accepted, but `reserveTokens: 0` leaves no response margin and also sets the summarization output budget to zero.
-
-Global and project settings merge recursively **before** model lookup. A project can override one field for a model without replacing its other fields or other models. A global model-specific value takes precedence over a project-wide fallback; override the same model entry in the project to change it.
-
-`enabled` is not model-specific. The active model's token settings apply to manual compaction, automatic threshold checks (including between assistant turns), and overflow recovery. Switching models takes effect on the next check or compaction. Configure overrides in JSON; `/settings` retains the ordinary auto-compaction toggle.
-
-See [compaction.md](compaction.md) for trigger and summarization behavior.
-
-### Branch Summary
+### Branch summaries
 
 | Setting | Type | Default | Description |
-|---------|------|---------|-------------|
-| `branchSummary.reserveTokens` | number | `16384` | Tokens reserved when selecting branch history; output is capped at 4096 tokens |
-| `branchSummary.skipPrompt` | boolean | `false` | Skip "Summarize branch?" prompt on `/tree` navigation (defaults to no summary) |
+|---|---|---|---|
+| `branchSummary.reserveTokens` | number | `16384` | Tokens reserved when summarizing branch history. |
+| `branchSummary.skipPrompt` | boolean | `false` | Skip the branch-summary prompt and default to no summary. |
 
-### Retry
-
-| Setting | Type | Default | Description |
-| --------- | ------ | --------- | ------------- |
-| `retry.enabled` | boolean | `true` | Enable automatic agent-level retry on transient errors |
-| `retry.maxRetries` | number | `3` | Maximum agent-level retry attempts |
-| `retry.baseDelayMs` | number | `2000` | Base delay for agent-level exponential backoff (2s, 4s, 8s) |
-| `retry.maxAgentDelayMs` | number | `60000` | Max agent-level retry delay (60s) |
-| `retry.provider.timeoutMs` | number | SDK default | Provider/SDK request timeout in milliseconds |
-| `retry.provider.maxRetries` | number | `0` | Provider/SDK retry attempts |
-| `retry.provider.maxRetryDelayMs` | number | `60000` | Max server-requested delay before failing (60s) |
-
-Agent-level retries use exponential backoff capped by `retry.maxAgentDelayMs`, so long retry runs stay responsive after prolonged outages.
-
-When a provider requests a retry delay longer than `retry.provider.maxRetryDelayMs`, the request fails immediately with an informative error instead of waiting silently. Set it to `0` to disable the limit.
-
-Keep `retry.provider.maxRetries` at `0` unless provider-level retries are explicitly needed. Setting it above `0` can make SDK/provider retries handle out-of-usage-limit errors before Pi sees them, which may block the agent until the provider quota resets in some circumstances.
-
-```json
-{
-  "retry": {
-    "enabled": true,
-    "maxRetries": 3,
-    "baseDelayMs": 2000,
-    "maxAgentDelayMs": 60000,
-    "provider": {
-      "timeoutMs": 3600000,
-      "maxRetries": 0,
-      "maxRetryDelayMs": 60000
-    }
-  }
-}
-```
-
-### Message Delivery
+## Terminal and display
 
 | Setting | Type | Default | Description |
-| --------- | ------ | --------- | ------------- |
-| `steeringMode` | string | `"one-at-a-time"` | How steering messages are sent: `"all"` or `"one-at-a-time"` |
-| `followUpMode` | string | `"one-at-a-time"` | How follow-up messages are sent: `"all"` or `"one-at-a-time"` |
-| `transport` | string | `"auto"` | Preferred transport for providers that support multiple transports: `"sse"`, `"websocket"`, `"websocket-cached"`, or `"auto"` |
-| `httpIdleTimeoutMs` | number | `300000` | HTTP header/body idle timeout in milliseconds, also used by providers with explicit stream idle timeouts. Set to `0` to disable. |
-| `websocketConnectTimeoutMs` | number | `15000` | WebSocket connect/open handshake timeout in milliseconds for providers that support WebSocket transports. Set to `0` to disable. |
+|---|---|---|---|
+| `theme` | string | Detected | Built-in or custom theme name. |
+| `quietStartup` | boolean | `false` | Hide the startup header. |
+| `tuiMode` | `"regular" \| "fullscreen"` | `"regular"` | Interactive terminal UI mode. |
+| `fullscreenExitOutput` | `"transcript" \| "resume-hint"` | `"transcript"` | Output printed when fullscreen mode exits. |
+| `fullscreenScrollbar` | `"auto" \| "always" \| "hidden"` | `"auto"` | Fullscreen transcript scrollbar behavior. |
+| `fullscreenCopyOnSelect` | boolean | `true` | Copy selected text automatically in fullscreen mode. |
+| `editorPaddingX` | number | `0` | Horizontal editor padding from 0 to 3 cells. |
+| `outputPad` | `0 \| 1` | `1` | Horizontal transcript padding. |
+| `autocompleteMaxVisible` | number | `5` | Visible autocomplete entries, from 3 to 20. |
+| `showHardwareCursor` | boolean | `false` | Show the terminal cursor while Pi positions it for input methods. |
+| `terminal.showImages` | boolean | `true` | Display inline images when supported. |
+| `terminal.imageWidthCells` | number | `60` | Preferred inline image width in terminal cells. |
+| `terminal.clearOnShrink` | boolean | `false` | Clear empty rows when rendered content shrinks. |
+| `terminal.showTerminalProgress` | boolean | `false` | Show OSC 9;4 progress in the terminal tab. |
+| `terminal.hyperlinks` | `boolean \| "auto"` | `"auto"` | Override OSC 8 hyperlink detection. |
+| `terminal.images` | `"kitty" \| "iterm2" \| "auto" \| false` | `"auto"` | Override inline-image protocol detection. |
+| `terminal.trueColor` | `boolean \| "auto"` | `"auto"` | Override true-color detection. |
+| `images.autoResize` | boolean | `true` | Resize images to at most 2000 by 2000 pixels before sending them to a model. |
+| `images.blockImages` | boolean | `false` | Prevent images from being sent to models. |
+| `markdown.codeBlockIndent` | string | `"  "` | Prefix used to indent rendered code blocks. |
+| `markdown.mermaid` | `"off" \| "final" \| "streaming"` | `"streaming"` | Mermaid rendering mode. |
 
-### Terminal & Images
+See [Themes](themes.md) and [Terminal Setup](terminal-setup.md) for format and platform details.
 
-| Setting | Type | Default | Description |
-| --------- | ------ | --------- | ------------- |
-| `terminal.showImages` | boolean | `true` | Show images in terminal (if supported) |
-| `terminal.imageWidthCells` | number | `60` | Preferred inline image width in terminal cells |
-| `terminal.clearOnShrink` | boolean | `false` | Clear empty rows when content shrinks (can cause flicker) |
-| `terminal.hyperlinks` | boolean or `"auto"` | `"auto"` | Override OSC 8 hyperlink support (advanced, JSON-only) |
-| `terminal.images` | string or boolean | `"auto"` | Override image protocol support with `"kitty"`, `"iterm2"`, `false`, or `"auto"` (advanced, JSON-only) |
-| `terminal.trueColor` | boolean or `"auto"` | `"auto"` | Override truecolor support (advanced, JSON-only) |
-| `images.autoResize` | boolean | `true` | Resize images to 2000x2000 max. Applies to `@file` attachments, `read`, and images returned by tools |
-| `images.blockImages` | boolean | `false` | Block all images from being sent to LLM |
-
-### Shell
-
-| Setting | Type | Default | Description |
-| --------- | ------ | --------- | ------------- |
-| `shellPath` | string | - | Custom shell path (e.g., for Cygwin on Windows); supports a leading `~` for the home directory |
-| `shellCommandPrefix` | string | - | Prefix for every bash command (e.g., `"shopt -s expand_aliases"`) |
-| `npmCommand` | string[] | - | Command argv used for npm package lookup/install operations (e.g., `["mise", "exec", "node@20", "--", "npm"]`) |
-
-Windows paths in JSON must use forward slashes or escaped backslashes:
-
-```json
-{
-  "shellPath": "C:/Program Files/Git/bin/bash.exe"
-}
-```
-
-```json
-{
-  "shellPath": "C:\\Program Files\\Git\\bin\\bash.exe"
-}
-```
-
-```json
-{
-  "npmCommand": ["mise", "exec", "node@20", "--", "npm"]
-}
-```
-
-`npmCommand` is used for all npm package-manager operations, including installs, uninstalls, and dependency installs inside git packages. User-scoped npm packages install under `~/.pi/agent/npm/`; project-scoped npm packages install under `.pi/npm/`. Use argv-style entries exactly as the process should be launched. When `npmCommand` is configured, git package dependency installs use plain `install` to avoid npm-specific flags in wrappers or alternate package managers.
-
-### Tools
+## Network and retries
 
 | Setting | Type | Default | Description |
-|---------|------|---------|-------------|
-| `defaultTools` | string[] | - | Built-in tools enabled initially. When omitted, Pi uses its standard defaults |
+|---|---|---|---|
+| `transport` | `"auto" \| "sse" \| "websocket" \| "websocket-cached"` | `"auto"` | Preferred transport for AI providers that support multiple transports. |
+| `httpProxy` | string | None | Proxy URL applied as `HTTP_PROXY` and `HTTPS_PROXY` for Pi-managed HTTP clients. **Can only be set in agent-directory settings.** |
+| `httpIdleTimeoutMs` | number | `300000` | HTTP header and body idle timeout in milliseconds. Set to `0` to disable. |
+| `websocketConnectTimeoutMs` | number | `15000` | WebSocket connection timeout in milliseconds. Set to `0` to disable. |
+| `retry.enabled` | boolean | `true` | Enable automatic agent-level retry for transient failures. |
+| `retry.maxRetries` | number | `3` | Maximum agent-level retry attempts. |
+| `retry.baseDelayMs` | number | `2000` | Initial exponential-backoff delay in milliseconds. |
+| `retry.maxAgentDelayMs` | number | `60000` | Maximum agent-level retry delay in milliseconds. |
+| `retry.provider.timeoutMs` | number | `httpIdleTimeoutMs` | Provider request timeout in milliseconds. |
+| `retry.provider.maxRetries` | number | `0` | Provider-level retry attempts. |
+| `retry.provider.maxRetryDelayMs` | number | `60000` | Maximum server-requested delay in milliseconds. Set to `0` to disable the limit. |
 
-`defaultTools` selects the built-in tools enabled at startup. Extension and SDK custom tools remain enabled. Available built-ins are `read`, `bash`, `powershell`, `edit`, `write`, `grep`, `find`, and `ls`:
+Keep `retry.provider.maxRetries` at `0` unless provider-level retries are required. Provider retries can delay Pi from handling quota and usage-limit errors itself.
 
-```json
-{
-  "defaultTools": ["bash", "edit", "write"]
-}
-```
-
-On Windows, select `powershell` instead of `bash`, or include both:
-
-```json
-{
-  "defaultTools": ["read", "powershell", "edit", "write"]
-}
-```
-
-An empty array starts with no built-in tools while preserving extension and SDK custom tools. `--tools` replaces this behavior with a strict allowlist for all tools, `--no-tools` disables all tools, and `--no-builtin-tools` disables the built-in defaults. `--exclude-tools` filters the resulting list. A project `defaultTools` array replaces the global array.
-
-### Sessions
+## Shell
 
 | Setting | Type | Default | Description |
-|---------|------|---------|-------------|
-| `sessionDir` | string | - | Directory where session files are stored. Accepts absolute or relative paths, plus `~`. |
+|---|---|---|---|
+| `shellPath` | string | Platform default | Custom shell executable path. Supports a leading `~`. |
+| `shellCommandPrefix` | string | None | Prefix prepended to every shell command. |
+| `npmCommand` | `string[]` | `npm` | Command and arguments used for npm package lookup and installation. |
 
-```json
-{ "sessionDir": ".pi/sessions" }
-```
+See [Shell aliases](shell-aliases.md) for shell setup and [Pi Packages](packages.md) for package-manager behavior.
 
-When multiple sources specify a session directory, precedence is `--session-dir`, `PI_CODING_AGENT_SESSION_DIR`, then `sessionDir` in settings.json.
+## Resources
 
-### Model Cycling
-
-| Setting | Type | Default | Description |
-|---------|------|---------|-------------|
-| `enabledModels` | string[] | - | Model patterns for Ctrl+P cycling (same format as `--models` CLI flag) |
-
-```json
-{
-  "enabledModels": ["claude-*", "gpt-4o", "gemini-2*"]
-}
-```
-
-### Markdown
+Resource paths in user settings resolve from the agent directory. Paths in project settings resolve from the project `.pi` directory. Absolute paths and `~` are supported.
 
 | Setting | Type | Default | Description |
-|---------|------|---------|-------------|
-| `markdown.codeBlockIndent` | string | `"  "` | Indentation for code blocks |
-| `markdown.mermaid` | string | `"streaming"` | Mermaid rendering mode: `"off"`, `"final"`, or `"streaming"` |
+|---|---|---|---|
+| `packages` | array | `[]` | npm, git, or local Pi package sources. See [Pi Packages](packages.md). |
+| `extensions` | `string[]` | `[]` | Extension files or directories. |
+| `skills` | `string[]` | `[]` | Skill files or directories. |
+| `prompts` | `string[]` | `[]` | Prompt-template files or directories. |
+| `themes` | `string[]` | `[]` | Theme files or directories. |
+| `enableSkillCommands` | boolean | `true` | Register skills as `/skill:name` commands. |
 
-### Resources
+Resource arrays support glob exclusions with `!pattern`, exact inclusion with `+path`, and exact exclusion with `-path`. Pi loads resources listed in both user-level and project settings.
 
-These settings define where to load extensions, skills, prompts, and themes from.
-
-Paths in `~/.pi/agent/settings.json` resolve relative to `~/.pi/agent`. Paths in `.pi/settings.json` resolve relative to `.pi`. Absolute paths and `~` are supported.
+## Updates, telemetry, and warnings
 
 | Setting | Type | Default | Description |
-| --------- | ------ | --------- | ------------- |
-| `packages` | array | `[]` | npm/git packages to load resources from |
-| `extensions` | string[] | `[]` | Local extension file paths or directories |
-| `skills` | string[] | `[]` | Local skill file paths or directories |
-| `prompts` | string[] | `[]` | Local prompt template paths or directories |
-| `themes` | string[] | `[]` | Local theme file paths or directories |
-| `enableSkillCommands` | boolean | `true` | Register skills as `/skill:name` commands |
-
-Arrays support glob patterns and exclusions. Use `!pattern` to exclude. Use `+path` to force-include an exact path and `-path` to force-exclude an exact path.
-
-#### packages
-
-String form loads all resources from a package:
-
-```json
-{
-  "packages": ["pi-skills", "@org/my-extension"]
-}
-```
-
-Object form filters which resources to load:
-
-```json
-{
-  "packages": [
-    {
-      "source": "pi-skills",
-      "skills": ["brave-search", "transcribe"],
-      "extensions": []
-    }
-  ]
-}
-```
-
-See [packages.md](packages.md) for package management details.
-
-## Example
-
-```json
-{
-  "defaultProvider": "anthropic",
-  "defaultModel": "claude-sonnet-4-20250514",
-  "defaultThinkingLevel": "medium",
-  "modelThinkingLevels": {
-    "anthropic/claude-sonnet-4-20250514": "high"
-  },
-  "theme": "dark",
-  "compaction": {
-    "enabled": true,
-    "reserveTokens": 16384,
-    "keepRecentTokens": 20000
-  },
-  "retry": {
-    "enabled": true,
-    "maxRetries": 3
-  },
-  "enabledModels": ["claude-*", "gpt-4o"],
-  "warnings": {
-    "anthropicExtraUsage": true
-  },
-  "packages": ["pi-skills"]
-}
-```
-
-## Project Overrides
-
-Project settings (`.pi/settings.json`) override global settings. Nested objects are merged:
-
-```json
-// ~/.pi/agent/settings.json (global)
-{
-  "theme": "dark",
-  "compaction": { "enabled": true, "reserveTokens": 16384 }
-}
-
-// .pi/settings.json (project)
-{
-  "compaction": { "reserveTokens": 8192 }
-}
-
-// Result
-{
-  "theme": "dark",
-  "compaction": { "enabled": true, "reserveTokens": 8192 }
-}
-```
+|---|---|---|---|
+| `collapseChangelog` | boolean | `false` | Show a condensed changelog after an update. |
+| `enableInstallTelemetry` | boolean | `true` | Enable anonymous install/update reporting and selected provider attribution headers. Does not control update checks. |
+| `enableAnalytics` | boolean | `false` | Opt in to analytics data sharing. Currently used only by the experimental first-run setup. |
+| `warnings.anthropicExtraUsage` | boolean | `true` | Warn when Anthropic subscription authentication may use paid extra usage. |
 
 ---
 
 ## Compaction
 
-LLMs have limited context windows. When conversations grow too long, Pi uses compaction to summarize older content while preserving recent work. This page covers both auto-compaction and branch summarization.
+This reference describes automatic compaction, branch summarization, persisted entries, and extension hooks. For the user workflow, see [Sessions and Context](sessions.md#manage-conversation-context).
 
 **Source files** ([pi](https://github.com/earendil-works/pi)):
-
 - [`packages/coding-agent/src/core/compaction/compaction.ts`](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/src/core/compaction/compaction.ts) - Auto-compaction logic
 - [`packages/coding-agent/src/core/compaction/branch-summarization.ts`](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/src/core/compaction/branch-summarization.ts) - Branch summarization
 - [`packages/coding-agent/src/core/compaction/utils.ts`](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/src/core/compaction/utils.ts) - Shared utilities (file tracking, serialization)
@@ -438,7 +229,7 @@ Pi has two summarization mechanisms:
 | Compaction | Context exceeds threshold, or `/compact` | Summarize old messages to free up context |
 | Branch summarization | `/tree` navigation | Preserve context when switching branches |
 
-Both use the same structured summary format and track file operations cumulatively. Compaction and branch-summary requests use fresh routing session IDs and, where supported by the provider, disable prompt-cache writes because these one-off prompts are unlikely to be reused.
+Both use closely related structured formats and track file operations cumulatively. Summarization requests disable prompt-cache writes because these one-off prompts are unlikely to be reused.
 
 ## Compaction
 
@@ -452,14 +243,16 @@ contextTokens > contextWindow - reserveTokens
 
 By default, `reserveTokens` is 16384 tokens (configurable in `~/.pi/agent/settings.json` or `<project-dir>/.pi/settings.json`). This leaves room for the LLM's response.
 
-During a multi-turn agent run, Pi checks this threshold after tools finish and their results are appended, before starting the next assistant response. If the threshold is crossed, Pi compacts inside the same agent run and resumes with the summary and retained messages. It skips this between-turn check when the completed tool batch terminates the run and no queued message requires another response. Pi also checks the threshold before a new user prompt and after a low-level agent run ends.
+During a multi-turn agent run, Pi checks the canonical projected context after tools finish and their results are appended, before starting the next assistant response. If the threshold is crossed, Pi compacts during `prepareNextTurn`, then performs the existing catch-up steering poll before `turn_start`. It skips this between-turn check when the completed tool batch terminates the run and no queued message requires another response. Pi also checks before a new user prompt and performs final-attempt overflow recovery after the low-level run ends.
+
+A provider context-overflow error or an early final `stopReason: "length"` can select one compact-and-retry recovery attempt. Length responses with tool calls retain their synthetic failed tool results and follow the ordinary tool/queue scheduler rather than forcing the run to end.
 
 You can also trigger manually with `/compact [instructions]`, where optional instructions focus the summary.
 
 ### How It Works
 
-1. **Find cut point**: Walk backwards from newest message, accumulating token estimates until `keepRecentTokens` (default 20k, configurable in `~/.pi/agent/settings.json` or `<project-dir>/.pi/settings.json`) is reached
-2. **Extract messages**: Collect messages from the previous kept boundary (or session start) up to the cut point
+1. **Find cut point**: Walk backwards through the finalized session projection, accumulating token estimates until `keepRecentTokens` (default 20k, configurable in `~/.pi/agent/settings.json` or `<project-dir>/.pi/settings.json`) is reached
+2. **Extract messages**: Collect projected messages from the previous kept boundary (or session start) up to the cut point
 3. **Generate summary**: Call LLM to summarize with structured format, passing the previous summary as iterative context when present
 4. **Append entry**: Save `CompactionEntry` with summary and `firstKeptEntryId`
 5. **Rebuilds context**: Session rebuilds the context for the next request, using summary + messages from `firstKeptEntryId` onwards
@@ -496,16 +289,31 @@ What the LLM sees:
     prompt   from cmp          messages from firstKeptEntryId
 ```
 
-On repeated compactions, the summarized span starts at the previous compaction's kept boundary (`firstKeptEntryId`), not at the compaction entry itself, falling back to the entry after the previous compaction if that kept entry cannot be found in the path. This preserves messages that survived the earlier compaction by including them in the next summarization pass as well. Pi also recalculates `tokensBefore` from the rebuilt session context before writing the new `CompactionEntry`, so the token count reflects the actual pre-compaction context being replaced.
+On repeated compactions, the summarized span starts at the previous compaction's kept boundary (`firstKeptEntryId`), not at the compaction entry itself, falling back to the entry after the previous compaction if that kept entry cannot be found in the path. A retain-none compaction records its own ID as `firstKeptEntryId`; repeated compaction starts after that entry. This preserves messages that survived the earlier compaction by including them in the next summarization pass as well. Pi also recalculates `tokensBefore` from the rebuilt, context-edited session projection before writing the new `CompactionEntry`, so the token count reflects the actual pre-compaction context being replaced. Omitted raw entries remain stored but do not affect cut selection, summaries, checkpoints, or token estimates.
 
-### Split Turns
+### Overflow and Length Recovery Ordering
 
-A "turn" starts with a user message and includes all assistant responses and tool calls until the next user message. Normally, compaction cuts at turn boundaries.
+Recovery preserves the existing lifecycle and queue order. The completed attempt remains visible to `turn_end` and `agent_end`; post-run recovery then repairs persisted model context before a fresh retry:
 
-When a single turn exceeds `keepRecentTokens`, the cut point lands mid-turn at an assistant message. This is a "split turn":
+```text
+persist final assistant response
+→ extension/public turn_end
+→ extension/public agent_end
+→ append context_edit omissions for the selected attempt
+→ for overflow/length: run session_before_compact and append compaction on success
+→ start the retry as a fresh run
+```
+
+If recovery compaction fails or is cancelled, Pi keeps the omission edits, appends no compaction, and schedules no internal retry. Existing queued work remains governed by ordinary steering and follow-up rules. `agent_before_settle` sees the repaired projection after recovery processing. Raw transcript history, exports, billing totals, and history-search extensions can still inspect the omitted attempt.
+
+### Split user-message spans
+
+A user-message span starts with a user message and includes all turns until the next user message. Normally, compaction cuts at user-message boundaries.
+
+When one user-message span exceeds `keepRecentTokens`, the cut point lands within that span at an assistant message. This is a split user-message span:
 
 ```
-Split turn (one huge turn exceeds budget):
+Split user-message span (one span exceeds budget):
 
   entry:  0     1     2      3     4      5      6     7      8
         ┌─────┬─────┬─────┬──────┬─────┬──────┬──────┬─────┬──────┐
@@ -518,25 +326,25 @@ Split turn (one huge turn exceeds budget):
                                                       └── kept (7-8)
 
   isSplitTurn = true
-  messagesToSummarize = []  (no complete turns before)
+  messagesToSummarize = []  (no earlier user-message spans)
   turnPrefixMessages = [usr, ass, tool, ass, tool, tool]
 ```
 
-For split turns, Pi generates two summaries and merges them:
-
+For split user-message spans, Pi generates two summaries and merges them:
 1. **History summary**: Previous context (if any)
-2. **Turn prefix summary**: The early part of the split turn
+2. **User-message-span prefix summary**: The early part of the split user-message span
 
 ### Cut Point Rules
 
 Valid cut points are:
-
 - User messages
 - Assistant messages
 - BashExecution messages
 - Custom messages (custom_message, branch_summary)
 
 Never cut at tool results (they must stay with their tool call).
+
+Preparation advances the kept boundary into a context-invisible suffix only when that suffix contains an omitted assistant attempt and no unomitted context-producing entries. Recovery `context_edit` omissions satisfy this rule; intrinsically context-invisible metadata may coexist with them. Metadata alone and newly appended custom messages do not move the cut. A replacement edit affecting the candidate input or summarized prefix also blocks advancement because the omitted assistant answered the pre-edit input; replacements of suffix entries that are ultimately omitted remain safe. This allows an over-budget recovered input to be summarized while retaining the edits that keep the abandoned attempt omitted, without making bookkeeping change whether new model input is preserved verbatim.
 
 ### CompactionEntry Structure
 
@@ -546,8 +354,8 @@ Defined in [`session-manager.ts`](https://github.com/earendil-works/pi/blob/main
 interface CompactionEntry<T = unknown> {
   type: "compaction";
   id: string;
-  parentId: string;
-  timestamp: number;
+  parentId: string | null;
+  timestamp: string;
   summary: string;
   firstKeptEntryId: string;
   tokensBefore: number;
@@ -600,12 +408,9 @@ After navigation with summary:
 
 ### Cumulative File Tracking
 
-Both compaction and branch summarization track files cumulatively. When generating a summary, pi extracts file operations from:
+Default compaction and branch summarization track files cumulatively. Both extract file operations from tool calls in the messages being summarized. Compaction also carries file lists from the previous Pi-generated compaction. Branch summarization carries file lists from Pi-generated branch summaries in the entries it summarizes.
 
-- Tool calls in the messages being summarized
-- Previous compaction or branch summary `details` (if any)
-
-This means file tracking accumulates across multiple compactions or nested branch summaries, preserving the full history of read and modified files.
+File tracking therefore accumulates across default compactions and nested default branch summaries. Pi does not automatically carry file lists from extension-generated summaries whose `fromHook` field is `true`; extensions manage their own `details` format.
 
 ### BranchSummaryEntry Structure
 
@@ -615,8 +420,8 @@ Defined in [`session-manager.ts`](https://github.com/earendil-works/pi/blob/main
 interface BranchSummaryEntry<T = unknown> {
   type: "branch_summary";
   id: string;
-  parentId: string;
-  timestamp: number;
+  parentId: string | null;
+  timestamp: string;
   summary: string;
   fromId: string;      // Entry we navigated from
   usage?: Usage;       // LLM usage that generated the summary
@@ -637,7 +442,9 @@ See [`collectEntriesForBranchSummary()`](https://github.com/earendil-works/pi/bl
 
 ## Summary Format
 
-Both compaction and branch summarization use the same structured format:
+Both formats include Goal, Constraints & Preferences, Progress, Key Decisions, and Next Steps. Compaction summaries also include Critical Context. Branch summaries stop after Next Steps. Pi appends file lists to either format when relevant.
+
+Compaction summaries use this format:
 
 ```markdown
 ## Goal
@@ -704,7 +511,7 @@ pi.on("session_before_compact", async (event, ctx) => {
   const { preparation, branchEntries, customInstructions, reason, willRetry, signal } = event;
 
   // preparation.messagesToSummarize - messages to summarize
-  // preparation.turnPrefixMessages - split turn prefix (if isSplitTurn)
+  // preparation.turnPrefixMessages - user-message-span prefix (if isSplitTurn)
   // preparation.previousSummary - previous compaction summary
   // preparation.fileOps - extracted file operations
   // preparation.tokensBefore - context tokens before compaction
@@ -778,7 +585,7 @@ pi.on("session_compact_failed", async (event, ctx) => {
   const { reason, errorMessage, aborted, willRetry, fromExtension } = event;
   // reason - "manual" (/compact), "threshold", or "overflow"
   // errorMessage - present for non-abort failures
-  // aborted - true for cancelled/aborted compactions
+  // aborted - true for canceled/aborted compactions
   // willRetry - whether the aborted turn would have retried after compaction
   // fromExtension - whether extension-provided compaction content was being used
 });
@@ -831,7 +638,7 @@ Configure compaction in `~/.pi/agent/settings.json` or `<project-dir>/.pi/settin
 ```
 
 | Setting | Default | Description |
-| --------- | --------- | ------------- |
+|---------|---------|-------------|
 | `enabled` | `true` | Enable auto-compaction |
 | `reserveTokens` | `16384` | Tokens to reserve for LLM response |
 | `keepRecentTokens` | `20000` | Recent tokens to keep (not summarized) |
@@ -862,4 +669,4 @@ Keys are exact, case-sensitive `provider/modelId` values, including any slashes 
 
 These resolved values are used for manual compaction, all automatic threshold checks, overflow recovery, and extension-visible `preparation.settings`. Model switches affect subsequent checks and compactions without changing ordinary settings. Compaction already in progress uses the model and settings captured for that operation. Branch summarization settings are unaffected.
 
-Overrides work in both global and project settings. The files merge recursively before lookup, so a global model-specific value beats a project-wide fallback; a project must override that model entry to change it. See [settings.md](settings.md#per-model-compaction-overrides) for details.
+Overrides work in both global and project settings. The files merge recursively before lookup, so a global model-specific value beats a project-wide fallback; a project must override that model entry to change it. See [Settings](settings.md#per-model-compaction-overrides) for details.

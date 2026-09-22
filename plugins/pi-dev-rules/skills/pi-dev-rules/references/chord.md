@@ -1,12 +1,11 @@
 # Chord: Application-Composition Runtime
-
 Source: `packages/chord/README.md`, `src/delta/README.md`, `PLANNING.md`
 Not a Pi package: `@earendil-works/chord` is an application-neutral runtime that depends on no other Pi workspace package, and it is not covered by the Pi user docs. `PLANNING.md` is an active implementation plan, not a stable API contract.
 
 ---
 
 > **Auto-built from individual doc pages.**
-> Sources: <https://raw.githubusercontent.com/earendil-works/pi/main/packages/chord/README.md>, <https://raw.githubusercontent.com/earendil-works/pi/main/packages/chord/src/delta/README.md>, <https://raw.githubusercontent.com/earendil-works/pi/main/packages/chord/PLANNING.md>
+> Sources: https://raw.githubusercontent.com/earendil-works/pi/main/packages/chord/README.md, https://raw.githubusercontent.com/earendil-works/pi/main/packages/chord/src/delta/README.md, https://raw.githubusercontent.com/earendil-works/pi/main/packages/chord/PLANNING.md
 
 ## Overview
 
@@ -42,16 +41,17 @@ The design has a few connected pieces:
   stable facade while a provider disconnects or is replaced.
 
 - **Replicated state** exposes authoritative state to local and remote
-  connected consumers. Producers mutate the tracked `state` proxy and call
-  `publish(context)`; consumers receive complete immutable values. Chord flushes
-  one decoded operation batch per publication, while each remote client/state
-  stream owns independent path-codec state. Replicas become unready on disconnect
-  or replacement until they are rehydrated.
+  connected consumers. Producers publish atomic copy-on-write transactions with
+  `change(context, callback)`; consumers receive complete immutable values. Draft
+  proxies exist only during the callback and are revoked afterward. Chord compares
+  the previous and next immutable revisions to produce one decoded operation batch,
+  while each remote client/state stream owns independent path-codec state. Replicas
+  become unready on disconnect or replacement until they are rehydrated.
 
-- **Delta tracking** derives compact operations from tracked plain JSON at
-  flush time. It preserves string append/front-truncation and array-append
-  behavior without retaining mutation history, supports durable base batches,
-  and validates untrusted operations as they are applied.
+- **Delta tracking** records and coalesces operations over tracked plain JSON.
+  It preserves common string and array operations, supports durable base
+  batches, and validates untrusted operations as they are applied. Batches
+  guarantee convergence but are not canonical or necessarily minimal.
 
 - **Remote service sources** advertise services available outside a facet host
   and open bindings for the services its facets require. Bindings carry logical
@@ -114,22 +114,27 @@ const replica = apply({ output: "", count: 0 }, ops);
 
 The first flush is always a complete base batch. Later flushes contain path-based
 changes. `applyImmutable()` applies those batches while preserving prior replica
-revisions. `replicatedState(initial)` uses tracking directly:
+revisions. Replicated state instead uses transaction-scoped copy-on-write drafts:
 
 ```ts
 const status = env.replicatedState({ output: "", count: 0 });
-status.state.output += "done\n";
-status.state.count += 1;
-status.publish(context);
+status.change(context, (draft) => {
+	draft.output += "done\n";
+	draft.count += 1;
+});
 ```
 
-`publish()` flushes once; remote connection plumbing encodes that operation batch
-independently for every client/state pairing. String assignments preserve pure
-appends and rolling-window movement as append and front-truncate operations;
-unrelated rewrites fall back to a set. Values inserted into tracked state become
-tracker-owned and must subsequently be mutated only through `state`. See the
-[Delta guide](src/delta/README.md) for mutation, array, lifecycle, and
-consumer-ownership rules.
+A successful `change()` publishes exactly one atomic revision. If its callback
+throws, the original value and sequence remain unchanged. Draft handles are revoked
+when the callback returns and assigned containers are copied by value. Unchanged
+subtrees are shared between immutable revisions. Chord derives string append and
+front-truncate operations, array splices and permutations, sets, and deletes from
+the two revisions; a large delta falls back to a complete snapshot. Remote
+connection plumbing encodes each batch independently for every client/state
+pairing. `replace(context, value)` publishes a detached complete value directly.
+
+The standalone [Delta guide](src/delta/README.md) documents the lower-level mutable
+tracker, which remains available separately from replicated state.
 
 ## Bundling and loading facets
 
@@ -159,12 +164,12 @@ facet path conventions supplied by the host application:
 import { bundleFacetPackage } from "@earendil-works/chord/bundler";
 
 await bundleFacetPackage({
- packagePath: "/path/to/my-plugin",
- outdir: "/application-owned/plugin-builds/my-plugin",
- defaultFacets: {
-  worker: "src/worker.ts",
-  presentation: "src/presentation.ts",
- },
+	packagePath: "/path/to/my-plugin",
+	outdir: "/application-owned/plugin-builds/my-plugin",
+	defaultFacets: {
+		worker: "src/worker.ts",
+		presentation: "src/presentation.ts",
+	},
 });
 ```
 
@@ -182,9 +187,9 @@ loader:
 import { createFacetBundleLoader } from "@earendil-works/chord/node";
 
 const loader = createFacetBundleLoader({
- manifestPath: "/application-owned/plugin-builds/my-plugin/chord-facets.json",
- entry: "worker",
- resolveExternal: (specifier) => import.meta.resolve(specifier),
+	manifestPath: "/application-owned/plugin-builds/my-plugin/chord-facets.json",
+	entry: "worker",
+	resolveExternal: (specifier) => import.meta.resolve(specifier),
 });
 const loaded = await loader.load();
 ```
@@ -203,10 +208,10 @@ receiving host.
 
 To reload, load a candidate, pass its facets to `FacetHost.reload()`, dispose the
 candidate on failure, and dispose the retired `LoadedFacets` only after a
-successful cutover. The host activates and validates the candidate while the old
-providers remain routed, then replaces each singleton directly without an
-unavailable interval. Stable service handles therefore do not become disconnected
-during an ordinary reload. Keyed instances
+successful cutover. The host activates and validates the candidate while the
+currently active providers remain routed, then replaces each singleton directly
+without an unavailable interval. Stable service handles therefore do not become
+disconnected during an ordinary reload. Keyed instances
 remain incarnation-specific and replacements receive fresh generations. The
 bundler writes a complete temporary directory before replacing the previous
 output, so loaders do not observe partially built generations.
@@ -222,8 +227,8 @@ Chord Delta synchronizes JSON values from an authoritative producer to an
 ordered replica. It is available from `@earendil-works/chord/delta`.
 
 A change is represented by an `Op`: a JSON tuple for replacing, setting,
-deleting, updating a string, or splicing an array. Producers use `track()`;
-replicas use `apply()` or `applyImmutable()`.
+deleting, updating a string, splicing an array, or permuting an array. Producers
+use `track()`; replicas use `apply()` or `applyImmutable()`.
 
 ```ts
 import { apply, track } from "@earendil-works/chord/delta";
@@ -237,13 +242,16 @@ replica = apply(replica, tracker.flush());
 ```
 
 The first `flush()` returns one operation containing the complete value. Each
-later flush returns the operations needed to transform the previously published
-value into the current value. It returns `[]` when the value has not changed.
+later flush returns operations whose application transforms the previously
+published value into the current value. It returns `[]` when no tracked mutation
+is pending, but a mutation window that restores its starting value may still
+produce a redundant batch.
 
 `applyImmutable()` copies only containers along changed paths and shares
 unchanged subtrees. It does not mutate, clone, or freeze either complete input.
-Chord's replicated-state producers mutate a tracked proxy and publish operation
-batches; consumers still observe complete immutable values.
+Chord's replicated-state producers use a separate transaction-scoped
+copy-on-write draft and derive these operation batches from immutable revisions;
+consumers still observe complete immutable values.
 
 ## Sending or storing changes
 
@@ -263,10 +271,10 @@ const dec = decoder(); // consumer side
 let replica: { output: string } | undefined;
 
 const send = () => {
- const ops = tracker.flush();
- const wire = enc.encode(ops); // serialize or store WireOp[] here
- const received = dec.decode(wire);
- replica = apply(replica, received);
+	const ops = tracker.flush();
+	const wire = enc.encode(ops); // serialize or store WireOp[] here
+	const received = dec.decode(wire);
+	replica = apply(replica, received);
 };
 ```
 
@@ -303,9 +311,10 @@ A path is an array of object keys and array indices:
 | `["a", path, text]` | Append to a string. |
 | `["t", path, count]` | Remove UTF-16 code units from a string's front. |
 | `["p", path, index, remove, items]` | Splice an array. |
+| `["m", path, permutation]` | Reorder an array so `new[i] = old[permutation[i]]`. |
 
 Except for `r`, every decoded operation carries its complete path. `s`, `d`,
-`a`, and `t` cannot address the root. `p` may address a root array.
+`a`, and `t` cannot address the root. `p` and `m` may address a root array.
 
 ### Encoded `WireOp`
 
@@ -326,13 +335,15 @@ A `PathRef` is either an inline path or a non-negative numeric path ID.
 | `["t", count]` | Front-truncate using the previous path. |
 | `["p", pathRef, index, remove, items]` | Splice with an inline or interned path. |
 | `["p", index, remove, items]` | Splice using the previous path. |
+| `["m", pathRef, permutation]` | Reorder with an inline or interned path. |
+| `["m", permutation]` | Reorder using the previous path. |
 
 For example, adjacent decoded operations on one path:
 
 ```ts
 [
- ["t", ["output"], 200],
- ["a", ["output"], "next chunk"],
+	["t", ["output"], 200],
+	["a", ["output"], "next chunk"],
 ]
 ```
 
@@ -340,8 +351,8 @@ encode to:
 
 ```ts
 [
- ["t", ["output"], 200],
- ["a", "next chunk"], // reuses ["output"]
+	["t", ["output"], 200],
+	["a", "next chunk"], // reuses ["output"]
 ]
 ```
 
@@ -350,8 +361,8 @@ second explicit use:
 
 ```ts
 [
- ["#", 0, ["output"]],
- ["a", 0, "more"],
+	["#", 0, ["output"]],
+	["a", 0, "more"],
 ]
 ```
 
@@ -369,7 +380,7 @@ tracker.state.messages.push(message);
 delete tracker.state.retry;
 ```
 
-Only the value at flush time is published:
+Operations are coalesced within a flush window when doing so is cheap and safe:
 
 ```ts
 tracker.state.status = "starting";
@@ -377,13 +388,17 @@ tracker.state.status = "running";
 tracker.flush(); // one set to "running"
 ```
 
+The operation sequence is not canonical. Equivalent changes may use different
+verbs, and mutations that cancel can still produce a nonempty batch. Consumers
+must depend on the resulting value, not the exact tuples or their minimality.
+
 Replacing an object or array is valid. Delta compares its properties and elements
-with the previously published value:
+with the outgoing value at assignment time:
 
 ```ts
 tracker.state.settings = {
- ...plainSettings,
- theme: "dark",
+	...plainSettings,
+	theme: "dark",
 };
 ```
 
@@ -398,8 +413,8 @@ Appending text produces an `a` operation:
 tracker.state.output += "next line\n";
 ```
 
-Moving a bounded text window forward produces `t` followed by `a` when the old
-suffix matches the new prefix:
+Moving a bounded text window forward produces `t` followed by `a` when the
+previous suffix matches the new prefix:
 
 ```ts
 tracker.state.output = tracker.state.output.slice(200) + nextChunk;
@@ -417,29 +432,77 @@ tracker.state.messages.push(second);
 tracker.state.messages.splice(3, 1, replacement);
 ```
 
-All `push()` calls before one flush produce one tail `p`. Changes to older
-elements remain separate, regardless of whether they happen before or after the
-pushes. Changes to newly pushed elements are included in the pushed values.
+Adjacent `push()` calls are normally coalesced into one tail `p`. Intervening
+operations may keep them separate to preserve ordering. Changes to older
+elements remain separate, and changes to newly pushed elements may be folded
+into the pushed values when no structural operation intervenes.
 
-Front or middle insertion, removal, sorting, reversing, `fill()`, and
-`copyWithin()` are supported. A structural change combined with edits to elements
-whose indices moved may compare and publish the retained suffix positionally:
-
-```ts
-tracker.state.items.shift();
-tracker.state.items[0].status = "changed";
-// A shift followed by push in the same flush has the same issue.
-```
-
-The emitted data can then scale with the retained suffix, or with the complete
-array, rather than only the changed element. When batching is under your control,
-flush the structural change before editing elements at their new indices.
+Front or middle insertion and removal are recorded directly. Edits before and
+after an index-changing operation remain ordered against the array generation
+they addressed. Sorting, reversing, `fill()`, and `copyWithin()` emit a snapshot
+of the affected array; repeated whole-array mutators can therefore produce a
+redundant snapshot even when their combined result restores the prior value.
 
 Sparse arrays are unsupported. Writing beyond the next index throws. Increasing
 `length` creates explicit `null` elements; decreasing it removes elements.
 
-`fill()` and `copyWithin()` keep normal JavaScript reference semantics. Do not use
-them to place one mutable object at multiple live paths.
+`fill()` and `copyWithin()` keep normal JavaScript reference semantics; an object
+they place at several indices is published at each.
+
+### Large mutation windows
+
+#### Build once, assign once
+
+Every object or array assignment is diffed immediately. Do not repeatedly assign
+large intermediate values before one flush:
+
+```ts
+// Avoid: traverses every intermediate tree.
+for (const frame of frames) tracker.state.view = render(frame);
+
+// Prefer: only the final tree crosses the tracked boundary.
+const nextView = frames.reduce((view, frame) => renderInto(view, frame), initialView);
+tracker.state.view = nextView;
+```
+
+For a few changes, mutate the leaves directly:
+
+```ts
+for (const update of updates) {
+	tracker.state.view.rows[update.index]!.status = update.status;
+}
+```
+
+#### Do not cancel whole-array mutators
+
+`sort()`, `reverse()`, `fill()`, and `copyWithin()` record snapshots. Cancelling
+them still publishes the final snapshot:
+
+```ts
+// Avoid: final value is unchanged, but a snapshot may still be sent.
+tracker.state.items.reverse();
+tracker.state.items.reverse();
+
+// Prefer: decide before mutating tracked state.
+if (needsReverse) tracker.state.items.reverse();
+```
+
+#### Publish large inserts and edit sets in chunks
+
+Pending inserted values are cloned for replica ownership. Very large unflushed
+pushes therefore temporarily retain both the live values and their operation
+payloads. Long operation/path histories may also collapse to a complete base
+batch, increasing snapshot and wire cost.
+
+```ts
+for (const chunk of chunks(items, 1_000)) {
+	tracker.state.items.push(...chunk);
+	replica = apply(replica, tracker.flush()); // send each batch in a real producer
+}
+```
+
+Use the same pattern for large sets of unrelated edits: apply a bounded chunk,
+publish it, then continue.
 
 ### Optional properties
 
@@ -461,42 +524,65 @@ array position or explicit empty value must remain present.
 
 ## State ownership
 
-The object passed to `track()` becomes tracker-owned. The same applies to objects
-later assigned into state or inserted into arrays.
-
-After insertion, a retained reference may be read but must not be mutated or
-inserted at another live location. The tracker relies on this ownership rule; it
-does not recursively validate values or detect aliases:
+The object passed to `track()` becomes tracker-owned, as does any object later
+assigned into state or inserted into an array. Mutate through `tracker.state`:
 
 ```ts
 const item = { status: "new" };
 tracker.state.item = item;
 
-tracker.state.item.status = "ready"; // supported: tracked mutation
-item.status = "broken"; // unsupported: bypasses tracking
-tracker.state.other = item; // unsupported: one object at two live paths
+tracker.state.item.status = "ready"; // tracked
+item.status = "broken"; // NOT tracked: silently diverges from the replica
 ```
 
-The same restriction applies across separate array calls:
+A reference retained from `tracker.state` stays correct across operations that
+renumber it, and across the removal of the element it points at:
 
 ```ts
-tracker.state.items.push(item);
-tracker.state.items.push(item); // unsupported alias
+const held = tracker.state.items[2];
+tracker.state.items.unshift(other);
+held.name = "edited"; // publishes items[3].name
+
+tracker.state.items.splice(3, 1);
+held.name = "gone"; // element is no longer in the tree: mutated, nothing published
 ```
 
-Use distinct objects when values must appear at multiple paths. Perform
-mutations through `tracker.state`; do not put a proxy read from `tracker.state`
-back into tracked state.
+One object may occupy several paths. Each live path is published:
+
+```ts
+tracker.state.a = tracker.state.items[0];
+tracker.state.items[0].k = 1; // publishes both a.k and items[0].k
+```
 
 Tracked state must be a mutable JSON tree:
 
 - strings, booleans, finite numbers, `null`, arrays, and plain objects;
-- no cycles or one mutable object stored at multiple locations;
+- no cycles;
 - no sparse arrays, accessors, frozen objects, symbols, classes, functions,
   `Map`, or `Set`.
 
-Do not keep a child proxy across an array operation that changes indices. Read
-the child again from its new index.
+## Proxy lifetime and large reads
+
+Proxy caches are weak. Reading a subtree does not permanently retain its proxies
+just because the underlying plain objects remain in the document. A proxy still
+held by application code keeps its identity; held descendants retain the ancestor
+tracking metadata needed to follow array reindexing. Explicit alias locations are
+remembered separately from the lifetime of their public proxies.
+
+Collection is automatic, not a `flush()` side effect. JavaScript keeps newly
+created or dereferenced `WeakRef` targets alive until the current job ends, and
+finalizer cleanup can run later. A synchronous traversal can therefore still have
+a substantial allocation peak. Retained-memory measurements must allow event-loop
+turns as well as GC; a synchronous `gc()` immediately after the traversal is not
+sufficient to measure weak-cache reclamation.
+
+This does not eliminate proxy construction/trap costs or full comparisons on
+container assignment. `tracker.target` is available for read-only bulk inspection
+without creating proxies. Never mutate through it; all tracked mutations must go
+through `tracker.state` or a proxy obtained from it.
+
+See the [delta investigation findings](../../../durable/docs/chord-delta-findings.md)
+for the full-traversal regression, measured trade-offs, and reproduction commands.
 
 ## Tracker lifecycle
 
@@ -509,6 +595,14 @@ tracker.state = replacement; // replace the root; next flush is complete
 
 `discard()` intentionally prevents current changes from reaching existing
 replicas. Use it only when those replicas do not need the discarded changes.
+
+`flush()` guarantees convergence, not a minimal or canonical diff. Any nonempty
+batch advances replicated-state sequence numbers and notifies subscribers, even
+if applying it leaves the value deeply equal to the previous revision. To bound
+pending operation and path history, a sufficiently long mutation window may
+collapse to a complete base batch automatically. This bounds accumulated log
+metadata, not payload bytes or peak allocation, and trades one full-value
+snapshot for an additional recovery point.
 
 `apply()` adopts object and array payloads from its input batch. Do not freeze a
 batch before applying it, and do not apply one in-memory batch to multiple
@@ -526,8 +620,8 @@ changed the replica.
 - Delta assumes one authoritative writer and ordered delivery. Sequence numbers,
   gap detection, retries, and persistence policy belong to the surrounding
   protocol or storage format.
-- Object identity is not replicated. Tracked mutable state must be a tree;
-  immutable inputs may share references, but replicas need not preserve them.
+- Object identity is not replicated. One object at several paths publishes each
+  path separately, and a replica holds a distinct value at each.
 - Object key insertion order is not replicated. Do not compare or hash replicas
   using serialized key order.
 - Array operations that change indices may publish a wider array region, as
@@ -588,7 +682,7 @@ The names below are provisional, but the distinctions are required.
 - **Provider**: the owner of one singleton service or one keyed service collection.
 - **Connection**: a transport-neutral source of services outside the current host.
 - **Peer**: one endpoint of a symmetric RPC channel. Either peer may provide and consume services.
-- **Replicated state**: initialized mutable source state with read-only local or remote replicas.
+- **Replicated state**: initialized immutable source revisions with read-only local or remote replicas.
 
 A product feature may ship multiple plugin-module entries for different application environments. Chord does not group those entries into a cross-process runtime object and does not interpret their entry names.
 
@@ -899,7 +993,7 @@ An instance address is `(service ID, key, generation)`. Reusing a closed key cre
 
 Replicated state is authoritative one-writer latest-value replication.
 
-The source API has an initialized value, `set(value, context)`, and subscriptions. A remote or disconnected replica has `value === undefined` until hydration.
+The source API has an initialized immutable value, `change(context, callback)`, `replace(context, value)`, and subscriptions. A remote or disconnected replica has `value === undefined` until hydration.
 
 Required semantics:
 
@@ -909,12 +1003,12 @@ Required semantics:
 4. Subscribing to cold state registers without immediate delivery.
 5. Subscription establishment installs update capture before taking the snapshot.
 6. Updates racing the snapshot are buffered and delivered after the snapshot with no gap.
-7. The source API exposes a tracked mutable state and explicit publication. Each publication flushes one decoded operation batch; connection adapters encode it independently per client/state stream, and replicas apply batches only in sequence order.
+7. The source API exposes atomic copy-on-write transactions. A successful transaction publishes one decoded operation batch; a callback failure discards all tentative copies. Connection adapters encode each batch independently per client/state stream, and replicas apply batches only in sequence order.
 8. A sequence gap clears readiness and triggers complete resubscription or reports a terminal binding error; stale state must not continue as current silently.
 9. Disconnect, provider withdrawal, route change, and replacement clear replica readiness.
 10. Reconnect or replacement installs a complete fresh snapshot in the existing state facade before later updates.
 11. Listener exceptions are isolated and reported through host policy.
-12. Values are immutable data. Chord does not defensively clone local reads, local writes, or local listener delivery. Delta application preserves prior values and may structurally share unchanged data, but callers must not depend on identity.
+12. Values are immutable data. Chord returns raw immutable values for reads and listener delivery. Transaction drafts are revocable and assigned containers are copied by value; committed revisions structurally share unchanged subtrees.
 
 State identity is structural:
 
@@ -930,10 +1024,9 @@ Explicit non-goals:
 - event history;
 - CRDT merging or multiple writers;
 - offline mutation replay;
-- automatic unchanged-value suppression; and
 - high-frequency stream transport.
 
-Chord exposes an intent-preserving JSON delta primitive and uses its operation batches internally for remote replicated state. Initial hydration and reconnection carry a complete root replacement; producers mutate tracked state and flush compact operations on publication. Replicated-state sources do not select reducers or interact with path encoders. Every client/state pairing owns an independent encoder, and sequence handling rejects gaps before a later operation can be applied.
+Chord exposes an intent-preserving JSON delta primitive and uses its operation batches internally for remote replicated state. Initial hydration and reconnection carry a complete root replacement. Producers mutate a transaction-scoped copy-on-write draft; Chord derives compact operations from the previous and next immutable revisions and uses a complete replacement when that is smaller. Replicated-state sources do not select reducers or interact with path encoders. Every client/state pairing owns an independent encoder, and sequence handling rejects gaps before a later operation can be applied.
 
 ## 9. Symmetric RPC plumbing
 
@@ -1078,7 +1171,7 @@ Plugin discovery, installation, version resolution, download, signature trust, a
 The following existing files describe behavior that should become Chord responsibility through a rewrite:
 
 | Existing area | Chord responsibility |
-| --- | --- |
+|---|---|
 | `packages/agent/src/plugins/services/types.ts` | service tokens, modes, remote contract checks, strict JSON, snapshots, updates, connection interfaces |
 | `packages/agent/src/plugins/services/replicated-state.ts` | authoritative replicated state and delivery semantics |
 | `packages/agent/src/plugins/services/provider.ts` | provider classification, calls, singleton replacement, keyed generations, snapshots |
@@ -1090,7 +1183,7 @@ The following existing files describe behavior that should become Chord responsi
 The following must remain outside Chord:
 
 | Existing area | Downstream responsibility |
-| --- | --- |
+|---|---|
 | `packages/coding-agent/src/experimental/services/connection.ts` | Pi connection state, selected-session attachment, route rebinding, Pi client adapter |
 | `packages/coding-agent/src/experimental/services/server.ts` | server-wide session directory and management implementations |
 | `packages/coding-agent/src/experimental/services/worker.ts` | Session worker host construction and Pi protocol publication adapter |
@@ -1098,7 +1191,7 @@ The following must remain outside Chord:
 | slash-command, model, account, transcript, TUI, and agent-controller services | application contracts and plugin implementations |
 | `source-resolver.ts` and Pi internal process entrypoints | Pi source execution and process policy |
 
-`packages/agent/docs/plugins.md`, `packages/agent/docs/rpc.md`, the experimental service tests, and the remote plugin fixture are behavioral input. They are not normative Chord APIs. Once migration finishes, generic semantics should be documented in Chord and Pi documents should cover only their host-specific contracts and adapters.
+The Pico5 Chord usage guide, experimental service tests, and remote plugin fixture are behavioral input. They are not normative Chord APIs. Once migration finishes, generic semantics should be documented in Chord and Pi documents should cover only their host-specific contracts and adapters.
 
 Migration should happen only after Chord passes its standalone conformance suite:
 
