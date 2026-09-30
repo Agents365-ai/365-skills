@@ -13,6 +13,13 @@ to the `@earendil-works` org and the current docs at pi.dev.
 > your customization follows the intended design instead of fighting it. When a request would add an
 > MCP server, a sub-agent, or a plan-mode ceremony, check here first: the author's intended
 > alternative is usually a plain file (TODO.md / PLAN.md), a CLI tool with a README, or tmux.
+>
+> **Superseded in part (checked 2026-09-30).** The blog is a 2025-11-30 snapshot. MCP is no longer
+> a non-feature: Pi 0.99.0 (2026-09-29) shipped built-in MCP servers together with `codemode`, which
+> answers the context-overhead argument recorded below by keeping large MCP tool lists out of the
+> model's tool declarations. Read the MCP row of the non-feature table as that historical position,
+> and `mcp.md` for current behavior. To-dos, plan mode, sub-agents, and background bash remain
+> non-features.
 
 ## Author & origin
 
@@ -78,7 +85,7 @@ to the `@earendil-works` org and the current docs at pi.dev.
 | ------------ | ----- | ---------------------- |
 | Built-in to-dos | Lists "confuse models more than they help" | A `TODO.md` with checkboxes the agent reads/updates |
 | Plan mode | Telling the agent to think without modifying files is sufficient; Claude Code's plan mode forces approving many command invocations | A `PLAN.md`, versioned with the code, shareable across sessions; enforce read-only via the `--tools` flag |
-| MCP support | Context overhead: Playwright MCP = 21 tools / 13.7k tokens; Chrome DevTools MCP = 26 tools / 18k tokens ("7-9% of your context window gone before you even start") | CLI tools with README files the agent reads on demand (progressive disclosure); author maintains github.com/badlogic/agent-tools; `mcporter` (steipete) wraps MCP servers as CLIs |
+| MCP support (non-feature until 2026-09-29; built-in since, see `mcp.md`) | Context overhead: Playwright MCP = 21 tools / 13.7k tokens; Chrome DevTools MCP = 26 tools / 18k tokens ("7-9% of your context window gone before you even start") | CLI tools with README files the agent reads on demand (progressive disclosure); author maintains github.com/badlogic/agent-tools; `mcporter` (steipete) wraps MCP servers as CLIs |
 | Background bash | Process tracking, output buffering, cleanup complexity; poor observability | tmux (dev servers, log watching, co-debugging) |
 | Sub-agents | "A black box within a black box"; poor context transfer; painful to debug | Spawn pi itself via bash, optionally inside tmux for observability; a custom slash command can spawn a sub-agent via `pi --print` |
 
@@ -149,9 +156,13 @@ to the `@earendil-works` org and the current docs at pi.dev.
 ## What this means when configuring or using Pi
 
 - When in doubt, prefer the minimal path: a plain file (TODO.md / PLAN.md), a CLI tool with a
-  README, or tmux, before adding an MCP server, a sub-agent, or plan-mode ceremony.
+  README, or tmux, before adding an MCP server, a sub-agent, or plan-mode ceremony. For MCP the
+  trade-off narrowed on 2026-09-29: built-in MCP with `codemode` exposure (the default) keeps server
+  tools out of the model's declarations, so the context-overhead argument above now applies mainly
+  to `direct` exposure.
 - Read-only restriction is a CLI flag, not a config: `pi --tools read,grep,find,ls`.
 - No built-in sandbox (see `security-and-containerization.md`); isolate with a container/VM when
   needed.
 - The package gallery ships `pi-mcp-adapter`, `pi-subagents`, `pi-web-access`, etc. as opt-in
-  packages, consistent with "minimal core, extend on demand".
+  packages, consistent with "minimal core, extend on demand". As of 2026-09-29, `pi-mcp-adapter` is
+  no longer needed for MCP: it now replaces the built-in support rather than adding to it.

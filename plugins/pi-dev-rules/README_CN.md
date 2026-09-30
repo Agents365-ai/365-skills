@@ -12,9 +12,10 @@
 一个编程助手技能，将最新的 [Pi](https://pi.dev) 文档（`@earendil-works/pi-coding-agent`）
 打包为按需参考库，让助手无需重新抓取文档即可安装、配置、运行和**扩展 Pi**。
 
-镜像 <https://pi.dev/docs/latest>（抓取日期：2026-09-22，已包含本次文档改版）。另外三个参考文件
-（`development.md`、`chord.md`、`agent-harness.md`）覆盖官网没有页面的内容：仓库的构建/开发/贡献
-规则，以及 Pi 的**内部 monorepo 架构**，从 `pi@2c2cd63` 的源码树构建。
+镜像 <https://pi.dev/docs/latest>（抓取日期：2026-09-30，对应 Pi 0.99.1，已包含 2026-09-22 的文档改版
+与 2026-09-28/29 的新增页面）。另外三个参考文件（`development.md`、`chord.md`、`agent-harness.md`）
+覆盖官网没有页面的内容：仓库的构建/开发/贡献规则，以及 Pi 的**内部 monorepo 架构**，从
+`pi@d86654abb` 的源码树构建。
 
 适用于 Claude Code、Cursor、Codex、Copilot、Windsurf、Cline / Roo Code、Gemini CLI、
 Aider、Zed、OpenCode、OpenClaw / ClawHub、Hermes、pi-mono，以及主流国产编程助手
@@ -22,7 +23,7 @@ Aider、Zed、OpenCode、OpenClaw / ClawHub、Hermes、pi-mono，以及主流国
 或 [Agent Skills](https://agentskills.io) 格式的工具。
 
 <p align="center">
-  <img src="assets/workflow-zh.png" width="700" alt="pi-dev-rules 工作流程">
+  <img src="skills/pi-dev-rules/assets/workflow-zh.png" width="700" alt="pi-dev-rules 工作流程">
 </p>
 
 ## 包含内容
@@ -34,7 +35,11 @@ Aider、Zed、OpenCode、OpenClaw / ClawHub、Hermes、pi-mono，以及主流国
   提供商、自定义 `models.json`、`compat`、自定义提供商扩展。
 - `references/settings-and-compaction.md`：配置布局（agent 目录与项目 `.pi/`、上下文文件）、
   `settings.json`（trust/analytics/retry/transport）、自动/手动压缩、分支摘要。
-- `references/extending-pi.md`：扩展 API、技能（SKILL.md）、提示模板、主题、包。
+- `references/extending-pi.md`：扩展 API、技能（SKILL.md）、提示模板、主题、包、虚拟模型
+  （`pi.registerVirtualModel`）。
+- `references/mcp.md`：内置 MCP 服务器（2026-09-29），`mcp.json` 全局与项目配置、stdio 与
+  streamable HTTP、`pi mcp add/remove/list`、OAuth 登录、暴露模式与 `toolExposure`、
+  `codemode` / `tool_search`、resource、权限、来自扩展的服务器。
 - `references/tui-components.md`：自定义扩展/工具 UI 的 TUI 组件系统。
 - `references/security-and-containerization.md`：项目信任模型、无内置沙箱、Gondolin
   微型虚拟机、Docker、OpenShell。
@@ -46,8 +51,8 @@ Aider、Zed、OpenCode、OpenClaw / ClawHub、Hermes、pi-mono，以及主流国
 - `references/development.md`：monorepo 包列表、从源码构建与独立二进制构建、供应链规则、
   `AGENTS.md` 开发规则、`CONTRIBUTING.md` 准入门槛。
 - `references/philosophy-and-design.md`（作者的设计宣言，Mario Zechner 的博客文章，2025-11-30）：
-  为何极简、4 工具哲学、默认 YOLO、明确的非功能特性（无 MCP / 无计划模式 / 无待办 / 无子代理 /
-  无后台 bash）及其预期替代方案。
+  为何极简、4 工具哲学、默认 YOLO、文中列出的非功能特性（MCP、计划模式、待办、子代理、后台 bash）
+  及其预期替代方案。其中 MCP 一条已标注为“已被取代”：MCP 自 2026-09-29 起内置。
 - `references/chord.md`：`@earendil-works/chord`，与应用无关的组合运行时：插件加载/组合/打包、
   服务目录、RPC 传输、facet bundle loader，以及 `chord/delta` 的“最新值”状态复制。其中
   `PLANNING.md` 是实施计划，不是冻结的 API。
@@ -71,12 +76,13 @@ cp -r pi-dev-rules ~/.claude/skills/      # 示例：Claude Code，全局
 
 ## 更新
 
-`references/*.md` 是生成物，不是手写文档：12 个自动生成的参考包与 `changelog.md` 来自 pi 源码
+`references/*.md` 是生成物，不是手写文档：13 个自动生成的参考包与 `changelog.md` 来自 pi 源码
 检出，`philosophy-and-design.md` 为手工整理。用户直接使用随包文件即可，无需执行任何命令；重建属于
 维护者工具，说明见 [`scripts/README.md`](skills/pi-dev-rules/scripts/README.md)。上游于
 2026-09-22 改版了文档（拆分为 `cli.md`、`slash-commands.md`、`configuration.md`、
 `message-types.md`、`rpc-commands.md`、`rpc-extension-ui.md`、`cli-integration.md`、
-`how-pi-works.md`；`docs/development.md` 并入 `docs/index.md`）。
+`how-pi-works.md`；`docs/development.md` 并入 `docs/index.md`），并于 2026-09-28 新增
+`virtual-models.md`、于 2026-09-29 新增 `mcp.md`，两者均已收录。
 
 ## 支持
 

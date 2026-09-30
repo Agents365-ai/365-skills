@@ -1,11 +1,11 @@
-# Extending Pi: Extensions, Skills, Prompt Templates, Themes, Packages
-Source: https://pi.dev/docs/latest/extensions, /skills, /prompt-templates, /themes, /packages
+# Extending Pi: Extensions, Skills, Prompt Templates, Themes, Packages, Virtual Models
+Source: https://pi.dev/docs/latest/extensions, /skills, /prompt-templates, /themes, /packages, /virtual-models
 See also: `tui-components.md` (custom UI), `session-format.md` (entry/message schema).
 
 ---
 
 > **Auto-built from individual doc pages.**
-> Sources: https://raw.githubusercontent.com/earendil-works/pi/main/packages/coding-agent/docs/extensions.md, https://raw.githubusercontent.com/earendil-works/pi/main/packages/coding-agent/docs/skills.md, https://raw.githubusercontent.com/earendil-works/pi/main/packages/coding-agent/docs/prompt-templates.md, https://raw.githubusercontent.com/earendil-works/pi/main/packages/coding-agent/docs/themes.md, https://raw.githubusercontent.com/earendil-works/pi/main/packages/coding-agent/docs/packages.md
+> Sources: https://raw.githubusercontent.com/earendil-works/pi/main/packages/coding-agent/docs/extensions.md, https://raw.githubusercontent.com/earendil-works/pi/main/packages/coding-agent/docs/skills.md, https://raw.githubusercontent.com/earendil-works/pi/main/packages/coding-agent/docs/prompt-templates.md, https://raw.githubusercontent.com/earendil-works/pi/main/packages/coding-agent/docs/themes.md, https://raw.githubusercontent.com/earendil-works/pi/main/packages/coding-agent/docs/packages.md, https://raw.githubusercontent.com/earendil-works/pi/main/packages/coding-agent/docs/virtual-models.md
 
 ## Extensions
 
@@ -89,6 +89,8 @@ Automatic retries, recovery, compaction, or queued work can continue afterward.
 | Persist non-context session data | `pi.appendEntry()` |
 | Change active tools, model, or thinking level | Session control methods on `pi` |
 | Add a model provider | `pi.registerProvider()` |
+| Add an MCP server | `pi.registerMcpServer()` |
+| Route each request to a model | [`pi.registerVirtualModel()`](virtual-models.md) |
 | Add terminal rendering | Renderer registration and `ctx.ui` |
 | Communicate with another extension | `pi.events` |
 
@@ -110,6 +112,12 @@ Events cover resource discovery, sessions, agent and message lifecycle, provider
 `before_agent_start` exposes both the current prompt and its structured `systemPromptOptions`. Prefer changing prompt sections, selected tools, or guidelines so Pi can append a transcript delta. Returning `systemPrompt`, or setting `forceSystemPrompt`, replaces the whole prompt for that run while the transcript continues recording the structured sections. Providers receive the forced text as their leading system prompt.
 
 `message_end` can replace a finalized message while preserving its role. `tool_call` can mutate input or block execution. `tool_result` handlers compose, with each handler seeing prior changes.
+
+<a id="provider_stream_event"></a>
+
+`provider_stream_event` fires for each parsed provider stream event before Pi normalizes it. The event identifies the provider, API, and model; `event.data` is the earliest structured value available to Pi, not necessarily the original HTTP bytes or SSE frame. Treat it as read-only because mutation can affect normalization. The event is notification-only and is not persisted.
+
+Handlers are awaited in stream order, so slow handlers delay stream consumption. Handler errors are reported without changing the provider response. See [`debug-provider.ts`](../examples/extensions/debug-provider.ts) for an opt-in viewer that groups raw events by assistant message.
 
 <a id="context_with_system"></a>
 
@@ -144,13 +152,60 @@ Use sequential execution when tools share mutable in-memory state.
 File-mutating tools should wrap the complete read-modify-write operation with `withFileMutationQueue()`.
 Truncate large model-facing results and tell the model where to read the complete output.
 
+Declare `outputSchema` and return a matching `structuredContent` when the result is data. The model still receives `content`; programmatic callers such as codemode scripts receive `structuredContent` instead of the text. Tools without `outputSchema` are passed to scripts as their text content. To report a failure that still carries data, return the result with `isError: true` instead of throwing: the model sees an error, and scripts still receive `structuredContent`.
+
+A tool can run other tools with `ctx.executeTool(name, args, { signal, onUpdate })`. Nested calls go through argument validation and the `tool_call` and `tool_result` handlers like model-issued calls, and emit `tool_execution_start`, `tool_execution_update`, and `tool_execution_end`; all of these events carry `parentToolCallId`, and their `toolCallId` is assigned by pi as `<parent id>/<n>`. These ids do not appear as tool calls or tool results in the transcript. Nested calls do not add transcript entries: their results only reach the calling tool, which reports them itself, for example through `onUpdate` and `details`. The session keeps a bounded record of them (name, arguments, status, duration, error; never results) as `nestedCalls` on the calling tool's result message. It is used for compaction file lists and shown in HTML exports. Arguments over 8 KiB per call or 32 KiB per tool result are omitted, at most 256 calls are kept, and `complete: false` marks a record that lost anything. The `usage` of nested results, at every depth, is added to the calling tool's result `usage`, so a tool reports only its own usage, not that of the tools it called. `ctx.tools` lists the tools `ctx.executeTool()` can call. `tool_result` handlers that redact `content` should also replace `structuredContent`; replacing only `content` drops it.
+
 See [`hello.ts`](../examples/extensions/hello.ts), [`todo.ts`](../examples/extensions/todo.ts), [`dynamic-tools.ts`](../examples/extensions/dynamic-tools.ts), and [`truncated-tool.ts`](../examples/extensions/truncated-tool.ts).
+
+### Tool exposure
+
+`exposure` controls how the model reaches a tool. "Callable" means callable from other tools through `ctx.executeTool()` (`ctx.tools`), as the `codemode` tool's scripts do:
+
+- `direct` (default): declared to the model while active, and callable while active.
+- `model-only`: declared to the model while active, never callable. Use it for tools that orchestrate other tools or ask the user.
+- `codemode`: callable whenever registered, and listed by the `codemode` tool. Not declared to the model unless activated explicitly.
+- `deferred`: like `codemode`, but codemode tools do not list it; `tool_search` can find and activate it.
+- `hidden`: registered but unreachable. Re-register a tool with `exposure: "hidden"` to withdraw it, since tools cannot be unregistered.
+
+`namespace: { name, description }` groups related tools, as MCP servers do. Codemode tools list a namespace under one heading.
+
+Registering a `direct` or `model-only` tool activates it; the other exposures are not activated on registration. The active set (`pi.getActiveTools()`, `pi.setActiveTools()`) is the set of tools declared to the model. `pi.getAllTools()` reports each tool's `exposure`, `namespace`, and `annotations`.
+
+`annotations` are hints about what a tool does, with the meaning of MCP tool annotations: `readOnlyHint`, `destructiveHint`, `idempotentHint`, and `openWorldHint`. MCP tools carry the hints their server declares. Missing hints take the MCP defaults: a tool is not read-only, and may be destructive and reach an open world. The hints are not verified, but a permission extension can use them to decide which calls to confirm. This confirms the calls Codex asks approval for:
+
+```typescript
+pi.on("tool_call", async (event, ctx) => {
+  const hints = pi.getAllTools().find((tool) => tool.name === event.toolName)?.annotations;
+  const needsApproval =
+    hints?.destructiveHint === true ||
+    (!hints?.readOnlyHint && ((hints?.destructiveHint ?? true) || (hints?.openWorldHint ?? true)));
+  if (needsApproval && !(await ctx.ui.confirm("Allow tool call?", event.toolName))) {
+    return { block: true, reason: `${event.toolName} was not approved` };
+  }
+});
+```
+
+A tool that orchestrates other tools can adjust what the model sees while it is active with `prepareLoadout(loadout)`. It runs whenever the active tools change and receives the declared tools, the callable tools, and every registered tool with its exposure and namespace. It returns replacement `descriptions` for declared tools (including its own) and `hiddenDeclarations`: active tools whose declarations requests leave out while they stay active and callable. `codemode` and `tool_search` use only this hook, `exposure`, and `ctx.executeTool()`, so another tool can implement the same behavior under a different name.
 
 ### Activate tools dynamically
 
 Register every tool first, keep optional tools inactive, and use `pi.setActiveTools()` from a loader tool to select the desired active tools. Names must already be registered; unknown names are ignored.
 
 Pi records the initial prompt and tool set in the transcript's first system message, then appends tool and prompt changes before the next model request. Providers that cannot represent the transition receive a complete transcript checkpoint, which can invalidate the cached prefix.
+
+### MCP servers
+
+`pi.registerMcpServer(name, config)` adds an MCP server for the current session. `config` has the shape of an `mcpServers` entry in [`mcp.json`](mcp.md): `command`, `args`, `env`, and `cwd` for stdio servers, `url`, `headers`, and `oauth` for HTTP servers, plus `exposure`, `toolExposure`, `enabled`, and `timeout`.
+
+```typescript
+pi.registerMcpServer("jira", { url: "https://mcp.example.com/jira", exposure: "codemode" });
+pi.unregisterMcpServer("jira");
+```
+
+Servers registered while the extension loads connect when the session starts, together with the `mcp.json` servers; servers registered later connect right away, and `pi.unregisterMcpServer()` closes the connection and makes the server's tools unreachable. Registrations are not saved: register again on every load, for example based on the extension's own settings. A server in `mcp.json` with the same name takes precedence, and `/mcp` shows the override. Registering the same name again replaces the extension's earlier registration; names registered by another extension, invalid names, and invalid configs throw.
+
+The built-in MCP support connects registered servers. When nothing does, because another extension replaced it (see [MCP](mcp.md#other-mcp-extensions)), each registration is reported as an extension error. Other MCP extensions can connect registered servers too: read them with `pi.getMcpServers()` on `session_start` and handle the `mcp_servers_change` event for later changes.
 
 <a id="extensioncontext"></a>
 <a id="extensioncommandcontext"></a>
@@ -385,7 +440,26 @@ Project templates become commands in the editor after trust is granted. Review t
 
 ## Themes
 
-Themes control the colors Pi uses in interactive mode and HTML exports. Pi includes `dark` and `light` themes. You can select one theme, follow your terminal's light or dark appearance, or create your own palette.
+Themes control the colors Pi uses in interactive mode and HTML exports. Pi includes the `system`, `dark`, and `light` themes. You can select one theme, follow your terminal's light or dark appearance, or create your own palette.
+
+## Use your terminal's colors
+
+The `system` theme is the default. It builds Pi's colors from your terminal's theme, so Pi matches the terminal instead of bringing its own palette:
+
+- Pi queries the terminal's default foreground and background colors and its 16 ANSI colors.
+- Each Pi color takes its hue from one ANSI color, for example errors from red and links from blue.
+- Pi sets each color's lightness so that it stands out from the background by a minimum contrast. Body text keeps at least a 4.5:1 WCAG contrast ratio on the background and every panel.
+- When the terminal switches between light and dark, Pi queries the colors again and rebuilds the theme.
+
+The theme adapts to what the terminal reports:
+
+| Terminal reports | Result |
+|---|---|
+| Background and ANSI colors | Colors from the terminal palette, placed for the actual background. |
+| Background only | Pi's own hues, placed for the actual background. |
+| Nothing | ANSI color indices and the terminal's default colors, which the terminal renders itself. Secondary text is faint, and panels have no background color. |
+
+Pi asks the terminal for its colors when it starts. Terminals usually answer within a few milliseconds, and Pi waits at most 100 ms before showing the startup header. If the terminal does not answer in time, Pi uses the ANSI color fallback, and it still applies the colors if they arrive later, for example over a slow SSH connection. `system` is a reserved name: a custom theme with that name is ignored.
 
 <a id="selecting-a-theme"></a>
 
@@ -401,6 +475,8 @@ The selection is saved as the `theme` [setting](settings.md#terminal-and-display
 }
 ```
 
+Without a `theme` setting, Pi uses `system`.
+
 Automatic mode stores the light theme first and the dark theme second:
 
 ```json
@@ -409,7 +485,7 @@ Automatic mode stores the light theme first and the dark theme second:
 }
 ```
 
-When automatic mode is active, Pi changes themes when the terminal reports an appearance change. Theme names cannot contain `/` because Pi reserves it for this setting format.
+Pi decides whether the terminal is light or dark from its reported background and foreground colors. If the terminal does not report its background, Pi uses the terminal's light/dark notification, then the `COLORFGBG` environment variable, then dark. The same decision picks the theme of a light/dark pair and the appearance of `system`. When automatic mode is active, Pi changes themes when the terminal reports an appearance change. Theme names cannot contain `/` because Pi reserves it for this setting format.
 
 Use `--use-theme` to choose the initial theme for one invocation without changing the saved setting:
 
@@ -422,7 +498,7 @@ See [CLI resources](cli.md#resources) for the command-line option.
 
 ## Create a custom theme
 
-Copy one of the [built-in themes](https://github.com/earendil-works/pi/tree/main/packages/coding-agent/src/modes/interactive/theme) or create a new JSON file conforming to the [schema](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/src/modes/interactive/theme/theme-schema.json).
+Copy one of the [built-in themes](https://github.com/earendil-works/pi/tree/main/packages/coding-agent/src/modes/interactive/theme) or create a new JSON file conforming to the [schema](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/src/modes/interactive/theme/theme-schema.json). The built-in themes use OKHSL colors, with variables for colors that several roles share, so you can adjust a hue, saturation, or lightness directly.
 
 1. Save the file as `<agent-dir>/themes/my-theme.json`. The agent directory defaults to `~/.pi/agent`.
 2. Set its `name` to `my-theme`.
@@ -436,21 +512,26 @@ Use the theme name as the filename. Pi hot-reloads the active user theme only fr
 | Property | Required | Responsibility |
 |---|---|---|
 | `$schema` | No | Enables editor validation and completion against Pi's published schema. |
-| `name` | Yes | Identifies the theme in selectors and settings. It must be unique and cannot contain `/`. |
+| `name` | Yes | Identifies the theme in selectors and settings. It must be unique, cannot contain `/`, and cannot be `system`. |
+| `appearance` | No | `"dark"` or `"light"`: the background the theme is designed for. Pi detects it from the theme colors when omitted. |
 | `vars` | No | Defines reusable color values. Variables can reference other variables. |
 | `colors` | Yes | Assigns colors to terminal UI roles. The schema identifies required and optional roles. |
 | `export` | No | Overrides page and panel backgrounds in HTML exports. |
 
-A color can be written in four forms:
+A color can be written in six forms:
 
 | Form | Example | Meaning |
 |---|---|---|
-| RGB hexadecimal | `"#00aaff"` | A six-digit RGB color. |
+| RGB hexadecimal | `"#0af"` or `"#00aaff"` | A three- or six-digit sRGB color. |
+| OKLCH | `"oklch(62% 0.1 200)"` | Perceptual lightness, chroma, and hue. |
+| OKHSL | `"okhsl(250 60% 55%)"` | Hue, saturation, and lightness. Saturation is relative to the most the sRGB gamut allows at that hue and lightness, so every value is in gamut and equal saturation looks equally colorful. |
 | 256-color index | `39` | An ANSI palette index from `0` through `255`. |
 | Variable reference | `"primary"` | The value of an entry in `vars`. |
 | Terminal default | `""` | The terminal's default foreground or background color. |
 
-Pi resolves chained variable references. A missing variable or circular reference makes the theme invalid. Hexadecimal colors use truecolor when supported and are approximated in terminals limited to 256 colors. If colors differ from their hexadecimal values, check your terminal's truecolor detection and contrast settings. See [Configure Your Terminal](terminal-setup.md#override-detected-capabilities).
+Terminal default colors render as the terminal's own colors. Where Pi needs a concrete value, such as HTML export or extension color math, it uses the default colors the terminal reports, or a black or white guess based on the theme's appearance.
+
+Pi resolves chained variable references. A missing variable or circular reference makes the theme invalid. Pi uses truecolor when available, gamut-maps OKLCH to sRGB, and approximates colors for 256-color terminals. HTML exports convert OKHSL values to hexadecimal because CSS does not support them. If colors differ from their source values, check your terminal's truecolor detection and contrast settings. See [Configure Your Terminal](terminal-setup.md#override-detected-capabilities).
 
 Use the [theme JSON schema](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/src/modes/interactive/theme/theme-schema.json) for the exact properties, required colors, and accepted value types.
 
@@ -583,7 +664,9 @@ Pi supplies these packages to extensions and skills:
 - `@earendil-works/pi-tui`
 - `typebox`
 
-Declare imported Pi packages in `peerDependencies` with a `"*"` range and do not bundle them. Other Pi packages used as dependencies must be included in the published tarball and referenced through their `node_modules` resource paths.
+Declare the host-provided packages listed above in `peerDependencies` with a `"*"` range and do not bundle them. Pi suppresses automatic peer installation for managed npm packages and git packages installed with npm, pnpm, or Bun. Local packages are not installed or modified, so their dependency tree remains the package author's responsibility.
+
+Do not list host-provided packages in `dependencies`. A physical copy can bypass Pi's extension module mapping in compiled ESM and create duplicate classes, registries, and initialization work. Pi reports an extension warning when it detects this manifest configuration. Other Pi packages used as dependencies must be included in the published tarball and referenced through their `node_modules` resource paths.
 
 Installed packages load with separate module roots. Do not rely on two packages sharing one dependency instance or one package resolving another package’s undeclared dependency.
 
@@ -614,7 +697,7 @@ For each resource type:
 
 Filters narrow the package manifest. They do not expose resources that the package itself did not declare.
 
-Run `pi config` to enable or disable discovered resources. It starts with personal configuration; press Tab to switch scope, or run `pi config --local` to start with project overrides.
+Run `pi config` to enable or disable discovered resources and pi's built-in extensions. It starts with personal configuration; press Tab to switch scope, or run `pi config --local` to start with project overrides.
 
 ## Understand scope and identity
 
@@ -623,3 +706,120 @@ The same package can appear in personal and project settings. A project entry no
 Pi identifies npm packages by package name, git packages by repository URL without the ref, and local packages by resolved absolute path. This prevents the same package from loading twice through equivalent declarations.
 
 Use [Extensions](extensions.md), [Skills](skills.md), [Prompt Templates](prompt-templates.md), and [Themes](themes.md) to design each resource before packaging it.
+
+---
+
+## Virtual Models
+
+A virtual model is a selectable model that picks a physical model for each request. Use one to route by task, cost, or conversation state. For example, a router can send quick questions to a small model and hard problems to a large one, while the user selects a single model.
+
+Register virtual models from an [extension](extensions.md). They appear in `/model`, `--model`, scoped models, and settings like any other model. A virtual model can be listed under any provider, including one with physical models, such as `openai-codex/auto`.
+
+## Selection and dispatch
+
+A virtual model selects a model and a thinking level. A router maps that pair to a physical pair for each request:
+
+```
+selected (virtual model, virtual level)  ->  dispatched (physical model, physical level)
+jev/auto:low                             ->  anthropic/claude-sonnet-4-5:high
+```
+
+The virtual thinking level is an input to the router. Its meaning is up to the router; it need not correspond to a reasoning budget.
+
+Pi keeps the two pairs apart:
+
+| | Selection | Dispatch |
+|---|---|---|
+| Recorded in | `model_change` and `thinking_level_change` entries | Each assistant message: `provider`, `api`, `model`, `thinkingLevel` |
+| Visible as | `ctx.model`, `ctx.thinkingLevel`, `PI_MODEL`, `PI_REASONING_LEVEL`, `/model` | The assistant message of each response |
+
+Providers only receive physical models. Assistant messages name the physical model, so replaying a conversation across different physical models works the same as after a manual model switch. Resuming a session restores the virtual selection from its latest `model_change` entry. If the virtual model is no longer registered, Pi falls back to the physical model that answered last.
+
+In interactive mode, the footer shows the routed model next to the selection, for example `auto • high → gpt-5.6-luna • medium`. `/session` lists the cost for each physical model.
+
+Context usage uses the limits of the physical model that produced the latest response, even if that response came before switching to the virtual model. Without such a response, it uses the limits declared on the virtual model, if any. Compaction checks the same limits, and again the limits of the model each request is routed to. If that model's context window is too small for the conversation, Pi compacts before sending the request; the route stays as the router chose it.
+
+## Register a virtual model
+
+```typescript
+import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+
+export default function (pi: ExtensionAPI) {
+  pi.registerVirtualModel({
+    provider: "router",
+    id: "auto",
+    name: "Auto",
+    thinkingLevels: ["low", "high"],
+    route(request, ctx) {
+      // Tool follow-ups and retries stay on the model that handled the turn.
+      const sticky = request.failed ?? request.previous;
+      if (request.reason !== "user" && sticky) {
+        return { model: sticky.model, thinkingLevel: sticky.thinkingLevel ?? "medium" };
+      }
+      const id = request.thinkingLevel === "high" ? "claude-sonnet-4-5" : "claude-haiku-4-5";
+      return { model: ctx.modelRegistry.find("anthropic", id)!, thinkingLevel: "medium" };
+    },
+  });
+}
+```
+
+- `provider` is the provider the model is listed under. It can be any provider ID. A provider can list several virtual models next to its physical ones. On a physical provider, the virtual model is available when that provider has credentials. Under an ID that no provider uses, it is always available.
+- `id` must not be the ID of a physical model of that provider. If a catalog refresh later adds a physical model with the same ID, the virtual model hides it.
+- `thinkingLevels` lists the levels offered for selection. It defaults to `["off"]`.
+- `contextWindow` and `maxTokens` are shown before the first response. Unset limits are unknown.
+- `input` lists the input types offered for selection. It defaults to text and images; physical models without image support receive placeholders.
+
+Registration follows the same queuing and reload rules as `pi.registerProvider()`. Registering the same provider and ID again replaces the virtual model. `pi.unregisterVirtualModel(provider, id)` removes it; `pi.unregisterProvider()` does not. SDK code can register one without an extension: `modelRuntime.registerVirtualModel(definition)`.
+
+## Route requests
+
+`route(request, ctx)` runs before every request made with the virtual model and returns `{ model, thinkingLevel }`. The model can be any physical model in the catalog whose provider has credentials; look it up with `ctx.modelRegistry`. A virtual model cannot route to another virtual model. Pi clamps the thinking level to the returned model.
+
+| Field | Meaning |
+|---|---|
+| `model`, `thinkingLevel` | The selected virtual model and level |
+| `reason` | Why the request is made, see below |
+| `previous` | Physical model and thinking level of the latest successful response in `messages` |
+| `failed` | For `retry`: physical model, thinking level, and assistant `message` of the failed request, which `messages` no longer contains. The message carries `stopReason` and `errorMessage`. Absent when routing itself failed |
+| `state` | Router state last returned on this session branch, see below |
+| `messages` | The conversation for this request, including system messages |
+| `signal` | Abort signal of the request |
+
+| `reason` | Request |
+|---|---|
+| `user` | First request after a message the user wrote, including steering and follow-up messages |
+| `continuation` | Any other request in the agent loop, such as after tool results or extension messages |
+| `retry` | Automatic retry after a failed request, including after compaction for a context overflow |
+| `direct` | Request made outside the agent loop, such as a compaction summary or an extension calling `ctx.modelRegistry.streamSimple()` |
+
+Returning `previous` for `continuation` and `failed` for `retry` keeps prompt caches and thinking signatures valid. Switching models between turns is allowed but loses the prompt cache. A retry can also switch to another model, for example when `failed.message.errorMessage` reports that a provider is overloaded or the context overflowed.
+
+If `route()` throws, or returns a virtual model or a model without credentials, the request ends with an error response.
+
+## Keep routing state
+
+`route()` can return `state` next to the model. Pi stores it on the session branch and passes it back as `request.state` on later requests. Use it for decisions the transcript does not record, such as classifier results or a routing phase:
+
+```typescript
+pi.registerVirtualModel<{ phase: "plan" | "build" }>({
+  provider: "router",
+  id: "phased",
+  name: "Phased",
+  route(request, ctx) {
+    const state = request.state ?? { phase: "plan" };
+    const id = state.phase === "plan" ? "claude-opus-4-5" : "claude-haiku-4-5";
+    return { model: ctx.modelRegistry.find("anthropic", id)!, thinkingLevel: "medium", state };
+  },
+});
+```
+
+- State must be JSON-serializable. Returning `undefined` or `request.state` itself keeps the current state.
+- Pi stores any other returned object as new state, before the request is sent, even when it equals the current state. Return a new object only when the state changes. The state stays stored if the request later fails.
+- State follows the session tree, so forks and `/tree` navigation see the state of their branch. It survives compaction.
+- `direct` requests have no state, and Pi ignores state they return.
+
+The transcript already records the selection and every dispatched model, and `ctx.sessionManager.getBranch()` exposes both.
+
+Routers can call other models through `ctx.modelRegistry`, for example `ctx.modelRegistry.classify()` with a classifier model from `ctx.modelRegistry.findOfType("classifier", provider, id)`. The call adds latency before the first token of the turn.
+
+See [`jev-router.ts`](../examples/extensions/jev-router.ts) for a complete router. It plans on a strong OpenAI Codex model chosen by the Jev classifier, lets that model make the first edit, and then switches once to a cheaper model, accepting a single prompt-cache miss. It keeps the phase as router state.

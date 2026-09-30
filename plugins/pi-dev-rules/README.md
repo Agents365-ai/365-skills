@@ -13,10 +13,11 @@ A coding-agent skill that packages the **latest [Pi](https://pi.dev) documentati
 (`@earendil-works/pi-coding-agent`) as an on-demand reference, so an agent can install, configure,
 run, and **extend Pi** without re-fetching the docs.
 
-Mirrors <https://pi.dev/docs/latest> (fetched 2026-09-22, doc restructure included). Three extra
-bundles (`development.md`, `chord.md`, `agent-harness.md`) cover material with no page on the
-website: the repository's build/development/contribution rules and Pi's **internal monorepo
-architecture**. They are built from a pi checkout at `pi@2c2cd63`.
+Mirrors <https://pi.dev/docs/latest> (fetched 2026-09-30 from Pi 0.99.1; includes the 2026-09-22 doc
+restructure and the 2026-09-28/29 additions). Three extra bundles (`development.md`, `chord.md`,
+`agent-harness.md`) cover material with no page on the website: the repository's
+build/development/contribution rules and Pi's **internal monorepo architecture**. They are built
+from a pi checkout at `pi@d86654abb`.
 
 Works with Claude Code, Cursor, Codex, Copilot, Windsurf, Cline / Roo Code, Gemini CLI,
 Aider, Zed, OpenCode, OpenClaw / ClawHub, Hermes, pi-mono, plus major Chinese agents
@@ -24,7 +25,7 @@ Aider, Zed, OpenCode, OpenClaw / ClawHub, Hermes, pi-mono, plus major Chinese ag
 `AGENTS.md` or the [Agent Skills](https://agentskills.io) format.
 
 <p align="center">
-  <img src="assets/workflow-en.png" width="700" alt="pi-dev-rules workflow">
+  <img src="skills/pi-dev-rules/assets/workflow-en.png" width="700" alt="pi-dev-rules workflow">
 </p>
 
 ## What's inside
@@ -38,7 +39,11 @@ Aider, Zed, OpenCode, OpenClaw / ClawHub, Hermes, pi-mono, plus major Chinese ag
 - `references/settings-and-compaction.md`: configuration layout (agent directory vs project
   `.pi/`, context files), `settings.json` (trust/analytics/retry/transport),
   auto/manual compaction, branch summaries.
-- `references/extending-pi.md`: extensions API, skills (SKILL.md), prompt templates, themes, packages.
+- `references/extending-pi.md`: extensions API, skills (SKILL.md), prompt templates, themes,
+  packages, virtual models (`pi.registerVirtualModel`).
+- `references/mcp.md`: built-in MCP servers (2026-09-29), `mcp.json` global and project config,
+  stdio vs streamable HTTP, `pi mcp add/remove/list`, OAuth sign-in, exposure modes with
+  `toolExposure`, `codemode` / `tool_search`, resources, permissions, servers from extensions.
 - `references/tui-components.md`: TUI component system for custom extension/tool UIs.
 - `references/security-and-containerization.md`: project-trust model, no built-in sandbox, Gondolin
   micro-VM, Docker, OpenShell.
@@ -50,8 +55,9 @@ Aider, Zed, OpenCode, OpenClaw / ClawHub, Hermes, pi-mono, plus major Chinese ag
 - `references/development.md`: monorepo package list, build-from-source and standalone-binary
   builds, supply-chain rules, `AGENTS.md` development rules, the `CONTRIBUTING.md` gate.
 - `references/philosophy-and-design.md` (the creator's design manifesto, Mario Zechner's blog post,
-  2025-11-30): why minimal, the 4-tool philosophy, YOLO by default, the explicit non-features (no
-  MCP / plan mode / to-dos / sub-agents / background bash) with their intended alternatives.
+  2025-11-30): why minimal, the 4-tool philosophy, YOLO by default, the non-features it lists (MCP,
+  plan mode, to-dos, sub-agents, background bash) with their intended alternatives. The MCP entry is
+  annotated as superseded: MCP is built in since 2026-09-29.
 - `references/chord.md`: `@earendil-works/chord`, the application-neutral composition runtime:
   plugin loading/composition/bundling, the service catalogue, RPC transport, facet bundle loaders,
   and `chord/delta` replicated latest-value state. Includes `PLANNING.md`, which is a plan rather
@@ -76,13 +82,14 @@ cp -r pi-dev-rules ~/.claude/skills/      # example: Claude Code, global
 
 ## Updating
 
-`references/*.md` are generated, not hand-written: the 12 auto-built bundles and `changelog.md`
+`references/*.md` are generated, not hand-written: the 13 auto-built bundles and `changelog.md`
 come from a pi checkout, and `philosophy-and-design.md` is curated by hand. Users only need the
 files as shipped and never have to run anything. Rebuilding is maintainer tooling, documented in
 [`scripts/README.md`](skills/pi-dev-rules/scripts/README.md). Upstream restructured the docs on
 2026-09-22 (pages split into `cli.md`, `slash-commands.md`, `configuration.md`,
 `message-types.md`, `rpc-commands.md`, `rpc-extension-ui.md`, `cli-integration.md`,
-`how-pi-works.md`; `docs/development.md` folded into `docs/index.md`).
+`how-pi-works.md`; `docs/development.md` folded into `docs/index.md`), and added `virtual-models.md`
+(2026-09-28) and `mcp.md` (2026-09-29), both bundled here.
 
 ## Support
 

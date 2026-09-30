@@ -1,9 +1,9 @@
 ---
 name: pi-dev-rules
-version: 0.4.0
-description: "Authoritative reference for Pi (@earendil-works/pi-coding-agent): install, configure, run, and extend. Use when the user asks about Pi CLI/flags/commands, providers/models/auth, settings/compaction/sessions, security/trust, extensions, skills, prompt templates, themes, packages, custom providers, TUI components, the SDK, RPC mode, or JSON streaming. Also use for Pi's design philosophy and opinionated choices (why minimal, 4 tools, YOLO, no MCP/plan mode/to-dos/sub-agents), the creator Mario Zechner's coding-agent blog post, Pi's internal monorepo architecture (the Chord plugin/service runtime (@earendil-works/chord), the agent harness, facets/services, delta tracking), and the repository's build, development, and contribution rules."
+version: 0.5.0
+description: "Authoritative reference for Pi (@earendil-works/pi-coding-agent): install, configure, run, extend. Use for Pi CLI/flags, providers/models/auth, settings/compaction/sessions, security/trust, extensions, skills, prompt templates, themes, packages, custom providers, MCP servers, TUI components, the SDK, RPC/JSON modes, design philosophy, and the repository's build and contribution rules."
 license: MIT
-metadata: {"source":"https://pi.dev/docs/latest","docVersion":"latest","fetched":"2026-09-22","piRevision":"2c2cd63","version":"0.4.0"}
+metadata: {"source":"https://pi.dev/docs/latest","docVersion":"0.99.1","fetched":"2026-09-30","piRevision":"d86654abb","version":"0.5.0"}
 ---
 
 # Pi Dev Rules
@@ -26,8 +26,9 @@ the repository's own development/contribution rules. They are built from the pi 
 - Driving Pi programmatically via the SDK, RPC mode, or JSON event-stream mode.
 - Setting up Pi on Windows/Termux/tmux/specific terminals, or building it from source.
 - Understanding **why Pi is designed the way it is**: the creator's philosophy (minimal core, 4
-  tools, YOLO by default, no MCP/plan mode/to-dos/sub-agents) and how to configure/extend Pi along
-  those lines instead of against them.
+  tools, YOLO by default; the 2025-11-30 manifesto lists MCP, plan mode, to-dos, and sub-agents as
+  deliberate non-features, and built-in MCP landed later, on 2026-09-29) and how to configure or
+  extend Pi along those lines instead of against them.
 - Working **inside** the pi monorepo: the `@earendil-works/chord` runtime (plugin loading,
   service catalogue, RPC transport, delta/replicated state), the agent harness, facets/services,
   and the experimental `server`/`client`/`protocol` packages.
@@ -39,30 +40,32 @@ the repository's own development/contribution rules. They are built from the pi 
 | `references/cli-and-usage.md` | Install, auth, launching, how Pi works (agent loop, context assembly, session tree), the full CLI reference (commands, flags, modes), slash commands, message queue, context files, environment variables (incl. bash-tool `PI_SESSION_*`/`PI_MODEL`), sessions, keybindings |
 | `references/providers-and-models.md` | Subscription & API-key providers (30+), llama.cpp local router, `auth.json` (+ scoped `env`), cloud providers (Azure/Bedrock/Vertex/Cloudflare), custom models in `models.json`, `compat`, custom-provider extensions |
 | `references/settings-and-compaction.md` | Configuration layout (agent directory vs project `.pi/`, context files), `settings.json` schema + example, trust/analytics/retry/transport keys, compaction (auto/manual) and branch summarization |
-| `references/extending-pi.md` | Extension API (events, tools, commands, UI), Skills (SKILL.md), Prompt Templates, Themes, Packages |
+| `references/extending-pi.md` | Extension API (events, tools, commands, UI), Skills (SKILL.md), Prompt Templates, Themes, Packages, virtual models (`pi.registerVirtualModel`) |
+| `references/mcp.md` | Built-in MCP support (2026-09-29): `mcp.json` global and project servers, stdio vs streamable HTTP, `pi mcp add/remove/list`, OAuth sign-in, exposure modes (`codemode`, `codemode-deferred`, `deferred`, `direct`, `hidden`) with `toolExposure`, `codemode`/`tool_search` tools, resources, permissions, servers from extensions, SDK wiring |
 | `references/tui-components.md` | TUI component system for custom extension/tool UIs (components, overlays, theming, custom editor) |
 | `references/security-and-containerization.md` | Project-trust model (`trust.json`, `defaultProjectTrust`), no built-in sandbox, Gondolin micro-VM, Docker, OpenShell, Docker Sandboxes |
 | `references/session-format.md` | Session JSONL schema: versions, content blocks, entry types, tree/context building, SessionManager API, plus the model-facing message types |
 | `references/programmatic.md` | SDK, CLI integration (interactive/print/JSON/RPC mode choice, `RpcClient`, fork-and-rebrand), JSON event-stream mode, RPC protocol, RPC command reference, RPC extension UI |
 | `references/platform-setup.md` | Windows, Termux, tmux, per-terminal modified-Enter setup, shell aliases |
 | `references/development.md` | Monorepo package list, build-from-source and standalone-binary builds, supply-chain rules, `AGENTS.md` development rules, the `CONTRIBUTING.md` gate |
-| `references/philosophy-and-design.md` | Creator Mario Zechner's design manifesto (blog, 2025-11-30): minimal prompt <1000 tokens, 4 tools, YOLO by default, non-features (no MCP/plan/to-dos/sub-agents/background bash) with their intended alternatives, multi-provider architecture, Terminal-Bench 2.0 results (manually curated, not auto-built) |
+| `references/philosophy-and-design.md` | Creator Mario Zechner's design manifesto (blog, 2025-11-30; manually curated, not auto-built): minimal prompt <1000 tokens, 4 tools, YOLO by default, the non-features it lists (MCP/plan mode/to-dos/sub-agents/background bash) with their intended alternatives and the MCP entry annotated as superseded since 2026-09-29, multi-provider architecture, Terminal-Bench 2.0 results |
 | `references/chord.md` | `@earendil-works/chord`: plugin loading/composition/bundling, the service catalogue, RPC transport, `bundleFacetPackage` + facet bundle loaders, and `chord/delta` replicated latest-value state. Built from `packages/chord/{README.md,PLANNING.md,src/delta/README.md}`; `PLANNING.md` is a plan, not a frozen API |
 | `references/agent-harness.md` | Internal agent architecture: `AgentHarness` spec, application hosts & facets, typed values/lists, facet-service RPC, telemetry schema and invocation context. Built from `packages/agent/docs/`; specifications, not user docs |
-| `references/changelog.md` | Release history: the last 25 versions with their headline change, extracted from `packages/coding-agent/CHANGELOG.md` (278 release sections; read the file in the checkout for the full text) |
+| `references/changelog.md` | Release history: the last 25 versions with their headline change, extracted from `packages/coding-agent/CHANGELOG.md` (280 release sections; read the file in the checkout for the full text) |
 
 ## Starter plugins
 
-Every Pi user should install these four (same author, battle-tested):
+Every Pi user should install these three (same author, battle-tested):
 
 ```bash
-pi install npm:pi-mcp-adapter     # MCP server integration
 pi install npm:pi-subagents       # subagents / loop / chain / parallel
 pi install npm:pi-lens            # real-time LSP diagnostics
 pi install npm:pi-web-access      # web search, URL fetch, YouTube, PDF
 ```
 
-Then `pi list` to verify, restart Pi.
+Then `pi list` to verify, restart Pi. MCP needs no package: it is built in since 2026-09-29 (see
+`references/mcp.md`). An extension that registers `/mcp`, such as `pi-mcp-adapter`, replaces the
+built-in support instead of adding to it.
 
 ## Cheat sheet
 
@@ -109,6 +112,12 @@ pi --mode rpc                                   # JSON-RPC over stdin/stdout
   (`ask`/`always`/`never`), overridable per run with `--approve`/`--no-approve`. For untrusted repos
   or unattended runs, isolate with a container/VM (Gondolin/Docker/OpenShell); don't mount host
   `~/.pi/agent` unless the sandbox should see host credentials.
+- **MCP is built in since 2026-09-29**, configured in `~/.pi/agent/mcp.json` or a project `.pi/
+  mcp.json`; the project file is read only after the project is trusted, because stdio servers run
+  commands. MCP calls go through the tool pipeline, so `tool_call` handlers and permission gates
+  apply (`codemode` calls carry `parentToolCallId`). Installing an extension that registers `/mcp`
+  (`pi-mcp-adapter`) disables the built-in support; disable it deliberately with `"extensions":
+  ["-builtin:mcp"]` or `pi config`.
 - **In extension/SDK tools: throw on error, never return an error flag.** Pi wraps a thrown error
   into an error tool result (`isError: true`); the docs defer to `ToolDefinition` in
   `packages/coding-agent/src/core/extensions/types.ts` for the exact contract. Limit tool output to
@@ -119,7 +128,7 @@ pi --mode rpc                                   # JSON-RPC over stdin/stdout
 - **`chord.md` and `agent-harness.md` describe internals, not a stable contract.** Chord is
   published but application-neutral, the harness docs are implementation specifications, and
   `PLANNING.md`/`server`/`client`/`protocol` are explicitly experimental. Quote them as the
-  current source tree state (pi@`2c2cd63`), not as promised API.
+  current source tree state (pi@`d86654abb`), not as promised API.
 - **`auth.json` holds API keys and OAuth tokens**: Pi writes it `0600`, keep it private and out of
   version control. Credential priority: CLI `--api-key` → `auth.json` →
   env var → custom-provider keys in `models.json`.

@@ -57,6 +57,7 @@ This table covers providers with a single primary API-key variable. Providers th
 | ZAI Coding Plan (China) | `ZAI_CODING_CN_API_KEY` |
 | OpenCode Zen and Go | `OPENCODE_API_KEY` |
 | Radius | `RADIUS_API_KEY` |
+| TypeSafe ([classifier models](models.md#use-classifier-models)) | `TYPESAFE_API_KEY` |
 | Hugging Face | `HF_TOKEN` |
 | Fireworks | `FIREWORKS_API_KEY` |
 | Together AI | `TOGETHER_API_KEY` |
@@ -284,6 +285,17 @@ Loaded and sleeping models appear in `/model`. Sleeping models wake automaticall
 
 If the router disconnects, `/llama` shows **Retry** and **Close**. Retry reconnects and refreshes model state without replaying the interrupted operation.
 
+## Classification
+
+Every model listed for chat is also listed as a classifier model with the same ID and the `llama-cpp-classify` API. Classifier models answer typed `choice`, `bool`, and `score` questions about JSON state, like TypeSafe's Jev models. The model reaches them from [`codemode`](cli.md#enable-codemode) scripts, and extensions through `ctx.modelRegistry.classify()`; see [Classifier models](models.md#use-classifier-models).
+
+The model does not generate an answer. Each question becomes one chat prompt: the state, every question of the request, the state again, and then the question with its answers under single-token labels. Labels are letters for a choice (up to 62 options), `Yes`/`No` for a bool, and digits for a score (up to 10 levels). The second copy of the state is read with the questions in view, which improved accuracy on JevBench with small models. Pi reads the probabilities of the labels as the next token and normalizes them. A choice returns every option's probability and a confidence of `(n * peak - 1) / (n - 1)`; a score returns the expected level.
+
+- Raw label probabilities are usually overconfident. The per-request `temperature` option divides the label logits before normalizing; values above 1 soften the distribution. It changes no answer.
+- Questions run one after another. Everything before the final question is the same for all questions of a request, so the server's prompt cache evaluates it once. The state appears twice, so it needs twice its size in context.
+- Small models may follow instructions written inside the state. The prompt tells the model to judge the state as data, but that is not a guarantee.
+- Hybrid models such as Qwen3.5 cannot rewind a partially cached prompt without context checkpoints. If each question reprocesses the whole state, start the router with `--ctx-checkpoints 32 --checkpoint-min-step 0`.
+
 ## Troubleshooting
 
 Check that the router is reachable:
@@ -297,6 +309,8 @@ curl http://127.0.0.1:8080/models
 - **Model missing from `/model` with `--no-models-autoload`:** Load it with `/llama` first.
 - **Load fails or uses too much memory:** Lower `-c` or unload another model.
 - **Server is not in router mode:** Start it without `--model`, `-m`, or `-hf`.
+
+To remove the `llama.cpp` provider and `/llama`, disable `llama.cpp` under Built-in in `pi config`, or set `"extensions": ["-builtin:llama.cpp"]` in [settings](settings.md#resources).
 
 ---
 
@@ -402,6 +416,41 @@ Choose the conservative end of any published range. A model without a lifetime f
 
 Compatibility settings should describe verified differences in the endpoint's request or response behavior. Do not enable them based only on an endpoint advertising OpenAI or Anthropic compatibility.
 
+## Use classifier models
+
+Classifier models do not chat. They answer typed questions about JSON state: pick one of several choices, answer yes or no, or give a score, each with probabilities. Pi includes TypeSafe's Jev model from these providers:
+
+| Provider | Model IDs | Authentication |
+|---|---|---|
+| `typesafe` | `jev-latest` | `TYPESAFE_API_KEY` |
+| `openrouter` | `typesafe/jev-1.13`, `~typesafe/jev-latest` | `OPENROUTER_API_KEY` or `/login` |
+| `cloudflare-workers-ai` | `typesafe/jev` | `CLOUDFLARE_API_KEY` and `CLOUDFLARE_ACCOUNT_ID` |
+| `vercel-ai-gateway` | `typesafe-ai/jev` | `AI_GATEWAY_API_KEY` |
+| `opencode` | `jev-1.13`, `jev-1.13-free` | `OPENCODE_API_KEY` |
+
+Chat models on a [llama.cpp router](llama-cpp.md#classification) are also listed as classifier models.
+
+Classifier models do not appear in `/model`. The model reaches them through the [`codemode`](cli.md#enable-codemode) tool, which is off unless an MCP server turned it on. Enable it with `"defaultTools": ["+codemode"]` in [settings](settings.md#tools). Scripts then list classifier models with `models.getAvailableOfType("classifier")` and call `models.classify(model, { state, questions })`:
+
+```js
+const jev = await models.getModelOfType("classifier", "typesafe", "jev-latest");
+const result = await models.classify(jev, {
+  state: { message: "The change works, thanks." },
+  questions: {
+    approved: {
+      type: "bool",
+      instructions: "Does the user approve of the result?",
+      criteria: { true: "Approval", false: "No approval" },
+    },
+  },
+});
+return result.answers;
+```
+
+When the service reports token counts, as all System One services do, `result.usage` carries them with their cost. Pi adds the usage of a script's classifier calls to the `codemode` tool result, so it counts toward the session cost in the footer and `/session`. The cost uses the model's catalog price; models without one, such as TypeSafe's direct `jev-latest`, report tokens at no cost.
+
+Extensions call classifiers through `ctx.modelRegistry.classify()`, without codemode. [Virtual models](virtual-models.md#route-requests) can use them to route requests; see the `jev-router.ts` example.
+
 ## Add a custom provider
 
 Use an extension when the provider needs custom streaming, model discovery, or authentication behavior. See [Custom Providers](custom-provider.md) for the extension workflow.
@@ -455,7 +504,45 @@ There are two registration forms:
 
 Prefer a complete provider for new integrations that own more than static endpoint and model metadata. Pi composes `models.json` overrides above a registered native provider.
 
-Registering only `baseUrl` or `headers` for an existing provider preserves its built-in models. Supplying `models` in the legacy form replaces the models supplied by that registration.
+Registering only `baseUrl` or `headers` for an existing provider preserves its built-in models. Supplying `models` in the legacy form replaces that provider's models across chat, image, and classifier operations. An omitted `type` means `"chat"`; image and classifier models require explicit discriminants and implementations keyed by their `api` values through the `images` and `classifiers` fields.
+
+For example, a mixed-operation provider can register non-chat models and their implementations together:
+
+```typescript
+pi.registerProvider("media-tools", {
+  apiKey: "$MEDIA_TOOLS_API_KEY",
+  models: [
+    {
+      type: "image",
+      id: "image-v1",
+      name: "Image V1",
+      api: "media-images",
+      baseUrl: "https://media.example.com/v1",
+      input: ["text"],
+      output: ["image"],
+      cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+    },
+    {
+      type: "classifier",
+      id: "classifier-v1",
+      name: "Classifier V1",
+      api: "media-classifier",
+      baseUrl: "https://media.example.com/v1",
+      input: ["text"],
+      cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+      contextWindow: 64000,
+    },
+  ],
+  images: {
+    "media-images": { generateImages: async (model, context, options) => result },
+  },
+  classifiers: {
+    "media-classifier": { classify: async (model, context, options) => result },
+  },
+});
+```
+
+Model-level `baseUrl` values take precedence over the provider endpoint. If no `models` list is supplied, built-in models of every operation remain registered. Equal model IDs in different operations remain distinct, including their model-specific headers.
 
 Calls made after initial extension loading take effect immediately. Use `pi.unregisterProvider()` to remove the dynamic provider and restore built-in behavior that it replaced.
 
@@ -480,7 +567,7 @@ Never write access tokens, refresh tokens, authorization headers, or complete pr
 
 ## Supply and refresh models
 
-Every model needs an ID, display name, input capabilities, context window, output limit, reasoning support, and cost metadata. Choose the API implementation at the provider level unless one model requires an override.
+Every model needs an ID, display name, input capabilities, and cost metadata. Chat and classifier models also need a context window; chat models need an output limit and reasoning support; image models declare their output modalities. Choose the API implementation at the provider level unless one model requires an override.
 
 Set `promptCache.short` or `promptCache.long` to the provider's best-effort cache lifetime in seconds when Pi should keep an idle prompt cache warm. Leave them unset to disable cache warming for that retention tier.
 
@@ -493,7 +580,7 @@ Use `refreshModels` when the available catalog comes from a live service. Pass `
 The two registration forms have different refresh contracts:
 
 - A complete `Provider` returns nothing. It calls `context.publish({ update })` to install provider-owned model state, after which its synchronous `getModels()` exposes the latest list.
-- Legacy `ProviderConfig.refreshModels` returns model definitions. Pi replaces that registration’s live models with the returned list and applies any requested persistence.
+- Legacy `ProviderConfig.refreshModels` returns mixed-operation model definitions. Pi replaces that registration’s live models with the returned list and applies any requested persistence.
 
 Publish persisted catalog data only when it should survive across runs. A live service such as llama.cpp can update its in-memory list without persisting it; a remote catalog can retain a snapshot for offline startup.
 
@@ -530,9 +617,10 @@ The stream must also honor request instrumentation supplied through `SimpleStrea
 
 - Call `options.onPayload` before sending the provider request and use any replacement payload it returns.
 - Call `options.onResponse` after receiving the response but before consuming its body.
+- Await `options.onProviderStreamEvent?.(providerEvent, model)` for each parsed provider event before normalizing it.
 - Pass through the abort signal and provider-scoped environment.
 
-These hooks power extension request inspection and response-header events. Omitting them makes the provider behave differently from Pi’s built-in providers.
+These hooks power extension request inspection, response-header events, and provider-stream observation. Omitting them makes the provider behave differently from Pi’s built-in providers.
 
 ## Report failures and usage
 
