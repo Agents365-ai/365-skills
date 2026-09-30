@@ -51,6 +51,10 @@ BUNDLES = {
         ("packages/coding-agent/docs/prompt-templates.md", "Prompt Templates"),
         ("packages/coding-agent/docs/themes.md", "Themes"),
         ("packages/coding-agent/docs/packages.md", "Pi Packages"),
+        ("packages/coding-agent/docs/virtual-models.md", "Virtual Models"),
+    ],
+    "mcp.md": [
+        ("packages/coding-agent/docs/mcp.md", "MCP Servers"),
     ],
     "tui-components.md": [
         ("packages/coding-agent/docs/tui.md", "TUI Components"),
@@ -113,8 +117,12 @@ HEADER_DOCS = {
         "Source: https://pi.dev/docs/latest/configuration, /settings, /compaction",
     ),
     "extending-pi.md": (
-        "# Extending Pi: Extensions, Skills, Prompt Templates, Themes, Packages",
-        "Source: https://pi.dev/docs/latest/extensions, /skills, /prompt-templates, /themes, /packages\nSee also: `tui-components.md` (custom UI), `session-format.md` (entry/message schema).",
+        "# Extending Pi: Extensions, Skills, Prompt Templates, Themes, Packages, Virtual Models",
+        "Source: https://pi.dev/docs/latest/extensions, /skills, /prompt-templates, /themes, /packages, /virtual-models\nSee also: `tui-components.md` (custom UI), `session-format.md` (entry/message schema).",
+    ),
+    "mcp.md": (
+        "# Pi: MCP Servers",
+        "Source: https://pi.dev/docs/latest/mcp\nBuilt-in MCP support, added 2026-09-29 (`mcp.json`, exposure modes and `codemode`, resources, permissions). An extension that registers `/mcp`, such as `pi-mcp-adapter`, replaces it; `pi config` can disable the built-in extension instead.",
     ),
     "tui-components.md": (
         "# Pi: TUI Components",

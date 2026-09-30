@@ -73,7 +73,7 @@ After a runtime replacement, subscriptions belong to the old `AgentSession` and 
 
 A prompt sent while the session is already streaming must specify whether it should steer the current run or follow it. Calling `prompt()` without that choice rejects rather than guessing.
 
-A steering message enters after the current assistant turn and its tool calls. A follow-up enters after the current run finishes its pending work. `steer()` and `followUp()` expose those behaviors directly.
+A steering message enters after the current assistant turn and its tool calls. A follow-up enters after the current run finishes its pending work. `steer()` and `followUp()` expose those behaviors directly and return `"queued"` if the input was queued (including after an extension transformed it), or `"handled"` if an extension consumed it.
 
 `abort()` stops the active operation and waits for the session to become idle. `waitForIdle()` waits without aborting it.
 
@@ -117,7 +117,11 @@ Use `DefaultResourceLoader` when you want standard discovery with selected overr
 
 <a id="inlineextension"></a>
 
-Inline extension factories can be supplied through `DefaultResourceLoader`. Give one an `InlineExtension` name only when it needs a stable name in diagnostics and startup output.
+Inline extension factories can be supplied through `DefaultResourceLoader`. Give one an `InlineExtension` name only when it needs a stable name in diagnostics and startup output. A named inline extension with `replaceable: true` is left out when another extension registers a tool, command, or flag with a name it registers during loading, instead of both loading with a conflict. The CLI's built-in codemode, tool search, and MCP extensions are replaceable. A named entry with `builtin: true` is not an inline extension: it supplies the code of the `builtin:<name>` extension, which loads like a configured extension file. It loads by default, is listed in `pi config`, and is disabled by `-builtin:<name>` in the `extensions` setting or by `noExtensions`; `additionalExtensionPaths: ["builtin:<name>"]` loads it explicitly. It loads after project trust is resolved, so it cannot handle `project_trust`. The CLI's built-in extensions use it.
+
+<a id="codemode-mcp"></a>
+
+The CLI loads `codemode`, `tool_search`, and MCP as built-in extensions. SDK sessions do not; add `createCodemodeExtension()`, `createToolSearchExtension()`, and `createMcpExtension()` to the `extensionFactories` of `DefaultResourceLoader`. `codemode` and `tool_search` are registered inactive: enable them through the `defaultTools` setting (`["+codemode", "+tool_search"]` keeps the other default tools), or let the MCP extension activate them: `codemode` for servers with `codemode` or `codemode-deferred` exposure, `tool_search` for servers with `deferred` exposure. The MCP extension connects its servers on `session_start`, so call `session.bindExtensions()`. See [Codemode and MCP](../examples/sdk/14-codemode-mcp.ts).
 
 See the focused examples for [models](../examples/sdk/02-custom-model.ts), [tools](../examples/sdk/05-tools.ts), [extensions](../examples/sdk/06-extensions.ts), and [full control](../examples/sdk/12-full-control.ts).
 
@@ -138,6 +142,7 @@ See the focused examples for [models](../examples/sdk/02-custom-model.ts), [tool
 | [Sessions](../examples/sdk/11-sessions.ts) | Control session persistence and restoration |
 | [Full control](../examples/sdk/12-full-control.ts) | Replace default discovery and state services |
 | [Session runtime](../examples/sdk/13-session-runtime.ts) | Replace the active session safely |
+| [Codemode and MCP](../examples/sdk/14-codemode-mcp.ts) | Add the `codemode`, `tool_search`, and MCP extensions |
 
 <a id="exports"></a>
 
@@ -552,8 +557,10 @@ A successful `prompt` response means the prompt was accepted, queued, or handled
 
 ```json
 {"id":"req-2","type":"prompt","message":"Review this repository"}
-{"id":"req-2","type":"response","command":"prompt","success":true}
+{"id":"req-2","type":"response","command":"prompt","success":true,"data":{"disposition":"started"}}
 ```
+
+`data.disposition` reports what happened to the prompt. If it is `"handled"`, no run started for this prompt, so don't wait for `agent_settled`. See [RPC Commands](rpc-commands.md#prompt) for all values.
 
 Continue consuming [events](json.md) after that response. `agent_end` marks the end of one low-level agent run, but retries, overflow recovery, compaction, steering, or follow-up work can still follow. Wait for `agent_settled` when the client needs to know Pi will not continue automatically.
 
@@ -719,8 +726,10 @@ If the agent is streaming and no `streamingBehavior` is specified, the command r
 
 Response:
 ```json
-{"id": "req-1", "type": "response", "command": "prompt", "success": true}
+{"id": "req-1", "type": "response", "command": "prompt", "success": true, "data": {"disposition": "started"}}
 ```
+
+`data.disposition` is `"handled"` if an extension command or input handler consumed the prompt, `"queued"` if Pi queued it during a run, or `"started"` if Pi accepted it to start a run. This describes the submitted prompt, not independent work started by an extension or a guarantee of completion.
 
 `success: true` means the prompt was accepted, queued, or handled immediately. `success: false` means the prompt was rejected before acceptance. Failures after acceptance are reported through the normal event and message stream, not as a second `response` for the same request id.
 
@@ -743,8 +752,10 @@ The `images` field is optional. Each image uses `ImageContent` format (same as `
 
 Response:
 ```json
-{"type": "response", "command": "steer", "success": true}
+{"type": "response", "command": "steer", "success": true, "data": {"disposition": "queued"}}
 ```
+
+`data.disposition` is `"handled"` if an input handler consumed this steer, or `"queued"` if Pi queued it (including after a handler transformed it). It does not guarantee this message remains queued.
 
 See [set_steering_mode](#set_steering_mode) for controlling how steering messages are processed.
 
@@ -765,8 +776,10 @@ The `images` field is optional. Each image uses `ImageContent` format (same as `
 
 Response:
 ```json
-{"type": "response", "command": "follow_up", "success": true}
+{"type": "response", "command": "follow_up", "success": true, "data": {"disposition": "queued"}}
 ```
+
+`data.disposition` has the same `"handled"` or `"queued"` meaning as for `steer`, applied to this follow-up.
 
 See [set_follow_up_mode](#set_follow_up_mode) for controlling how follow-up messages are processed.
 
