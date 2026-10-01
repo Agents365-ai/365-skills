@@ -1,4 +1,5 @@
 ---
+disable-model-invocation: true
 name: excalidraw
 description: Use when user requests diagrams, flowcharts, architecture charts, or visualizations. Also use proactively when explaining systems with 3+ components, complex data flows, or relationships that benefit from visual representation. Generates .excalidraw files and exports to PNG/SVG via Kroki API or locally using excalidraw-brute-export-cli.
 homepage: https://github.com/Agents365-ai/365-skills

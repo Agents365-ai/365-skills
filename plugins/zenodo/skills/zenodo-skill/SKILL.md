@@ -1,4 +1,5 @@
 ---
+disable-model-invocation: true
 name: zenodo-skill
 description: Use whenever the user mentions Zenodo, depositing or publishing research artifacts (datasets, software, papers, posters) to Zenodo, minting a DOI for a dataset/code release, uploading files to a Zenodo record, creating a new version of a Zenodo deposit, or searching Zenodo records. Covers the full Zenodo REST API workflow — create deposition, upload files via the bucket API, set metadata, publish, version, and search — for both production (zenodo.org) and sandbox (sandbox.zenodo.org).
 license: MIT

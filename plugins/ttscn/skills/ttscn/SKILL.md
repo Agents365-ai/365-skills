@@ -1,4 +1,5 @@
 ---
+disable-model-invocation: true
 name: ttscn
 description: Multi-platform Chinese & multilingual TTS text-to-speech via Edge/Doubao/CosyVoice/Qwen3/StepFun/GLM-TTS/Azure/Tencent/Baidu/MiniMax/Xunfei plus ElevenLabs/OpenAI/Google/Atlas Cloud — 15 backends, word-level timestamps, [PAUSE:x] pause markers, pinyin pronunciation overrides
 author: Agents365-ai

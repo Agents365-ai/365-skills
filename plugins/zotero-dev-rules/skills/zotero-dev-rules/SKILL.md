@@ -1,6 +1,7 @@
 ---
+disable-model-invocation: true
 name: zotero-dev-rules
-description: Authoritative reference and rules for developing with Zotero — the Web API v3 (read/write requests, file upload, syncing, streaming, OAuth, item types & fields), the desktop client's internal JavaScript API, building Zotero plugins (7–10, incl. Zotero 10 migration notes), writing translators (web/import/export/search), and creating/editing CSL citation styles. Use whenever the user asks to query or write to a Zotero library via the API, build or debug a Zotero plugin, write a Zotero translator, work with citeproc-js / CSL styles, sync Zotero data programmatically, or script the Zotero client.
+description: "Developing with Zotero: Web API v3 (read/write, file upload, sync, OAuth, item types/fields), the desktop client's JS API, plugin development (7-10), translators (web/import/export/search), and CSL/citeproc-js styles. Use when scripting Zotero or building or debugging a plugin, translator, or citation style."
 version: 0.4.1
 license: CC BY-NC 4.0
 homepage: https://github.com/Agents365-ai/365-skills

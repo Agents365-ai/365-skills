@@ -1,4 +1,5 @@
 ---
+disable-model-invocation: true
 name: pi-dev-rules
 version: 0.5.0
 description: "Authoritative reference for Pi (@earendil-works/pi-coding-agent): install, configure, run, extend. Use for Pi CLI/flags, providers/models/auth, settings/compaction/sessions, security/trust, extensions, skills, prompt templates, themes, packages, custom providers, MCP servers, TUI components, the SDK, RPC/JSON modes, design philosophy, and the repository's build and contribution rules."

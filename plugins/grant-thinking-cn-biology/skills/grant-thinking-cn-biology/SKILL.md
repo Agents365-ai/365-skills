@@ -1,4 +1,5 @@
 ---
+disable-model-invocation: true
 name: grant-thinking-cn-biology
 description: Use when evaluating biology grant ideas in the Chinese funding context (NSFC, MOST, etc.) — diagnosing project legitimacy, mechanism-centered scientific questions, reviewer-aware logic, innovation discipline, feasibility, and scope control across funding levels (youth, general, key).
 license: MIT

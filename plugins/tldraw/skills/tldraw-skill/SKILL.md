@@ -1,4 +1,5 @@
 ---
+disable-model-invocation: true
 name: tldraw-skill
 description: Use when user requests diagrams, flowcharts, architecture charts, or visualizations. Also use proactively when explaining systems with 3+ components, complex data flows, or relationships that benefit from visual representation. Generates .tldr JSON files and exports to PNG/SVG locally using @kitschpatrol/tldraw-cli.
 license: MIT

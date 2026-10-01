@@ -1,4 +1,5 @@
 ---
+disable-model-invocation: true
 name: scientific-thinking
 description: Use when interpreting research findings, evaluating scientific evidence, analyzing mechanisms, comparing competing hypotheses, designing experiments, or constructing scientific arguments.
 license: MIT

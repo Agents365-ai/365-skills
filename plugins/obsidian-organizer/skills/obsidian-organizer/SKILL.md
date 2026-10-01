@@ -1,16 +1,7 @@
 ---
+disable-model-invocation: true
 name: obsidian-organizer
-description: >-
-  File new notes into the right folder and audit/reorganize folder structure in
-  the user's Obsidian vault, using the `obsidian` CLI and a single source-of-truth
-  map note (`00_Index/Folder_Map.md`) that lives inside the vault. Use this
-  whenever a note needs to be placed, filed, sorted, or moved into the vault;
-  whenever the user asks where a note "belongs" or "should go"; and whenever they
-  want to clean up, reorganize, deduplicate, audit, or restructure vault folders
-  (e.g. orphaned notes, dead-end notes, near-duplicate titles, overlapping
-  folders). Trigger even when the user just says "add this to my vault", "put
-  this somewhere sensible", or "tidy up the cellchat notes" without naming a
-  folder. Requires the Obsidian desktop app to be running.
+description: "File notes into the right folder in the user's Obsidian vault and audit/reorganize its structure, via the `obsidian` CLI and the `00_Index/Folder_Map.md` map note. Use when a note needs filing, when the user asks where a note belongs, or wants to tidy, deduplicate, audit, or restructure folders. Requires the Obsidian app to be running."
 ---
 
 # Obsidian Organizer
