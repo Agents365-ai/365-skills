@@ -6,12 +6,11 @@
 [![Last Commit](https://img.shields.io/github/last-commit/Agents365-ai/365-skills?logo=github)](https://github.com/Agents365-ai/365-skills/commits/main)
 
 [![SkillsMP](https://img.shields.io/badge/SkillsMP-listed-1f6feb)](https://skillsmp.com/skills/agents365-ai-asta-skill-skills-asta-skill-skill-md)
-[![ClawHub](https://img.shields.io/badge/ClawHub-listed-ff6b35)](https://clawhub.ai/agents365-ai/asta-skill)
 [![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-plugin-8a2be2)](https://github.com/Agents365-ai/365-skills)
 [![Agent Skills](https://img.shields.io/badge/Agent%20Skills-compatible-2ea44f)](https://agentskills.io)
 **English** · [中文](README_CN.md) · [Asta MCP Overview](https://allenai.org/asta/resources/mcp) · [Request API Key](https://share.hsforms.com/1L4hUh20oT3mu8iXJQMV77w3ioxm)
 
-Ai2's Asta MCP server (Semantic Scholar) runs on **any MCP-capable agent** — this repo adds an *optional* pure instruction-pack skill on top that turns natural-language research questions into well-formed tool calls: it routes intent → tool, fills safe defaults, chains workflows, and warns you off the usual pitfalls. Register the MCP server and you can call Asta from **Claude Code, Cursor, Codex, Windsurf, Trae, Qoder, CodeBuddy/WorkBuddy, Hermes, opencode, OpenClaw, pi-mono**, and anything else that speaks MCP; add the skill (on any [Agent Skills](https://agentskills.io)-compatible host) for sharper results.
+Ai2's Asta MCP server (Semantic Scholar) runs on **any MCP-capable agent**; this repo adds an *optional* pure instruction-pack skill on top that turns natural-language research questions into well-formed tool calls: it routes intent → tool, fills safe defaults, chains workflows, and warns you off the usual pitfalls. Register the MCP server and you can call Asta from **Claude Code, Cursor, Codex, Windsurf, Trae, Qoder, CodeBuddy/WorkBuddy, Hermes, opencode, pi-mono**, and anything else that speaks MCP; add the skill (on any [Agent Skills](https://agentskills.io)-compatible host) for sharper results.
 
 ## What it does
 
@@ -22,17 +21,18 @@ Ai2's Asta MCP server (Semantic Scholar) runs on **any MCP-capable agent** — t
 - **Snippet search** — retrieve ~500-word passages from paper bodies for evidence grounding
 - **Author discovery** — find researchers and list their publications
 - **Zero-code integration** — the skill is a pure instruction pack; all I/O goes through the Asta MCP server
+- **Verified failure-mode guards**: per-tool parameter names, typos the server silently ignores, errors delivered under HTTP 200, and measured payload budgets (a 50-row search costs 296 KB)
 - Triggers automatically whenever the user asks for papers, citations, academic search, or literature discovery and Asta tools are registered
 
 ## Multi-Platform Support
 
-**Anything that speaks MCP can call Asta** — the skill is just an optional [Agent Skills](https://agentskills.io) layer on top. Verified on **Claude Code, Codex, Cursor, Devin Desktop (ex-Windsurf), Hermes, opencode, OpenClaw/ClawHub,** and **[pi-mono](https://github.com/badlogic/pi-mono)**; indexed on **SkillsMP**. The [Installation](#installation) section below has copy-paste setup for those plus **Gemini CLI, GitHub Copilot, Cline, Trae, 通义灵码 Lingma, CodeBuddy/WorkBuddy, Qoder, Claude Desktop,** and **LM Studio**. Desktop hosts that don't auto-load skills (Claude Desktop, LM Studio) still get the tools over MCP — paste `SKILL.md` into the system prompt to add the routing layer.
+**Anything that speaks MCP can call Asta**: the skill is just an optional [Agent Skills](https://agentskills.io) layer on top. Verified on **Claude Code, Codex, Cursor, Devin Desktop (ex-Windsurf), Hermes, opencode,** and **[pi-mono](https://github.com/badlogic/pi-mono)**; indexed on **SkillsMP**. The [Installation](#installation) section below has copy-paste setup for those plus **Gemini CLI, GitHub Copilot, Cline, Trae, 通义灵码 Lingma, CodeBuddy/WorkBuddy, Qoder, Claude Desktop,** and **LM Studio**. Desktop hosts that don't auto-load skills (Claude Desktop, LM Studio) still get the tools over MCP; paste `SKILL.md` into the system prompt to add the routing layer.
 
-`SKILL.md`'s frontmatter keeps only `name`, `description`, and `license` at the top level (all other fields are nested under `metadata`), so it validates cleanly under stricter skill-frontmatter parsers such as Codex's.
+`SKILL.md`'s frontmatter stays generic to any Agent Skills host (`name`, `description`, `license`, `version`), so it validates cleanly under stricter skill-frontmatter parsers such as Codex's.
 
 ## Prerequisites
 
-- An agent host with MCP support (Claude Code, Cursor, Codex, Gemini CLI, GitHub Copilot, Cline, Devin Desktop, Trae, 通义灵码 Lingma, CodeBuddy/WorkBuddy, Qoder, opencode, OpenClaw/ClawHub, pi-mono, etc.)
+- An agent host with MCP support (Claude Code, Cursor, Codex, Gemini CLI, GitHub Copilot, Cline, Devin Desktop, Trae, 通义灵码 Lingma, CodeBuddy/WorkBuddy, Qoder, opencode, pi-mono, etc.)
 - An Asta API key — [request here](https://share.hsforms.com/1L4hUh20oT3mu8iXJQMV77w3ioxm)
 
   ```bash
@@ -251,7 +251,7 @@ Edit `~/.codebuddy/.mcp.json` (user scope) or `<project>/.mcp.json`:
 }
 ```
 
-`${ASTA_API_KEY}` expands from the environment. WorkBuddy is OpenClaw-compatible, so the optional skill also loads from its OpenClaw skills directory.
+`${ASTA_API_KEY}` expands from the environment.
 
 </details>
 
@@ -366,7 +366,7 @@ npx skills add Agents365-ai/365-skills -g
 /plugin install asta
 ```
 
-Also indexed on [SkillsMP](https://skillsmp.com/) and [ClawHub](https://clawhub.ai/) — each handles updates through its own marketplace.
+Also indexed on [SkillsMP](https://skillsmp.com/), which handles updates through its own marketplace.
 
 #### Manual clone (any host)
 
@@ -433,6 +433,7 @@ Part of the [Agents365-ai research-skill family](https://github.com/Agents365-ai
 
 | Skill | Niche | When to use |
 | --- | --- | --- |
+| [Ai2 asta-plugins](https://github.com/allenai/asta-plugins) | Official Ai2 plugin set: the `asta` CLI plus skills (find-literature, literature-report, pdf-download, local-paper-index, analyze-data, generate-theories) | When you want topic-driven literature reports, local PDF indexing, or data analysis instead of raw corpus tool calls |
 | [semanticscholar-skill](https://github.com/Agents365-ai/365-skills/tree/main/plugins/semanticscholar) | Direct Semantic Scholar API (Python) | When MCP isn't available or you prefer scripted access |
 | [paper-fetch](https://github.com/Agents365-ai/365-skills/tree/main/plugins/paper-fetch) | DOI → PDF, 7-source fallback | When you need full text after finding citations |
 | [scholar-deep-research](https://github.com/Agents365-ai/365-skills/tree/main/plugins/scholar-deep-research) | 8-phase literature review pipeline | When the user wants a structured cited report |
