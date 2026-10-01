@@ -6,12 +6,11 @@
 [![Last Commit](https://img.shields.io/github/last-commit/Agents365-ai/365-skills?logo=github)](https://github.com/Agents365-ai/365-skills/commits/main)
 
 [![SkillsMP](https://img.shields.io/badge/SkillsMP-listed-1f6feb)](https://skillsmp.com/skills/agents365-ai-asta-skill-skills-asta-skill-skill-md)
-[![ClawHub](https://img.shields.io/badge/ClawHub-listed-ff6b35)](https://clawhub.ai/agents365-ai/asta-skill)
 [![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-plugin-8a2be2)](https://github.com/Agents365-ai/365-skills)
 [![Agent Skills](https://img.shields.io/badge/Agent%20Skills-compatible-2ea44f)](https://agentskills.io)
 [English](README.md) · **中文** · [Asta MCP 介绍](https://allenai.org/asta/resources/mcp) · [申请 API Key](https://share.hsforms.com/1L4hUh20oT3mu8iXJQMV77w3ioxm)
 
-Ai2 的 Asta MCP server(Semantic Scholar)可在**任意支持 MCP 的 agent** 上运行 —— 本仓库在其之上额外提供一个*可选*的纯指令包技能,把自然语言研究问题转换为规范的工具调用:负责意图路由 → 工具选择、安全默认值填充、工作流编排,并提示常见陷阱。只要注册好 MCP server,就能在 **Claude Code、Cursor、Codex、Windsurf、Trae、Qoder、CodeBuddy/WorkBuddy、Hermes、opencode、OpenClaw、pi-mono** 以及任何支持 MCP 的 agent 上调用 Asta;在任意兼容 [Agent Skills](https://agentskills.io) 的 host 上再加载本技能可获得更精准的结果。
+Ai2 的 Asta MCP server(Semantic Scholar)可在**任意支持 MCP 的 agent** 上运行,本仓库在其之上额外提供一个*可选*的纯指令包技能,把自然语言研究问题转换为规范的工具调用:负责意图路由 → 工具选择、安全默认值填充、工作流编排,并提示常见陷阱。只要注册好 MCP server,就能在 **Claude Code、Cursor、Codex、Windsurf、Trae、Qoder、CodeBuddy/WorkBuddy、Hermes、opencode、pi-mono** 以及任何支持 MCP 的 agent 上调用 Asta;在任意兼容 [Agent Skills](https://agentskills.io) 的 host 上再加载本技能可获得更精准的结果。
 
 ## 功能特性
 
@@ -22,17 +21,18 @@ Ai2 的 Asta MCP server(Semantic Scholar)可在**任意支持 MCP 的 agent** �
 - **片段检索** —— 从论文正文中提取 ~500 词的相关段落,用于证据溯源
 - **作者检索** —— 查找研究者并列出其发表论文
 - **零代码集成** —— 本技能是纯指令包,所有 I/O 通过 Asta MCP server 完成
+- **实测验证的失效模式防护**:各工具参数名差异、被服务端静默忽略的拼写错误、HTTP 200 下返回的错误,以及实测载荷预算(50 行搜索结果约 296 KB)
 - 当用户提出论文、引用、学术搜索、文献发现相关需求且 Asta 工具已注册时自动触发
 
 ## 多平台支持
 
-**任何支持 MCP 的工具都能调用 Asta** —— 本技能只是其上一个可选的 [Agent Skills](https://agentskills.io) 层。已在 **Claude Code、Codex、Cursor、Devin Desktop(原 Windsurf)、Hermes、opencode、OpenClaw/ClawHub、[pi-mono](https://github.com/badlogic/pi-mono)** 上验证,并收录于 **SkillsMP**。下方[安装](#安装)一节还提供了 **Gemini CLI、GitHub Copilot、Cline、Trae、通义灵码 Lingma、CodeBuddy/WorkBuddy、Qoder、Claude Desktop、LM Studio** 的可复制配置。不自动加载 skills 的桌面端(Claude Desktop、LM Studio)连上 MCP 后工具即可用 —— 把 `SKILL.md` 粘到 system prompt 即可补上路由层。
+**任何支持 MCP 的工具都能调用 Asta**,本技能只是其上一个可选的 [Agent Skills](https://agentskills.io) 层。已在 **Claude Code、Codex、Cursor、Devin Desktop(原 Windsurf)、Hermes、opencode、[pi-mono](https://github.com/badlogic/pi-mono)** 上验证,并收录于 **SkillsMP**。下方[安装](#安装)一节还提供了 **Gemini CLI、GitHub Copilot、Cline、Trae、通义灵码 Lingma、CodeBuddy/WorkBuddy、Qoder、Claude Desktop、LM Studio** 的可复制配置。不自动加载 skills 的桌面端(Claude Desktop、LM Studio)连上 MCP 后工具即可用,把 `SKILL.md` 粘到 system prompt 即可补上路由层。
 
-`SKILL.md` 的 frontmatter 仅在顶层保留 `name`、`description`、`license`,其余字段全部嵌套在 `metadata` 下,因此能通过 Codex 等更严格的 skill frontmatter 解析器的校验。
+`SKILL.md` 的 frontmatter 保持任意 Agent Skills host 通用的最小字段(`name`、`description`、`license`、`version`),因此能通过 Codex 等更严格的 skill frontmatter 解析器的校验。
 
 ## 前置条件
 
-- 任意支持 MCP 的 agent host(Claude Code、Cursor、Codex、Gemini CLI、GitHub Copilot、Cline、Devin Desktop、Trae、通义灵码 Lingma、CodeBuddy/WorkBuddy、Qoder、opencode、OpenClaw/ClawHub、pi-mono 等)
+- 任意支持 MCP 的 agent host(Claude Code、Cursor、Codex、Gemini CLI、GitHub Copilot、Cline、Devin Desktop、Trae、通义灵码 Lingma、CodeBuddy/WorkBuddy、Qoder、opencode、pi-mono 等)
 - Asta API key —— [点此申请](https://share.hsforms.com/1L4hUh20oT3mu8iXJQMV77w3ioxm)
 
   ```bash
@@ -251,7 +251,7 @@ MCP 面板 → **添加 MCP** → 表单配置:传输方式选 **SSE / streamabl
 }
 ```
 
-`${ASTA_API_KEY}` 会从环境变量展开。WorkBuddy 兼容 OpenClaw,所以可选技能也能从其 OpenClaw 技能目录加载。
+`${ASTA_API_KEY}` 会从环境变量展开。
 
 </details>
 
@@ -366,7 +366,7 @@ npx skills add Agents365-ai/365-skills -g
 /plugin install asta
 ```
 
-同时收录于 [SkillsMP](https://skillsmp.com/) 与 [ClawHub](https://clawhub.ai/) —— 各自通过自己的市场处理更新。
+同时收录于 [SkillsMP](https://skillsmp.com/),由该市场自行处理更新。
 
 #### 手动克隆(任意 host)
 
@@ -433,6 +433,7 @@ cp -r /tmp/365-skills/plugins/asta/skills/asta-skill <你的-host-的-skills-目
 
 | 技能 | 定位 | 何时使用 |
 | --- | --- | --- |
+| [Ai2 asta-plugins](https://github.com/allenai/asta-plugins) | Ai2 官方插件集：`asta` CLI 加 find-literature、literature-report、pdf-download、local-paper-index、analyze-data、generate-theories 等 skills | 需要按主题生成文献综述报告、建本地 PDF 索引或做数据分析，而不是直接调用语料工具时 |
 | [semanticscholar-skill](https://github.com/Agents365-ai/365-skills/tree/main/plugins/semanticscholar) | 直连 Semantic Scholar API(Python) | 无法使用 MCP,或更想脚本化访问时 |
 | [paper-fetch](https://github.com/Agents365-ai/365-skills/tree/main/plugins/paper-fetch) | DOI → PDF,7 源回退 | 找到引用后需要全文时 |
 | [scholar-deep-research](https://github.com/Agents365-ai/365-skills/tree/main/plugins/scholar-deep-research) | 8 阶段文献综述流水线 | 用户需要结构化、带引用的综述报告时 |
