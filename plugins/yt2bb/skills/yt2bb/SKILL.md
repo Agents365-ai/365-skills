@@ -1,4 +1,5 @@
 ---
+disable-model-invocation: true
 name: yt2bb
 description: Use when the user wants to repurpose a YouTube video for Bilibili, add bilingual (English-Chinese) subtitles to a video, or create hardcoded subtitle versions for Chinese platforms.
 license: MIT

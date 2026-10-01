@@ -1,4 +1,5 @@
 ---
+disable-model-invocation: true
 name: imagencn
 description: Multi-platform AI image generation via DashScope/Ark/Hunyuan/Zhipu/StepFun plus Grok/OpenAI/Gemini/FLUX (international), specializing in Chinese text rendering and photorealistic images
 author: Agents365-ai

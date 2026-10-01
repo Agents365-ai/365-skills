@@ -1,4 +1,5 @@
 ---
+disable-model-invocation: true
 name: obsidian-dev-rules
 description: Authoritative reference and rules for developing for Obsidian — building TypeScript plugins (Plugin lifecycle, manifest.json, commands, settings, modals, views, ribbon/status bar), the Vault and Editor APIs, the event system, Markdown post-processing & code-block processors, CodeMirror 6 editor extensions, building CSS themes (CSS variables, theme.css/manifest), and submitting plugins/themes to the community directory. Use whenever the user asks to build, debug, or review an Obsidian plugin or theme, work with the Obsidian API (Vault/Editor/Workspace/Plugin), register commands/views/events, process Markdown, or release/submit to the Obsidian community.
 license: MIT

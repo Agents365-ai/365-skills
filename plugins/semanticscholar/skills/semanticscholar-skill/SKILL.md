@@ -1,4 +1,5 @@
 ---
+disable-model-invocation: true
 name: semanticscholar-skill
 description: Use when searching academic papers, looking up citations, finding authors, or getting paper recommendations using the Semantic Scholar API. Triggers on queries about research papers, academic search, citation analysis, or literature discovery.
 license: MIT

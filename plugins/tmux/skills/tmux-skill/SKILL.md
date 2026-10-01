@@ -1,4 +1,5 @@
 ---
+disable-model-invocation: true
 name: tmux-skill
 description: "Use tmux from the command line to run, drive, and monitor terminal programs as a coding agent (detached sessions, send-keys input injection, capture-pane output polling, formats, completion detection, and control mode). Use when a task needs long-running or interactive processes (builds, tests, servers, REPLs, watch modes, TUI apps) kept alive across turns or inspected live; skip when plain `cmd > log 2>&1 &` is enough."
 license: CC-BY-NC-4.0

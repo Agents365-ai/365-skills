@@ -1,4 +1,5 @@
 ---
+disable-model-invocation: true
 name: grant-thinking-general
 description: Use when evaluating grant ideas, diagnosing proposal logic, framing fundable projects, strengthening reviewer-aware arguments, or preparing to write any section of a research proposal.
 license: MIT

@@ -1,4 +1,5 @@
 ---
+disable-model-invocation: true
 name: bangumi-frames
 version: 0.5.0
 description: Extract and organize frames from a Bilibili video (bangumi episode, UP upload, or a local file) into scenery shots and per-character image groups, using anime-specific person detection + CCIP character-identity embeddings. Two modes — cluster everyone, or pull out one (or several) named characters via reference folders. Use when the user wants to collect, extract, or organize anime frames/screenshots by character or by scenery from a Bilibili video. Read-only download for personal viewing/analysis; uploads nothing.

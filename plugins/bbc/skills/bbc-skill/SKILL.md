@@ -1,4 +1,5 @@
 ---
+disable-model-invocation: true
 name: bbc-skill
 description: Fetch Bilibili (哔哩哔哩) video comments for UP主 self-analysis. Use when the user asks to collect, download, export, or analyze comments on a Bilibili video (BV号 / URL / UID). Produces JSONL + summary.json suitable for further Claude Code analysis (sentiment, keywords, audience trends). Read-only; does not post/edit/delete.
 license: MIT

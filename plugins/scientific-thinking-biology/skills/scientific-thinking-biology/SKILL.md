@@ -1,4 +1,5 @@
 ---
+disable-model-invocation: true
 name: scientific-thinking-biology
 description: Use when interpreting biological research findings, evaluating life science evidence, analyzing molecular or cellular mechanisms, comparing competing biological hypotheses, designing or critiquing experiments in biology, genetics, genomics, cell biology, immunology, neuroscience, ecology, or any life science domain. Triggers on questions about gene function, pathways, phenotypes, GWAS hits, single-cell data, animal models, clinical translation, evolutionary arguments, or any biology/life science reasoning task.
 license: MIT

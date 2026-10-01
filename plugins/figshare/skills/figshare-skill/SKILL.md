@@ -1,4 +1,5 @@
 ---
+disable-model-invocation: true
 name: figshare-skill
 description: Use whenever the user wants to interact with Figshare - searching public datasets/articles, downloading Figshare files, listing their own articles/collections/projects, creating or updating articles, or uploading files (including large multi-part uploads) via the Figshare v2 REST API. Trigger on mentions of "figshare", figshare DOIs (10.6084/m9.figshare.*), figshare.com URLs, or phrases like "upload my dataset to figshare", "publish to figshare", "get figshare article".
 homepage: https://github.com/Agents365-ai/365-skills

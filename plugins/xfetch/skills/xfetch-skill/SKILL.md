@@ -1,6 +1,7 @@
 ---
+disable-model-invocation: true
 name: xfetch
-description: Fetch and export public X (Twitter) data with a self-contained Python CLI built on the twikit library — no developer API keys, just the user's own login cookies. Covers user profiles, a user's tweets/replies/likes, single tweets, threads, search, followers/following, home/bookmark timelines, with JSON/JSONL/CSV/SQLite output and resumable pagination. Use whenever the user wants to scrape, download, collect, archive, monitor, or analyze tweets or X/Twitter accounts, export a timeline or follower list to a file or dataset, pull X data for research, or build a tweet corpus — even if they don't name the tool. Requires the user's own X login cookies (auth_token + ct0, or username/password login).
+description: "Fetch and export public X (Twitter) data with a self-contained Python CLI (twikit; no API keys, uses the user's own login cookies): profiles, a user's tweets/replies/likes, threads, search, followers, timelines, JSON/JSONL/CSV/SQLite output, resumable pagination. Use to scrape, archive, monitor, or analyze tweets or accounts."
 license: MIT
 compatibility: Requires Python >= 3.10 and the twikit package (pip install twikit). Needs the user's own X/Twitter session cookies.
 platforms: [macos, linux, windows]
