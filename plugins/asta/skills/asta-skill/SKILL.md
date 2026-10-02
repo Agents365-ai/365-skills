@@ -1,7 +1,7 @@
 ---
 disable-model-invocation: true
-name: asta-skill
-description: Use when the user needs papers, citations, or authors from the Semantic Scholar corpus through AI2's Asta MCP tools, covering keyword or title search with venue/date filters, who cited a paper, author profiles and publications, ~500-word full-text snippets for evidence, and DOI/arXiv/PMID lookup. Trigger on "find papers on X", "who cited this paper", "papers by <author>", "recent work since 2024", "论文检索", "找论文", "文献综述", "谁引用了这篇", "某作者的论文". Also use for citation counts, h-index, or venue-scoped paper lists. Requires the Asta MCP server; routes intent to the right tool with context-safe limits and fields.
+name: asta
+description: "Query the Semantic Scholar academic corpus through AI2's Asta MCP server: keyword or title search with venue and date filters, who-cited-a-paper traversal, author profiles and publications, DOI/arXiv/PMID lookup, and ~500-word full-text snippets for evidence, with citation counts and h-index. Use when the user asks for papers on a topic, who cited a paper, an author's work, recent literature since a date, or a venue-scoped paper list. Requires the Asta MCP server."
 license: MIT
 version: 0.4.0
 ---
