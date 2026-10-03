@@ -93,12 +93,12 @@ BUNDLES = {
         ("packages/chord/PLANNING.md", "Implementation Plan"),
     ],
     "agent-harness.md": [
-        ("packages/agent/docs/harness.md", "AgentHarness Implementation Specification"),
-        ("packages/agent/docs/plugins.md", "Application Hosts and Facets"),
-        ("packages/agent/docs/values.md", "Typed Values and Lists"),
-        ("packages/agent/docs/rpc.md", "Facet Service RPC"),
-        ("packages/agent/docs/telemetry-schema.md", "Telemetry Schemas"),
-        ("packages/agent/docs/telemetry.md", "Invocation Context and Telemetry Notes"),
+        ("packages/durable/README.md", "Durable Agent Harness"),
+        ("packages/agent/README.md", "Agent Core"),
+        ("packages/telemetry/README.md", "Telemetry"),
+    ],
+    "durable-spec.md": [
+        ("packages/durable/docs/spec.md", "Pico5 Specification"),
     ],
 }
 
@@ -153,8 +153,12 @@ HEADER_DOCS = {
         "Source: `packages/chord/README.md`, `src/delta/README.md`, `PLANNING.md`\nNot a Pi package: `@earendil-works/chord` is an application-neutral runtime that depends on no other Pi workspace package, and it is not covered by the Pi user docs. `PLANNING.md` is an active implementation plan, not a stable API contract.",
     ),
     "agent-harness.md": (
-        "# Pi Agent Harness, Facets, and Services",
-        "Source: `packages/agent/docs/harness.md`, `plugins.md`, `values.md`, `rpc.md`, `telemetry-schema.md`, `telemetry.md`\nInternal architecture of the agent harness, not user documentation. `harness.md`, `plugins.md`, and `rpc.md` are implementation specifications; `telemetry.md` is design input and `telemetry-schema.md` is generated. See the shipped CLI docs in the other reference files for user-facing behavior.",
+        "# Pi Agent Runtime, Durable Harness, and Telemetry",
+        "Source: `packages/durable/README.md`, `packages/agent/README.md`, `packages/telemetry/README.md`\nInternal runtime packages, not user documentation. `@earendil-works/pi-durable` is the durable agent harness, `@earendil-works/pi-agent-core` is the tool-calling and state core, and `@earendil-works/pi-telemetry` holds the vendor-neutral telemetry contracts. The durable harness is experimental and its API changes between releases; the normative Pico5 specification is bundled in `durable-spec.md`. See the shipped CLI docs in the other reference files for user-facing behavior.",
+    ),
+    "durable-spec.md": (
+        "# Pico5: Durable Harness Specification",
+        "Source: `packages/durable/docs/spec.md`\nThe normative specification behind `@earendil-works/pi-durable`, a design document for an experimental package rather than a stable API contract. Long: read `agent-harness.md` for the public runtime API first, this file for the record, task, submission, and extension semantics underneath it.",
     ),
 }
 
