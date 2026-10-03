@@ -6,44 +6,60 @@ fingerprints:
 - hash: sha256:8194d9ddd359fce0
   rule_id: LP3
   file: SKILL.md
-  reason: Accepted finding (auto-generated baseline)
-- hash: sha256:119160d55b481096
+  reason: Reviewed 2026-10-03, upstream Pi documentation prose, not skill code.
+- hash: sha256:46b01f2e986e6ecd
   rule_id: RP1
   file: references/mcp.md
-  reason: Accepted finding (auto-generated baseline)
-- hash: sha256:d5d8f714dcdc263f
+  reason: Reviewed 2026-10-03, upstream Pi documentation prose, not skill code.
+- hash: sha256:9dd0ce8061d77cc4
   rule_id: RP1
   file: references/mcp.md
-  reason: Accepted finding (auto-generated baseline)
+  reason: Reviewed 2026-10-03, upstream Pi documentation prose, not skill code.
 - hash: sha256:34e5f52cb3c8425d
   rule_id: RP1
   file: references/security-and-containerization.md
-  reason: Accepted finding (auto-generated baseline)
-- hash: sha256:dd6366f8b8cd4aca
+  reason: Reviewed 2026-10-03, upstream Pi documentation prose, not skill code.
+- hash: sha256:5e03c291cc13f120
   rule_id: E4
   file: references/cli-and-usage.md
-  reason: Accepted finding (auto-generated baseline)
-- hash: sha256:61132a59c6ead8d1
+  reason: Reviewed 2026-10-03, upstream Pi documentation prose, not skill code.
+- hash: sha256:96a8de2093c7770b
   rule_id: E4
   file: references/cli-and-usage.md
-  reason: Accepted finding (auto-generated baseline)
-- hash: sha256:1b31232f613f359a
+  reason: Reviewed 2026-10-03, upstream Pi documentation prose, not skill code.
+- hash: sha256:3b4e53c53c4688e0
+  rule_id: MP2
+  file: SKILL.md
+  reason: Reviewed 2026-10-03, upstream Pi documentation prose, not skill code.
+- hash: sha256:042a6afa6543e2e8
   rule_id: PE3
   file: references/development.md
-  reason: Accepted finding (auto-generated baseline)
-- hash: sha256:9b4114ddb87d3e98
+  reason: Reviewed 2026-10-03, upstream Pi documentation prose, not skill code.
+- hash: sha256:4740b3b1e6d59301
+  rule_id: PE3
+  file: references/durable-spec.md
+  reason: Reviewed 2026-10-03, upstream Pi documentation prose, not skill code.
+- hash: sha256:d9bacc57db93c127
   rule_id: PE3
   file: references/providers-and-models.md
-  reason: Accepted finding (auto-generated baseline)
-- hash: sha256:c3dd89c000ad73cc
+  reason: Reviewed 2026-10-03, upstream Pi documentation prose, not skill code.
+- hash: sha256:4f11461d4c136869
+  rule_id: PE3
+  file: references/providers-and-models.md
+  reason: Reviewed 2026-10-03, upstream Pi documentation prose, not skill code.
+- hash: sha256:bc6381b7987b963f
+  rule_id: SC2
+  file: SKILL.md
+  reason: Reviewed 2026-10-03, upstream Pi documentation prose, not skill code.
+- hash: sha256:b3e634bd94487dba
   rule_id: TM1
   file: references/development.md
-  reason: Accepted finding (auto-generated baseline)
-- hash: sha256:c3dd89c000ad73cc
+  reason: Reviewed 2026-10-03, upstream Pi documentation prose, not skill code.
+- hash: sha256:b3e634bd94487dba
   rule_id: TM1
   file: references/development.md
-  reason: Accepted finding (auto-generated baseline)
-- hash: sha256:267f88f199cb25b4
+  reason: Reviewed 2026-10-03, upstream Pi documentation prose, not skill code.
+- hash: sha256:ea11cfcbdd947100
   rule_id: YR1
   file: references/development.md
-  reason: Accepted finding (auto-generated baseline)
+  reason: Reviewed 2026-10-03, upstream Pi documentation prose, not skill code.

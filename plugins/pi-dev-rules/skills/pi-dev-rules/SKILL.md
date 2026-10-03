@@ -1,10 +1,9 @@
 ---
-disable-model-invocation: true
 name: pi-dev-rules
-version: 0.5.0
+version: 0.6.0
 description: "Authoritative reference for Pi (@earendil-works/pi-coding-agent): install, configure, run, and extend it. Use for the CLI and configuration, providers and models, extensions, skills, MCP, the SDK/RPC, security and trust, design philosophy, and the pi repository's internals and contribution rules."
 license: MIT
-metadata: {"source":"https://pi.dev/docs/latest","docVersion":"0.99.1","fetched":"2026-09-30","piRevision":"d86654abb","version":"0.5.0"}
+metadata: {"source":"https://pi.dev/docs/latest","docVersion":"1.0.1","fetched":"2026-10-03","piRevision":"a7229ddc2","version":"0.6.0"}
 ---
 
 # Pi Dev Rules
@@ -12,9 +11,10 @@ metadata: {"source":"https://pi.dev/docs/latest","docVersion":"0.99.1","fetched"
 Pi is a **minimal terminal coding harness**: lightweight core, extended through TypeScript
 customizations. Package: `@earendil-works/pi-coding-agent`. Maintained by Earendil Inc. (MIT).
 This skill mirrors the official docs at <https://pi.dev/docs/latest> so you can answer Pi questions
-and build Pi customizations without re-fetching. Three further bundles describe material that has
-no page on the website: the **internal monorepo architecture** (Chord runtime, agent harness) and
-the repository's own development/contribution rules. They are built from the pi source tree.
+and build Pi customizations without re-fetching. Four further bundles describe material that has
+no page on the website: the **internal monorepo architecture** (the Chord composition runtime, the
+durable agent harness with its Pico5 specification, the agent core, telemetry) and the
+repository's own development/contribution rules. They are built from the pi source tree.
 
 ## When to use this skill
 
@@ -30,9 +30,10 @@ the repository's own development/contribution rules. They are built from the pi 
   tools, YOLO by default; the 2025-11-30 manifesto lists MCP, plan mode, to-dos, and sub-agents as
   deliberate non-features, and built-in MCP landed later, on 2026-09-29) and how to configure or
   extend Pi along those lines instead of against them.
-- Working **inside** the pi monorepo: the `@earendil-works/chord` runtime (plugin loading,
-  service catalogue, RPC transport, delta/replicated state), the agent harness, facets/services,
-  and the experimental `server`/`client`/`protocol` packages.
+- Working **inside** the pi monorepo: the `@earendil-works/chord` composition runtime (plugin
+  loading, service catalogue, RPC transport, delta/replicated state), the durable harness
+  (`@earendil-works/pi-durable`, Pico5), the agent core, telemetry, and the experimental
+  `server`/`client`/`protocol` packages.
 
 ## Reference index: load the file you need
 
@@ -51,8 +52,9 @@ the repository's own development/contribution rules. They are built from the pi 
 | `references/development.md` | Monorepo package list, build-from-source and standalone-binary builds, supply-chain rules, `AGENTS.md` development rules, the `CONTRIBUTING.md` gate |
 | `references/philosophy-and-design.md` | Creator Mario Zechner's design manifesto (blog, 2025-11-30; manually curated, not auto-built): minimal prompt <1000 tokens, 4 tools, YOLO by default, the non-features it lists (MCP/plan mode/to-dos/sub-agents/background bash) with their intended alternatives and the MCP entry annotated as superseded since 2026-09-29, multi-provider architecture, Terminal-Bench 2.0 results |
 | `references/chord.md` | `@earendil-works/chord`: plugin loading/composition/bundling, the service catalogue, RPC transport, `bundleFacetPackage` + facet bundle loaders, and `chord/delta` replicated latest-value state. Built from `packages/chord/{README.md,PLANNING.md,src/delta/README.md}`; `PLANNING.md` is a plan, not a frozen API |
-| `references/agent-harness.md` | Internal agent architecture: `AgentHarness` spec, application hosts & facets, typed values/lists, facet-service RPC, telemetry schema and invocation context. Built from `packages/agent/docs/`; specifications, not user docs |
-| `references/changelog.md` | Release history: the last 25 versions with their headline change, extracted from `packages/coding-agent/CHANGELOG.md` (280 release sections; read the file in the checkout for the full text) |
+| `references/agent-harness.md` | Internal runtime packages: `@earendil-works/pi-durable` (durable conversation/task/document harness, experimental API, stored before shown), `@earendil-works/pi-agent-core` (tool calling and state), `@earendil-works/pi-telemetry` (vendor-neutral telemetry contracts, adapters, typed schemas). Built from the three package READMEs; not user docs |
+| `references/durable-spec.md` | The normative **Pico5 specification** behind `pi-durable` (4610 lines): records and lifetimes, documents and mutation ownership, tasks and the effect sandwich, submissions and inbox, extensions/hooks/tools, telemetry. A design document for an experimental package, not a frozen API |
+| `references/changelog.md` | Release history: the last 25 versions with their headline change, extracted from `packages/coding-agent/CHANGELOG.md` (283 release sections; read the file in the checkout for the full text) |
 
 ## Starter plugins
 
@@ -71,7 +73,8 @@ built-in support instead of adding to it.
 ## Cheat sheet
 
 ```bash
-npm install -g --ignore-scripts @earendil-works/pi-coding-agent   # install (or: curl -fsSL https://pi.dev/install.sh | sh)
+curl -fsSL https://pi.dev/install.sh | sh                         # install (pins dependencies)
+npm install -g --ignore-scripts @earendil-works/pi-coding-agent   # npm alternative (no pinned transitive deps)
 export ANTHROPIC_API_KEY=sk-ant-...                               # or run /login in-session
 cd /path/to/project && pi                                          # start interactive (may prompt to trust the project)
 
@@ -103,7 +106,9 @@ pi --mode rpc                                   # JSON-RPC over stdin/stdout
 
 ## Hard rules
 
-- **Install package name is exactly** `@earendil-works/pi-coding-agent` with `--ignore-scripts`.
+- **Install package name is exactly** `@earendil-works/pi-coding-agent`. The pi.dev installer
+  (`curl -fsSL https://pi.dev/install.sh | sh`) pins dependencies and is the recommended path since
+  1.0.1; a global npm install needs `--ignore-scripts` and pins nothing.
 - **Project context file is `AGENTS.md`** (Pi also reads `CLAUDE.md`); put it in the project root.
 - **Extensions run with full system permissions**: treat them as trusted code; gate dangerous
   ops (`rm`, `sudo`, sensitive paths) with `ctx.ui.confirm` or a `tool_call` block handler.
@@ -126,10 +131,11 @@ pi --mode rpc                                   # JSON-RPC over stdin/stdout
   `@earendil-works/pi-ai`) for LLM-facing enums.
 - **Skill `name`**: 1–64 chars, lowercase `a-z 0-9 -`, no leading/trailing or consecutive hyphens;
   `description` ≤1024 chars and must say *when* to load it (a skill with no description won't load).
-- **`chord.md` and `agent-harness.md` describe internals, not a stable contract.** Chord is
-  published but application-neutral, the harness docs are implementation specifications, and
+- **`chord.md`, `agent-harness.md`, and `durable-spec.md` describe internals, not a stable
+  contract.** Chord is published but application-neutral, `pi-durable` is experimental and its API
+  changes between releases, the Pico5 spec is a design document, and
   `PLANNING.md`/`server`/`client`/`protocol` are explicitly experimental. Quote them as the
-  current source tree state (pi@`d86654abb`), not as promised API.
+  current source tree state (pi@`a7229ddc2`), not as promised API.
 - **`auth.json` holds API keys and OAuth tokens**: Pi writes it `0600`, keep it private and out of
   version control. Credential priority: CLI `--api-key` → `auth.json` →
   env var → custom-provider keys in `models.json`.

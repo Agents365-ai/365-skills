@@ -13,11 +13,10 @@ A coding-agent skill that packages the **latest [Pi](https://pi.dev) documentati
 (`@earendil-works/pi-coding-agent`) as an on-demand reference, so an agent can install, configure,
 run, and **extend Pi** without re-fetching the docs.
 
-Mirrors <https://pi.dev/docs/latest> (fetched 2026-09-30 from Pi 0.99.1; includes the 2026-09-22 doc
-restructure and the 2026-09-28/29 additions). Three extra bundles (`development.md`, `chord.md`,
-`agent-harness.md`) cover material with no page on the website: the repository's
-build/development/contribution rules and Pi's **internal monorepo architecture**. They are built
-from a pi checkout at `pi@d86654abb`.
+Mirrors <https://pi.dev/docs/latest> (fetched 2026-10-03 from Pi 1.0.1). Four extra bundles
+(`development.md`, `chord.md`, `agent-harness.md`, `durable-spec.md`) cover material with no page on
+the website: the repository's build/development/contribution rules and Pi's **internal monorepo
+architecture**. They are built from a pi checkout at `pi@a7229ddc2`.
 
 Works with Claude Code, Cursor, Codex, Copilot, Windsurf, Cline / Roo Code, Gemini CLI,
 Aider, Zed, OpenCode, OpenClaw / ClawHub, Hermes, pi-mono, plus major Chinese agents
@@ -62,9 +61,14 @@ Aider, Zed, OpenCode, OpenClaw / ClawHub, Hermes, pi-mono, plus major Chinese ag
   plugin loading/composition/bundling, the service catalogue, RPC transport, facet bundle loaders,
   and `chord/delta` replicated latest-value state. Includes `PLANNING.md`, which is a plan rather
   than a frozen API.
-- `references/agent-harness.md`: internal agent architecture, from `packages/agent/docs/`:
-  `AgentHarness` spec, application hosts and facets, typed values and lists, facet-service RPC,
-  telemetry schema and invocation context.
+- `references/agent-harness.md`: internal runtime packages, from their READMEs:
+  `@earendil-works/pi-durable` (durable conversation/task/document harness, stored before shown,
+  experimental API), `@earendil-works/pi-agent-core` (tool calling and state), and
+  `@earendil-works/pi-telemetry` (telemetry contracts, adapters, typed schemas).
+- `references/durable-spec.md`: the normative **Pico5 specification** behind `pi-durable` (4610
+  lines): records and lifetimes, documents and mutation ownership, tasks and the effect sandwich,
+  submissions and inbox, extensions/hooks/tools, telemetry. A design document for an experimental
+  package, not a frozen API.
 
 ## Install
 
@@ -82,14 +86,16 @@ cp -r pi-dev-rules ~/.claude/skills/      # example: Claude Code, global
 
 ## Updating
 
-`references/*.md` are generated, not hand-written: the 13 auto-built bundles and `changelog.md`
+`references/*.md` are generated, not hand-written: the 14 auto-built bundles and `changelog.md`
 come from a pi checkout, and `philosophy-and-design.md` is curated by hand. Users only need the
 files as shipped and never have to run anything. Rebuilding is maintainer tooling, documented in
 [`scripts/README.md`](skills/pi-dev-rules/scripts/README.md). Upstream restructured the docs on
 2026-09-22 (pages split into `cli.md`, `slash-commands.md`, `configuration.md`,
 `message-types.md`, `rpc-commands.md`, `rpc-extension-ui.md`, `cli-integration.md`,
 `how-pi-works.md`; `docs/development.md` folded into `docs/index.md`), and added `virtual-models.md`
-(2026-09-28) and `mcp.md` (2026-09-29), both bundled here.
+(2026-09-28) and `mcp.md` (2026-09-29), both bundled here. On 2026-10-01 the harness docs left
+`packages/agent/docs/`: the durable harness ships in `packages/durable` (README plus the Pico5
+spec) and telemetry in `packages/telemetry`, which the two internal bundles now mirror.
 
 ## Support
 

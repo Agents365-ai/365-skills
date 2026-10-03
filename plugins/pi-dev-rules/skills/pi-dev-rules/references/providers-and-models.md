@@ -25,8 +25,6 @@ Run `/logout` and select a provider to remove its stored credential. This does n
 
 `auth.json` can contain API keys and OAuth tokens. Keep it private and do not commit it.
 
-Radius authentication uses its gateway catalog and caches refreshed model metadata for later offline startup. A custom Radius gateway configured in `models.json` uses its own catalog rather than inheriting the public `radius.pi.dev` catalog.
-
 ## Use an API key from the environment
 
 Environment variables are useful in CI and anywhere Pi should not store the key. Set the variable before starting Pi:
@@ -36,7 +34,7 @@ export ANTHROPIC_API_KEY=sk-ant-...
 pi
 ```
 
-This table covers providers with a single primary API-key variable. Providers that need additional configuration or support ambient credentials are covered under [Cloud providers](#cloud-providers).
+This table covers providers with a single primary API-key variable. Providers that need additional configuration or support ambient credentials are covered under [Provider Specific Config](#provider-specific-config).
 
 | Provider | Environment variable |
 |---|---|
@@ -76,6 +74,8 @@ This table covers providers with a single primary API-key variable. Providers th
 
 Anthropic also recognizes `ANTHROPIC_OAUTH_TOKEN` as an API credential and `ANTHROPIC_AUTH_TOKEN` as bearer authentication.
 
+With no key or token set, Anthropic uses workload identity federation when `ANTHROPIC_FEDERATION_RULE_ID`, `ANTHROPIC_ORGANIZATION_ID` and `ANTHROPIC_IDENTITY_TOKEN_FILE` are set: the Anthropic SDK exchanges the identity token for a short-lived access token and refreshes it itself (re-reading the identity token file, so keep that file fresh for long sessions). `ANTHROPIC_SERVICE_ACCOUNT_ID` and `ANTHROPIC_WORKSPACE_ID` are passed through when set.
+
 ## Load an API key from a command
 
 To use a secret manager without writing the resolved key to disk, set a provider's `key` in `auth.json` to a command prefixed with `!`:
@@ -91,9 +91,9 @@ To use a secret manager without writing the resolved key to disk, set a provider
 
 Pi runs the command when the key is first needed and caches its standard output for the process lifetime. Empty output, a timeout, or a nonzero exit leaves the key unresolved until Pi restarts.
 
-## Cloud Providers
+## Provider Specific Config
 
-The providers below need additional settings or can use credentials supplied by their cloud platform.
+The providers below have additional setup, need additional settings, or can use credentials supplied by their platform.
 
 A stored API-key credential can include an `env` object. Its values take priority over the process environment for that provider:
 
@@ -108,6 +108,18 @@ A stored API-key credential can include an `env` object. Its values take priorit
   }
 }
 ```
+
+### Radius
+
+Radius is a service crafted for Pi by the builders of Pi, Earendil Works. It provides a customizable AI gateway with organization-level controls and analytics built in, and artifacts for sharing what you create with Pi.
+
+To get started, run `/login radius` in Pi. This adds Radius as a provider, and its models appear in `/model` like any other provider's.
+
+Radius also has an MCP server, so Pi can manage Radius for you.
+
+Radius is currently in early alpha and evolving quickly. See [radius.earendil.com](https://radius.earendil.com) for more.
+
+Radius authentication uses its gateway catalog and caches refreshed model metadata for later offline startup. A custom Radius gateway configured in `models.json` uses its own catalog rather than inheriting the public `radius.pi.dev` catalog.
 
 ### Azure OpenAI
 
@@ -334,7 +346,7 @@ Browse the [model catalog](https://pi.dev/models) for current providers, model I
 
 Run `/login` and select a provider. Pi stores credentials in [`auth.json`](configuration.md#agent-directory). Run `/logout` to remove stored credentials for a provider.
 
-You can instead provide an API key through the provider's environment variable. This is useful in CI and other environments where Pi should not write credentials. [Provider Authentication](providers.md) lists the variables and cloud-provider setup.
+You can instead provide an API key through the provider's environment variable. This is useful in CI and other environments where Pi should not write credentials. [Providers](providers.md) lists the variables and provider-specific setup.
 
 When several credential sources are configured, Pi uses a runtime `--api-key` first, then a stored `auth.json` credential, an `apiKey` from `models.json`, and finally the provider's environment variables or ambient cloud credentials. Provider extensions can define their own authentication behavior.
 
@@ -418,13 +430,13 @@ Compatibility settings should describe verified differences in the endpoint's re
 
 ## Use classifier models
 
-Classifier models do not chat. They answer typed questions about JSON state: pick one of several choices, answer yes or no, or give a score, each with probabilities. Pi includes TypeSafe's Jev model from these providers:
+Classifier models do not chat. They answer typed questions about JSON state: pick one of several choices, answer yes or no, or give a score, each with probabilities. Pi includes TypeSafe's Jev model from these providers, and Cloudflare's Clef and Clef Flash models from Workers AI:
 
 | Provider | Model IDs | Authentication |
 |---|---|---|
 | `typesafe` | `jev-latest` | `TYPESAFE_API_KEY` |
 | `openrouter` | `typesafe/jev-1.13`, `~typesafe/jev-latest` | `OPENROUTER_API_KEY` or `/login` |
-| `cloudflare-workers-ai` | `typesafe/jev` | `CLOUDFLARE_API_KEY` and `CLOUDFLARE_ACCOUNT_ID` |
+| `cloudflare-workers-ai` | `typesafe/jev`, `@cf/cloudflare/clef`, `@cf/cloudflare/clef-flash` | `CLOUDFLARE_API_KEY` and `CLOUDFLARE_ACCOUNT_ID` |
 | `vercel-ai-gateway` | `typesafe-ai/jev` | `AI_GATEWAY_API_KEY` |
 | `opencode` | `jev-1.13`, `jev-1.13-free` | `OPENCODE_API_KEY` |
 
@@ -447,9 +459,30 @@ const result = await models.classify(jev, {
 return result.answers;
 ```
 
+[Codemode](codemode.md#classify) describes the question and answer types.
+
 When the service reports token counts, as all System One services do, `result.usage` carries them with their cost. Pi adds the usage of a script's classifier calls to the `codemode` tool result, so it counts toward the session cost in the footer and `/session`. The cost uses the model's catalog price; models without one, such as TypeSafe's direct `jev-latest`, report tokens at no cost.
 
 Extensions call classifiers through `ctx.modelRegistry.classify()`, without codemode. [Virtual models](virtual-models.md#route-requests) can use them to route requests; see the `jev-router.ts` example.
+
+## Use image models
+
+Image models generate images from a prompt and optional input images. Pi lists OpenRouter's image models, such as `google/gemini-2.5-flash-image` and `black-forest-labs/flux.2-pro`, under the `openrouter` provider; they use the same `OPENROUTER_API_KEY` or `/login` credential as its chat models.
+
+Like classifier models, image models do not appear in `/model`; the model reaches them through the [`codemode`](cli.md#enable-codemode) tool. Scripts list them with `models.getAvailableOfType("image")` and call `models.generateImages(model, { input })`. The result's `output` holds base64 image blocks, which `image()` attaches to the `codemode` result so the model sees them:
+
+```js
+const painter = await models.getModelOfType("image", "openrouter", "google/gemini-2.5-flash-image");
+const result = await models.generateImages(painter, {
+  input: [{ type: "text", text: "A red fox in the snow, watercolor" }],
+});
+if (result.stopReason !== "stop") return result.errorMessage;
+for (const block of result.output) if (block.type === "image") image(block);
+```
+
+`input` can also contain `{ type: "image", data, mimeType }` blocks to edit or use as references. Pi adds the usage of a script's image calls to the `codemode` tool result, like classifier calls. Generated images are not saved to disk. [Codemode](codemode.md#generate-images) describes the full API.
+
+Extensions generate images through `ctx.modelRegistry.generateImages()`, without codemode.
 
 ## Add a custom provider
 

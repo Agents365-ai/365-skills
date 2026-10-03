@@ -1,6 +1,6 @@
 # Pi: Changelog
 
-Source: `packages/coding-agent/CHANGELOG.md` at pi@d86654abb. Built locally from the repository changelog; no network access.
+Source: `packages/coding-agent/CHANGELOG.md` at pi@a7229ddc2. Built locally from the repository changelog; no network access.
 
 A reverse-chronological release list, newest first. The highlight column is the first
 bullet of each release's `### New Features` section, or its first bullet when that
@@ -15,6 +15,9 @@ checkout to rebuild this file and the reference bundles.
 
 | Version | Date | Highlights |
 | --------- | ------ | ----------- |
+| **1.0.1** | 2026-10-03 | Nix flake — nix run github:earendil-works/pi/stable runs the latest release, and nix profile add github:earendil-works/pi/stable installs it. See I... |
+| **1.0.0** | 2026-10-01 | Fullscreen by default — The TUI now runs fullscreen. Set tuiMode to "regular" to keep the terminal's normal scrollback. See Terminal and display. |
+| **0.99.2** | 2026-09-30 | MCP servers stay out of the way: servers with the default codemode exposure are no longer listed in the codemode description and no longer block th... |
 | **0.99.1** | 2026-09-29 | GPT-6.1 Sol — Available on OpenAI, Azure OpenAI, and OpenAI Codex, and now the default OpenAI Codex model. See Select a model. |
 | **0.99.0** | 2026-09-29 | Codemode and MCP — Connect MCP servers and let models run JavaScript that calls tools in parallel. See MCP Servers and Enable codemode. |
 | **0.87.1** | 2026-09-22 | Latest frontier models — Use Claude Opus 5.5, GPT-6 Sol, and GPT-6 Luna through supported providers, including GitHub Copilot. See Choose a Model. |
@@ -37,15 +40,12 @@ checkout to rebuild this file and the reference bundles.
 | **0.80.9** | 2026-07-16 | Kimi K3 and deferred tool loading — Use Kimi K3 across built-in providers, including progressive extension tool activation through Kimi’s native pr... |
 | **0.80.8** | 2026-07-16 | Unified model runtime and provider authentication — ModelRuntime centralizes model configuration, provider-owned /login, and dynamic provider catal... |
 | **0.80.7** | 2026-07-14 | Cache-friendly dynamic tool loading - Extensions can add tools during execution while supported Anthropic and OpenAI Responses models preserve prom... |
-| **0.80.6** | 2026-07-09 | max thinking level - New opt-in thinking level above xhigh, natively supported on GPT-5.6 and adaptive Claude models, available across CLI (--think... |
-| **0.80.5** | 2026-07-09 | (no notes recorded) |
-| **0.80.4** | 2026-07-09 | Prompt cache miss visibility - Significant cache misses can be shown in transcripts via showCacheMissNotices. See Model & Thinking. |
 
 ---
 
 ## Full changelog
 
-280 release sections are recorded in the Pi repository, including `[Unreleased]`.
+283 release sections are recorded in the Pi repository, including `[Unreleased]`.
 Read the complete, untruncated history there:
 
 ```bash

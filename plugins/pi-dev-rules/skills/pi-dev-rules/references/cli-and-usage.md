@@ -20,13 +20,21 @@ On macOS or Linux, you can use the installer:
 curl -fsSL https://pi.dev/install.sh | sh
 ```
 
-Alternatively, install Pi from npm. This requires Node.js 22.19 or newer:
+The installer pins all dependencies and updates Pi with `pi update`. Alternatively, install Pi from npm, which does not pin transitive dependencies. This requires Node.js 22.19 or newer:
 
 ```bash
 npm install -g --ignore-scripts @earendil-works/pi-coding-agent
 ```
 
 Pi does not require dependency lifecycle scripts for a normal npm installation.
+
+With Nix on macOS or Linux, install the latest release from Pi's flake. Nix builds Pi from source:
+
+```bash
+nix profile add github:earendil-works/pi/stable
+```
+
+Older Nix versions use `nix profile install` instead. Update with `nix profile upgrade pi`; `pi update` cannot update a Nix installation. To pin a release, use a tag such as `github:earendil-works/pi/v1.0.0`.
 
 Verify the installation:
 
@@ -127,7 +135,13 @@ If you used the installer, run it again and choose **Uninstall Pi**:
 curl -fsSL https://pi.dev/install.sh | sh
 ```
 
-Neither method removes configuration, credentials, sessions, or installed Pi packages from `~/.pi/agent/`.
+If you installed Pi with Nix, run:
+
+```bash
+nix profile remove pi
+```
+
+None of these methods removes configuration, credentials, sessions, or installed Pi packages from `~/.pi/agent/`.
 
 ---
 
@@ -268,7 +282,7 @@ Use `/share` to upload the session and get a viewer link. With Radius authentica
 
 ## Adjust the terminal
 
-Regular mode uses the terminal's normal scrollback. Fullscreen mode keeps the editor and status area fixed while the transcript scrolls within the terminal window. Choose a mode through `/settings` or `--tui-mode`.
+Fullscreen mode, the default, keeps the editor and status area fixed while the transcript scrolls within the terminal window. Regular mode uses the terminal's normal scrollback. Choose a mode through `/settings` or `--tui-mode`.
 
 Terminal support for mouse input, keyboard shortcuts, and inline images varies. See [Terminal Setup](terminal-setup.md) for platform-specific configuration and [Keybindings](keybindings.md) for every configurable shortcut. Run `/hotkeys` to inspect the shortcuts active in your current session.
 
@@ -338,10 +352,10 @@ RPC mode rejects `@file` arguments. JSON and RPC modes reserve stdout for protoc
 pi --model sonnet:high
 ```
 
-See [Choose a Model](models.md) for model selection and [Provider Authentication](providers.md) for credentials.
+See [Choose a Model](models.md) for model selection and [Providers](providers.md) for credentials.
 
 - `--provider <name>`<br>
-  Restricts `--model` lookup to one provider.
+  Restricts `--model` lookup to one provider. It requires `--model`.
 - `--model <pattern>`<br>
   Selects by exact ID or fuzzy ID/name match. It accepts `provider/id` and an optional `:<thinking>` suffix.
 - `--api-key <key>`<br>
@@ -441,21 +455,11 @@ This keeps `read`, `bash`, `edit`, and `write` and adds `codemode`. For one invo
 pi --tools read,bash,edit,write,codemode
 ```
 
-Codemode is useful without MCP: scripts can run several tool calls in parallel, filter large output before it reaches the model, and call classifier models such as TypeSafe's Jev through `models.classify()` (see [Classifier models](models.md#use-classifier-models)).
+Codemode is useful without MCP: scripts can run several tool calls in parallel, filter large output before it reaches the model, call classifier models such as TypeSafe's Jev through `models.classify()` (see [Classifier models](models.md#use-classifier-models)), and generate images through `models.generateImages()` (see [Image models](models.md#use-image-models)).
 
 ### How codemode works
 
-Codemode scripts run in a QuickJS sandbox that can only reach the other tools, through `tools.<name>(args)`; `ALL_TOOLS` lists them. Output comes from `text(value)`, `image(dataUrlOrImageContent)`, `console.*`, and a top-level `return value`; `exit()` ends the script early. The result starts with `Script completed` or `Script failed`, the wall time, and the output; a failed script keeps its partial output, followed by `Script error:` and the error.
-
-A script may start with an options line such as `// @options: {"max_output_tokens": 2000, "timeout_ms": 60000}`. `max_output_tokens` (default 10000) limits the output: longer output keeps its start and end, and the full text is written to a temp file whose path is included in the result. `timeout_ms` is a hard deadline, unset by default.
-
-While `codemode` is active, `codemode.mode` in [settings](settings.md#tools) decides how the other tools are presented. With `on` (default) declared tools keep being declared and their descriptions show how to call them from scripts. With `only` they are hidden from the model and listed in the `codemode` description instead, so the model calls them through scripts.
-
-The `codemode` description lists the callable tools with their TypeScript declarations, grouped by namespace (for example one MCP server). Declarations share a budget of 3000 estimated tokens (`codemode.inlineBudget` in [settings](settings.md#tools)); every namespace is still listed with its tool count, and the description says whether the list is complete. Scripts find the rest with `await searchTools(query, { limit, namespace })`, which ranks tools with BM25, and `await describeTool(name)`, or by filtering `ALL_TOOLS`.
-
-Tools with an output schema resolve to structured values: `bash` to `{ output, truncated, full_output_path?, exit_code, wall_time_seconds }`, also for non-zero exit codes, and MCP tools to their `CallToolResult`. Other tools resolve to their text output. The `output` of `bash` is not limited to the 2000 lines or 50KB the model sees: it holds up to 1 MiB, and longer output keeps its first and last 512 KiB around an omission marker, with `truncated` set and the full output in `full_output_path`.
-
-`store(key, value)` and `load(key)` keep JSON values across `codemode` calls: each successful script that stores values appends a `codemode-store` custom entry to the session, so resumed sessions keep the values and each branch sees only the values written on its path. Scripts can also use `models`: `getModelsOfType`, `getAvailableOfType`, and `getModelOfType` list the model catalog, and `classify(model, context)` runs a classifier model with the session's credentials, at most four at a time per script.
+Scripts run in a QuickJS sandbox and reach the other tools through `tools.<name>(args)`. [Codemode](codemode.md) describes the script API, how tools are listed and found, the `store()` and `models` globals, and the limits.
 
 ### Tool search
 
@@ -509,7 +513,7 @@ See [Configuration](configuration.md) for saved configuration, [Security](securi
 - `--append-system-prompt <text|path>`<br>
   Appends text or an existing file to the system prompt and is repeatable.
 - `--tui-mode <mode>`<br>
-  Uses `regular` or `fullscreen` terminal mode.
+  Uses `fullscreen` (default) or `regular` terminal mode.
 - `--verbose`<br>
   Shows verbose interactive startup information, overriding `quietStartup`.
 - `-a`, `--approve`<br>
@@ -558,6 +562,8 @@ Running `pi update` without a target updates Pi itself.
 
 Add `--force` to reinstall Pi when the selected update includes Pi.
 
+`pi update` cannot update Pi when another package manager provides it, such as Nix. Update Pi with that package manager, for example `nix profile upgrade pi`. Package and model catalog updates still work.
+
 ### Aliases and command options
 
 - `pi uninstall <source>` is an alias for `pi remove <source>`.
@@ -572,7 +578,7 @@ Add `--force` to reinstall Pi when the selected update includes Pi.
 pi auth check --provider openai --json
 ```
 
-Authentication commands require `--provider <provider>` or `--model <model>`. See [Provider Authentication](providers.md) for supported methods.
+Authentication commands require `--provider <provider>` or `--model <model>`. See [Providers](providers.md) for supported methods.
 
 | Command | Description |
 |---|---|
@@ -598,13 +604,13 @@ These commands work outside a session, so agents can run them through `bash`. Se
 | Command | Description |
 |---|---|
 | `pi mcp add <server> [options] -- <command> [args...]` | Add or replace a stdio server in `mcp.json`; `--env KEY=VALUE` (repeatable) and `--cwd <dir>` set its environment and working directory. Arguments after the command are passed to it |
-| `pi mcp add <server> [options] --url <url>` | Add or replace a streamable HTTP server; `--header KEY=VALUE` (repeatable), `--bearer-token-env-var <NAME>` (sends `Authorization: Bearer ${NAME}`), `--oauth-client-id`, `--oauth-client-secret`, and `--oauth-callback-port` configure authentication |
+| `pi mcp add <server> [options] --url <url>` | Add or replace a streamable HTTP server; `--header KEY=VALUE` (repeatable), `--bearer-token-env-var <NAME>` (sends `Authorization: Bearer ${NAME}`), `--oauth-client-id`, `--oauth-client-secret`, `--oauth-callback-port`, and `--oauth-client-name` configure authentication |
 | `pi mcp remove <server>` | Remove a server from `mcp.json`; stored OAuth credentials are kept |
 | `pi mcp list [--json]` | Connect to every enabled server and print its state, tools, and errors; exit with `1` when a config entry is invalid or an enabled server is not connected |
 | `pi mcp login <server> [--timeout <seconds>]` | Sign in to an OAuth server: open the authorization page and wait for the browser (default 300 seconds); a terminal also accepts the pasted redirect URL |
 | `pi mcp logout <server>` | Delete the stored OAuth credentials of a server |
 
-`add` and `remove` change `~/.pi/agent/mcp.json`, or `.pi/mcp.json` in the current directory with `--local` (`-l`). `add` also takes `--exposure <mode>` (see [Exposure](mcp.md#exposure)) and does not connect; run `pi mcp list` to check the server.
+`add` and `remove` change `~/.pi/agent/mcp.json`, or `.pi/mcp.json` in the current directory with `--local` (`-l`). `add` also takes `--exposure <mode>` (see [Exposure](mcp.md#exposure)) and `--description <text>` and does not connect; run `pi mcp list` to check the server.
 
 Project `.pi/mcp.json` files are only read for projects that are already trusted.
 
@@ -681,7 +687,7 @@ Pi uses environment variables in three ways:
 - Pi sets process markers so child processes can identify Pi as the launching agent.
 - Commands run by the LLM-callable shell tools receive `PI_*` variables describing the current session.
 
-Provider API-key variables are documented separately in [Provider Authentication](providers.md#use-an-api-key-from-the-environment).
+Provider API-key variables are documented separately in [Providers](providers.md#use-an-api-key-from-the-environment).
 
 ## Process Marker
 
@@ -770,7 +776,7 @@ These variables are read by Pi itself:
 | `VISUAL`, `EDITOR` | External editor fallback when `externalEditor` is unset |
 | `HTTP_PROXY`, `HTTPS_PROXY` | Proxy outbound HTTP requests |
 
-Provider credentials such as `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, and cloud-provider configuration are listed in [Provider Authentication](providers.md#use-an-api-key-from-the-environment).
+Provider credentials such as `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, and provider-specific configuration are listed in [Providers](providers.md#use-an-api-key-from-the-environment).
 
 ---
 
@@ -1006,7 +1012,7 @@ On native Windows, `app.suspend` has no default because Windows terminals do not
 | Keybinding id | Default | Description |
 |--------|---------|-------------|
 | `app.tools.expand` | `ctrl+o` | Collapse or expand tool output |
-| `app.message.copy` | `ctrl+x` | Copy the selected message in `/tree`; in fullscreen mode, copy the active selection when `fullscreenCopyOnSelect` is `false`; otherwise copy the last assistant message |
+| `app.message.copy` | `ctrl+x` | Copy the selected message in `/tree`; in fullscreen mode, copy the active selection when `fullscreenCopyOnSelect` is `false`; otherwise copy the last assistant message. On OAuth sign-in screens, copy the sign-in URL |
 | `app.message.followUp` | `alt+enter` (`ctrl+q` on Windows and WSL) | Queue follow-up message |
 | `app.message.dequeue` | `alt+up` (`alt+q` on Windows and WSL) | Restore queued messages to editor |
 
