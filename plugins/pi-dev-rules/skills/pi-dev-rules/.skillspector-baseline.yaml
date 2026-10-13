@@ -6,60 +6,60 @@ fingerprints:
 - hash: sha256:8194d9ddd359fce0
   rule_id: LP3
   file: SKILL.md
-  reason: Reviewed 2026-10-03, upstream Pi documentation prose, not skill code.
+  reason: Reviewed 2026-10-13, upstream Pi documentation prose, not skill code.
 - hash: sha256:46b01f2e986e6ecd
   rule_id: RP1
   file: references/mcp.md
-  reason: Reviewed 2026-10-03, upstream Pi documentation prose, not skill code.
+  reason: Reviewed 2026-10-13, upstream Pi documentation prose, not skill code.
 - hash: sha256:9dd0ce8061d77cc4
   rule_id: RP1
   file: references/mcp.md
-  reason: Reviewed 2026-10-03, upstream Pi documentation prose, not skill code.
+  reason: Reviewed 2026-10-13, upstream Pi documentation prose, not skill code.
 - hash: sha256:34e5f52cb3c8425d
   rule_id: RP1
   file: references/security-and-containerization.md
-  reason: Reviewed 2026-10-03, upstream Pi documentation prose, not skill code.
+  reason: Reviewed 2026-10-13, upstream Pi documentation prose, not skill code.
 - hash: sha256:5e03c291cc13f120
   rule_id: E4
   file: references/cli-and-usage.md
-  reason: Reviewed 2026-10-03, upstream Pi documentation prose, not skill code.
-- hash: sha256:96a8de2093c7770b
+  reason: Reviewed 2026-10-13, upstream Pi documentation prose, not skill code.
+- hash: sha256:23f7e2cc694bf007
   rule_id: E4
   file: references/cli-and-usage.md
-  reason: Reviewed 2026-10-03, upstream Pi documentation prose, not skill code.
-- hash: sha256:3b4e53c53c4688e0
+  reason: Reviewed 2026-10-13, upstream Pi documentation prose, not skill code.
+- hash: sha256:4ae9419f78c9fcb8
   rule_id: MP2
   file: SKILL.md
-  reason: Reviewed 2026-10-03, upstream Pi documentation prose, not skill code.
-- hash: sha256:042a6afa6543e2e8
+  reason: Reviewed 2026-10-13, upstream Pi documentation prose, not skill code.
+- hash: sha256:6a6606fddf92b966
   rule_id: PE3
   file: references/development.md
-  reason: Reviewed 2026-10-03, upstream Pi documentation prose, not skill code.
-- hash: sha256:4740b3b1e6d59301
+  reason: Reviewed 2026-10-13, upstream Pi documentation prose, not skill code.
+- hash: sha256:f9867db8a9921a94
   rule_id: PE3
   file: references/durable-spec.md
-  reason: Reviewed 2026-10-03, upstream Pi documentation prose, not skill code.
+  reason: Reviewed 2026-10-13, upstream Pi documentation prose, not skill code.
 - hash: sha256:d9bacc57db93c127
   rule_id: PE3
   file: references/providers-and-models.md
-  reason: Reviewed 2026-10-03, upstream Pi documentation prose, not skill code.
-- hash: sha256:4f11461d4c136869
+  reason: Reviewed 2026-10-13, upstream Pi documentation prose, not skill code.
+- hash: sha256:c7540d1d8314c27b
   rule_id: PE3
   file: references/providers-and-models.md
-  reason: Reviewed 2026-10-03, upstream Pi documentation prose, not skill code.
-- hash: sha256:bc6381b7987b963f
+  reason: Reviewed 2026-10-13, upstream Pi documentation prose, not skill code.
+- hash: sha256:07db8395a24f0be7
   rule_id: SC2
   file: SKILL.md
-  reason: Reviewed 2026-10-03, upstream Pi documentation prose, not skill code.
-- hash: sha256:b3e634bd94487dba
+  reason: Reviewed 2026-10-13, upstream Pi documentation prose, not skill code.
+- hash: sha256:93064c1830a9b519
   rule_id: TM1
   file: references/development.md
-  reason: Reviewed 2026-10-03, upstream Pi documentation prose, not skill code.
-- hash: sha256:b3e634bd94487dba
+  reason: Reviewed 2026-10-13, upstream Pi documentation prose, not skill code.
+- hash: sha256:93064c1830a9b519
   rule_id: TM1
   file: references/development.md
-  reason: Reviewed 2026-10-03, upstream Pi documentation prose, not skill code.
-- hash: sha256:ea11cfcbdd947100
+  reason: Reviewed 2026-10-13, upstream Pi documentation prose, not skill code.
+- hash: sha256:fb0b7546af68c42f
   rule_id: YR1
   file: references/development.md
-  reason: Reviewed 2026-10-03, upstream Pi documentation prose, not skill code.
+  reason: Reviewed 2026-10-13, upstream Pi documentation prose, not skill code.

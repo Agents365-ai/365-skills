@@ -1,6 +1,6 @@
 # Pi: Changelog
 
-Source: `packages/coding-agent/CHANGELOG.md` at pi@a7229ddc2. Built locally from the repository changelog; no network access.
+Source: `packages/coding-agent/CHANGELOG.md` at pi@06a466935. Built locally from the repository changelog; no network access.
 
 A reverse-chronological release list, newest first. The highlight column is the first
 bullet of each release's `### New Features` section, or its first bullet when that
@@ -15,6 +15,11 @@ checkout to rebuild this file and the reference bundles.
 
 | Version | Date | Highlights |
 | --------- | ------ | ----------- |
+| **1.2.0** | 2026-10-12 | Per-key OpenRouter model lists: with an OpenRouter key, Pi lists only the models that key may use, with the key's context size, max output, and pri... |
+| **1.1.0** | 2026-10-07 | Program status reporting: terminals and agent dashboards that support OSC 7501 see whether Pi is working, blocked on a dialog or login, done, or fa... |
+| **1.0.4** | 2026-10-05 | Tool patterns and --no-mcp: --tools and --exclude-tools accept * patterns, for example --tools read,codemode,'mcp__radius__*' keeps only one MCP se... |
+| **1.0.3** | 2026-10-05 | Azure Foundry Chat Completions — The azure provider (renamed from azure-openai-responses) now also serves Foundry Chat Completions deployments, sta... |
+| **1.0.2** | 2026-10-04 | Sampling by thinking level — samplingParamsByThinkingLevel in models.json sets sampling parameters such as temperature and top_p for each thinking... |
 | **1.0.1** | 2026-10-03 | Nix flake — nix run github:earendil-works/pi/stable runs the latest release, and nix profile add github:earendil-works/pi/stable installs it. See I... |
 | **1.0.0** | 2026-10-01 | Fullscreen by default — The TUI now runs fullscreen. Set tuiMode to "regular" to keep the terminal's normal scrollback. See Terminal and display. |
 | **0.99.2** | 2026-09-30 | MCP servers stay out of the way: servers with the default codemode exposure are no longer listed in the codemode description and no longer block th... |
@@ -35,17 +40,12 @@ checkout to rebuild this file and the reference bundles.
 | **0.82.1** | 2026-07-25 | Claude Opus 5 — Available on Anthropic and Amazon Bedrock with adaptive thinking (including xhigh), inference profiles, and prompt caching. See Pro... |
 | **0.82.0** | 2026-07-24 | Constrained tool sampling — Tools can prefer or require strict JSON Schema sampling or use OpenAI Lark/regex grammars, with model capability metada... |
 | **0.81.1** | 2026-07-21 | Verifiable release source archives — GitHub releases now include deterministic, checksummed source archives with instructions for rebuilding standa... |
-| **0.81.0** | 2026-07-21 | Local llama.cpp model management — Connect to a llama.cpp router, search and download Hugging Face models, and explicitly load or unload models wit... |
-| **0.80.10** | 2026-07-16 | Kimi Coding thinking compatibility — Kimi Coding models now use adaptive thinking correctly; K3 exposes its supported max level and supports replay... |
-| **0.80.9** | 2026-07-16 | Kimi K3 and deferred tool loading — Use Kimi K3 across built-in providers, including progressive extension tool activation through Kimi’s native pr... |
-| **0.80.8** | 2026-07-16 | Unified model runtime and provider authentication — ModelRuntime centralizes model configuration, provider-owned /login, and dynamic provider catal... |
-| **0.80.7** | 2026-07-14 | Cache-friendly dynamic tool loading - Extensions can add tools during execution while supported Anthropic and OpenAI Responses models preserve prom... |
 
 ---
 
 ## Full changelog
 
-283 release sections are recorded in the Pi repository, including `[Unreleased]`.
+288 release sections are recorded in the Pi repository, including `[Unreleased]`.
 Read the complete, untruncated history there:
 
 ```bash

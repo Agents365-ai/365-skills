@@ -1,9 +1,9 @@
 ---
 name: pi-dev-rules
-version: 0.6.0
-description: "Authoritative reference for Pi (@earendil-works/pi-coding-agent): install, configure, run, and extend it. Use for the CLI and configuration, providers and models, extensions, skills, MCP, the SDK/RPC, security and trust, design philosophy, and the pi repository's internals and contribution rules."
+version: 0.7.0
+description: "Authoritative reference for Pi (@earendil-works/pi-coding-agent): install, configure, run, and extend it. Use for the CLI and configuration, providers and models, extensions, skills, MCP, codemode, the SDK/RPC, security and trust, design philosophy, and the pi repository's internals and contribution rules."
 license: MIT
-metadata: {"source":"https://pi.dev/docs/latest","docVersion":"1.0.1","fetched":"2026-10-03","piRevision":"a7229ddc2","version":"0.6.0"}
+metadata: {"source":"https://pi.dev/docs/latest","docVersion":"1.2.0","fetched":"2026-10-13","piRevision":"06a466935","version":"0.7.0"}
 ---
 
 # Pi Dev Rules
@@ -12,7 +12,7 @@ Pi is a **minimal terminal coding harness**: lightweight core, extended through 
 customizations. Package: `@earendil-works/pi-coding-agent`. Maintained by Earendil Inc. (MIT).
 This skill mirrors the official docs at <https://pi.dev/docs/latest> so you can answer Pi questions
 and build Pi customizations without re-fetching. Four further bundles describe material that has
-no page on the website: the **internal monorepo architecture** (the Chord composition runtime, the
+no page on the website: the **internal monorepo architecture** (the Chord typed host runtime, the
 durable agent harness with its Pico5 specification, the agent core, telemetry) and the
 repository's own development/contribution rules. They are built from the pi source tree.
 
@@ -22,7 +22,8 @@ repository's own development/contribution rules. They are built from the pi sour
 - Configuring providers, API keys, custom models (`models.json`), or proxies.
 - Editing `settings.json`, keybindings, themes; understanding sessions & compaction.
 - Understanding the **project-trust security model** and running Pi in containers/sandboxes.
-- **Extending Pi**: writing extensions, skills, prompt templates, packages, custom providers, TUI UI.
+- **Extending Pi**: writing extensions, skills, prompt templates, packages, custom providers, TUI UI;
+  enabling `codemode` or writing its scripts.
 - Checking Pi's version history / what changed in a recent release.
 - Driving Pi programmatically via the SDK, RPC mode, or JSON event-stream mode.
 - Setting up Pi on Windows/Termux/tmux/specific terminals, or building it from source.
@@ -30,10 +31,10 @@ repository's own development/contribution rules. They are built from the pi sour
   tools, YOLO by default; the 2025-11-30 manifesto lists MCP, plan mode, to-dos, and sub-agents as
   deliberate non-features, and built-in MCP landed later, on 2026-09-29) and how to configure or
   extend Pi along those lines instead of against them.
-- Working **inside** the pi monorepo: the `@earendil-works/chord` composition runtime (plugin
-  loading, service catalogue, RPC transport, delta/replicated state), the durable harness
-  (`@earendil-works/pi-durable`, Pico5), the agent core, telemetry, and the experimental
-  `server`/`client`/`protocol` packages.
+- Working **inside** the pi monorepo: the `@earendil-works/chord` typed host runtime (contracts,
+  hosts and links, hot reload, delta/replicated state), the durable harness
+  (`@earendil-works/pi-durable`, Pico5), the agent core, and telemetry. The experimental
+  `server`/`client`/`protocol` packages were removed in 1.2.0.
 
 ## Reference index: load the file you need
 
@@ -43,7 +44,8 @@ repository's own development/contribution rules. They are built from the pi sour
 | `references/providers-and-models.md` | Subscription & API-key providers (30+), llama.cpp local router, `auth.json` (+ scoped `env`), cloud providers (Azure/Bedrock/Vertex/Cloudflare), custom models in `models.json`, `compat`, custom-provider extensions |
 | `references/settings-and-compaction.md` | Configuration layout (agent directory vs project `.pi/`, context files), `settings.json` schema + example, trust/analytics/retry/transport keys, compaction (auto/manual) and branch summarization |
 | `references/extending-pi.md` | Extension API (events, tools, commands, UI), Skills (SKILL.md), Prompt Templates, Themes, Packages, virtual models (`pi.registerVirtualModel`) |
-| `references/mcp.md` | Built-in MCP support (2026-09-29): `mcp.json` global and project servers, stdio vs streamable HTTP, `pi mcp add/remove/list`, OAuth sign-in, exposure modes (`codemode`, `codemode-deferred`, `deferred`, `direct`, `hidden`) with `toolExposure`, `codemode`/`tool_search` tools, resources, permissions, servers from extensions, SDK wiring |
+| `references/mcp.md` | Built-in MCP support (2026-09-29): `mcp.json` global and project servers, stdio vs streamable HTTP, `pi mcp add/remove/list`, OAuth sign-in, exposure modes (`codemode`, `codemode-deferred`, `deferred`, `direct`, `hidden`) with `toolExposure`, `codemode`/`tool_search` tools, resources, permissions, servers from extensions, SDK wiring, and the `--no-mcp` / `mcp__*` tool patterns |
+| `references/codemode.md` | The `codemode` tool: script input and the `// @options:` line, globals (`tools.<name>()`, `text()`, `image()`, `console.log()`, `store()`/`load()`, `searchTools()`, `describeTool()`), what tool calls resolve to, classifier and image models, namespaces and the inline budget, limits |
 | `references/tui-components.md` | TUI component system for custom extension/tool UIs (components, overlays, theming, custom editor) |
 | `references/security-and-containerization.md` | Project-trust model (`trust.json`, `defaultProjectTrust`), no built-in sandbox, Gondolin micro-VM, Docker, OpenShell, Docker Sandboxes |
 | `references/session-format.md` | Session JSONL schema: versions, content blocks, entry types, tree/context building, SessionManager API, plus the model-facing message types |
@@ -51,10 +53,10 @@ repository's own development/contribution rules. They are built from the pi sour
 | `references/platform-setup.md` | Windows, Termux, tmux, per-terminal modified-Enter setup, shell aliases |
 | `references/development.md` | Monorepo package list, build-from-source and standalone-binary builds, supply-chain rules, `AGENTS.md` development rules, the `CONTRIBUTING.md` gate |
 | `references/philosophy-and-design.md` | Creator Mario Zechner's design manifesto (blog, 2025-11-30; manually curated, not auto-built): minimal prompt <1000 tokens, 4 tools, YOLO by default, the non-features it lists (MCP/plan mode/to-dos/sub-agents/background bash) with their intended alternatives and the MCP entry annotated as superseded since 2026-09-29, multi-provider architecture, Terminal-Bench 2.0 results |
-| `references/chord.md` | `@earendil-works/chord`: plugin loading/composition/bundling, the service catalogue, RPC transport, `bundleFacetPackage` + facet bundle loaders, and `chord/delta` replicated latest-value state. Built from `packages/chord/{README.md,PLANNING.md,src/delta/README.md}`; `PLANNING.md` is a plan, not a frozen API |
+| `references/chord.md` | `@earendil-works/chord`: the typed host runtime (contracts, declarations, registries, principals, handles, hot reload), hosts and links (`memoryLinkPair`, `ipcLink`, `webSocketLink`), and `chord/delta` replicated latest-value state. Built from `packages/chord/{README.md,docs/{guide,spec,tutorial}.md,src/delta/README.md}`; no Pi package depends on chord since 1.2.0, and the spec describes the runtime rather than a promoted API |
 | `references/agent-harness.md` | Internal runtime packages: `@earendil-works/pi-durable` (durable conversation/task/document harness, experimental API, stored before shown), `@earendil-works/pi-agent-core` (tool calling and state), `@earendil-works/pi-telemetry` (vendor-neutral telemetry contracts, adapters, typed schemas). Built from the three package READMEs; not user docs |
-| `references/durable-spec.md` | The normative **Pico5 specification** behind `pi-durable` (4610 lines): records and lifetimes, documents and mutation ownership, tasks and the effect sandwich, submissions and inbox, extensions/hooks/tools, telemetry. A design document for an experimental package, not a frozen API |
-| `references/changelog.md` | Release history: the last 25 versions with their headline change, extracted from `packages/coding-agent/CHANGELOG.md` (283 release sections; read the file in the checkout for the full text) |
+| `references/durable-spec.md` | The normative **Pico5 specification** behind `pi-durable` (5340 lines): records and lifetimes, documents and mutation ownership, tasks and the effect sandwich, submissions and inbox, extensions/hooks/tools, telemetry. A design document for an experimental package, not a frozen API |
+| `references/changelog.md` | Release history: the last 25 versions with their headline change, extracted from `packages/coding-agent/CHANGELOG.md` (288 release sections; read the file in the checkout for the full text) |
 
 ## Starter plugins
 
@@ -92,7 +94,7 @@ pi @README.md "Summarize this"                  # attach files/images with @
 cat file | pi -p "..."                          # pipe stdin
 pi --provider openai --model gpt-4o "..."       # pick provider/model
 pi --model sonnet:high "..."                    # model:thinkingLevel
-pi --tools read,grep,find,ls -p "..."           # allowlist tools (-xt to exclude)
+pi --tools read,grep,find,ls -p "..."           # allowlist tools (-xt excludes; +name/-name adjusts defaults)
 pi --mode json "..." | jq -c 'select(.type=="message_end")'   # JSON stream
 pi --mode rpc                                   # JSON-RPC over stdin/stdout
 
@@ -107,8 +109,8 @@ pi --mode rpc                                   # JSON-RPC over stdin/stdout
 ## Hard rules
 
 - **Install package name is exactly** `@earendil-works/pi-coding-agent`. The pi.dev installer
-  (`curl -fsSL https://pi.dev/install.sh | sh`) pins dependencies and is the recommended path since
-  1.0.1; a global npm install needs `--ignore-scripts` and pins nothing.
+  (`curl -fsSL https://pi.dev/install.sh | sh`) pins dependencies and is the documented install
+  path; a global npm install needs `--ignore-scripts` and pins nothing.
 - **Project context file is `AGENTS.md`** (Pi also reads `CLAUDE.md`); put it in the project root.
 - **Extensions run with full system permissions**: treat them as trusted code; gate dangerous
   ops (`rm`, `sudo`, sensitive paths) with `ctx.ui.confirm` or a `tool_call` block handler.
@@ -123,7 +125,7 @@ pi --mode rpc                                   # JSON-RPC over stdin/stdout
   commands. MCP calls go through the tool pipeline, so `tool_call` handlers and permission gates
   apply (`codemode` calls carry `parentToolCallId`). Installing an extension that registers `/mcp`
   (`pi-mcp-adapter`) disables the built-in support; disable it deliberately with `"extensions":
-  ["-builtin:mcp"]` or `pi config`.
+  ["-builtin:mcp"]`, `pi config`, or `--no-mcp` for one run.
 - **In extension/SDK tools: throw on error, never return an error flag.** Pi wraps a thrown error
   into an error tool result (`isError: true`); the docs defer to `ToolDefinition` in
   `packages/coding-agent/src/core/extensions/types.ts` for the exact contract. Limit tool output to
@@ -132,10 +134,9 @@ pi --mode rpc                                   # JSON-RPC over stdin/stdout
 - **Skill `name`**: 1–64 chars, lowercase `a-z 0-9 -`, no leading/trailing or consecutive hyphens;
   `description` ≤1024 chars and must say *when* to load it (a skill with no description won't load).
 - **`chord.md`, `agent-harness.md`, and `durable-spec.md` describe internals, not a stable
-  contract.** Chord is published but application-neutral, `pi-durable` is experimental and its API
-  changes between releases, the Pico5 spec is a design document, and
-  `PLANNING.md`/`server`/`client`/`protocol` are explicitly experimental. Quote them as the
-  current source tree state (pi@`a7229ddc2`), not as promised API.
+  contract.** Chord is published but application-neutral and no Pi package depends on it,
+  `pi-durable` is experimental and its API changes between releases, and the Pico5 spec is a
+  design document. Quote them as the current source tree state (pi@`06a466935`), not as promised API.
 - **`auth.json` holds API keys and OAuth tokens**: Pi writes it `0600`, keep it private and out of
   version control. Credential priority: CLI `--api-key` → `auth.json` →
   env var → custom-provider keys in `models.json`.

@@ -121,7 +121,31 @@ Radius is currently in early alpha and evolving quickly. See [radius.earendil.co
 
 Radius authentication uses its gateway catalog and caches refreshed model metadata for later offline startup. A custom Radius gateway configured in `models.json` uses its own catalog rather than inheriting the public `radius.pi.dev` catalog.
 
+### OpenRouter
+
+Authenticate with `/login openrouter` or `OPENROUTER_API_KEY`.
+
+With a key, Pi lists only the OpenRouter chat models that key may use, with the key's context size, max output, and prices. These come from OpenRouter's `/models/user` endpoint and reflect guardrails and provider restrictions set in OpenRouter. Image and classifier models are not filtered.
+
+Pi refreshes the list in the background at startup in interactive mode, when `/model` opens, after `/login`, and on `pi update --models`. The last list is saved and used offline and in `pi -p` and RPC mode. After switching keys outside `/login`, the previous key's list stays until the next refresh.
+
+Regional endpoints filter models to their region. To use one, set the base URL in [`models.json`](models.md#configure-a-compatible-endpoint):
+
+```json
+{
+  "providers": {
+    "openrouter": { "baseUrl": "https://us.openrouter.ai/api/v1" }
+  }
+}
+```
+
+If the base URL rejects the key at `/models/user` or does not have that endpoint, for example a proxy configured as the OpenRouter base URL, Pi lists every OpenRouter model.
+
 ### Azure OpenAI
+
+The provider ID is `azure` (formerly `azure-openai-responses`). Use it as the key in `auth.json`, `models.json`, and `settings.json`, and in model references such as `--model azure/gpt-5.4`.
+
+The `azure` provider serves OpenAI models through the Responses API and Microsoft Foundry models through Chat Completions, such as `azure/deepseek-v4-pro`.
 
 Set an API key plus either a base URL or resource name:
 
@@ -133,6 +157,29 @@ export AZURE_OPENAI_RESOURCE_NAME=your-resource
 ```
 
 Resource root URLs under `ai.azure.com`, `cognitiveservices.azure.com`, and `openai.azure.com` are normalized to the OpenAI API path.
+
+Pi sends the model ID as the deployment name. If a deployment has a different name, map it with `AZURE_OPENAI_DEPLOYMENT_NAME_MAP`:
+
+```bash
+export AZURE_OPENAI_DEPLOYMENT_NAME_MAP=gpt-5.4=my-gpt-deployment,deepseek-v4-pro=my-deepseek
+```
+
+`AZURE_OPENAI_API_VERSION` overrides the API version for OpenAI models (default `v1`).
+
+To use a Foundry model that Pi does not include, add it under `azure` in [`models.json`](models.md#configure-a-compatible-endpoint) with `api: "openai-completions"`. Custom models require a `baseUrl`; `AZURE_OPENAI_BASE_URL` and `AZURE_OPENAI_RESOURCE_NAME` take priority over it when set:
+
+```json
+{
+  "providers": {
+    "azure": {
+      "baseUrl": "https://your-resource.services.ai.azure.com",
+      "models": [
+        { "id": "your-deployment", "api": "openai-completions" }
+      ]
+    }
+  }
+}
+```
 
 ### Amazon Bedrock
 
@@ -299,7 +346,14 @@ If the router disconnects, `/llama` shows **Retry** and **Close**. Retry reconne
 
 ## Classification
 
-Every model listed for chat is also listed as a classifier model with the same ID and the `llama-cpp-classify` API. Classifier models answer typed `choice`, `bool`, and `score` questions about JSON state, like TypeSafe's Jev models. The model reaches them from [`codemode`](cli.md#enable-codemode) scripts, and extensions through `ctx.modelRegistry.classify()`; see [Classifier models](models.md#use-classifier-models).
+Classifier models answer typed `choice`, `bool`, and `score` questions about JSON state, like TypeSafe's Jev models. The model reaches them from [`codemode`](cli.md#enable-codemode) scripts, and extensions through `ctx.modelRegistry.classify()`; see [Classifier models](models.md#use-classifier-models). Pi lists llama.cpp models as classifiers in two ways:
+
+- **Decision models** such as [Julia-1, Laya, Kev, lev, and OpenJev](https://huggingface.co/collections/ggml-org/decision-models-6abf80cca3c83f127060a769) answer natively through llama.cpp's `/v1/systemone` endpoint. They appear only as classifiers, with the `typesafe-system-one` API, and not in `/model`.
+- **Chat models** are also listed as classifiers with the same ID and the `llama-cpp-classify` API, which reads answers from next-token probabilities as described below.
+
+llama.cpp 0.6.0 and later report decision models in the router's model list: their `architecture.output_modalities` contains `decisions`. The router reads this from the GGUF metadata without loading the model, so Pi recognizes unloaded and sleeping decision models too. Older llama.cpp builds do not report it, and Pi lists their decision models as chat models.
+
+### Chat models as classifiers
 
 The model does not generate an answer. Each question becomes one chat prompt: the state, every question of the request, the state again, and then the question with its answers under single-token labels. Labels are letters for a choice (up to 62 options), `Yes`/`No` for a bool, and digits for a score (up to 10 levels). The second copy of the state is read with the questions in view, which improved accuracy on JevBench with small models. Pi reads the probabilities of the labels as the next token and normalizes them. A choice returns every option's probability and a confidence of `(n * peak - 1) / (n - 1)`; a score returns the expected level.
 
@@ -376,6 +430,7 @@ Use [`models.json`](configuration.md#agent-directory) when an endpoint speaks an
 
 ```json
 {
+  "$schema": "https://pi.dev/schemas/models.schema.json",
   "providers": {
     "ollama": {
       "baseUrl": "http://localhost:11434/v1",
@@ -426,11 +481,37 @@ Use `promptCache` to declare the provider's best-effort cache lifetime in second
 
 Choose the conservative end of any published range. A model without a lifetime for the active tier is not eligible for cache warming. A `modelOverrides` entry can set `inputLimits` or `promptCache` for a built-in or extension model, including a model accessed through a validated proxy. See [`cacheWarming`](settings.md#model-and-thinking).
 
+### Configure sampling by thinking level
+
+OpenAI-compatible APIs support free-form `samplingParams` model defaults and `samplingParamsByThinkingLevel` overrides. The latter uses Pi thinking-level keys (`off`, `minimal`, `low`, `medium`, `high`, `xhigh`, and `max`), not provider values from `thinkingLevelMap`:
+
+```json
+{
+  "id": "qwen-thinking-model",
+  "reasoning": true,
+  "samplingParams": {
+    "temperature": 1.0,
+    "top_p": 0.95
+  },
+  "samplingParamsByThinkingLevel": {
+    "off": {
+      "temperature": 0.7,
+      "top_p": 0.8
+    },
+    "high": {
+      "top_k": 20
+    }
+  }
+}
+```
+
+Pi first clamps unsupported thinking levels, then merges model `samplingParams`, the effective level's override, and request-level `samplingParams` in that order. Later values win per key. Missing levels inherit the model defaults. `modelOverrides` merges per-level entries per key with the base model. These fields apply only to `openai-completions`, `openai-responses`, and `azure-openai-responses`; other APIs ignore them.
+
 Compatibility settings should describe verified differences in the endpoint's request or response behavior. Do not enable them based only on an endpoint advertising OpenAI or Anthropic compatibility.
 
 ## Use classifier models
 
-Classifier models do not chat. They answer typed questions about JSON state: pick one of several choices, answer yes or no, or give a score, each with probabilities. Pi includes TypeSafe's Jev model from these providers, and Cloudflare's Clef and Clef Flash models from Workers AI:
+Classifier models do not chat. They answer typed questions about JSON state: pick one of several choices, answer yes or no, or give a score, each with probabilities. Pi includes TypeSafe's Jev model from these providers, Cloudflare's Clef and Clef Flash models from Workers AI, and OpenAI's GPT-6 Luna through the [Decisions API](https://developers.openai.com/api/docs/guides/decisions):
 
 | Provider | Model IDs | Authentication |
 |---|---|---|
@@ -439,8 +520,11 @@ Classifier models do not chat. They answer typed questions about JSON state: pic
 | `cloudflare-workers-ai` | `typesafe/jev`, `@cf/cloudflare/clef`, `@cf/cloudflare/clef-flash` | `CLOUDFLARE_API_KEY` and `CLOUDFLARE_ACCOUNT_ID` |
 | `vercel-ai-gateway` | `typesafe-ai/jev` | `AI_GATEWAY_API_KEY` |
 | `opencode` | `jev-1.13`, `jev-1.13-free` | `OPENCODE_API_KEY` |
+| `openai` | `gpt-6-luna` | `OPENAI_API_KEY` |
 
 Chat models on a [llama.cpp router](llama-cpp.md#classification) are also listed as classifier models.
+
+OpenAI's Decisions API needs an API key. Sign in with ChatGPT credentials do not work with it, so `gpt-6-luna` is not listed as available while `openai` is logged in through `/login`, even when `OPENAI_API_KEY` is set; log out of `openai` to use the key. GPT-6 Luna also judges images passed in `images` (see [Codemode](codemode.md#classify)); other classifier models return an error for them. The API rejects inputs above 922K tokens, but requests that run longer than about five seconds, currently above roughly 600K input tokens, fail with a gateway timeout.
 
 Classifier models do not appear in `/model`. The model reaches them through the [`codemode`](cli.md#enable-codemode) tool, which is off unless an MCP server turned it on. Enable it with `"defaultTools": ["+codemode"]` in [settings](settings.md#tools). Scripts then list classifier models with `models.getAvailableOfType("classifier")` and call `models.classify(model, { state, questions })`:
 

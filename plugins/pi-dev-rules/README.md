@@ -13,10 +13,10 @@ A coding-agent skill that packages the **latest [Pi](https://pi.dev) documentati
 (`@earendil-works/pi-coding-agent`) as an on-demand reference, so an agent can install, configure,
 run, and **extend Pi** without re-fetching the docs.
 
-Mirrors <https://pi.dev/docs/latest> (fetched 2026-10-03 from Pi 1.0.1). Four extra bundles
+Mirrors <https://pi.dev/docs/latest> (fetched 2026-10-13 from Pi 1.2.0). Four extra bundles
 (`development.md`, `chord.md`, `agent-harness.md`, `durable-spec.md`) cover material with no page on
 the website: the repository's build/development/contribution rules and Pi's **internal monorepo
-architecture**. They are built from a pi checkout at `pi@a7229ddc2`.
+architecture**. They are built from a pi checkout at `pi@06a466935`.
 
 Works with Claude Code, Cursor, Codex, Copilot, Windsurf, Cline / Roo Code, Gemini CLI,
 Aider, Zed, OpenCode, OpenClaw / ClawHub, Hermes, pi-mono, plus major Chinese agents
@@ -43,6 +43,9 @@ Aider, Zed, OpenCode, OpenClaw / ClawHub, Hermes, pi-mono, plus major Chinese ag
 - `references/mcp.md`: built-in MCP servers (2026-09-29), `mcp.json` global and project config,
   stdio vs streamable HTTP, `pi mcp add/remove/list`, OAuth sign-in, exposure modes with
   `toolExposure`, `codemode` / `tool_search`, resources, permissions, servers from extensions.
+- `references/codemode.md`: the `codemode` tool: scripts and the `// @options:` line, globals
+  (`tools.<name>()`, `text()`, `image()`, `store()`/`load()`, `searchTools()`), what tool calls
+  resolve to, classifier and image models, namespaces and the inline budget, limits.
 - `references/tui-components.md`: TUI component system for custom extension/tool UIs.
 - `references/security-and-containerization.md`: project-trust model, no built-in sandbox, Gondolin
   micro-VM, Docker, OpenShell.
@@ -57,15 +60,16 @@ Aider, Zed, OpenCode, OpenClaw / ClawHub, Hermes, pi-mono, plus major Chinese ag
   2025-11-30): why minimal, the 4-tool philosophy, YOLO by default, the non-features it lists (MCP,
   plan mode, to-dos, sub-agents, background bash) with their intended alternatives. The MCP entry is
   annotated as superseded: MCP is built in since 2026-09-29.
-- `references/chord.md`: `@earendil-works/chord`, the application-neutral composition runtime:
-  plugin loading/composition/bundling, the service catalogue, RPC transport, facet bundle loaders,
-  and `chord/delta` replicated latest-value state. Includes `PLANNING.md`, which is a plan rather
-  than a frozen API.
+- `references/chord.md`: `@earendil-works/chord`, the application-neutral typed host runtime:
+  contracts and declarations, hosts and links (`memoryLinkPair`, `ipcLink`, `webSocketLink`),
+  principals and handles, hot reload, and `chord/delta` replicated latest-value state. No Pi package
+  depends on chord since 1.2.0, and the specification describes the runtime rather than a promoted
+  API.
 - `references/agent-harness.md`: internal runtime packages, from their READMEs:
   `@earendil-works/pi-durable` (durable conversation/task/document harness, stored before shown,
   experimental API), `@earendil-works/pi-agent-core` (tool calling and state), and
   `@earendil-works/pi-telemetry` (telemetry contracts, adapters, typed schemas).
-- `references/durable-spec.md`: the normative **Pico5 specification** behind `pi-durable` (4610
+- `references/durable-spec.md`: the normative **Pico5 specification** behind `pi-durable` (5340
   lines): records and lifetimes, documents and mutation ownership, tasks and the effect sandwich,
   submissions and inbox, extensions/hooks/tools, telemetry. A design document for an experimental
   package, not a frozen API.
@@ -86,7 +90,7 @@ cp -r pi-dev-rules ~/.claude/skills/      # example: Claude Code, global
 
 ## Updating
 
-`references/*.md` are generated, not hand-written: the 14 auto-built bundles and `changelog.md`
+`references/*.md` are generated, not hand-written: the 15 auto-built bundles and `changelog.md`
 come from a pi checkout, and `philosophy-and-design.md` is curated by hand. Users only need the
 files as shipped and never have to run anything. Rebuilding is maintainer tooling, documented in
 [`scripts/README.md`](skills/pi-dev-rules/scripts/README.md). Upstream restructured the docs on
@@ -95,7 +99,10 @@ files as shipped and never have to run anything. Rebuilding is maintainer toolin
 `how-pi-works.md`; `docs/development.md` folded into `docs/index.md`), and added `virtual-models.md`
 (2026-09-28) and `mcp.md` (2026-09-29), both bundled here. On 2026-10-01 the harness docs left
 `packages/agent/docs/`: the durable harness ships in `packages/durable` (README plus the Pico5
-spec) and telemetry in `packages/telemetry`, which the two internal bundles now mirror.
+spec) and telemetry in `packages/telemetry`, which the two internal bundles now mirror. Release
+1.2.0 (2026-10-12) replaced the chord facet/service runtime with a typed host runtime and removed
+the experimental `server`/`client`/`protocol` packages, so `chord.md` is now built from
+`packages/chord/docs/{guide,spec,tutorial}.md` and `codemode.md` joined the coding-agent bundles.
 
 ## Support
 

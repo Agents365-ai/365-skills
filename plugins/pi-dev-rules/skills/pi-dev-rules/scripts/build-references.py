@@ -56,6 +56,9 @@ BUNDLES = {
     "mcp.md": [
         ("packages/coding-agent/docs/mcp.md", "MCP Servers"),
     ],
+    "codemode.md": [
+        ("packages/coding-agent/docs/codemode.md", "Codemode"),
+    ],
     "tui-components.md": [
         ("packages/coding-agent/docs/tui.md", "TUI Components"),
     ],
@@ -89,8 +92,10 @@ BUNDLES = {
     ],
     "chord.md": [
         ("packages/chord/README.md", "Overview"),
+        ("packages/chord/docs/guide.md", "Guide"),
+        ("packages/chord/docs/spec.md", "Specification"),
+        ("packages/chord/docs/tutorial.md", "Tutorial"),
         ("packages/chord/src/delta/README.md", "Delta Tracking"),
-        ("packages/chord/PLANNING.md", "Implementation Plan"),
     ],
     "agent-harness.md": [
         ("packages/durable/README.md", "Durable Agent Harness"),
@@ -124,6 +129,10 @@ HEADER_DOCS = {
         "# Pi: MCP Servers",
         "Source: https://pi.dev/docs/latest/mcp\nBuilt-in MCP support, added 2026-09-29 (`mcp.json`, exposure modes and `codemode`, resources, permissions). An extension that registers `/mcp`, such as `pi-mcp-adapter`, replaces it; `pi config` can disable the built-in extension instead.",
     ),
+    "codemode.md": (
+        "# Pi: Codemode",
+        "Source: https://pi.dev/docs/latest/codemode\nThe QuickJS scripting layer for tool calls and non-LLM models: script input and the `// @options:` line, globals (`tools.<name>()`, `text()`, `image()`, `console.log()`, `store()`/`load()`, `searchTools()`, `describeTool()`), what tool calls resolve to, classifier and image models, namespaces and the inline budget, and limits.",
+    ),
     "tui-components.md": (
         "# Pi: TUI Components",
         "Source: https://pi.dev/docs/latest/tui",
@@ -149,8 +158,8 @@ HEADER_DOCS = {
         "Source: repository-root `README.md`, `AGENTS.md`, `CONTRIBUTING.md`\nUpstream folded the `docs/development.md` page into `docs/index.md`; the package list, build-from-source commands, and contribution rules now live in the repository-root files bundled here.",
     ),
     "chord.md": (
-        "# Chord: Application-Composition Runtime",
-        "Source: `packages/chord/README.md`, `src/delta/README.md`, `PLANNING.md`\nNot a Pi package: `@earendil-works/chord` is an application-neutral runtime that depends on no other Pi workspace package, and it is not covered by the Pi user docs. `PLANNING.md` is an active implementation plan, not a stable API contract.",
+        "# Chord: Typed Host Runtime",
+        "Source: `packages/chord/README.md`, `docs/guide.md`, `docs/spec.md`, `docs/tutorial.md`, `src/delta/README.md`\nNot a Pi package: `@earendil-works/chord` is an application-neutral runtime that no Pi workspace package depends on, and it is not covered by the Pi user docs. Release 1.2.0 replaced the facet and service runtime with a typed host runtime (contracts, hosts, links, hot reload) and removed `PLANNING.md`, the `./bundler` export, and the `pi-client`/`pi-protocol`/`pi-server` packages. The specification and the guide describe the current runtime; the tutorial is a worked example.",
     ),
     "agent-harness.md": (
         "# Pi Agent Runtime, Durable Harness, and Telemetry",
