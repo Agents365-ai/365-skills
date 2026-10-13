@@ -1,9 +1,9 @@
 ---
 name: pi-dev-rules
-version: 0.7.0
+version: 0.8.0
 description: "Authoritative reference for Pi (@earendil-works/pi-coding-agent): install, configure, run, and extend it. Use for the CLI and configuration, providers and models, extensions, skills, MCP, codemode, the SDK/RPC, security and trust, design philosophy, and the pi repository's internals and contribution rules."
 license: MIT
-metadata: {"source":"https://pi.dev/docs/latest","docVersion":"1.2.0","fetched":"2026-10-13","piRevision":"06a466935","version":"0.7.0"}
+metadata: {"source":"https://pi.dev/docs/latest","docVersion":"1.2.0","fetched":"2026-10-13","piRevision":"06a466935","version":"0.8.0"}
 ---
 
 # Pi Dev Rules
@@ -11,10 +11,12 @@ metadata: {"source":"https://pi.dev/docs/latest","docVersion":"1.2.0","fetched":
 Pi is a **minimal terminal coding harness**: lightweight core, extended through TypeScript
 customizations. Package: `@earendil-works/pi-coding-agent`. Maintained by Earendil Inc. (MIT).
 This skill mirrors the official docs at <https://pi.dev/docs/latest> so you can answer Pi questions
-and build Pi customizations without re-fetching. Four further bundles describe material that has
-no page on the website: the **internal monorepo architecture** (the Chord typed host runtime, the
-durable agent harness with its Pico5 specification, the agent core, telemetry) and the
-repository's own development/contribution rules. They are built from the pi source tree.
+and build Pi customizations without re-fetching. Five further bundles describe material the pi.dev
+docs site does not hold: the **internal monorepo architecture** (the Chord typed host runtime, the
+durable agent harness with its Pico5 specification, the agent core, telemetry), a **Pi Durable
+overview** curated from the 2026-10-01 Earendil blog post (what the experimental harness is, its
+version timeline, and which blog demos were removed in 1.2.0), and the repository's own
+development/contribution rules.
 
 ## When to use this skill
 
@@ -35,6 +37,8 @@ repository's own development/contribution rules. They are built from the pi sour
   hosts and links, hot reload, delta/replicated state), the durable harness
   (`@earendil-works/pi-durable`, Pico5), the agent core, and telemetry. The experimental
   `server`/`client`/`protocol` packages were removed in 1.2.0.
+- Building on or asking about **Pi Durable** (`@earendil-works/pi-durable`): what the harness is, which
+  version shipped what, where the runnable examples live, or why a blog-post demo path no longer exists.
 
 ## Reference index: load the file you need
 
@@ -54,8 +58,9 @@ repository's own development/contribution rules. They are built from the pi sour
 | `references/development.md` | Monorepo package list, build-from-source and standalone-binary builds, supply-chain rules, `AGENTS.md` development rules, the `CONTRIBUTING.md` gate |
 | `references/philosophy-and-design.md` | Creator Mario Zechner's design manifesto (blog, 2025-11-30; manually curated, not auto-built): minimal prompt <1000 tokens, 4 tools, YOLO by default, the non-features it lists (MCP/plan mode/to-dos/sub-agents/background bash) with their intended alternatives and the MCP entry annotated as superseded since 2026-09-29, multi-provider architecture, Terminal-Bench 2.0 results |
 | `references/chord.md` | `@earendil-works/chord`: the typed host runtime (contracts, declarations, registries, principals, handles, hot reload), hosts and links (`memoryLinkPair`, `ipcLink`, `webSocketLink`), and `chord/delta` replicated latest-value state. Built from `packages/chord/{README.md,docs/{guide,spec,tutorial}.md,src/delta/README.md}`; no Pi package depends on chord since 1.2.0, and the spec describes the runtime rather than a promoted API |
-| `references/agent-harness.md` | Internal runtime packages: `@earendil-works/pi-durable` (durable conversation/task/document harness, experimental API, stored before shown), `@earendil-works/pi-agent-core` (tool calling and state), `@earendil-works/pi-telemetry` (vendor-neutral telemetry contracts, adapters, typed schemas). Built from the three package READMEs; not user docs |
-| `references/durable-spec.md` | The normative **Pico5 specification** behind `pi-durable` (5340 lines): records and lifetimes, documents and mutation ownership, tasks and the effect sandwich, submissions and inbox, extensions/hooks/tools, telemetry. A design document for an experimental package, not a frozen API |
+| `references/durable.md` | **Pi Durable** overview, curated from the 2026-10-01 Earendil blog post and the v1.2.0 tree: the harness/conversation/agent/task/execution-environment vocabulary, the positioning (a harness for building agentic applications, not the Pi CLI), the version timeline (1.0.0 with Pi 1.0 → 1.2.0, lockstep versions, breaking changes), install and code shape, the package layout and its 32 runnable examples, and the blog demos deleted in 1.2.0. Start here for status and routing |
+| `references/agent-harness.md` | Internal runtime packages: `@earendil-works/pi-durable` (durable conversation/task/document harness, experimental API, stored before shown), `@earendil-works/pi-agent-core` (tool calling and state), `@earendil-works/pi-telemetry` (vendor-neutral telemetry contracts, adapters, typed schemas). Built from the three package READMEs; not user docs, and `durable.md` is the entry point |
+| `references/durable-spec.md` | The normative **Pico5 specification** behind `pi-durable` (5340 lines): records and lifetimes, documents and mutation ownership, tasks and the effect sandwich, submissions and inbox, extensions/hooks/tools, telemetry. A design document for an experimental package, not a frozen API; the bundled text is the v1.2.0 spec |
 | `references/changelog.md` | Release history: the last 25 versions with their headline change, extracted from `packages/coding-agent/CHANGELOG.md` (288 release sections; read the file in the checkout for the full text) |
 
 ## Starter plugins
@@ -133,10 +138,15 @@ pi --mode rpc                                   # JSON-RPC over stdin/stdout
   `@earendil-works/pi-ai`) for LLM-facing enums.
 - **Skill `name`**: 1–64 chars, lowercase `a-z 0-9 -`, no leading/trailing or consecutive hyphens;
   `description` ≤1024 chars and must say *when* to load it (a skill with no description won't load).
-- **`chord.md`, `agent-harness.md`, and `durable-spec.md` describe internals, not a stable
-  contract.** Chord is published but application-neutral and no Pi package depends on it,
-  `pi-durable` is experimental and its API changes between releases, and the Pico5 spec is a
-  design document. Quote them as the current source tree state (pi@`06a466935`), not as promised API.
+- **`chord.md`, `durable.md`, `agent-harness.md`, and `durable-spec.md` describe internals, not a
+  stable contract.** Chord is published but application-neutral and no Pi package depends on it;
+  `pi-durable` is experimental (1.0.0 on 2026-10-01 with Pi 1.0, 1.2.0 on 2026-10-12, versioned in
+  lockstep with the monorepo, breaking changes in every release) and the Pico5 spec is a design
+  document. Quote them as the current source tree state (pi@`06a466935`), not as promised API.
+- **The Pi Durable blog post is a 2026-10-01 snapshot.** Its "Try it" demos
+  (`packages/coding-agent/src/experimental/{durable,vacation}/`) were deleted in 1.2.0 by commit
+  `7472cda0d`; the durable harness itself is unaffected. Run examples from
+  `packages/durable/test/examples/` (00–31) instead, and read `durable.md` for the version timeline.
 - **`auth.json` holds API keys and OAuth tokens**: Pi writes it `0600`, keep it private and out of
   version control. Credential priority: CLI `--api-key` → `auth.json` →
   env var → custom-provider keys in `models.json`.

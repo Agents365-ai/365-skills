@@ -13,10 +13,11 @@ A coding-agent skill that packages the **latest [Pi](https://pi.dev) documentati
 (`@earendil-works/pi-coding-agent`) as an on-demand reference, so an agent can install, configure,
 run, and **extend Pi** without re-fetching the docs.
 
-Mirrors <https://pi.dev/docs/latest> (fetched 2026-10-13 from Pi 1.2.0). Four extra bundles
-(`development.md`, `chord.md`, `agent-harness.md`, `durable-spec.md`) cover material with no page on
-the website: the repository's build/development/contribution rules and Pi's **internal monorepo
-architecture**. They are built from a pi checkout at `pi@06a466935`.
+Mirrors <https://pi.dev/docs/latest> (fetched 2026-10-13 from Pi 1.2.0). Five extra bundles
+(`development.md`, `chord.md`, `durable.md`, `agent-harness.md`, `durable-spec.md`) cover material
+with no page on the website: the repository's build/development/contribution rules and Pi's
+**internal monorepo architecture**. They are built from a pi checkout at `pi@06a466935`; `durable.md`
+is curated from the Pi Durable blog post on top of that checkout.
 
 Works with Claude Code, Cursor, Codex, Copilot, Windsurf, Cline / Roo Code, Gemini CLI,
 Aider, Zed, OpenCode, OpenClaw / ClawHub, Hermes, pi-mono, plus major Chinese agents
@@ -65,6 +66,11 @@ Aider, Zed, OpenCode, OpenClaw / ClawHub, Hermes, pi-mono, plus major Chinese ag
   principals and handles, hot reload, and `chord/delta` replicated latest-value state. No Pi package
   depends on chord since 1.2.0, and the specification describes the runtime rather than a promoted
   API.
+- `references/durable.md`: **Pi Durable** overview, curated from the 2026-10-01 Earendil blog post
+  and the v1.2.0 tree: the harness/conversation/agent/task vocabulary, positioning (a harness for
+  agentic applications, not the Pi CLI), the version timeline (1.0.0 with Pi 1.0 → 1.2.0), install
+  and code shape, the package layout with its 32 runnable examples, and the blog demos deleted in
+  1.2.0. The entry point for the three internal bundles.
 - `references/agent-harness.md`: internal runtime packages, from their READMEs:
   `@earendil-works/pi-durable` (durable conversation/task/document harness, stored before shown,
   experimental API), `@earendil-works/pi-agent-core` (tool calling and state), and
@@ -91,8 +97,8 @@ cp -r pi-dev-rules ~/.claude/skills/      # example: Claude Code, global
 ## Updating
 
 `references/*.md` are generated, not hand-written: the 15 auto-built bundles and `changelog.md`
-come from a pi checkout, and `philosophy-and-design.md` is curated by hand. Users only need the
-files as shipped and never have to run anything. Rebuilding is maintainer tooling, documented in
+come from a pi checkout, and `philosophy-and-design.md` and `durable.md` are curated by hand. Users
+only need the files as shipped and never have to run anything. Rebuilding is maintainer tooling, documented in
 [`scripts/README.md`](skills/pi-dev-rules/scripts/README.md). Upstream restructured the docs on
 2026-09-22 (pages split into `cli.md`, `slash-commands.md`, `configuration.md`,
 `message-types.md`, `rpc-commands.md`, `rpc-extension-ui.md`, `cli-integration.md`,
@@ -101,8 +107,10 @@ files as shipped and never have to run anything. Rebuilding is maintainer toolin
 `packages/agent/docs/`: the durable harness ships in `packages/durable` (README plus the Pico5
 spec) and telemetry in `packages/telemetry`, which the two internal bundles now mirror. Release
 1.2.0 (2026-10-12) replaced the chord facet/service runtime with a typed host runtime and removed
-the experimental `server`/`client`/`protocol` packages, so `chord.md` is now built from
-`packages/chord/docs/{guide,spec,tutorial}.md` and `codemode.md` joined the coding-agent bundles.
+the experimental `server`/`client`/`protocol` packages together with the durable server stack and
+its demo apps (`src/experimental/{durable,vacation}`), so `chord.md` is now built from
+`packages/chord/docs/{guide,spec,tutorial}.md`, `codemode.md` joined the coding-agent bundles, and
+`durable.md` records what the blog's "Try it" section no longer applies to.
 
 ## Support
 
