@@ -12,9 +12,10 @@
 一个编程助手技能，将最新的 [Pi](https://pi.dev) 文档（`@earendil-works/pi-coding-agent`）
 打包为按需参考库，让助手无需重新抓取文档即可安装、配置、运行和**扩展 Pi**。
 
-镜像 <https://pi.dev/docs/latest>（抓取日期：2026-10-13，对应 Pi 1.2.0）。另外四个参考文件
-（`development.md`、`chord.md`、`agent-harness.md`、`durable-spec.md`）覆盖官网没有页面的内容：
-仓库的构建/开发/贡献规则，以及 Pi 的**内部 monorepo 架构**，从 `pi@06a466935` 的源码树构建。
+镜像 <https://pi.dev/docs/latest>（抓取日期：2026-10-13，对应 Pi 1.2.0）。另外五个参考文件
+（`development.md`、`chord.md`、`durable.md`、`agent-harness.md`、`durable-spec.md`）覆盖官网
+没有页面的内容：仓库的构建/开发/贡献规则，以及 Pi 的**内部 monorepo 架构**。它们从
+`pi@06a466935` 的源码树构建；`durable.md` 在此基础上根据 Pi Durable 博客整理。
 
 适用于 Claude Code、Cursor、Codex、Copilot、Windsurf、Cline / Roo Code、Gemini CLI、
 Aider、Zed、OpenCode、OpenClaw / ClawHub、Hermes、pi-mono，以及主流国产编程助手
@@ -59,6 +60,10 @@ Aider、Zed、OpenCode、OpenClaw / ClawHub、Hermes、pi-mono，以及主流国
   contract 与声明、host 与 link（`memoryLinkPair`、`ipcLink`、`webSocketLink`）、principal 与
   handle、热重载，以及 `chord/delta` 的“最新值”状态复制。自 1.2.0 起已无 Pi 包依赖 chord，
   spec 描述该运行时，并非已提升为稳定 API。
+- `references/durable.md`：**Pi Durable** 概览，根据 2026-10-01 的 Earendil 博客与 v1.2.0 源码树
+  整理：harness/会话/agent/任务词汇、定位（用于构建 agentic 应用的 harness，不是 Pi CLI）、
+  版本时间线（随 Pi 1.0 发布 1.0.0 → 1.2.0）、安装与代码形态、包结构与 32 个可运行示例，以及
+  1.2.0 中被删除的博客演示应用。三个内部参考包的入口。
 - `references/agent-harness.md`：内部运行时包，取自各自的 README：`@earendil-works/pi-durable`
   （持久化的会话/任务/文档 harness，先落盘再展示，API 属实验性）、`@earendil-works/pi-agent-core`
   （工具调用与状态）、`@earendil-works/pi-telemetry`（遥测契约、适配器、类型化 schema）。
@@ -83,17 +88,18 @@ cp -r pi-dev-rules ~/.claude/skills/      # 示例：Claude Code，全局
 ## 更新
 
 `references/*.md` 是生成物，不是手写文档：15 个自动生成的参考包与 `changelog.md` 来自 pi 源码
-检出，`philosophy-and-design.md` 为手工整理。用户直接使用随包文件即可，无需执行任何命令；重建属于
-维护者工具，说明见 [`scripts/README.md`](skills/pi-dev-rules/scripts/README.md)。上游于
+检出，`philosophy-and-design.md` 与 `durable.md` 为手工整理。用户直接使用随包文件即可，无需执行
+任何命令；重建属于维护者工具，说明见 [`scripts/README.md`](skills/pi-dev-rules/scripts/README.md)。上游于
 2026-09-22 改版了文档（拆分为 `cli.md`、`slash-commands.md`、`configuration.md`、
 `message-types.md`、`rpc-commands.md`、`rpc-extension-ui.md`、`cli-integration.md`、
 `how-pi-works.md`；`docs/development.md` 并入 `docs/index.md`），并于 2026-09-28 新增
 `virtual-models.md`、于 2026-09-29 新增 `mcp.md`，两者均已收录。2026-10-01 harness 文档迁出
 `packages/agent/docs/`：持久化 harness 现位于 `packages/durable`（README 加 Pico5 规范），
 遥测位于 `packages/telemetry`，即这两个内部参考包现在镜像的内容。1.2.0（2026-10-12）将 chord 的
-facet/service 运行时改为类型化宿主运行时，并移除实验性的 `server`/`client`/`protocol` 包，
+facet/service 运行时改为类型化宿主运行时，并移除实验性的 `server`/`client`/`protocol` 包以及
+持久化 harness 的服务端栈与演示应用（`src/experimental/{durable,vacation}`），
 `chord.md` 因此改由 `packages/chord/docs/{guide,spec,tutorial}.md` 构建，`codemode.md` 也加入
-了 coding-agent 参考包。
+了 coding-agent 参考包，`durable.md` 记录了博客“试用”一节不再适用的部分。
 
 ## 支持
 

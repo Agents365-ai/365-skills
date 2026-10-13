@@ -27,7 +27,7 @@ fingerprints:
   rule_id: E4
   file: references/cli-and-usage.md
   reason: Reviewed 2026-10-13, upstream Pi documentation prose, not skill code.
-- hash: sha256:4ae9419f78c9fcb8
+- hash: sha256:0f9b73d6aee7cf5a
   rule_id: MP2
   file: SKILL.md
   reason: Reviewed 2026-10-13, upstream Pi documentation prose, not skill code.
@@ -47,7 +47,7 @@ fingerprints:
   rule_id: PE3
   file: references/providers-and-models.md
   reason: Reviewed 2026-10-13, upstream Pi documentation prose, not skill code.
-- hash: sha256:07db8395a24f0be7
+- hash: sha256:6b0f92661b4323f9
   rule_id: SC2
   file: SKILL.md
   reason: Reviewed 2026-10-13, upstream Pi documentation prose, not skill code.

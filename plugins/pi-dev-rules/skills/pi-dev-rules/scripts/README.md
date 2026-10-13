@@ -21,4 +21,5 @@ Nothing is fetched over the network: the script reads a local checkout of
 `version`, `metadata.fetched`, and `metadata.piRevision` in `SKILL.md` plus the plugin version in
 the repo-root marketplace entry before releasing.
 
-`references/philosophy-and-design.md` is curated by hand and is not touched by the scripts.
+`references/philosophy-and-design.md` and `references/durable.md` are curated by hand and are not
+touched by the scripts.
