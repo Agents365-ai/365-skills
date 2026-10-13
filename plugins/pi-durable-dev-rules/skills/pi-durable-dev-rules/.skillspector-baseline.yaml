@@ -1,0 +1,33 @@
+# SkillSpector baseline — findings listed here are suppressed on future scans.
+# Edit 'reason' fields and add glob 'rules' as needed. See docs/SUPPRESSION.md.
+version: 1
+rules: []
+fingerprints:
+- hash: sha256:8194d9ddd359fce0
+  rule_id: LP3
+  file: SKILL.md
+  reason: Reviewed 2026-10-13, false positive on the SKILL.md frontmatter (line 1); the file is skill prose and routing, no code.
+- hash: sha256:ecfdbbc69d6af6d2
+  rule_id: RP1
+  file: references/codemode-sandbox.md
+  reason: Reviewed 2026-10-13, vendored upstream pi-codemode README prose (line 164, `npx wrangler deploy`), not skill code.
+- hash: sha256:f88da2c7caf1e22b
+  rule_id: RP1
+  file: references/pi-ai-models.md
+  reason: Reviewed 2026-10-13, vendored upstream pi-ai README prose (line 1821, unpinned `npx` example), not skill code.
+- hash: sha256:799f7ff54a052422
+  rule_id: RP1
+  file: references/pi-ai-models.md
+  reason: Reviewed 2026-10-13, vendored upstream pi-ai README prose (line 1822, unpinned `npx` example), not skill code.
+- hash: sha256:4e7bef42204e337c
+  rule_id: RP1
+  file: references/pi-ai-models.md
+  reason: Reviewed 2026-10-13, vendored upstream pi-ai README prose (line 1823, unpinned `npx` example), not skill code.
+- hash: sha256:0da1cde40535df02
+  rule_id: MP2
+  file: SKILL.md
+  reason: Reviewed 2026-10-13, false positive on the cheat-sheet code block (line 73); the skill instructs a coding agent and carries no user input.
+- hash: sha256:28cb41bbac645ed6
+  rule_id: PE3
+  file: references/durable-spec.md
+  reason: Reviewed 2026-10-13, false positive on vendored upstream specification prose (line 2569, `input.env` in a code sample), not credential handling.
