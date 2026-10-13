@@ -31,6 +31,7 @@ npx skills add Agents365-ai/365-skills -g
 | 插件 | 说明 |
 | --- | --- |
 | `agent-native-design` | AI 智能体 CLI 设计 —— 评估、设计和重构 CLI，使其能同时服务人类、AI 智能体和编排系统 |
+| `pi-durable-dev-rules` | Pi Durable 开发参考 —— 在持久化 agent harness（`@earendil-works/pi-durable`）上开发应用与工具：存储后端与重启恢复、带结构化输出与嵌套调用的 TypeBox 工具、带检查点与所有权的持久化任务、子代理与子任务、文档与迁移、代码模式、按对话执行环境、钩子守卫、上下文压缩，以及规范性的 Pico5 规格说明。同时包含 `pi-ai` 模型层与该包 32 个示例提炼的 19 个配方 |
 | `pi-plugin-cc` | 从 Claude Code 驱动 Pi coding agent —— 模型无关的任务委派与代码审查。`/pi:review` 结构化发现、`/pi:adversarial-review`、`/pi:rescue`、`/pi:parallel-rescue`，跨 provider 竞速/回退，增量审查 |
 | `tmux` | 让编程助手驱动并监控终端程序：固定尺寸的分离会话、`send-keys` 输入注入、带竞态安全哨兵的 `capture-pane` 轮询、formats 检视、四种完成检测策略，以及会击垮粗暴 tmux 脚本的各类坑 |
 

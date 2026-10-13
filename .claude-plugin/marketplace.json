@@ -193,6 +193,27 @@
       ]
     },
     {
+      "name": "pi-durable-dev-rules",
+      "source": "./plugins/pi-durable-dev-rules",
+      "description": "Developer reference for building applications, tools, and agents on the Pi Durable agent harness (@earendil-works/pi-durable) and the pi-ai model layer. Use when writing or debugging code that imports @earendil-works/pi-durable or pi-ai: assembling a Harness over memory/SQLite/JSONL/Durable Object storage, submitting input and waiting for answers, defining tools with TypeBox schemas and structured output, calling tools from tools, hooks and guards, durable tasks with checkpoints and ownership, subagents and child tasks, documents and migrations, code mode, tool search, per-conversation environments, compaction, recovery after a crash, storage and environment conformance tests, or choosing models and providers. Also use for durable-runtime behavior questions: what survives a restart, why an input stayed queued, why a task is blocked or orphaned, how abort cascades, or what the Pico5 specification requires.",
+      "version": "0.1.0",
+      "author": {
+        "name": "Agents365-ai"
+      },
+      "repository": "https://github.com/Agents365-ai/365-skills",
+      "license": "MIT",
+      "keywords": [
+        "pi",
+        "pi-durable",
+        "pi-ai",
+        "agent-harness",
+        "durable-execution",
+        "tasks",
+        "tools",
+        "developer-reference"
+      ]
+    },
+    {
       "name": "scholar-deep-research",
       "source": "./plugins/scholar-deep-research",
       "description": "End-to-end academic research pipeline — 8-phase (Phase 0..7) script-driven workflow across 7 federated sources (OpenAlex, arXiv, Crossref, PubMed, DBLP, bioRxiv, Exa), cross-source dedup, transparent ranking, dual-backend citation chasing (OpenAlex + Semantic Scholar), parallel deep-read fan-out, mandatory self-critique, and cited reports across 5 archetypes",
