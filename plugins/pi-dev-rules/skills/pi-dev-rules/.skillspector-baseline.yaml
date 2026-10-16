@@ -6,60 +6,90 @@ fingerprints:
 - hash: sha256:8194d9ddd359fce0
   rule_id: LP3
   file: SKILL.md
-  reason: Reviewed 2026-10-13, upstream Pi documentation prose, not skill code.
+  reason: Reviewed 2026-10-16, upstream Pi documentation and installer examples, not
+    executable skill behavior. Residual findings match prior baseline rules at shifted
+    lines.
 - hash: sha256:46b01f2e986e6ecd
   rule_id: RP1
   file: references/mcp.md
-  reason: Reviewed 2026-10-13, upstream Pi documentation prose, not skill code.
+  reason: Reviewed 2026-10-16, upstream Pi documentation and installer examples, not
+    executable skill behavior. Residual findings match prior baseline rules at shifted
+    lines.
 - hash: sha256:9dd0ce8061d77cc4
   rule_id: RP1
   file: references/mcp.md
-  reason: Reviewed 2026-10-13, upstream Pi documentation prose, not skill code.
+  reason: Reviewed 2026-10-16, upstream Pi documentation and installer examples, not
+    executable skill behavior. Residual findings match prior baseline rules at shifted
+    lines.
 - hash: sha256:34e5f52cb3c8425d
   rule_id: RP1
   file: references/security-and-containerization.md
-  reason: Reviewed 2026-10-13, upstream Pi documentation prose, not skill code.
+  reason: Reviewed 2026-10-16, upstream Pi documentation and installer examples, not
+    executable skill behavior. Residual findings match prior baseline rules at shifted
+    lines.
 - hash: sha256:5e03c291cc13f120
   rule_id: E4
   file: references/cli-and-usage.md
-  reason: Reviewed 2026-10-13, upstream Pi documentation prose, not skill code.
+  reason: Reviewed 2026-10-16, upstream Pi documentation and installer examples, not
+    executable skill behavior. Residual findings match prior baseline rules at shifted
+    lines.
 - hash: sha256:23f7e2cc694bf007
   rule_id: E4
   file: references/cli-and-usage.md
-  reason: Reviewed 2026-10-13, upstream Pi documentation prose, not skill code.
-- hash: sha256:0f9b73d6aee7cf5a
+  reason: Reviewed 2026-10-16, upstream Pi documentation and installer examples, not
+    executable skill behavior. Residual findings match prior baseline rules at shifted
+    lines.
+- hash: sha256:1968a4e625c85ab3
   rule_id: MP2
   file: SKILL.md
-  reason: Reviewed 2026-10-13, upstream Pi documentation prose, not skill code.
+  reason: Reviewed 2026-10-16, upstream Pi documentation and installer examples, not
+    executable skill behavior. Residual findings match prior baseline rules at shifted
+    lines.
 - hash: sha256:6a6606fddf92b966
   rule_id: PE3
   file: references/development.md
-  reason: Reviewed 2026-10-13, upstream Pi documentation prose, not skill code.
-- hash: sha256:f9867db8a9921a94
+  reason: Reviewed 2026-10-16, upstream Pi documentation and installer examples, not
+    executable skill behavior. Residual findings match prior baseline rules at shifted
+    lines.
+- hash: sha256:ace4e525b374f45d
   rule_id: PE3
   file: references/durable-spec.md
-  reason: Reviewed 2026-10-13, upstream Pi documentation prose, not skill code.
+  reason: Reviewed 2026-10-16, upstream Pi documentation and installer examples, not
+    executable skill behavior. Residual findings match prior baseline rules at shifted
+    lines.
 - hash: sha256:d9bacc57db93c127
   rule_id: PE3
   file: references/providers-and-models.md
-  reason: Reviewed 2026-10-13, upstream Pi documentation prose, not skill code.
-- hash: sha256:c7540d1d8314c27b
+  reason: Reviewed 2026-10-16, upstream Pi documentation and installer examples, not
+    executable skill behavior. Residual findings match prior baseline rules at shifted
+    lines.
+- hash: sha256:c54a8c6fdadfa7ef
   rule_id: PE3
   file: references/providers-and-models.md
-  reason: Reviewed 2026-10-13, upstream Pi documentation prose, not skill code.
-- hash: sha256:6b0f92661b4323f9
+  reason: Reviewed 2026-10-16, upstream Pi documentation and installer examples, not
+    executable skill behavior. Residual findings match prior baseline rules at shifted
+    lines.
+- hash: sha256:bc8f7b8eadf21897
   rule_id: SC2
   file: SKILL.md
-  reason: Reviewed 2026-10-13, upstream Pi documentation prose, not skill code.
+  reason: Reviewed 2026-10-16, upstream Pi documentation and installer examples, not
+    executable skill behavior. Residual findings match prior baseline rules at shifted
+    lines.
 - hash: sha256:93064c1830a9b519
   rule_id: TM1
   file: references/development.md
-  reason: Reviewed 2026-10-13, upstream Pi documentation prose, not skill code.
+  reason: Reviewed 2026-10-16, upstream Pi documentation and installer examples, not
+    executable skill behavior. Residual findings match prior baseline rules at shifted
+    lines.
 - hash: sha256:93064c1830a9b519
   rule_id: TM1
   file: references/development.md
-  reason: Reviewed 2026-10-13, upstream Pi documentation prose, not skill code.
+  reason: Reviewed 2026-10-16, upstream Pi documentation and installer examples, not
+    executable skill behavior. Residual findings match prior baseline rules at shifted
+    lines.
 - hash: sha256:fb0b7546af68c42f
   rule_id: YR1
   file: references/development.md
-  reason: Reviewed 2026-10-13, upstream Pi documentation prose, not skill code.
+  reason: Reviewed 2026-10-16, upstream Pi documentation and installer examples, not
+    executable skill behavior. Residual findings match prior baseline rules at shifted
+    lines.

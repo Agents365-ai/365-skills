@@ -1,7 +1,7 @@
 # Pi Durable: What It Is, What Shipped, and Where to Read More
 
 Source: <https://earendil.com/posts/pi-durable/> (Earendil Engineering, "Pi Durable", 2026-10-01)
-and the pi tree at `pi@06a466935` (release v1.2.0, 2026-10-12) with `packages/durable/CHANGELOG.md`.
+and the pi tree at `pi@71023aec1` (release v1.3.0, 2026-10-15) with `packages/durable/CHANGELOG.md`.
 Manually curated, not auto-built. The package README and the normative specification are bundled in
 `agent-harness.md` (API) and `durable-spec.md` (semantics); this page is the routing and status layer
 the blog provides and the docs site does not.
@@ -12,7 +12,7 @@ the blog provides and the docs site does not.
 > agentic applications, coding agents included. It is not the Pi CLI and does not replace it. Read
 > this to know what the package is for, which version is current, which parts of the blog are stale,
 > and which bundled file to open for API versus record semantics. The package is experimental and
-> its CHANGELOG records breaking changes in every release since 1.0.0, so pin a version.
+> earlier releases include breaking changes, so pin a version.
 
 ## The vocabulary
 
@@ -65,6 +65,7 @@ experimental: the blog says the API might still change, and the CHANGELOG confir
 | 1.0.2 – 1.0.4 | 2026-10-04 – 2026-10-05 | Execution-environment and tool fixes, PowerShell tool, env conformance suite |
 | 1.1.0 | 2026-10-07 | Breaking scan `order`, Cloudflare storage, context caching |
 | 1.2.0 | 2026-10-12 | Breaking: tagged `ToolTaskInput`, `output` instead of `content`, storage errors fail the Session, nested tool calls, structured output, deferred tools, the `codemode` extension |
+| 1.3.0 | 2026-10-15 | SQLite table prefixes, shared operation queues for Cloudflare adapters, system-baseline ordering after compaction, lower-memory image encoding |
 
 Install, as in the README:
 
@@ -84,10 +85,10 @@ const settled = await submission.wait(context);
 
 ## Where it lives in the tree
 
-| Path (pi@06a466935) | What it holds |
+| Path (pi@71023aec1) | What it holds |
 | --------------------- | ------------- |
 | `packages/durable/README.md` | The public API, per feature; bundled in `agent-harness.md` |
-| `packages/durable/docs/spec.md` | The normative Pico5 specification (5340 lines); bundled in `durable-spec.md` |
+| `packages/durable/docs/spec.md` | The normative Pico5 specification (5352 lines); bundled in `durable-spec.md` |
 | `packages/durable/test/examples/00-31` | 32 runnable examples; the README's table names most of them: chat, coding tools, print/JSON mode, inbox, late join, foreground and background subagents, child tasks, compaction, reviewer, per-conversation sandbox, tool override, reload |
 | `packages/durable/CHANGELOG.md` | Per-release breaking changes and features; the source of the table above |
 | `packages/durable/docs/pico-v5-{handoff,chord-usage}.md`, `chord-delta-findings.md` | Implementation plan and Chord design notes; not bundled here |
@@ -119,7 +120,7 @@ exist in older checkouts (for example at `v1.1.0` and earlier), which is why a s
 show them; `git log --oneline --diff-filter=D -- packages/coding-agent/src/experimental/durable` is
 the check.
 
-Everything else the blog describes matches the v1.2.0 package: the storage backends, crash recovery,
+The main features described in the blog remain in the v1.3.0 package: the storage backends, crash recovery,
 queued submissions, forks, compaction as a background task, documents, hot extension replacement,
 and the multi-client view. The blog's "coming weeks" items (a Slack bot, a GitHub triage bot) are not
 in the tree.

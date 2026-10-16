@@ -12,10 +12,10 @@
 一个编程助手技能，将最新的 [Pi](https://pi.dev) 文档（`@earendil-works/pi-coding-agent`）
 打包为按需参考库，让助手无需重新抓取文档即可安装、配置、运行和**扩展 Pi**。
 
-镜像 <https://pi.dev/docs/latest>（抓取日期：2026-10-13，对应 Pi 1.2.0）。另外五个参考文件
+镜像 <https://pi.dev/docs/latest>（抓取日期：2026-10-16，对应 Pi 1.3.0）。另外五个参考文件
 （`development.md`、`chord.md`、`durable.md`、`agent-harness.md`、`durable-spec.md`）覆盖官网
 没有页面的内容：仓库的构建/开发/贡献规则，以及 Pi 的**内部 monorepo 架构**。它们从
-`pi@06a466935` 的源码树构建；`durable.md` 在此基础上根据 Pi Durable 博客整理。
+`pi@71023aec1` 的源码树构建；`durable.md` 在此基础上根据 Pi Durable 博客整理。
 
 适用于 Claude Code、Cursor、Codex、Copilot、Windsurf、Cline / Roo Code、Gemini CLI、
 Aider、Zed、OpenCode、OpenClaw / ClawHub、Hermes、pi-mono，以及主流国产编程助手
@@ -32,7 +32,7 @@ Aider、Zed、OpenCode、OpenClaw / ClawHub、Hermes、pi-mono，以及主流国
 - `references/cli-and-usage.md`：安装、认证、启动、Pi 的工作原理（agent 循环、上下文、
   会话）、CLI 参考（命令、参数、模式）、斜杠命令、消息队列、上下文文件、环境变量、会话、快捷键。
 - `references/providers-and-models.md`：提供商（30+）、`auth.json`（+ scoped `env`）、云
-  提供商、自定义 `models.json`、`compat`、自定义提供商扩展。
+  提供商、NVIDIA RTX llama.cpp 配方预设、自定义 `models.json`、`compat`、自定义提供商扩展。
 - `references/settings-and-compaction.md`：配置布局（agent 目录与项目 `.pi/`、上下文文件）、
   `settings.json`（trust/analytics/retry/transport）、自动/手动压缩、分支摘要。
 - `references/extending-pi.md`：扩展 API、技能（SKILL.md）、提示模板、主题、包、虚拟模型
@@ -58,18 +58,28 @@ Aider、Zed、OpenCode、OpenClaw / ClawHub、Hermes、pi-mono，以及主流国
   及其预期替代方案。其中 MCP 一条已标注为“已被取代”：MCP 自 2026-09-29 起内置。
 - `references/chord.md`：`@earendil-works/chord`，与应用无关的类型化宿主运行时（typed host runtime）：
   contract 与声明、host 与 link（`memoryLinkPair`、`ipcLink`、`webSocketLink`）、principal 与
-  handle、热重载，以及 `chord/delta` 的“最新值”状态复制。自 1.2.0 起已无 Pi 包依赖 chord，
-  spec 描述该运行时，并非已提升为稳定 API。
-- `references/durable.md`：**Pi Durable** 概览，根据 2026-10-01 的 Earendil 博客与 v1.2.0 源码树
+  handle、热重载，以及 `chord/delta` 的“最新值”状态复制。Pi Durable 依赖 Chord，Pi CLI 则不依赖。
+  spec 描述该运行时的当前状态。
+- `references/durable.md`：**Pi Durable** 概览，根据 2026-10-01 的 Earendil 博客与 v1.3.0 源码树
   整理：harness/会话/agent/任务词汇、定位（用于构建 agentic 应用的 harness，不是 Pi CLI）、
-  版本时间线（随 Pi 1.0 发布 1.0.0 → 1.2.0）、安装与代码形态、包结构与 32 个可运行示例，以及
+  版本时间线（随 Pi 1.0 发布 1.0.0 → 1.3.0）、安装与代码形态、包结构与 32 个可运行示例，以及
   1.2.0 中被删除的博客演示应用。三个内部参考包的入口。
 - `references/agent-harness.md`：内部运行时包，取自各自的 README：`@earendil-works/pi-durable`
   （持久化的会话/任务/文档 harness，先落盘再展示，API 属实验性）、`@earendil-works/pi-agent-core`
   （工具调用与状态）、`@earendil-works/pi-telemetry`（遥测契约、适配器、类型化 schema）。
-- `references/durable-spec.md`：`pi-durable` 背后的规范性 **Pico5 规范**（5340 行）：记录与生命周期、
+- `references/durable-spec.md`：`pi-durable` 背后的规范性 **Pico5 规范**（5352 行）：记录与生命周期、
   文档与变更所有权、任务与 effect sandwich、submission 与 inbox、扩展/hook/工具、遥测。属实验性
   包的设计文档，不是冻结的 API。
+
+## Pi 1.3.0 更新
+
+- `sessionShareDestination` 可将 `/share` 上传目标设为 `auto`、`gist` 或 `radius`。
+- 恢复会话时保留已激活的工具，`--tools +name`/`-name` 在此基础上调整。
+- 模型匹配多个提供商时优先选择已有凭据的提供商，否则需指定 `--provider`。
+- Kimi Code 改用 Chat Completions，自定义 base URL 必须包含 `/v1`。
+- 每个 Pi 进程最多同时存在两个 codemode worker，已取消但未退出的 worker 仍占用名额。
+- Pi Durable 新增 SQLite 表名前缀与 Cloudflare 适配器共享操作队列。
+- 提供商参考包新增 NVIDIA RTX llama.cpp 预设指南。
 
 ## 安装
 

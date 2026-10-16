@@ -1,6 +1,6 @@
 # Pi: Changelog
 
-Source: `packages/coding-agent/CHANGELOG.md` at pi@06a466935. Built locally from the repository changelog; no network access.
+Source: `packages/coding-agent/CHANGELOG.md` at pi@71023aec1. Built locally from the repository changelog; no network access.
 
 A reverse-chronological release list, newest first. The highlight column is the first
 bullet of each release's `### New Features` section, or its first bullet when that
@@ -15,6 +15,7 @@ checkout to rebuild this file and the reference bundles.
 
 | Version | Date | Highlights |
 | --------- | ------ | ----------- |
+| **1.3.0** | 2026-10-15 | Choose where /share uploads: sessionShareDestination selects auto, gist, or radius. See Sessions and context and Export or share a session. |
 | **1.2.0** | 2026-10-12 | Per-key OpenRouter model lists: with an OpenRouter key, Pi lists only the models that key may use, with the key's context size, max output, and pri... |
 | **1.1.0** | 2026-10-07 | Program status reporting: terminals and agent dashboards that support OSC 7501 see whether Pi is working, blocked on a dialog or login, done, or fa... |
 | **1.0.4** | 2026-10-05 | Tool patterns and --no-mcp: --tools and --exclude-tools accept * patterns, for example --tools read,codemode,'mcp__radius__*' keeps only one MCP se... |
@@ -39,13 +40,12 @@ checkout to rebuild this file and the reference bundles.
 | **0.83.0** | 2026-07-29 | Credential export for external clients — pi auth print-api-key and pi auth print-bearer-token export configured credentials with automatic OAuth re... |
 | **0.82.1** | 2026-07-25 | Claude Opus 5 — Available on Anthropic and Amazon Bedrock with adaptive thinking (including xhigh), inference profiles, and prompt caching. See Pro... |
 | **0.82.0** | 2026-07-24 | Constrained tool sampling — Tools can prefer or require strict JSON Schema sampling or use OpenAI Lark/regex grammars, with model capability metada... |
-| **0.81.1** | 2026-07-21 | Verifiable release source archives — GitHub releases now include deterministic, checksummed source archives with instructions for rebuilding standa... |
 
 ---
 
 ## Full changelog
 
-288 release sections are recorded in the Pi repository, including `[Unreleased]`.
+289 release sections are recorded in the Pi repository, including `[Unreleased]`.
 Read the complete, untruncated history there:
 
 ```bash

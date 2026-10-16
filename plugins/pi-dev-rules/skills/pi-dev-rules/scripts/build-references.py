@@ -37,6 +37,10 @@ BUNDLES = {
     "providers-and-models.md": [
         ("packages/coding-agent/docs/providers.md", "Providers"),
         ("packages/coding-agent/docs/llama-cpp.md", "llama.cpp Router Setup"),
+        (
+            "packages/coding-agent/docs/nvidia-rtx-llama-cpp.md",
+            "NVIDIA RTX and llama.cpp",
+        ),
         ("packages/coding-agent/docs/models.md", "Custom Models"),
         ("packages/coding-agent/docs/custom-provider.md", "Custom Providers"),
     ],
@@ -115,7 +119,7 @@ HEADER_DOCS = {
     ),
     "providers-and-models.md": (
         "# Pi: Providers & Custom Models",
-        "Source: https://pi.dev/docs/latest/providers, /llama-cpp, /models, /custom-provider",
+        "Source: https://pi.dev/docs/latest/providers, /llama-cpp, /nvidia-rtx-llama-cpp, /models, /custom-provider",
     ),
     "settings-and-compaction.md": (
         "# Pi: Configuration, Settings & Compaction",
@@ -159,7 +163,7 @@ HEADER_DOCS = {
     ),
     "chord.md": (
         "# Chord: Typed Host Runtime",
-        "Source: `packages/chord/README.md`, `docs/guide.md`, `docs/spec.md`, `docs/tutorial.md`, `src/delta/README.md`\nNot a Pi package: `@earendil-works/chord` is an application-neutral runtime that no Pi workspace package depends on, and it is not covered by the Pi user docs. Release 1.2.0 replaced the facet and service runtime with a typed host runtime (contracts, hosts, links, hot reload) and removed `PLANNING.md`, the `./bundler` export, and the `pi-client`/`pi-protocol`/`pi-server` packages. The specification and the guide describe the current runtime; the tutorial is a worked example.",
+        "Source: `packages/chord/README.md`, `docs/guide.md`, `docs/spec.md`, `docs/tutorial.md`, `src/delta/README.md`\n`@earendil-works/chord` is an application-neutral runtime used by `pi-durable`, but not by the Pi coding agent. It is not covered by the Pi user docs. Release 1.2.0 replaced the facet and service runtime with a typed host runtime (contracts, hosts, links, hot reload) and removed `PLANNING.md`, the `./bundler` export, and the `pi-client`/`pi-protocol`/`pi-server` packages. The specification and the guide describe the current runtime; the tutorial is a worked example.",
     ),
     "agent-harness.md": (
         "# Pi Agent Runtime, Durable Harness, and Telemetry",

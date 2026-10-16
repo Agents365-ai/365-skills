@@ -13,10 +13,10 @@ A coding-agent skill that packages the **latest [Pi](https://pi.dev) documentati
 (`@earendil-works/pi-coding-agent`) as an on-demand reference, so an agent can install, configure,
 run, and **extend Pi** without re-fetching the docs.
 
-Mirrors <https://pi.dev/docs/latest> (fetched 2026-10-13 from Pi 1.2.0). Five extra bundles
+Mirrors <https://pi.dev/docs/latest> (fetched 2026-10-16 from Pi 1.3.0). Five extra bundles
 (`development.md`, `chord.md`, `durable.md`, `agent-harness.md`, `durable-spec.md`) cover material
 with no page on the website: the repository's build/development/contribution rules and Pi's
-**internal monorepo architecture**. They are built from a pi checkout at `pi@06a466935`; `durable.md`
+**internal monorepo architecture**. They are built from a pi checkout at `pi@71023aec1`; `durable.md`
 is curated from the Pi Durable blog post on top of that checkout.
 
 Works with Claude Code, Cursor, Codex, Copilot, Windsurf, Cline / Roo Code, Gemini CLI,
@@ -35,7 +35,7 @@ Aider, Zed, OpenCode, OpenClaw / ClawHub, Hermes, pi-mono, plus major Chinese ag
   sessions), the CLI reference (commands, flags, modes), slash commands, message queue, context
   files, env vars, sessions, keybindings.
 - `references/providers-and-models.md`: providers (30+), `auth.json` (+ scoped `env`), cloud
-  providers, custom `models.json`, `compat`, custom-provider extensions.
+  providers, NVIDIA RTX llama.cpp recipe presets, custom `models.json`, `compat`, and custom-provider extensions.
 - `references/settings-and-compaction.md`: configuration layout (agent directory vs project
   `.pi/`, context files), `settings.json` (trust/analytics/retry/transport),
   auto/manual compaction, branch summaries.
@@ -63,22 +63,31 @@ Aider, Zed, OpenCode, OpenClaw / ClawHub, Hermes, pi-mono, plus major Chinese ag
   annotated as superseded: MCP is built in since 2026-09-29.
 - `references/chord.md`: `@earendil-works/chord`, the application-neutral typed host runtime:
   contracts and declarations, hosts and links (`memoryLinkPair`, `ipcLink`, `webSocketLink`),
-  principals and handles, hot reload, and `chord/delta` replicated latest-value state. No Pi package
-  depends on chord since 1.2.0, and the specification describes the runtime rather than a promoted
-  API.
+  principals and handles, hot reload, and `chord/delta` replicated latest-value state. Pi Durable uses Chord, but the Pi coding agent does not.
+  The specification describes the current runtime.
 - `references/durable.md`: **Pi Durable** overview, curated from the 2026-10-01 Earendil blog post
-  and the v1.2.0 tree: the harness/conversation/agent/task vocabulary, positioning (a harness for
-  agentic applications, not the Pi CLI), the version timeline (1.0.0 with Pi 1.0 → 1.2.0), install
+  and the v1.3.0 tree: the harness/conversation/agent/task vocabulary, positioning (a harness for
+  agentic applications, not the Pi CLI), the version timeline (1.0.0 with Pi 1.0 → 1.3.0), install
   and code shape, the package layout with its 32 runnable examples, and the blog demos deleted in
   1.2.0. The entry point for the three internal bundles.
 - `references/agent-harness.md`: internal runtime packages, from their READMEs:
   `@earendil-works/pi-durable` (durable conversation/task/document harness, stored before shown,
   experimental API), `@earendil-works/pi-agent-core` (tool calling and state), and
   `@earendil-works/pi-telemetry` (telemetry contracts, adapters, typed schemas).
-- `references/durable-spec.md`: the normative **Pico5 specification** behind `pi-durable` (5340
+- `references/durable-spec.md`: the normative **Pico5 specification** behind `pi-durable` (5352
   lines): records and lifetimes, documents and mutation ownership, tasks and the effect sandwich,
   submissions and inbox, extensions/hooks/tools, telemetry. A design document for an experimental
   package, not a frozen API.
+
+## Pi 1.3.0 changes
+
+- Select `/share` uploads with `sessionShareDestination`: `auto`, `gist`, or `radius`.
+- Resume with the session's active tools. Use `--tools +name`/`-name` to adjust them.
+- Resolve ambiguous model matches through provider credentials, or specify `--provider`.
+- Include `/v1` in custom Kimi Code base URLs. The provider now uses Chat Completions.
+- Codemode allows at most two live workers per Pi process, including cancelled workers until exit.
+- Pi Durable adds SQLite table prefixes and shared Cloudflare adapter queues.
+- The provider bundle now includes the NVIDIA RTX llama.cpp preset guide.
 
 ## Install
 

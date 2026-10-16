@@ -176,7 +176,7 @@
       "name": "pi-dev-rules",
       "source": "./plugins/pi-dev-rules",
       "description": "Authoritative reference for Pi (@earendil-works/pi-coding-agent): install, configure, run, and extend. Use when the user asks about Pi CLI/flags/commands, providers/models/auth, settings/compaction/sessions, security/trust, extensions, skills, prompt templates, themes, packages, MCP, codemode, custom providers, TUI components, the SDK, RPC mode, or JSON streaming. Also use for Pi's design philosophy and opinionated choices (why minimal, 4 tools, YOLO, no MCP/plan mode/to-dos/sub-agents), Pi's internal monorepo architecture (the Chord typed host runtime (@earendil-works/chord), the durable agent harness (@earendil-works/pi-durable) and its Pico5 specification, telemetry, delta tracking), and the repository's build, development, and contribution rules. Also use for Pi Durable itself: what the experimental harness is, its versions, the runnable examples, and which blog demos 1.2.0 removed.",
-      "version": "0.8.0",
+      "version": "0.9.0",
       "author": {
         "name": "Agents365-ai"
       },
