@@ -1,9 +1,9 @@
 ---
 name: pi-dev-rules
-version: 0.8.0
+version: 0.9.0
 description: "Authoritative reference for Pi (@earendil-works/pi-coding-agent): install, configure, run, and extend it. Use for the CLI and configuration, providers and models, extensions, skills, MCP, codemode, the SDK/RPC, security and trust, design philosophy, and the pi repository's internals and contribution rules."
 license: MIT
-metadata: {"source":"https://pi.dev/docs/latest","docVersion":"1.2.0","fetched":"2026-10-13","piRevision":"06a466935","version":"0.8.0"}
+metadata: {"source":"https://pi.dev/docs/latest","docVersion":"1.3.0","fetched":"2026-10-16","piRevision":"71023aec1","version":"0.9.0"}
 ---
 
 # Pi Dev Rules
@@ -45,7 +45,7 @@ development/contribution rules.
 | File | Covers |
 | ------ | -------- |
 | `references/cli-and-usage.md` | Install, auth, launching, how Pi works (agent loop, context assembly, session tree), the full CLI reference (commands, flags, modes), slash commands, message queue, context files, environment variables (incl. bash-tool `PI_SESSION_*`/`PI_MODEL`), sessions, keybindings |
-| `references/providers-and-models.md` | Subscription & API-key providers (30+), llama.cpp local router, `auth.json` (+ scoped `env`), cloud providers (Azure/Bedrock/Vertex/Cloudflare), custom models in `models.json`, `compat`, custom-provider extensions |
+| `references/providers-and-models.md` | Subscription & API-key providers (30+), llama.cpp local router, NVIDIA RTX recipe presets, `auth.json` (+ scoped `env`), cloud providers (Azure/Bedrock/Vertex/Cloudflare), custom models in `models.json`, `compat`, custom-provider extensions |
 | `references/settings-and-compaction.md` | Configuration layout (agent directory vs project `.pi/`, context files), `settings.json` schema + example, trust/analytics/retry/transport keys, compaction (auto/manual) and branch summarization |
 | `references/extending-pi.md` | Extension API (events, tools, commands, UI), Skills (SKILL.md), Prompt Templates, Themes, Packages, virtual models (`pi.registerVirtualModel`) |
 | `references/mcp.md` | Built-in MCP support (2026-09-29): `mcp.json` global and project servers, stdio vs streamable HTTP, `pi mcp add/remove/list`, OAuth sign-in, exposure modes (`codemode`, `codemode-deferred`, `deferred`, `direct`, `hidden`) with `toolExposure`, `codemode`/`tool_search` tools, resources, permissions, servers from extensions, SDK wiring, and the `--no-mcp` / `mcp__*` tool patterns |
@@ -57,11 +57,20 @@ development/contribution rules.
 | `references/platform-setup.md` | Windows, Termux, tmux, per-terminal modified-Enter setup, shell aliases |
 | `references/development.md` | Monorepo package list, build-from-source and standalone-binary builds, supply-chain rules, `AGENTS.md` development rules, the `CONTRIBUTING.md` gate |
 | `references/philosophy-and-design.md` | Creator Mario Zechner's design manifesto (blog, 2025-11-30; manually curated, not auto-built): minimal prompt <1000 tokens, 4 tools, YOLO by default, the non-features it lists (MCP/plan mode/to-dos/sub-agents/background bash) with their intended alternatives and the MCP entry annotated as superseded since 2026-09-29, multi-provider architecture, Terminal-Bench 2.0 results |
-| `references/chord.md` | `@earendil-works/chord`: the typed host runtime (contracts, declarations, registries, principals, handles, hot reload), hosts and links (`memoryLinkPair`, `ipcLink`, `webSocketLink`), and `chord/delta` replicated latest-value state. Built from `packages/chord/{README.md,docs/{guide,spec,tutorial}.md,src/delta/README.md}`; no Pi package depends on chord since 1.2.0, and the spec describes the runtime rather than a promoted API |
-| `references/durable.md` | **Pi Durable** overview, curated from the 2026-10-01 Earendil blog post and the v1.2.0 tree: the harness/conversation/agent/task/execution-environment vocabulary, the positioning (a harness for building agentic applications, not the Pi CLI), the version timeline (1.0.0 with Pi 1.0 → 1.2.0, lockstep versions, breaking changes), install and code shape, the package layout and its 32 runnable examples, and the blog demos deleted in 1.2.0. Start here for status and routing |
+| `references/chord.md` | `@earendil-works/chord`: the typed host runtime (contracts, declarations, registries, principals, handles, hot reload), hosts and links (`memoryLinkPair`, `ipcLink`, `webSocketLink`), and `chord/delta` replicated latest-value state. Built from `packages/chord/{README.md,docs/{guide,spec,tutorial}.md,src/delta/README.md}`; Pi Durable uses Chord, but the Pi coding agent does not; the spec describes the current runtime |
+| `references/durable.md` | **Pi Durable** overview, curated from the 2026-10-01 Earendil blog post and the v1.3.0 tree: the harness/conversation/agent/task/execution-environment vocabulary, the positioning (a harness for building agentic applications, not the Pi CLI), the version timeline (1.0.0 with Pi 1.0 → 1.3.0, lockstep versions, breaking changes), install and code shape, the package layout and its 32 runnable examples, and the blog demos deleted in 1.2.0. Start here for status and routing |
 | `references/agent-harness.md` | Internal runtime packages: `@earendil-works/pi-durable` (durable conversation/task/document harness, experimental API, stored before shown), `@earendil-works/pi-agent-core` (tool calling and state), `@earendil-works/pi-telemetry` (vendor-neutral telemetry contracts, adapters, typed schemas). Built from the three package READMEs; not user docs, and `durable.md` is the entry point |
-| `references/durable-spec.md` | The normative **Pico5 specification** behind `pi-durable` (5340 lines): records and lifetimes, documents and mutation ownership, tasks and the effect sandwich, submissions and inbox, extensions/hooks/tools, telemetry. A design document for an experimental package, not a frozen API; the bundled text is the v1.2.0 spec |
-| `references/changelog.md` | Release history: the last 25 versions with their headline change, extracted from `packages/coding-agent/CHANGELOG.md` (288 release sections; read the file in the checkout for the full text) |
+| `references/durable-spec.md` | The normative **Pico5 specification** behind `pi-durable` (5352 lines): records and lifetimes, documents and mutation ownership, tasks and the effect sandwich, submissions and inbox, extensions/hooks/tools, telemetry. A design document for an experimental package, not a frozen API; the bundled text is the v1.3.0 spec |
+| `references/changelog.md` | Release history: the last 25 versions with their headline change, extracted from `packages/coding-agent/CHANGELOG.md` (289 release sections; read the file in the checkout for the full text) |
+
+## Pi 1.3.0 update notes
+
+- `sessionShareDestination` selects `auto`, `gist`, or `radius` for `/share`.
+- Resumed sessions restore active tools. `--tools +name`/`-name` adjusts that set.
+- Ambiguous `--model` matches prefer a provider with credentials. Otherwise, specify `--provider`.
+- Kimi Code now uses Chat Completions. Custom base URLs must include `/v1`.
+- Codemode permits at most two live workers per Pi process, including cancelled workers until exit.
+- Pi Durable supports SQLite table prefixes and shared Cloudflare adapter queues.
 
 ## Starter plugins
 
@@ -139,10 +148,10 @@ pi --mode rpc                                   # JSON-RPC over stdin/stdout
 - **Skill `name`**: 1–64 chars, lowercase `a-z 0-9 -`, no leading/trailing or consecutive hyphens;
   `description` ≤1024 chars and must say *when* to load it (a skill with no description won't load).
 - **`chord.md`, `durable.md`, `agent-harness.md`, and `durable-spec.md` describe internals, not a
-  stable contract.** Chord is published but application-neutral and no Pi package depends on it;
-  `pi-durable` is experimental (1.0.0 on 2026-10-01 with Pi 1.0, 1.2.0 on 2026-10-12, versioned in
-  lockstep with the monorepo, breaking changes in every release) and the Pico5 spec is a design
-  document. Quote them as the current source tree state (pi@`06a466935`), not as promised API.
+  stable contract.** Chord is application-neutral and used by Pi Durable, not by the Pi CLI.
+  `pi-durable` is experimental (1.0.0 on 2026-10-01 with Pi 1.0, 1.3.0 on 2026-10-15).
+  Versions follow the monorepo, and earlier releases include breaking changes. The Pico5 spec is
+  a design document. Quote the source tree state (pi@`71023aec1`), not a promised API.
 - **The Pi Durable blog post is a 2026-10-01 snapshot.** Its "Try it" demos
   (`packages/coding-agent/src/experimental/{durable,vacation}/`) were deleted in 1.2.0 by commit
   `7472cda0d`; the durable harness itself is unaffected. Run examples from

@@ -18,8 +18,9 @@ Nothing is fetched over the network: the script reads a local checkout of
 <https://pi.dev/docs/latest>, so the coding-agent bundles stay identical to the published site.
 
 `changelog.md` records the revision it was built from. After a refresh, review the diff, then bump
-`version`, `metadata.fetched`, and `metadata.piRevision` in `SKILL.md` plus the plugin version in
-the repo-root marketplace entry before releasing.
+`version`, `metadata.version`, `metadata.docVersion`, `metadata.fetched`, and
+`metadata.piRevision` in `SKILL.md`. Update the plugin version in the repo-root marketplace entry.
+Check the source revision and counts in both READMEs and the curated references before release.
 
 `references/philosophy-and-design.md` and `references/durable.md` are curated by hand and are not
 touched by the scripts.
