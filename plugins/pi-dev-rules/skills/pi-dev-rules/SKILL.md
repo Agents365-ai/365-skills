@@ -1,9 +1,10 @@
 ---
+disable-model-invocation: true
 name: pi-dev-rules
-version: 0.9.0
+version: 0.10.0
 description: "Authoritative reference for Pi (@earendil-works/pi-coding-agent): install, configure, run, and extend it. Use for the CLI and configuration, providers and models, extensions, skills, MCP, codemode, the SDK/RPC, security and trust, design philosophy, and the pi repository's internals and contribution rules."
 license: MIT
-metadata: {"source":"https://pi.dev/docs/latest","docVersion":"1.3.0","fetched":"2026-10-16","piRevision":"71023aec1","version":"0.9.0"}
+metadata: {"source":"https://pi.dev/docs/latest","docVersion":"1.5.0","fetched":"2026-11-02","piRevision":"f9a263655","version":"0.10.0"}
 ---
 
 # Pi Dev Rules
@@ -45,9 +46,9 @@ development/contribution rules.
 | File | Covers |
 | ------ | -------- |
 | `references/cli-and-usage.md` | Install, auth, launching, how Pi works (agent loop, context assembly, session tree), the full CLI reference (commands, flags, modes), slash commands, message queue, context files, environment variables (incl. bash-tool `PI_SESSION_*`/`PI_MODEL`), sessions, keybindings |
-| `references/providers-and-models.md` | Subscription & API-key providers (30+), llama.cpp local router, NVIDIA RTX recipe presets, `auth.json` (+ scoped `env`), cloud providers (Azure/Bedrock/Vertex/Cloudflare), custom models in `models.json`, `compat`, custom-provider extensions |
+| `references/providers-and-models.md` | Subscription & API-key providers (30+), llama.cpp local router, NVIDIA RTX recipe presets, `auth.json` (+ scoped `env`), cloud providers (Azure/Bedrock/Vertex/Cloudflare), custom models in `models.json`, the generated field reference for every provider, model and `compat` key, custom-provider extensions |
 | `references/settings-and-compaction.md` | Configuration layout (agent directory vs project `.pi/`, context files), `settings.json` schema + example, trust/analytics/retry/transport keys, compaction (auto/manual) and branch summarization |
-| `references/extending-pi.md` | Extension API (events, tools, commands, UI), Skills (SKILL.md), Prompt Templates, Themes, Packages, virtual models (`pi.registerVirtualModel`) |
+| `references/extending-pi.md` | Extension API (events, tools, commands, UI), tool parameter validation with `@earendil-works/pi-schema` and the TypeBox features it ignores, Skills (SKILL.md), Prompt Templates, Themes, Packages, virtual models (`pi.registerVirtualModel`) |
 | `references/mcp.md` | Built-in MCP support (2026-09-29): `mcp.json` global and project servers, stdio vs streamable HTTP, `pi mcp add/remove/list`, OAuth sign-in, exposure modes (`codemode`, `codemode-deferred`, `deferred`, `direct`, `hidden`) with `toolExposure`, `codemode`/`tool_search` tools, resources, permissions, servers from extensions, SDK wiring, and the `--no-mcp` / `mcp__*` tool patterns |
 | `references/codemode.md` | The `codemode` tool: script input and the `// @options:` line, globals (`tools.<name>()`, `text()`, `image()`, `console.log()`, `store()`/`load()`, `searchTools()`, `describeTool()`), what tool calls resolve to, classifier and image models, namespaces and the inline budget, limits |
 | `references/tui-components.md` | TUI component system for custom extension/tool UIs (components, overlays, theming, custom editor) |
@@ -57,20 +58,39 @@ development/contribution rules.
 | `references/platform-setup.md` | Windows, Termux, tmux, per-terminal modified-Enter setup, shell aliases |
 | `references/development.md` | Monorepo package list, build-from-source and standalone-binary builds, supply-chain rules, `AGENTS.md` development rules, the `CONTRIBUTING.md` gate |
 | `references/philosophy-and-design.md` | Creator Mario Zechner's design manifesto (blog, 2025-11-30; manually curated, not auto-built): minimal prompt <1000 tokens, 4 tools, YOLO by default, the non-features it lists (MCP/plan mode/to-dos/sub-agents/background bash) with their intended alternatives and the MCP entry annotated as superseded since 2026-09-29, multi-provider architecture, Terminal-Bench 2.0 results |
-| `references/chord.md` | `@earendil-works/chord`: the typed host runtime (contracts, declarations, registries, principals, handles, hot reload), hosts and links (`memoryLinkPair`, `ipcLink`, `webSocketLink`), and `chord/delta` replicated latest-value state. Built from `packages/chord/{README.md,docs/{guide,spec,tutorial}.md,src/delta/README.md}`; Pi Durable uses Chord, but the Pi coding agent does not; the spec describes the current runtime |
-| `references/durable.md` | **Pi Durable** overview, curated from the 2026-10-01 Earendil blog post and the v1.3.0 tree: the harness/conversation/agent/task/execution-environment vocabulary, the positioning (a harness for building agentic applications, not the Pi CLI), the version timeline (1.0.0 with Pi 1.0 → 1.3.0, lockstep versions, breaking changes), install and code shape, the package layout and its 32 runnable examples, and the blog demos deleted in 1.2.0. Start here for status and routing |
+| `references/chord.md` | `@earendil-works/chord`: the typed host runtime (contracts, declarations, registries, principals, handles, hot reload), hosts and links (`memoryLinkPair`, `ipcLink`, `webSocketLink`), and `chord/delta` replicated latest-value state with the fold-while-watching watches. Built from `packages/chord/{README.md,docs/{guide,spec,tutorial}.md,src/delta/README.md}`; Pi Durable uses Chord, but the Pi coding agent does not; the spec describes the 1.x runtime, now schema-checked with `@earendil-works/pi-schema`. A second-generation runtime (v2) lives in `packages/chord/src/next` with its design in `packages/chord/docs/next` and an experimental `@earendil-works/chord/next` export; it is not bundled here |
+| `references/durable.md` | **Pi Durable** overview, curated from the 2026-10-01 Earendil blog post and the v1.5.0 tree: the harness/conversation/agent/task/execution-environment vocabulary, the positioning (a harness for building agentic applications, not the Pi CLI), the version timeline (1.0.0 with Pi 1.0 → 1.5.0, lockstep versions, breaking changes), install and code shape, the package layout and its 38 runnable examples, and the blog demos deleted in 1.2.0. Start here for status and routing |
 | `references/agent-harness.md` | Internal runtime packages: `@earendil-works/pi-durable` (durable conversation/task/document harness, experimental API, stored before shown), `@earendil-works/pi-agent-core` (tool calling and state), `@earendil-works/pi-telemetry` (vendor-neutral telemetry contracts, adapters, typed schemas). Built from the three package READMEs; not user docs, and `durable.md` is the entry point |
-| `references/durable-spec.md` | The normative **Pico5 specification** behind `pi-durable` (5352 lines): records and lifetimes, documents and mutation ownership, tasks and the effect sandwich, submissions and inbox, extensions/hooks/tools, telemetry. A design document for an experimental package, not a frozen API; the bundled text is the v1.3.0 spec |
-| `references/changelog.md` | Release history: the last 25 versions with their headline change, extracted from `packages/coding-agent/CHANGELOG.md` (289 release sections; read the file in the checkout for the full text) |
+| `references/durable-spec.md` | The normative **Pico5 specification** behind `pi-durable` (6531 lines): records and lifetimes, documents and mutation ownership, tasks and the effect sandwich, submissions and inbox, extensions/hooks/tools, telemetry. A design document for an experimental package, not a frozen API; the bundled text is the v1.5.0 spec |
+| `references/changelog.md` | Release history: the last 25 versions with their headline change, extracted from `packages/coding-agent/CHANGELOG.md` (291 release sections; read the file in the checkout for the full text) |
 
-## Pi 1.3.0 update notes
+## Pi 1.4.0 and 1.5.0 update notes
 
-- `sessionShareDestination` selects `auto`, `gist`, or `radius` for `/share`.
-- Resumed sessions restore active tools. `--tools +name`/`-name` adjusts that set.
-- Ambiguous `--model` matches prefer a provider with credentials. Otherwise, specify `--provider`.
-- Kimi Code now uses Chat Completions. Custom base URLs must include `/v1`.
-- Codemode permits at most two live workers per Pi process, including cancelled workers until exit.
-- Pi Durable supports SQLite table prefixes and shared Cloudflare adapter queues.
+- Every `models.json` field now has a generated reference (`docs/models-configuration.md`), bundled
+  in `providers-and-models.md`.
+- Tool arguments are validated as JSON Schema by `@earendil-works/pi-schema`; TypeBox schemas still
+  work, but `Type.Refine`, `Type.BigInt`, `Type.Undefined`, codecs and `Format.Set` formats do not
+  apply to them, and plain JSON Schema tools get the same coercion.
+- Extensions can show a changelog after an update (`pi.changelogPath` or the package's
+  `CHANGELOG.md`; `collapseChangelog` condenses it).
+- `pi update` accepts a custom command: `PI_SELF_UPDATE_COMMAND` or the `selfUpdateCommand` setting,
+  with `{packageName}`, `{version}` and `{installSpec}` filled in.
+- Streaming got cheaper: large tool calls parse incrementally and rendered rows are reused. Rex is
+  a supported terminal (OSC 8, truecolor, inline images).
+- New default OpenAI model `gpt-6.1-sol` (also after ChatGPT sign-in); GPT-6.1 Terra is available
+  through OpenAI, Azure and Codex; the catalog moved to models.dev v2.
+- Codemode `models.classify()` accepts `images`; scripts wait up to 60 s for a free worker and
+  `PI_CODEMODE_MAX_WORKERS` raises the two-worker limit.
+- Compaction and branch summaries use the model's output limit, so `reserveTokens` no longer caps
+  them; it only decides when compaction starts.
+- MCP OAuth uses pi's Client ID Metadata Document by default (`oauth.clientRegistration: "auto"`);
+  `"dcr"` always registers dynamically, and `pi mcp add --oauth-client-registration` selects it.
+- A saved "Do not trust" decision now wins over auto-trust for projects whose only resource is
+  `AGENTS.md`.
+- Chord, Durable and the built-in tools build schemas with pi-schema. Durable 1.5.0 replaces the
+  `documentState`/`viewState`/`watchEvents` surface with windowed conversation views and Chord
+  watches, and `Storage.commit()` stores a group of commits; chord exports the experimental v2
+  runtime as `@earendil-works/chord/next`.
 
 ## Starter plugins
 
@@ -145,17 +165,21 @@ pi --mode rpc                                   # JSON-RPC over stdin/stdout
   `packages/coding-agent/src/core/extensions/types.ts` for the exact contract. Limit tool output to
   ~50KB / 2000 lines (`DEFAULT_MAX_BYTES = 50 * 1024`). Use `StringEnum` (from
   `@earendil-works/pi-ai`) for LLM-facing enums.
+- **Tool `parameters` are any JSON Schema; Pi validates them with `@earendil-works/pi-schema`.**
+  TypeBox schemas are JSON Schema and still work, but refinements, `BigInt`, `Undefined`, codecs and
+  `Format.Set` formats do not apply to tool arguments (check those in `execute()`), and plain JSON
+  Schema tools, including MCP tools, get the same coercion as TypeBox tools.
 - **Skill `name`**: 1–64 chars, lowercase `a-z 0-9 -`, no leading/trailing or consecutive hyphens;
   `description` ≤1024 chars and must say *when* to load it (a skill with no description won't load).
 - **`chord.md`, `durable.md`, `agent-harness.md`, and `durable-spec.md` describe internals, not a
   stable contract.** Chord is application-neutral and used by Pi Durable, not by the Pi CLI.
-  `pi-durable` is experimental (1.0.0 on 2026-10-01 with Pi 1.0, 1.3.0 on 2026-10-15).
+  `pi-durable` is experimental (1.0.0 on 2026-10-01 with Pi 1.0, 1.5.0 on 2026-11-02).
   Versions follow the monorepo, and earlier releases include breaking changes. The Pico5 spec is
-  a design document. Quote the source tree state (pi@`71023aec1`), not a promised API.
+  a design document. Quote the source tree state (pi@`f9a263655`), not a promised API.
 - **The Pi Durable blog post is a 2026-10-01 snapshot.** Its "Try it" demos
   (`packages/coding-agent/src/experimental/{durable,vacation}/`) were deleted in 1.2.0 by commit
   `7472cda0d`; the durable harness itself is unaffected. Run examples from
-  `packages/durable/test/examples/` (00–31) instead, and read `durable.md` for the version timeline.
+  `packages/durable/test/examples/` (00–37) instead, and read `durable.md` for the version timeline.
 - **`auth.json` holds API keys and OAuth tokens**: Pi writes it `0600`, keep it private and out of
   version control. Credential priority: CLI `--api-key` → `auth.json` →
   env var → custom-provider keys in `models.json`.

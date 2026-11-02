@@ -13,10 +13,10 @@ A coding-agent skill that packages the **latest [Pi](https://pi.dev) documentati
 (`@earendil-works/pi-coding-agent`) as an on-demand reference, so an agent can install, configure,
 run, and **extend Pi** without re-fetching the docs.
 
-Mirrors <https://pi.dev/docs/latest> (fetched 2026-10-16 from Pi 1.3.0). Five extra bundles
+Mirrors <https://pi.dev/docs/latest> (fetched 2026-11-02 from Pi 1.5.0). Five extra bundles
 (`development.md`, `chord.md`, `durable.md`, `agent-harness.md`, `durable-spec.md`) cover material
 with no page on the website: the repository's build/development/contribution rules and Pi's
-**internal monorepo architecture**. They are built from a pi checkout at `pi@71023aec1`; `durable.md`
+**internal monorepo architecture**. They are built from a pi checkout at `pi@f9a263655`; `durable.md`
 is curated from the Pi Durable blog post on top of that checkout.
 
 Works with Claude Code, Cursor, Codex, Copilot, Windsurf, Cline / Roo Code, Gemini CLI,
@@ -35,12 +35,14 @@ Aider, Zed, OpenCode, OpenClaw / ClawHub, Hermes, pi-mono, plus major Chinese ag
   sessions), the CLI reference (commands, flags, modes), slash commands, message queue, context
   files, env vars, sessions, keybindings.
 - `references/providers-and-models.md`: providers (30+), `auth.json` (+ scoped `env`), cloud
-  providers, NVIDIA RTX llama.cpp recipe presets, custom `models.json`, `compat`, and custom-provider extensions.
+  providers, NVIDIA RTX llama.cpp recipe presets, custom `models.json`, the generated reference for
+  every `models.json` field, and custom-provider extensions.
 - `references/settings-and-compaction.md`: configuration layout (agent directory vs project
   `.pi/`, context files), `settings.json` (trust/analytics/retry/transport),
   auto/manual compaction, branch summaries.
-- `references/extending-pi.md`: extensions API, skills (SKILL.md), prompt templates, themes,
-  packages, virtual models (`pi.registerVirtualModel`).
+- `references/extending-pi.md`: extensions API, tool parameter validation with
+  `@earendil-works/pi-schema` (and the TypeBox features it ignores), skills (SKILL.md), prompt
+  templates, themes, packages, virtual models (`pi.registerVirtualModel`).
 - `references/mcp.md`: built-in MCP servers (2026-09-29), `mcp.json` global and project config,
   stdio vs streamable HTTP, `pi mcp add/remove/list`, OAuth sign-in, exposure modes with
   `toolExposure`, `codemode` / `tool_search`, resources, permissions, servers from extensions.
@@ -63,31 +65,45 @@ Aider, Zed, OpenCode, OpenClaw / ClawHub, Hermes, pi-mono, plus major Chinese ag
   annotated as superseded: MCP is built in since 2026-09-29.
 - `references/chord.md`: `@earendil-works/chord`, the application-neutral typed host runtime:
   contracts and declarations, hosts and links (`memoryLinkPair`, `ipcLink`, `webSocketLink`),
-  principals and handles, hot reload, and `chord/delta` replicated latest-value state. Pi Durable uses Chord, but the Pi coding agent does not.
-  The specification describes the current runtime.
+  principals and handles, hot reload, and `chord/delta` replicated latest-value state with the
+  watches. Pi Durable uses Chord, but the Pi coding agent does not. The specification describes the
+  1.x runtime; release 1.5.0 moved its schemas to `@earendil-works/pi-schema` and exports an
+  experimental second-generation runtime as `@earendil-works/chord/next`, whose design lives in
+  `packages/chord/docs/next` and is not bundled here.
 - `references/durable.md`: **Pi Durable** overview, curated from the 2026-10-01 Earendil blog post
-  and the v1.3.0 tree: the harness/conversation/agent/task vocabulary, positioning (a harness for
-  agentic applications, not the Pi CLI), the version timeline (1.0.0 with Pi 1.0 → 1.3.0), install
-  and code shape, the package layout with its 32 runnable examples, and the blog demos deleted in
+  and the v1.5.0 tree: the harness/conversation/agent/task vocabulary, positioning (a harness for
+  agentic applications, not the Pi CLI), the version timeline (1.0.0 with Pi 1.0 → 1.5.0), install
+  and code shape, the package layout with its 38 runnable examples, and the blog demos deleted in
   1.2.0. The entry point for the three internal bundles.
 - `references/agent-harness.md`: internal runtime packages, from their READMEs:
   `@earendil-works/pi-durable` (durable conversation/task/document harness, stored before shown,
   experimental API), `@earendil-works/pi-agent-core` (tool calling and state), and
   `@earendil-works/pi-telemetry` (telemetry contracts, adapters, typed schemas).
-- `references/durable-spec.md`: the normative **Pico5 specification** behind `pi-durable` (5352
+- `references/durable-spec.md`: the normative **Pico5 specification** behind `pi-durable` (6531
   lines): records and lifetimes, documents and mutation ownership, tasks and the effect sandwich,
   submissions and inbox, extensions/hooks/tools, telemetry. A design document for an experimental
   package, not a frozen API.
 
-## Pi 1.3.0 changes
+## Pi 1.4.0 and 1.5.0 changes
 
-- Select `/share` uploads with `sessionShareDestination`: `auto`, `gist`, or `radius`.
-- Resume with the session's active tools. Use `--tools +name`/`-name` to adjust them.
-- Resolve ambiguous model matches through provider credentials, or specify `--provider`.
-- Include `/v1` in custom Kimi Code base URLs. The provider now uses Chat Completions.
-- Codemode allows at most two live workers per Pi process, including cancelled workers until exit.
-- Pi Durable adds SQLite table prefixes and shared Cloudflare adapter queues.
-- The provider bundle now includes the NVIDIA RTX llama.cpp preset guide.
+- Every `models.json` field now has a generated reference; it joins the provider bundle.
+- Tool arguments are validated as JSON Schema by `@earendil-works/pi-schema`. TypeBox schemas still
+  work, but refinements, `BigInt`, `Undefined`, codecs and `Format.Set` formats do not apply.
+- Extensions can show a changelog after an update (`pi.changelogPath` or `CHANGELOG.md`).
+- `pi update` accepts a custom command through `PI_SELF_UPDATE_COMMAND` or `selfUpdateCommand`.
+- Streaming parses large tool calls incrementally and reuses rendered rows; Rex is a supported
+  terminal.
+- New default OpenAI model `gpt-6.1-sol`, GPT-6.1 Terra through OpenAI/Azure/Codex, and the catalog
+  moved to models.dev v2.
+- Codemode classifiers accept images; scripts wait up to 60 s for a free worker and
+  `PI_CODEMODE_MAX_WORKERS` raises the two-worker limit.
+- Compaction and branch summaries use the model's output limit; `reserveTokens` only decides when
+  compaction starts.
+- MCP OAuth uses pi's Client ID Metadata Document by default (`oauth.clientRegistration: "auto"`).
+- A saved "Do not trust" decision now wins over auto-trust for an `AGENTS.md`-only project.
+- Chord and Durable build schemas with pi-schema. Durable 1.5.0 replaces the state getters and
+  `watchEvents()` with windowed conversation views and Chord watches, groups commits through
+  `Storage.commit()`, and Chord exports its experimental v2 runtime as `@earendil-works/chord/next`.
 
 ## Install
 
@@ -119,7 +135,11 @@ spec) and telemetry in `packages/telemetry`, which the two internal bundles now 
 the experimental `server`/`client`/`protocol` packages together with the durable server stack and
 its demo apps (`src/experimental/{durable,vacation}`), so `chord.md` is now built from
 `packages/chord/docs/{guide,spec,tutorial}.md`, `codemode.md` joined the coding-agent bundles, and
-`durable.md` records what the blog's "Try it" section no longer applies to.
+`durable.md` records what the blog's "Try it" section no longer applies to. Release 1.4.0 (2026-10-21)
+added `docs/models-configuration.md`, now part of the provider bundle. Release 1.5.0 (2026-11-02)
+moved tool and contract schemas to `@earendil-works/pi-schema` and started the Chord v2 runtime under
+`packages/chord/src/next` with its design in `packages/chord/docs/next`; those design documents are
+not bundled, and `chord.md` states where they live.
 
 ## Support
 

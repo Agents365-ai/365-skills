@@ -14,13 +14,17 @@ For native Windows setup, read [Windows Setup](windows.md). For Android, read [T
 
 ## 1. Install Pi
 
-On macOS or Linux, you can use the installer:
+Install Pi with the installer on macOS, Linux, or Windows:
 
-```bash
+```bash tab="macOS / Linux"
 curl -fsSL https://pi.dev/install.sh | sh
 ```
 
-The installer pins all dependencies and updates Pi with `pi update`. Alternatively, install Pi from npm, which does not pin transitive dependencies. This requires Node.js 22.19 or newer:
+```powershell tab="Windows"
+powershell -c "irm https://pi.dev/install.ps1 | iex"
+```
+
+Both installers pin all dependencies and update Pi with `pi update`. Alternatively, install Pi from npm, which does not pin transitive dependencies. This requires Node.js 22.19 or newer:
 
 ```bash
 npm install -g --ignore-scripts @earendil-works/pi-coding-agent
@@ -307,7 +311,7 @@ pi update [target] [options]
 pi list
 pi config [options]
 pi auth <check|print-api-key|print-bearer-token> [options]
-pi mcp <list|login|logout> [options]
+pi mcp <add|remove|list|login|logout> [options]
 ```
 
 <a id="modes"></a>
@@ -378,15 +382,15 @@ pi --continue
 See [Sessions and Context](sessions.md) for resuming, forking, naming, and storing sessions.
 
 - `-c`, `--continue`<br>
-  Continues the most recent session for the current project.
+  Continues the most recent session for the current directory.
 - `-r`, `--resume`<br>
-  Opens the session selector.
+  Opens the session selector and resumes the chosen session in its working directory. Press Tab to include sessions from other directories.
 - `--session <path|id>`<br>
-  Opens by file path, exact ID, or partial ID. Pi searches the current project first and offers to fork a cross-project match.
+  Opens a session by file path or full/partial ID, and resumes it in its working directory. If the ID only matches sessions stored for another directory, Pi offers to fork it into the current directory instead.
 - `--session-id <id>`<br>
-  Opens the exact project session ID or creates it if absent. IDs accept letters, numbers, `.`, `_`, and `-`.
+  Opens the current directory's existing session with the ID, or creates it otherwise. IDs accept letters, numbers, `.`, `_`, and `-`.
 - `--fork <path|id>`<br>
-  Forks an existing session into a new session for the current project.
+  Forks a session, chosen by file path or full/partial ID, into a new session in the current directory.
 - `--session-dir <dir>`<br>
   Overrides storage and lookup. It takes precedence over `PI_CODING_AGENT_SESSION_DIR` and the `sessionDir` setting.
 - `--no-session`<br>
@@ -442,7 +446,7 @@ The MCP resource tools (`list_mcp_resources`, `list_mcp_resource_templates`, `re
 | `find` | Find paths using glob patterns |
 | `ls` | List directory contents |
 
-Built-in extensions add two more tools. They are off by default; the MCP extension turns them on when an MCP server needs them (see [MCP](mcp.md#exposure)). To enable them yourself, name them in `--tools` or `defaultTools`.
+Built-in extensions add two more tools. They are off by default; the MCP extension turns them on when an MCP server needs them (see [MCP](mcp.md#control-tool-exposure)). To enable them yourself, name them in `--tools` or `defaultTools`.
 
 | Built-in extension | Purpose |
 |---|---|
@@ -576,6 +580,16 @@ Add `--force` to reinstall Pi when the selected update includes Pi.
 
 `pi update` cannot update Pi when another package manager provides it, such as Nix. Update Pi with that package manager, for example `nix profile upgrade pi`. Package and model catalog updates still work.
 
+#### Custom update command
+
+If a wrapper or another package manager provides Pi, set `PI_SELF_UPDATE_COMMAND` so `pi update` runs its update command:
+
+```sh
+export PI_SELF_UPDATE_COMMAND="mise use -g npm:{packageName}@{version}"
+```
+
+`pi update` runs it only when pi.dev has a newer release, replacing `{packageName}`, `{version}`, and `{installSpec}` (`{packageName}@{version}`) with that release. The value is split on spaces. For arguments with spaces, use the `selfUpdateCommand` setting in `~/.pi/agent/settings.json` instead, an argv array such as `["nix", "profile", "upgrade", "pi"]`.
+
 ### Aliases and command options
 
 - `pi uninstall <source>` is an alias for `pi remove <source>`.
@@ -616,13 +630,13 @@ These commands work outside a session, so agents can run them through `bash`. Se
 | Command | Description |
 |---|---|
 | `pi mcp add <server> [options] -- <command> [args...]` | Add or replace a stdio server in `mcp.json`; `--env KEY=VALUE` (repeatable) and `--cwd <dir>` set its environment and working directory. Arguments after the command are passed to it |
-| `pi mcp add <server> [options] --url <url>` | Add or replace a streamable HTTP server; `--header KEY=VALUE` (repeatable), `--bearer-token-env-var <NAME>` (sends `Authorization: Bearer ${NAME}`), `--oauth-client-id`, `--oauth-client-secret`, `--oauth-callback-port`, and `--oauth-client-name` configure authentication |
+| `pi mcp add <server> [options] --url <url>` | Add or replace a streamable HTTP server; `--header KEY=VALUE` (repeatable), `--bearer-token-env-var <NAME>` (sends `Authorization: Bearer ${NAME}`), `--oauth-client-id`, `--oauth-client-secret`, `--oauth-callback-port`, `--oauth-client-name`, and `--oauth-client-registration` (`auto`, `cimd`, or `dcr`) configure authentication |
 | `pi mcp remove <server>` | Remove a server from `mcp.json`; stored OAuth credentials are kept |
 | `pi mcp list [--json]` | Connect to every enabled server and print its state, tools, and errors; exit with `1` when a config entry is invalid or an enabled server is not connected |
-| `pi mcp login <server> [--timeout <seconds>]` | Sign in to an OAuth server: open the authorization page and wait for the browser; a terminal also accepts the pasted redirect URL. `--timeout` limits the whole sign-in, including requests to the authorization server (default 300 seconds) |
-| `pi mcp logout <server>` | Delete the stored OAuth credentials of a server |
+| `pi mcp login <server> [-l] [--timeout <seconds>]` | Sign in to an OAuth server: open the authorization page and wait for the browser; a terminal also accepts the pasted redirect URL. `--timeout` limits the whole sign-in, including requests to the authorization server (default 300 seconds). `-l` requires the server to be defined in the project's `.pi/mcp.json` |
+| `pi mcp logout <server> [-l]` | Delete the stored OAuth credentials of a server |
 
-`add` and `remove` change `~/.pi/agent/mcp.json`, or `.pi/mcp.json` in the current directory with `--local` (`-l`). `add` also takes `--exposure <mode>` (see [Exposure](mcp.md#exposure)) and `--description <text>` and does not connect; run `pi mcp list` to check the server.
+`add` and `remove` change `~/.pi/agent/mcp.json`, or `.pi/mcp.json` in the current directory with `--local` (`-l`). `add` also takes `--exposure <mode>` (see [Exposure](mcp.md#control-tool-exposure)) and `--description <text>` and does not connect; run `pi mcp list` to check the server.
 
 Project `.pi/mcp.json` files are only read for projects that are already trusted.
 
@@ -651,14 +665,14 @@ Extensions, prompt templates, and skills can add commands. The command menu in P
 | Command | Description |
 |---|---|
 | `/new` | Start a new session |
-| `/resume` | Switch to another saved session |
+| `/resume` | Resume another session |
 | `/name [name]` | Set the session display name, or show the current name when omitted |
 | `/session` | Show current session information and statistics |
 | `/tree` | Navigate the session tree |
 | `/fork` | Create a new session from an earlier user message |
 | `/clone` | Duplicate the current session at its current position |
 | `/compact [instructions]` | Compact the current context, optionally with custom instructions |
-| `/import <path>` | Import and resume a JSONL session |
+| `/import <path>` | Import a JSONL session, preserving its ID and working directory |
 
 ## Export and share
 
@@ -676,6 +690,7 @@ Review a session before exporting or sharing it. Sessions can contain prompts, t
 | Command | Description |
 |---|---|
 | `/trust` | Save a project trust decision for future Pi processes |
+| `/mcp` | Manage MCP servers: sign in, reconnect, enable or disable, and change exposure |
 | `/reload` | Reload keybindings, extensions, skills, templates, themes, and context files |
 | `/hotkeys` | Show active keyboard shortcuts |
 | `/changelog` | Show changelog entries |
@@ -776,10 +791,13 @@ These variables are read by Pi itself:
 | `PI_PACKAGE_DIR` | Override the package directory, useful for Nix/Guix store paths |
 | `PI_OFFLINE` | Disable automatic network activity, including model catalog refreshes |
 | `PI_SKIP_VERSION_CHECK` | Disable the `pi.dev` latest-version request |
+| `PI_SELF_UPDATE_COMMAND` | Command `pi update` runs to update Pi itself, split on whitespace, with `{packageName}`, `{version}`, and `{installSpec}` placeholders. Takes precedence over the `selfUpdateCommand` setting. See [Custom update command](cli.md#custom-update-command) |
 | `PI_TELEMETRY` | Override install/update telemetry and provider attribution headers: `1`/`true`/`yes` or `0`/`false`/`no` |
+| `PI_CODEMODE_MAX_WORKERS` | Maximum codemode workers alive at once across all sessions in the process; default `2`. Each worker's script may use up to 256 MB. Raise it when one process runs several sessions, such as in-process subagents. Further scripts wait for a free worker. See [Codemode](codemode.md) |
 | `PI_CACHE_RETENTION` | Set to `long` for extended provider prompt caching where supported |
 | `PI_SHARE_VIEWER_URL` | Override the base URL used by `/share` |
 | `PI_RADIUS_GATEWAY` | Override the Radius gateway origin used by `/bug` uploads |
+| `PI_CLEAR_ON_SHRINK` | Set to `1` to clear empty rows when rendered content shrinks; the `terminal.clearOnShrink` setting takes precedence. See [Settings](settings.md) |
 | `PI_HARDWARE_CURSOR` | Set to `1` to show the hardware cursor; see [Terminal setup](terminal-setup.md) |
 | `PI_CLIPBOARD_OSC52` | Set to `1` to also send copied text to the terminal with OSC 52 after the local clipboard write, as Pi does over SSH. Use it when a remote client reaches Pi without SSH variables, such as a multiplexer attached from another machine or a remote IDE daemon |
 | `PI_HYPERLINKS` | Override OSC 8 hyperlink detection with `1`, `0`, or `auto` |
@@ -807,7 +825,17 @@ pi --continue
 pi --resume
 ```
 
-`--continue` opens the most recent session for the current working directory. `--resume` opens the session picker. In interactive mode, `/resume` opens the same picker and `/new` starts a new session.
+`--continue` opens the most recent session for the current directory. `--resume` opens the session picker. In interactive mode, `/resume` opens the same picker and `/new` starts a new session.
+
+Each session records the working directory it was created in and never changes it. Pi runs a session in its working directory, so tools, `@path` references, project configuration, and context files resolve from there.
+
+| Entry point | Working directory |
+|---|---|
+| `--continue` | The current directory |
+| `--resume`, `/resume`, `--session`, `/import` | The session's working directory, which can differ from the current directory |
+| `--fork`, or a `--session` ID from another directory that you choose to fork | The current directory, in a new session |
+
+If a session's working directory no longer exists, interactive mode offers to run the session in the current directory instead. Pi does not store that choice, so it asks again the next time you open the session. Other modes exit with an error.
 
 Use `/name` or `--name` to assign a recognizable session name. Run `/session` to verify the current session file, ID, message count, token usage, and cost.
 
@@ -846,8 +874,6 @@ See [Compaction Reference](compaction.md) for thresholds, retained boundaries, b
 By default, Pi stores sessions under `~/.pi/agent/sessions/`, grouped by working directory. Use `--session-dir`, `PI_CODING_AGENT_SESSION_DIR`, or the `sessionDir` setting to choose another location. The CLI option has highest precedence.
 
 Use `--no-session` for an ephemeral run. An ephemeral session cannot be resumed after Pi exits.
-
-Use `--session` when you already know the session path or ID. Use `--fork` to create a new session from an existing session before interactive mode starts.
 
 ## Export or share a session
 
@@ -963,7 +989,7 @@ The dedicated history actions browse prompt history regardless of cursor positio
 
 #### Fullscreen
 
-In fullscreen mode, these actions control the transcript and take precedence over editor actions using the same key.
+In fullscreen mode, these actions control the transcript and take precedence over editor actions using the same key. While an overlay or a scrollable list such as autocomplete, `/settings`, or the model selector has focus, the scrolling and prompt-jump actions go to it instead of the transcript, so `tui.select.pageUp` and `tui.select.pageDown` move the list selection. Transcript search actions keep working.
 
 | Keybinding id | Default | Description |
 |---|---|---|
