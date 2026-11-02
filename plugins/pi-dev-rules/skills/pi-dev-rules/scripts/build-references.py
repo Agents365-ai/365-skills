@@ -42,6 +42,10 @@ BUNDLES = {
             "NVIDIA RTX and llama.cpp",
         ),
         ("packages/coding-agent/docs/models.md", "Custom Models"),
+        (
+            "packages/coding-agent/docs/models-configuration.md",
+            "Models Configuration Reference",
+        ),
         ("packages/coding-agent/docs/custom-provider.md", "Custom Providers"),
     ],
     "settings-and-compaction.md": [
@@ -119,7 +123,7 @@ HEADER_DOCS = {
     ),
     "providers-and-models.md": (
         "# Pi: Providers & Custom Models",
-        "Source: https://pi.dev/docs/latest/providers, /llama-cpp, /nvidia-rtx-llama-cpp, /models, /custom-provider",
+        "Source: https://pi.dev/docs/latest/providers, /llama-cpp, /nvidia-rtx-llama-cpp, /models, /models-configuration, /custom-provider",
     ),
     "settings-and-compaction.md": (
         "# Pi: Configuration, Settings & Compaction",
@@ -163,7 +167,7 @@ HEADER_DOCS = {
     ),
     "chord.md": (
         "# Chord: Typed Host Runtime",
-        "Source: `packages/chord/README.md`, `docs/guide.md`, `docs/spec.md`, `docs/tutorial.md`, `src/delta/README.md`\n`@earendil-works/chord` is an application-neutral runtime used by `pi-durable`, but not by the Pi coding agent. It is not covered by the Pi user docs. Release 1.2.0 replaced the facet and service runtime with a typed host runtime (contracts, hosts, links, hot reload) and removed `PLANNING.md`, the `./bundler` export, and the `pi-client`/`pi-protocol`/`pi-server` packages. The specification and the guide describe the current runtime; the tutorial is a worked example.",
+        "Source: `packages/chord/README.md`, `docs/guide.md`, `docs/spec.md`, `docs/tutorial.md`, `src/delta/README.md`\n`@earendil-works/chord` is an application-neutral runtime used by `pi-durable`, but not by the Pi coding agent. It is not covered by the Pi user docs. Release 1.2.0 replaced the facet and service runtime with a typed host runtime (contracts, hosts, links, hot reload) and removed `PLANNING.md`, the `./bundler` export, and the `pi-client`/`pi-protocol`/`pi-server` packages. The specification and the guide describe that runtime; the tutorial is a worked example. Bundles describe release 1.x only: a second-generation runtime lives in `packages/chord/src/next` with its design in `packages/chord/docs/next` (`design.md`, `decisions.md`, `slices.md`) and its API in the `src/next*/**/README.md` files. Release 1.5.0 exports it as `@earendil-works/chord/next` (experimental), not bundled here.",
     ),
     "agent-harness.md": (
         "# Pi Agent Runtime, Durable Harness, and Telemetry",

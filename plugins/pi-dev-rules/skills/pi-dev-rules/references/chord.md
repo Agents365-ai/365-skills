@@ -1,6 +1,6 @@
 # Chord: Typed Host Runtime
 Source: `packages/chord/README.md`, `docs/guide.md`, `docs/spec.md`, `docs/tutorial.md`, `src/delta/README.md`
-`@earendil-works/chord` is an application-neutral runtime used by `pi-durable`, but not by the Pi coding agent. It is not covered by the Pi user docs. Release 1.2.0 replaced the facet and service runtime with a typed host runtime (contracts, hosts, links, hot reload) and removed `PLANNING.md`, the `./bundler` export, and the `pi-client`/`pi-protocol`/`pi-server` packages. The specification and the guide describe the current runtime; the tutorial is a worked example.
+`@earendil-works/chord` is an application-neutral runtime used by `pi-durable`, but not by the Pi coding agent. It is not covered by the Pi user docs. Release 1.2.0 replaced the facet and service runtime with a typed host runtime (contracts, hosts, links, hot reload) and removed `PLANNING.md`, the `./bundler` export, and the `pi-client`/`pi-protocol`/`pi-server` packages. The specification and the guide describe that runtime; the tutorial is a worked example. Bundles describe release 1.x only: a second-generation runtime lives in `packages/chord/src/next` with its design in `packages/chord/docs/next` (`design.md`, `decisions.md`, `slices.md`) and its API in the `src/next*/**/README.md` files. Release 1.5.0 exports it as `@earendil-works/chord/next` (experimental), not bundled here.
 
 ---
 
@@ -17,33 +17,37 @@ Chord builds applications out of **objects** that live in several processes (a s
 - **State** is observable JSON. Remote viewers get a snapshot followed by deltas.
 - **Hot reload** swaps code while it runs. Work in flight finishes on the code it started with, state is kept, and incompatible changes migrate at a safe point.
 
-Contracts are runtime values described with [TypeBox](https://github.com/sinclairzx81/typebox) schemas. Hosts exchange JSON frames over links: in memory, a Node IPC channel, or a WebSocket.
+Contracts are runtime values described with JSON Schema, written with the builders of `@earendil-works/pi-schema` (any JSON Schema object works; `format` is an annotation, never checked). Hosts exchange JSON frames over links: in memory, a Node IPC channel, or a WebSocket.
 
 ## Entry points
 
 | Import | Contents | Runs in |
 |--------|----------|---------|
-| `@earendil-works/chord` | Contracts (`local`, `remote`, `method`, `opaque`), declarations (through the factory's `self`: `state`, `derive`, `resource`, `on`, `task`), hosts (`createHost`, `defineFacet`, `defineRegistry`), links (`memoryLinkPair`, `ipcLink`, `webSocketLink`, `acceptWebSockets`), errors (`ChordError`, `isChordError`, `forbidden`, `invalid`). Also the shared base: `Context`, `JsonValue`, `JsonRepresentation`, `Draft`, `copyJson`, `isJsonValue`, and `replicatedState` with its types. | Node and browsers |
+| `@earendil-works/chord` | Contracts (`local`, `remote`, `method`, `opaque`), declarations (through the factory's `self`: `state`, `derive`, `resource`, `on`, `task`), hosts (`createHost`, `defineFacet`, `defineRegistry`), links (`memoryLinkPair`, `ipcLink`, `webSocketLink`, `acceptWebSockets`), errors (`ChordError`, `isChordError`, `forbidden`, `invalid`). Also the shared base: `Context`, `JsonValue`, `JsonRepresentation`, `Draft`, `copyJson`, `isJsonValue`, `replicatedState` with its types, and the watch types `WatchHandle`, `NativeWatchHandle`, `WatchCall`, `NativeWatchCall`, and `WatchEnd` with their implementations `Watch` and `NativeWatch`. | Node and browsers |
 | `@earendil-works/chord/node` | Child host processes: `createHostManager`, `forkDriver`, `childControl`, `processLock`; the facet module loader `nodeLoader`. | Node |
-| `@earendil-works/chord/context` | Explicit cancellation and invocation values: `BACKGROUND_CONTEXT`, `withCancel`, `withAbortSignal`, `withoutAbortSignal`, `withContextValue`, `awaitWithContext`. | Node and browsers |
+| `@earendil-works/chord/context` | Explicit cancellation, telemetry, and invocation values: `BACKGROUND_CONTEXT`, `withCancel`, `withAbortSignal`, `withoutAbortSignal`, `withTelemetry`, `traceIn`, `withContextValue`, `awaitWithContext`. | Node and browsers |
 | `@earendil-works/chord/delta` | The transactional JSON tracker, structural diff, immutable apply, and the wire encoder/decoder for operation batches. | Node and browsers |
 | `@earendil-works/chord/output` | Bounded output streams and paced progress: `OutputBuffer` (head or tail window of a stream, `OutputLimits`, `OutputSkip`), `boundOutput`, `sanitizeOutput`, `utf8ByteLength`, and `Progress` (adaptive commits of a changing value). | Node and browsers |
+| `@earendil-works/chord/telemetry-sqlite` | `createSqliteTelemetry(db, { retentionMs?, maxQueuedSpans? })`: buffered recording and backend-independent `TelemetryStore` queries. | Any SQLite adapter |
+| `@earendil-works/chord/sqlite` | Portable `SqliteDatabase`, `SqliteExecutor`, and `SqliteValue`, atomic `applySqliteMigrations(database, migrations, { table })`, and `validateSqliteSchemaPrefix`. The metadata table must be a valid, non-reserved SQLite identifier; migration versions start at 1 and are contiguous. | Any SQLite adapter |
+| `@earendil-works/chord/sqlite/node` | `NodeSqliteDatabase`, `openNodeSqliteDatabase`, and `NodeSqliteDatabaseOptions`. | Node |
+| `@earendil-works/chord/sqlite/cloudflare` | `DurableObjectSqliteDatabase` and the structural `DurableObjectSqliteStorage` binding type. | Cloudflare Durable Objects |
 
 ## Quick start
 
 ```ts
-import { Type } from "typebox";
+import { num, obj, str } from "@earendil-works/pi-schema";
 import { createHost, hostNamed, method, remote } from "@earendil-works/chord";
 
 // contract.ts: shared by provider and consumers
 export const Counter = remote("demo.counter", {
 	version: 1,
-	input: Type.Object({ name: Type.String() }),
+	input: obj({ name: str() }),
 	host: hostNamed("server"), // where its objects live; callers never name a host
 	variants: {
 		default: {
-			state: { count: Type.Number() },
-			methods: { increment: method(Type.Object({ by: Type.Number() })) },
+			state: { count: num() },
+			methods: { increment: method(obj({ by: num() })) },
 		},
 	},
 });
@@ -51,7 +55,7 @@ export const Counter = remote("demo.counter", {
 const host = createHost({ name: "server", self: { kind: "server" } });
 
 host.serve(Counter, ({ name }, _principal, self) => {
-	const count = self.state("count", Type.Number(), 0);
+	const count = self.state("count", num(), 0);
 	return {
 		variant: "default",
 		count,
@@ -74,6 +78,60 @@ await host.root(async (ctx) => {
 - [Usage guide](docs/guide.md): API reference for contracts, objects, state, roots, lifetime, plugins, hot reload, hosts, and links.
 - [Specification](docs/spec.md): compatibility, lifetime, and reload semantics, plus known limitations and implementation decisions.
 - [Delta guide](src/delta/README.md): ownership, lifecycle, operation, and replica contracts of `@earendil-works/chord/delta`.
+
+## Explicit Context telemetry
+
+`Context` always carries a `telemetry: TelemetrySpan`, alongside `abortSignal`. `BACKGROUND_CONTEXT` and `TODO_CONTEXT` use the shared no-op span `NOOP_TELEMETRY_CONTEXT`. Adapters (`TelemetryContext`) belong to hosts and start root spans; adapters are never placed in a `Context`.
+
+```ts
+import { BACKGROUND_CONTEXT, traceIn, withTelemetry } from '@earendil-works/chord/context';
+import { InMemoryTelemetryContext } from '@earendil-works/pi-telemetry';
+
+const telemetry = new InMemoryTelemetryContext();
+await telemetry.startSpan({ name: 'app.request' }, async (span) => {
+  const context = withTelemetry(span, BACKGROUND_CONTEXT);
+  await traceIn(
+    { name: 'app.load' },
+    async (child) => {
+      child.telemetry.addEvent('cache.miss');
+      return traceIn({ name: 'app.read' }, (nested) => readAccount(nested), child);
+    },
+    context,
+  );
+});
+```
+
+`withTelemetry(span, context)` derives a new context; it never changes its parent, cancellation, or typed values. `traceIn(options, fn, context)` creates a callback-managed child span, and `fn` receives its derived context. Every context already supports `telemetry.addEvent()` and `telemetry.addLink()`. Values, cancellation, callback results, and rejection identities are preserved. Concurrent calls keep independent parents; there is no ambient current span. `value()`, `ContextKey`, and `withContextValue()` remain supported.
+
+These helpers operate on the standalone `Context` API. They do not yet instrument Chord hosts, methods, or network frames.
+
+## SQLite telemetry
+
+```ts
+import { createSqliteTelemetry } from '@earendil-works/chord/telemetry-sqlite';
+import { openNodeSqliteDatabase } from '@earendil-works/chord/sqlite/node';
+import { renderTrace } from '@earendil-works/pi-telemetry/render';
+
+const db = await openNodeSqliteDatabase('telemetry.db');
+const telemetry = await createSqliteTelemetry(db);
+try {
+  await telemetry.startSpan({ name: 'app.request' }, async (span) => {
+    span.addEvent('request.accepted');
+    await span.startSpan({ name: 'app.read' }, () => readAccount());
+  });
+  await telemetry.flush();
+  const { traces } = await telemetry.findTraces({ name: 'app.request', limit: 10 });
+  for (const trace of traces) console.log(renderTrace(trace.spans));
+} finally {
+  try { await telemetry.close(); } finally { await db.close(); }
+}
+```
+
+The adapter is portable over `SqliteDatabase` and owns no connection. Recording performs no SQL. A one-second timer flushes settled spans and completed ten-second metric intervals in one transaction, including retention cleanup. Metrics retain count, sum, minimum, and maximum per name/kind/unit/attribute series, not raw samples, buckets, or exemplars. `close()` stops recording and drains partial metric intervals without waiting for business callbacks or closing the database. Late span completions are ignored.
+
+Retention defaults to seven days. `maxQueuedSpans` defaults to 10,000 and counts settled spans awaiting commit, including an in-flight batch. The same limit independently bounds pending metric interval/series pairs. Overflow increments `droppedSpans` or `droppedMeasurements`; the limits bound counts, not bytes or active spans. A write failure stops recording permanently: `flush()` and `close()` reject with the original error without retrying.
+
+The adapter implements `TelemetryStore`: `findTraces()`, `getTrace()`, and `findMetrics()` read committed rows, including after adapter close while the database remains open. See [stored telemetry](../telemetry/README.md#stored-telemetry) for filters, pagination, and cross-process trace assembly. Schema tables are `telemetry_spans`, `telemetry_metrics`, and `telemetry_schema`.
 
 ## Tracking JSON deltas
 
@@ -107,8 +165,7 @@ their containers with the provider; mutating a consumed value violates the contr
 and can corrupt authority. Clone or serialize at any mutable trust boundary.
 
 Replicated state provides the same model through a callback. `replicatedState` is a
-standalone observable value, independent of hosts; Durable uses it for document,
-view, and task-graph states:
+standalone observable value, independent of hosts:
 
 ```ts
 import { replicatedState } from "@earendil-works/chord";
@@ -156,6 +213,68 @@ running callback.
 Cells of Chord objects and their remote readables have their own subscription
 model; see [State](docs/guide.md#state) in the usage guide.
 
+### Watches
+
+`WatchHandle<T>` is the one watch interface, implemented by watch sources such as
+Durable's documents, conversation views, and task graph. `watch.value` is the value
+at acquisition until `start(listener)` installs the sole asynchronous listener; each
+later change arrives as `(call, context)`, one call at a time, with
+`call: WatchCall<T>` tagged by `kind` (plain data; the context is the second
+argument):
+
+- `{ kind: "value", value, ops, retired }`: the new value, and `watch.value`
+  advances to it;
+- `{ kind: "failed", error }`: the source cannot compute its value now. The watch
+  stays open and `watch.value` keeps the last value; the next value arrives as
+  `[["r", value]]`.
+
+```ts
+watch.start(async (call) => {
+	if (call.kind === "failed") return showError(call.error);
+	render(call.value);
+});
+```
+
+Changes made while the listener runs (or before `start`) arrive in one call: the
+newest value, the ops of all of them folded by Delta's `PendingOps`, and the newest
+change's context. Past 10,000 pending ops after folding the call gets one root
+replacement `[["r", newest]]` instead. A failure drops the pending values and waits
+as one `failed` call (the newest failure); a value after it replaces it, as one
+`[["r", value]]` call.
+
+`retired` says the document the watch follows was retired since the previous value
+call. It does not end the watch: the call carries what the address shows after the
+retirement (the source decides; a Durable document keeps the last value the watch
+was given, with no ops), and a document created there later arrives as
+`[["r", value]]`, folded with what is pending, so one call can report a retirement
+and carry the new value.
+
+A watch ends only for good. `stop()` is idempotent, drops pending frames, and
+neither aborts nor awaits a running call; it and `closed` give the `WatchEnd`,
+tagged by `kind`:
+
+- `stopped`: `stop()` was called;
+- `aborted`: the context the watch was acquired with was aborted;
+- `ended`: the source closed (its owner ended or closed);
+- `listener_error` with `error`: the listener threw or rejected;
+- `failed` with `error`: the source failed for good.
+
+An ended watch drops every reference into its source, so a stopped watch that is
+still referenced keeps only its last value alive.
+
+Sources implement handles with `Watch<T>`, fed through `advance(call, context)`
+(a `WatchCall`: a value with `retired` set for a retirement, or a failure),
+`fail(error, context)` (a failure the source may recover from), `end(end)` (a
+`WatchEnd`, at once, dropping what is pending), `endAfterDelivery()` (take no more
+frames, deliver what is pending, then end `ended` once the last call returned; the
+source's `end()` still ends it first), and `observeAbort(signal)`.
+`NativeWatch<T>` implements `NativeWatchHandle<T>`, the same lifecycle for
+in-process values: the listener gets a `NativeWatchCall<T>`
+(`{ kind: "value", value }` without ops, or `{ kind: "failed", error }`), one call
+per value in order; past 100 pending values they collapse to one, the value of the
+optional `replace()` or the newest. A failure drops the pending values; values
+after it are delivered in order.
+
 ---
 
 ## Guide
@@ -194,17 +313,17 @@ Chord builds applications out of **objects** that live in several processes (a s
 ## Quick start
 
 ```ts
-import { Type } from "typebox";
+import { num, obj, str } from "@earendil-works/pi-schema";
 import { createHost, method, remote } from "@earendil-works/chord";
 
 // contract.ts: shared by provider and consumers
 export const Counter = remote("demo.counter", {
 	version: 1,
-	input: Type.Object({ name: Type.String() }),
+	input: obj({ name: str() }),
 	variants: {
 		default: {
-			state: { count: Type.Number() },
-			methods: { increment: method(Type.Object({ by: Type.Number() })) },
+			state: { count: num() },
+			methods: { increment: method(obj({ by: num() })) },
 		},
 	},
 });
@@ -212,7 +331,7 @@ export const Counter = remote("demo.counter", {
 const host = createHost({ name: "server", self: { kind: "server" } });
 
 host.serve(Counter, ({ name }, _principal, self) => {
-	const count = self.state("count", Type.Number(), 0);
+	const count = self.state("count", num(), 0);
 	return {
 		variant: "default",
 		count,
@@ -240,7 +359,7 @@ Remote types can be reached from other hosts. Everything that crosses the wire h
 ```ts
 export const Chat = remote("pi.chat", {
 	version: 1,
-	input: Type.Object({ session: Type.String(), conversation: Type.Number() }),
+	input: obj({ session: str(), conversation: num() }),
 	host: hostFamily("session:", "session"),  // lives on `session:S1` for `{ session: "S1", … }`
 	variants: {
 		viewer: {
@@ -249,7 +368,7 @@ export const Chat = remote("pi.chat", {
 		participant: {
 			state: { view: ConversationViewSchema },
 			methods: {
-				send: method(SendInputSchema, Type.Object({ submissionId: Type.Number() })),
+				send: method(SendInputSchema, obj({ submissionId: num() })),
 				stop: method(),  // no arguments, no result: `chat.stop(ctx)`
 			},
 		},
@@ -277,10 +396,10 @@ Local types are reachable only inside their host. Their members may be anything:
 ```ts
 export const Index = local("pi.index", {
 	version: 1,
-	input: Type.Object({ session: Type.String() }),
+	input: obj({ session: str() }),
 	members: {
-		search: method(Type.Object({ query: Type.String() }), Type.Array(HitSchema)),
-		onChange: method(Type.Function([ChangeSchema], Type.Void()), UnsubscribeSchema),
+		search: method(obj({ query: str() }), arr(HitSchema)),
+		onChange: method({ type: "function", parameters: [ChangeSchema], returnType: { type: "void" } }, UnsubscribeSchema),
 		harness: opaque("pi.durable-harness@1"),
 	},
 });
@@ -339,7 +458,7 @@ A reload runs the factory again over the same object. Declarations that keep som
 ```ts
 host.serve(StatusStore, ({ session }, _host, self) => {
 	const status = self.state("status", StatusSchema, { running: false, tasks: 0 });
-	const errors = self.state("errors", Type.Array(Type.String()), []);
+	const errors = self.state("errors", arr(str()), []);
 	const catalog = self.get(Catalog, {});
 	const db = self.resource("db", {
 		version: 1,
@@ -388,7 +507,7 @@ host.serve(Visits, (_, _p, self) => {
 
 // right
 host.serve(Visits, (_, _p, self) => {
-	const visits = self.state("visits", Type.Number(), 0);
+	const visits = self.state("visits", num(), 0);
 	return {
 		hit: async (ctx) => {
 			visits.change(ctx, (n) => n + 1);
@@ -398,7 +517,7 @@ host.serve(Visits, (_, _p, self) => {
 });
 ```
 
-**Methods** are declared with `method(args?, result?)` in the contract. Without `args` a method takes none: callers write `ref.hit(ctx)` (or `ref.hit()`), and its implementation is `(ctx) => …`. Without `result` it returns nothing: the implementation returns nothing, and callers get `undefined`. `method(undefined, Type.Number())` takes no arguments and returns a number.
+**Methods** are declared with `method(args?, result?)` in the contract. Without `args` a method takes none: callers write `ref.hit(ctx)` (or `ref.hit()`), and its implementation is `(ctx) => …`. Without `result` it returns nothing: the implementation returns nothing, and callers get `undefined`. `method(undefined, num())` takes no arguments and returns a number.
 
 ## Activation
 
@@ -586,7 +705,7 @@ chat.release();
 ## State
 
 ```ts
-const todos = self.state("todos", Type.Array(TodoSchema), []);
+const todos = self.state("todos", arr(TodoSchema), []);
 
 todos.change(ctx, (draft) => {
 	draft.push({ id: "t1", text: "Write docs", done: false });
@@ -615,7 +734,7 @@ view.replace(ctx, rebuilt, { diff: true });              // always diff
 
 ```ts
 const db = self.resource("db", { version: 1, open: () => openSqlite(path), close: (db) => db.close() });
-const notes = self.state("notes", Type.Array(NoteSchema), { init: () => db.value.all("SELECT * FROM notes") });
+const notes = self.state("notes", arr(NoteSchema), { init: () => db.value.all("SELECT * FROM notes") });
 ```
 
 `init(ctx)` runs once the resources are open and the references live, before the object goes live, so no method,
@@ -978,7 +1097,7 @@ A reload changing the guard: Durable phases already running keep the old snapsho
 This document specifies the runtime in `src`. Where it and the code disagree, the disagreement is a bug. [Known limitations and decisions](#12-known-limitations-and-decisions) lists what the runtime does not do yet and the choices the sections below leave open.
 
 Hard constraints:
-- Chord's runtime depends only on its own `delta` module (tracker, applyImmutable, encoder/decoder, diff) and Node/browser built-ins plus `typebox` for schemas. No other Pi packages.
+- Chord's runtime depends only on its own `delta` module (tracker, applyImmutable, encoder/decoder, diff) and Node/browser built-ins, plus `@earendil-works/pi-telemetry` for telemetry and `@earendil-works/pi-schema` for schemas. No other Pi packages.
 - Built-in plugins are trusted, loaded from source in-process. The plugin loader uses dynamic `import()` with a cache-busting query (owner-approved exception, `TODO(loader)`: replace with an isolating, evicting loader; old module copies leak; TUI plugins need isolation).
 - Hot reload is required. Host restart only for Chord/runtime code changes or host-level crash recovery.
 
@@ -1004,23 +1123,23 @@ Contracts are runtime values for every type (shipped bundles have no TypeScript;
 ```ts
 export const Chat = remote("pi.chat", {
 	version: 1,                                   // contract version: a plain number, bumped only on breaking changes
-	input: Type.Object({ session: Type.String(), conversation: Type.Number() }),
+	input: obj({ session: str(), conversation: num() }),
 	host: hostFamily("session:", "session"),       // where its objects live: `session:` + input.session
 	variants: {
 		viewer: { state: { view: ViewSchema } },
 		participant: {
 			state: { view: ViewSchema },
-			methods: { send: method(SendSchema, Type.Object({ submissionId: Type.Number() })) },
+			methods: { send: method(SendSchema, obj({ submissionId: num() })) },
 		},
 	},
 });
 
 export const Index = local("pi.index", {
 	version: 1,
-	input: Type.Object({ session: Type.String() }),
+	input: obj({ session: str() }),
 	members: {
-		search: method(Type.Object({ query: Type.String() }), Type.Array(Hit)),
-		onChange: method(Type.Function([Change], Type.Void()), Unsubscribe),   // non-JSON allowed for locals
+		search: method(obj({ query: str() }), arr(Hit)),
+		onChange: method({ type: "function", parameters: [Change], returnType: { type: "void" } }, Unsubscribe),   // non-JSON allowed for locals
 		harness: opaque("pi.durable-harness@1"),                               // native object, by name+version
 	},
 });
@@ -1056,7 +1175,7 @@ Factories are synchronous; returning a promise throws. A declaration has a name 
 host.serve(StatusStore, ({ session }, _host, self) => {
 	const status = self.state("status", StatusSchema, { running: false, tasks: 0 },  // schema required, initial value
 		{ version: 2, migrate: (old, from) => upgrade(old, from) });                     // per cell; default version 1
-	const errors = self.state("errors", Type.Array(Type.String()), []);
+	const errors = self.state("errors", arr(str()), []);
 	const catalog = self.get(Catalog, {});                         // reference; identity = canonical address (+ at)
 	const watch = self.resource("watch", {
 		version: 1, deps: [catalog], exclusive: false,
@@ -1253,8 +1372,8 @@ The tests cover at least: lifetime/references/linger/forced disposal/gone; activ
 - **Joining during a reload.** Participants are the child hosts in step when a reload starts. A child whose hello arrives while it runs is decided when it ends: in step, or reconciled to the committed code version; a child already behind is fenced at once, so the calls its roots make meanwhile are admitted in the parent's code version. A reconciliation that is running when a reload starts syncs its child only after that reload ended, against the code version it committed. A reconciliation announces the parent's retired code versions before its `prepare`.
 - **Two-version rule.** An object of a changed type created after a commit has only new code; a previous-code-version root calling it gets `superseded`.
 - **Validation.** Remote calls are validated at reference dispatch, in-host too: a direct binding against the provider's schema, a binding through an adapter against the consumer's. A provider validates each snapshot and reset of a remote state member once per (re)subscription, against the consumer's contract through an `accepts` adapter and the provider's otherwise; ops are validated only in dev mode. At reload, the new provider's description must cover the old provider's when the version is unchanged, in addition to the check against live consumers and facets' `uses`.
-- **Contracts.** Local contracts list their members, so a loading reference knows whether a member is a method, state or opaque. Canonical identity omits input fields equal to their default; with TypeBox, use `Type.Optional(Type.X({ default }))` to let callers omit them. Provider variants must cover consumer variants; members the consumer's contract does not list are hidden. Schema change detection compares canonical JSON, so reordering `anyOf` branches counts as a change. Fingerprints use a non-cryptographic 64-bit hash: synchronous and browser-safe; contracts are trusted.
-- **Principals.** A root ctx at ingress acts as its principal (`host.root(fn, { principal })`); contexts inside objects act as `host`. The acceptor decides a link's kind and name (`accept(link, { principal, kind, name })`); only configured host links are addressable, carry roots and may vote, and control frames are accepted only from the parent. Clients never carry roots or code versions. Relaying needs a matching `route`; `authorize(principal, hostName)` runs before `resolve` and again after, and revoking or re-stamping a principal closes its relays at once. `invalidatePrincipal(match)` re-stamps or closes matching links and propagates pattern matches to child hosts.
+- **Contracts.** Local contracts list their members, so a loading reference knows whether a member is a method, state or opaque. Canonical identity omits input fields equal to their default; use `opt(str({ default }))` (pi-schema) to let callers omit them. Provider variants must cover consumer variants; members the consumer's contract does not list are hidden. Schema change detection compares canonical JSON, so reordering `anyOf` branches counts as a change. Fingerprints use a non-cryptographic 64-bit hash: synchronous and browser-safe; contracts are trusted.
+- **Principals.** A root ctx at ingress acts as its principal (`host.root(fn, { principal })`); contexts inside objects act as `host`. The acceptor decides a link's kind and name (`accept(link, { principal, kind, name })`); only configured host links are addressable, carry roots and may vote, and control frames are accepted only from the parent. Clients never carry roots or code versions. Relaying needs a matching `route`; `authorize(principal, hostName)` runs before `resolve` and again after, and revoking or re-stamping a principal closes its relays at once. The host `resolve` returns is admitted before that second check, so a refused, revoked or released relay never leaves a spawned host's link unread. `invalidatePrincipal(match)` re-stamps or closes matching links and propagates pattern matches to child hosts.
 - **Cells and readables.** A value returned from `change` replaces the value and is always validated; `replace` transfers ownership without copying; by default (`{ diff }` overrides) it publishes a diff when the new value reuses a container of the old one at the same key, else `r`. `subscribe(fn)` delivers values, starting with the current one; `events(fn)` delivers `snap`, then `ops`, or `reset`. Reference state members are stable readables that throw `not_ready` while loading and `not_in_variant` outside the variant, and reset when their source moves; a listener added before they are readable gets its snapshot then. Remote state members stay hydrated while the reference is held.
 - **References and calls.** A reference's identity is its address; a second `self.get` of the same address in one run returns the same reference. A reference call without ctx, or with a task ctx, starts a fresh root in the current code version; a ctx whose call or root already settled is refused (`aborted/expired`), one from another host `invalid/foreign_ctx`. Calling a reference inside a factory throws `not_ready`.
 - **Resources and disposal.** New and replaced exclusive resources open at the gate, and so do non-exclusive resources of the same object that depend on them. A new object for an address that is still being disposed waits for that disposal. A resource open that completes after its signal aborted closes its value at once.
@@ -1311,11 +1430,12 @@ shuts down its objects and connections.
 
 Before callers can use an object, they need to agree on its name and members.
 That agreement is a **contract**: a runtime value that also gives TypeScript its
-types. A **schema** describes a value's shape. We use TypeBox's `Type` to write
-schemas. `method(args, result)` declares a method by its argument and result
-schemas: `method()` takes no arguments and returns nothing, and
-`method(undefined, Type.String())`, used below, takes no arguments and returns a
-string.
+types. A **schema** describes a value's shape: plain JSON Schema, which we write
+with the builders of `@earendil-works/pi-schema` (`obj`, `str`, `num`, ...;
+`{ open: true }` lets an object carry fields it does not name).
+`method(args, result)` declares a method by its argument and result schemas:
+`method()` takes no arguments and returns nothing, and
+`method(undefined, str())`, used below, takes no arguments and returns a string.
 
 Start with a label for a named list. `local` means only code inside this host
 can reach it. The input `{ list: "family" }` identifies which list we want;
@@ -1325,8 +1445,8 @@ it is not an argument to `label`.
 ```ts
 const TodoLabel = local("tutorial.todos", {
 	version: 1,
-	input: Type.Object({ list: Type.String() }),
-	members: { label: method(undefined, Type.String()) },
+	input: obj({ list: str() }, { open: true }),
+	members: { label: method(undefined, str()) },
 });
 ```
 
@@ -1382,17 +1502,17 @@ name, because it holds nothing a reload must keep.
 
 <!-- example:03-contract -->
 ```ts
-const Todo = Type.Object({ text: Type.String(), done: Type.Boolean() });
-const Rows = Type.Array(Todo);
+const Todo = obj({ text: str(), done: bool() }, { open: true });
+const Rows = arr(Todo);
 const TodoStore = local("tutorial.todos", {
 	version: 1,
-	input: Type.Object({ list: Type.String() }),
+	input: obj({ list: str() }, { open: true }),
 	members: {
-		label: method(undefined, Type.String()),
+		label: method(undefined, str()),
 		rows: Rows,
-		openCount: Type.Number(),
-		add: method(Type.Object({ text: Type.String() })),
-		finish: method(Type.Object({ index: Type.Integer() })),
+		openCount: num(),
+		add: method(obj({ text: str() }, { open: true })),
+		finish: method(obj({ index: int() }, { open: true })),
 		reset: method(Rows),
 	},
 });
@@ -1496,13 +1616,13 @@ to a declared resource, without reading the resource during the factory.
 ```ts
 const Database = local("tutorial.database", {
 	version: 1,
-	input: Type.Object({}),
+	input: obj({}, { open: true }),
 	members: { db: opaque<{ saved: string[] }>("tutorial.database@1") },
 });
 const SavedTodos = local("tutorial.saved-todos", {
 	version: 1,
-	input: Type.Object({ list: Type.String() }),
-	members: { add: method(Type.Object({ text: Type.String() })) },
+	input: obj({ list: str() }, { open: true }),
+	members: { add: method(obj({ text: str() }, { open: true })) },
 });
 const host = createHost({ self: "server" });
 let opens = 0;
@@ -1604,13 +1724,13 @@ puts every `Todos` object on the host named `server`. Section 6 uses that.
 ```ts
 const Todos = remote("tutorial.todo-view", {
 	version: 1,
-	input: Type.Object({ list: Type.String() }),
+	input: obj({ list: str() }, { open: true }),
 	host: hostNamed("server"),
 	variants: {
 		viewer: { state: { rows: Rows } },
 		editor: {
 			state: { rows: Rows },
-			methods: { add: method(Type.Object({ text: Type.String() })) },
+			methods: { add: method(obj({ text: str() }, { open: true })) },
 		},
 	},
 });
@@ -1765,8 +1885,8 @@ test; they are not stored application state.
 ```ts
 const Activity = local("tutorial.activity", {
 	version: 1,
-	input: Type.Object({}),
-	members: { seen: Type.Number() },
+	input: obj({}, { open: true }),
+	members: { seen: num() },
 });
 const host = createHost({ self: "server" });
 host.serve(TodoStore, todoFactory);
@@ -1775,7 +1895,7 @@ const seeded = Promise.withResolvers<void>();
 const stopped = Promise.withResolvers<void>();
 host.serve(Activity, (_input, _principal, self) => {
 	const todos = self.get(TodoStore, { list: "family" });
-	const seen = self.state("seen", Type.Number(), 0);
+	const seen = self.state("seen", num(), 0);
 	self.on("rows", todos.rows, (rows, ctx) => {
 		seen.replace(ctx, rows?.length ?? 0);
 		if (rows?.length === 1) observed.resolve();
@@ -1836,7 +1956,7 @@ default lifetime, `"referenced"`, are still created only when referenced.
 <!-- example:08 -->
 ```ts
 const Actions = defineRegistry<(ctx: Ctx) => Promise<number>>("tutorial.actions");
-const Menu = local("tutorial.menu", { version: 1, input: Type.Object({}) });
+const Menu = local("tutorial.menu", { version: 1, input: obj({}, { open: true }) });
 let click: (() => Promise<number>) | undefined;
 const storeFacet: Facet = {
 	name: "todo-store",
@@ -2011,7 +2131,7 @@ const { label: _label, ...members } = TodoStore.def.members;
 const RenamedStore = local("tutorial.todos", {
 	version: 2,
 	input: TodoStore.def.input,
-	members: { ...members, heading: method(undefined, Type.String()) },
+	members: { ...members, heading: method(undefined, str()) },
 });
 await host.reload([
 	{
@@ -2156,7 +2276,7 @@ tutorial's source-matching check, not by the application.
 ```ts
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { type Static, Type } from "typebox";
+import { arr, bool, int, num, obj, type Static, str } from "@earendil-works/pi-schema";
 import { it, onTestFinished } from "vitest";
 import {
 	type Ctx,
@@ -2282,6 +2402,35 @@ Parsing a separately serialized message per replica is also a valid detachment.
 `decode()` does not copy payloads, so decoding one in-memory `WireOp[]` for two
 mutable replicas makes them alias each other.
 
+## Slow consumers
+
+`PendingOps` holds the batches one consumer has not taken yet (a watch listener
+that is still running, a link whose window is full) and folds them while they
+wait, so what it hands over replays to the same value with fewer ops:
+
+```ts
+import { PendingOps } from "@earendil-works/chord/delta";
+
+const pending = new PendingOps();
+pending.push(prepared.ops); // for each adopted batch, while the consumer is busy
+// When the consumer is ready again:
+const batch = pending.take();
+const ops = batch.kind === "ops" ? batch.ops : [["r", tracker.value]];
+```
+
+- A leaf op (an append, or a set of a primitive) folds into the last pending leaf
+  op on its path: `a` + `a` join, `s` replaces `s` or `a`, an `a` after a string `s`
+  appends into it. `["a", ["text"], "he"]`, `["s", ["n"], 1]`, `["a", ["text"], "y"]`
+  becomes `["a", ["text"], "hey"]`, `["s", ["n"], 1]`.
+- Any other op (`p`, `m`, `d`, `t`, `s` of an object or array) ends folding into
+  the ops before it, as it may change what a path names; `r` drops them.
+- Past 10,000 pending ops after folding, only `replace` stays: the owner sends the
+  current value as `[["r", value]]`.
+- One batch is handed over as received; received batches and op tuples are never
+  mutated, so the same batch can feed other consumers.
+- It folds ops of the tracker, `diffRevisions()` and `appendText()`; it does not
+  validate or normalize hand-written ops.
+
 ## Do and don't
 
 - Do build a fresh root and then transfer it; validate untrusted roots at your ingestion boundary.
@@ -2325,6 +2474,8 @@ Growing `length` inserts `null`; shrinking it removes elements.
 
 `tracker.value` is the latest adopted revision. `beginChange()` opens an overlay
 draft over it and never modifies it. A draft may stay open across `await`.
+A draft dropped without `prepare()` or `abort()` stays referenced by its
+tracker until the tracker's next `beginChange()` or `adopt()`.
 `prepare()` materializes the candidate and ops and does not change authority.
 `adopt()` checks the preparation and swaps the root pointer.
 
@@ -2381,9 +2532,47 @@ and restores `Op` tuples. Use one encoder/decoder pair per ordered state stream.
 Path IDs span batches and an `r` resets both dictionaries. After a decode or
 apply error, discard the decoder and replica and recover from a later `r`.
 
+## Growing strings: use `appendText`
+
+The footgun: appending to a string through a draft costs the string's whole length on every change, not the length of
+what you append.
+
+```ts
+const change = tracker.beginChange();
+change.state.message.text += chunk;   // looks like O(chunk)
+const prepared = change.prepare();     // emits ["a", ["message", "text"], chunk], but costs O(text.length)
+```
+
+The draft's proxy only sees the finished new string, never the chunk, so `prepare()` recovers the append by checking
+that the new string starts with the old one. That check reads the whole string, and V8 first copies a string built by
+`+=` (a rope) into one flat piece. There is no fast path: measured on Node 24 and 26, 20,000 changes appending 40
+characters each, up to 800 KB, take about 2.4 s with the check and about 1 ms without it. A stream of N chunks into one
+string therefore costs O(N x length) in total: quadratic.
+
+The fix: hand Delta the chunk.
+
+```ts
+import { appendText } from "@earendil-works/chord/delta";
+
+appendText(change.state.message, "text", chunk);   // records ["a", path, chunk]: O(chunk), no compare, no copy
+```
+
+- `appendText(parent, key, text)` takes the parent draft and a key whose type is exactly `string` (not optional, not a
+  string literal type), so the compiler refuses `appendText(block, "type", …)`.
+- Several appends to one key in one change become one op. A plain assignment or deletion of the same key in that change
+  falls back to the compare, as does an append after a plain write.
+- The appended text is copied into a string of its own, so neither the op nor the new value keeps a larger string
+  alive.
+- Use it wherever a string grows by appends across many changes (streamed answers, tool output, logs). A one-off
+  assignment is fine with `=`.
+- Derives cannot use it: `diffRevisions()` compares two revisions it did not write, so a derive producing a growing
+  string pays O(length) per delivery.
+
 ## Limits and footguns
 
 - No freezing. Mutating any immutable value corrupts state silently.
+- Appending to a string through a draft (`draft.text += chunk`) costs O(string length) per change; use `appendText`
+  (section "Growing strings").
 - In-process sharing: local handles, cell subscribers, and `replicatedState` subscribers receive the provider's containers. A consumer mutation corrupts authority and makes remote replicas diverge.
 - A change inside a large flat array copies that array's pointer storage for the new revision.
 - Placement validation costs time and memory on bulk inserts. In a benchmark unshifting 100k three-field objects, it added about 19 ms and 20 MiB of transient heap.

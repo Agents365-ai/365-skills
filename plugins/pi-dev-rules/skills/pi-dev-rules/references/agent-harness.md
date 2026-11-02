@@ -9,7 +9,7 @@ Internal runtime packages, not user documentation. `@earendil-works/pi-durable` 
 
 ## Durable Agent Harness
 
-A durable agent harness. Conversations, model turns, tool calls, and your own state are committed to storage before anything is shown. If the process dies mid-turn, reopening the storage picks the work up where it stopped.
+A durable agent harness. Conversations, model turns, tool calls, and your own state are committed to storage before anything is shown. If the process dies mid-turn, reopening the storage picks the work up where it stopped; a model request it died during counts as a failed attempt and is retried, so a request that keeps killing the process ends (see [Persist and Resume](#persist-and-resume)).
 
 Built on [`@earendil-works/pi-ai`](../ai/README.md) for model access and `@earendil-works/chord` for document state.
 
@@ -82,7 +82,19 @@ What happened:
 - `submit()` durably admits your input and returns a `Submission`. A built-in generation task calls the model and appends the answer.
 - `wait()` resolves once the input is answered (`done`) or has failed (`unanswered`, with a reason).
 
-Every async call takes a Chord `Context`, which carries cancellation. `BACKGROUND_CONTEXT` never cancels. Cancelling a wait only cancels that wait, never the work.
+Every async call takes a Chord `Context`, which carries cancellation and its current `TelemetrySpan`. `BACKGROUND_CONTEXT` never cancels and uses a NOOP span. The Harness owns the root adapter; adapters are never stored in a `Context`. Cancelling a wait only cancels that wait, never the work.
+
+`HarnessOptions.identity` sets how model requests identify the app to providers (a pi-ai `ClientIdentity`), merged over `DEFAULT_HARNESS_IDENTITY` (`{ attribution: PI_ATTRIBUTION }`: OpenRouter, NVIDIA NIM, and OpenCode attribution headers name pi). It applies to generation, compaction, hooks, and tools, over the identity the host's `Models` was created with. Pass your app's attribution, for example `{ attribution: { name: "my-app", url: "https://my-app.example" } }`, or `{ attribution: null }` to send none.
+
+`HarnessOptions.telemetry` accepts a host-owned `TelemetryContext` from `@earendil-works/pi-telemetry`, with optional `propagation` and `metrics` capabilities; omitted, it is a no-op. `DURABLE_TELEMETRY_SCHEMA`, exported from the package root, documents its typed spans, events, and metrics. Attributes contain IDs and control metadata, never messages, arguments, or results; IDs point to the transcript.
+
+- `pi.durable.submit` covers the public submit call and its commit; for `submit(tx, draft)` it covers the admission only, its `result` is provisional until your commit is stored, and the commit's events go to your commit's context. Each input starts a new root trace with a link to its caller's current span; a write is a child of its caller. Duplicate `requestId` preserves the original submission and carrier. Internal admissions, such as compaction writes, emit events on their phase span without a submit span.
+- `pi.durable.phase` covers one run or abort phase of every task, including its decision commit, never the next phase, a durable wait, or a restart. Its attributes identify the task, phase, attempt when present, `resumed`, and outcome. Tool phases also identify the tool and call. Nested tasks and background compactions inherit the creating phase; model requests receive that phase context. Hooks add no spans.
+- Failed phase outcomes set error status with a fixed category (`task_faulted`, `task_failed`, or `task_orphaned`) and the outcome's diagnostic message, truncated to 500 characters (the reason for an orphaned task). Diagnostics can contain caller content; no error detail or exception name is recorded. An `aborted` outcome keeps status `ok`, including interruption by close or cancellation.
+- Every `onReport` report also emits a `pi.durable.report` event on its current span. Without a span, the NOOP span drops the event; no root report span is created. Only `type` (the report's `kind`), optional fixed `reason`, `extension`, and `task.id` are recorded; no error payload is included. `pi.durable.reports` counts all reports by `type` only, including those without a span. Clock failures report without a phase context. The `onReport` callback is unchanged.
+- Committed entries and settled submissions emit `pi.durable.entry` and `pi.durable.submission`. Committed running phase changes emit `pi.durable.checkpoint`; a nested call answered from its stored result emits `pi.durable.replay`.
+- Propagation stores optional opaque `trace` carriers in submission and task JSON without a storage migration. Phase spans extract their task's stored carrier, or start at the adapter root when absent or unknown. `TaskOptions.trace` inherits the creator's carrier when absent, accepts an explicit carrier override, or uses `"root"` to start at the adapter root without storing a carrier. A run started for several queued inputs takes the first input's trace; its first invocation's phase spans link to the other inputs through immutable task `links`. A steer stays in the running trace and its submit span links to that run's stored carrier. A reopened task's first invocation has `resumed: true` in the same trace.
+- Metrics record `pi.durable.phase.duration` (milliseconds; task, phase, outcome) and `pi.durable.tasks.active` (live tasks; task name), without record IDs. Closing the Harness releases its active counts.
 
 ## Concepts
 
@@ -119,7 +131,7 @@ const root = await harness.root(context); // the same root as last time
 harness.resume(); // continue any run the last process left unfinished
 ```
 
-Work interrupted by a crash or close stays pending. `resume()` starts the task scheduler; submitting or waiting starts it too. Each conversation has its own persisted UUIDv7 in `pi.provider`, forwarded to pi-ai as `sessionId` for provider prompt-cache and session affinity. It survives reopen, retries, reset, compaction, and model changes; a child or fork receives a fresh identity. A legacy conversation receives and persists one before its first generation or compaction request.
+Work interrupted by a crash or close stays pending. `resume()` starts the task scheduler; submitting or waiting starts it too. A process that only shows a session another one drives opens it with `readOnly: true`: open recovers nothing, and every write, `resume()`, and every call that would run tasks rejects with `ReadOnlySession`. Each conversation has its own persisted UUIDv7 in `pi.provider`, forwarded to pi-ai as `sessionId` for provider prompt-cache and session affinity. It survives reopen, retries, reset, compaction, and model changes; a child or fork receives a fresh identity. A legacy conversation receives and persists one before its first generation or compaction request.
 
 A retried submission with the same `requestId` returns the existing submission instead of submitting twice:
 
@@ -131,6 +143,90 @@ const again = await root.submit({ type: "input", content: "Hello", requestId: "g
 ```
 
 `harness.submission(id)` reacquires a submission by ID, for example to wait for it after a restart.
+
+### Sleeping and Waking Up
+
+A task waits for time by ending its phase asleep. The sleep is stored, so the task holds no invocation meanwhile, survives restarts, and resumes at the checkpoint once the Harness clock reaches `until`:
+
+```typescript
+const Reminder = defineTask<{ text: string; at: number }, { phase: "wait" } | { phase: "deliver" }, null>({
+	name: "app.reminder",
+	version: 1,
+	initial: () => ({ phase: "wait" }),
+	phases: {
+		// Resolves once the sleep is stored; the phase ends there.
+		wait: (task, runtime, context) => runtime.sleepUntil(task.input.at, { phase: "deliver" }, context),
+		deliver: async (task, runtime, context) => {
+			await notify(task.input.text);
+			await runtime.commit(() => ({ status: "terminal", outcome: { status: "completed", result: null } }), context);
+		},
+	},
+	abort: (_task, runtime, context) =>
+		runtime.commit(() => ({ status: "terminal", outcome: { status: "aborted" } }), context),
+});
+```
+
+There is no sleep in the middle of a phase: a phase reruns from its top after a restart, so work after the wait goes in the next phase, and what it needs goes in the checkpoint. `{ status: "sleeping", until, checkpoint }` returned from `runtime.commit()` is the same sleep, committed together with other writes. Retry backoffs and deferred-response polls of the built-in tasks sleep the same way.
+
+The timers of the Session, the scheduler, and its tasks go through `setTimer` (default `setTimeout`), and their times through `now` (default `Date.now`); pass both to run a Harness on a fake clock. The Node.js environment, file watcher, and image worker keep their own timers. Sleep deadlines are stored on `now`, so every process that opens one storage must use the same clock. While scheduling runs, a timer resumes sleeping tasks when they are due and keeps a Node.js process alive meanwhile.
+
+A host whose process can be evicted, such as a Cloudflare Durable Object, wakes it itself. With `onWake`, the Harness arms no timer for sleeps; it tells the host what `harness.wake()` says whenever that changes: `active` while some task can run now or is running, and `at`, the earliest sleep. The host keeps its alarm armed and calls `resume()` when it fires:
+
+```typescript
+export class Session extends DurableObject<Env> {
+	#harness!: Harness;
+
+	constructor(ctx: DurableObjectState, env: Env) {
+		super(ctx, env);
+		void ctx.blockConcurrencyWhile(async () => {
+			// A fallback before anything can throw: an object whose open or recovery fails is started again.
+			const fallback = Date.now() + 60_000;
+			const current = await ctx.storage.getAlarm();
+			if (current === null || current > fallback) await ctx.storage.setAlarm(fallback);
+			const storage = await openDurableObjectSqliteStorage(ctx.storage);
+			const onWake = (wake: Wake) =>
+				// A failed alarm write resets the object; it arms again when it next starts.
+				void this.#arm(wake).catch(() => ctx.abort("Alarm write failed"));
+			this.#harness = await Harness.open(storage, { models, registry, onWake }, context);
+			// Armed before `resume()` runs anything, as for any call that can start work.
+			await this.#arm(this.#harness.wake());
+			this.#harness.resume(); // work a lost instance left, and due sleeps
+		});
+	}
+
+	override async alarm(): Promise<void> {
+		await this.#arm({ ...this.#harness.wake(), active: true });
+		this.#harness.resume(); // due sleeps and work a lost instance left
+	}
+
+	// Arm before any call that can start work (submit, compact, abortTask, abort, a registry change): `onWake` runs
+	// after the commit. An early alarm is harmless, a missing one strands the work.
+	async submit(conversation: Conversation, input: string, requestId: string): Promise<void> {
+		await this.#arm({ ...this.#harness.wake(), active: true });
+		await conversation.submit({ type: "input", content: input, requestId }, context);
+	}
+
+	async #arm(wake: Wake): Promise<void> {
+		// A recovery heartbeat while work runs, never later than the earliest sleep.
+		const heartbeat = wake.active ? Date.now() + 60_000 : undefined;
+		const at = heartbeat === undefined || wake.at === undefined ? (heartbeat ?? wake.at) : Math.min(heartbeat, wake.at);
+		if (at === undefined) await this.ctx.storage.deleteAlarm();
+		else await this.ctx.storage.setAlarm(at);
+	}
+}
+```
+
+The default `setTimer` declines the timers that only free memory in Workers, so no pending timer keeps the object from hibernating or being evicted; memory is then freed at later commits.
+
+### Failures and Recovery
+
+**Crash loops.** Work that deterministically crashes its process, by exhausting memory or CPU before its next checkpoint, would otherwise be resumed and crash again forever. A model request the host died during is a failed attempt under `settings.retry`: its partial answer is kept as an aborted entry, the next attempt waits for the backoff (shown in `docs["pi.live"].generation.retry`), and with no retry left the run ends with `docs["pi.live"].runFailure` reason `interrupted`. A deferred response that was being fetched is polled again as the next attempt, not requested again, and cancelled when the run ends. A close is not a crash: a request it stopped is sent again. Other work is counted: open counts each task a crash, eviction, or reset cut off, and a new state the task commits starts the count over. Once the count reaches `settings.restartLimit` (default 5; `Infinity` never ends a task for it), the task ends instead of running again: a tool call with an error result (diagnostic code `restart_limit`), a compaction failed into `compactionFailure`, a run with `runFailure` reason `restart_limit` (also when charging an interrupted request keeps crashing), and a task of your own kinds `faulted`, reported as `task_faulted` with reason `restart_limit`. The built-in ones are reported as `task_interrupted`, as is a run that ends `interrupted`, so a crash loop always reaches `onReport`. Every task running when a process dies is counted, not only the one that killed it. An abort handler cut off that many times ends its task `faulted` too; a run someone aborted still ends `aborted`, with the cut-off in `detail`.
+
+**Reports.** `onReport(report)` gets one `Report`: the `error` and what happened in `report.kind`: `storage_failed` for the error that failed the Harness (a Storage error, often a platform reset); `task_faulted`, `task_interrupted` (crashes ended it, with `report.reason` and `report.restarts`), `migration_failed`, `task_outdated` (`reason` `missing_task`, `task_too_old`, or `migration_failed`, the words a blocked task shows), or `task_error` for a task, with `report.task` (its `id`, `kind`, and `conversationId`) and the extension that installed it in `report.extension`; `extension_error` for hooks, sections, wrappers, and tools, with the extension's name; `host_error` for a host callback, named in `report.callback`; and `listener_error`. A host can feed `task_faulted` reports of one kind to its own breaker.
+
+**Queued inputs after a failed run.** A run that fails with a model error, a missing model, nothing to answer, its turn limit, or crashes (`interrupted`, `restart_limit`) leaves the inputs queued behind it waiting until the next input arrives. `settings.afterFailedRun` changes that: `continue` starts the next run with them, as after an answer, and `withdraw` settles them `unanswered` with reason `run_failed`.
+
+**Blocked tasks.** Tasks blocked on a missing or unmigratable definition show their reason in the task graph too, and a registry change that unblocks them makes `onWake` report the Session active, so a host need not poll them.
 
 ## Extensions
 
@@ -168,15 +264,15 @@ registry.install(createCodingTools({ images: await createNodePhotonImages() }));
 
 A model without image input sees a placeholder instead of the image, and `read` says so in a diagnostic. `/images/node` prepares images in a worker thread, so a large photo (a second or two of work) never blocks the event loop; the worker exits after 30 s without images, freeing Photon's WebAssembly memory (`createNodePhotonImages({ worker: false, idleMs })`). Elsewhere, `createPhotonImages()` and `/images/cloudflare` work on the calling thread, and decoding takes the image's full size in WebAssembly memory, which does not shrink again; leave the processor out on memory-constrained hosts such as Cloudflare Workers unless images stay small.
 
-Define your own tool with a TypeBox schema. `defineTool()` types `args` from `parameters`, which the Harness validates before `execute()`. `api.output()` streams running output, which becomes the result when `execute()` returns no `output`:
+Define your own tool with a JSON Schema, built here with `@earendil-works/pi-schema`. `defineTool()` types `args` from `parameters` (through pi-schema's `Static`; other JSON Schema gives `unknown`), which the Harness coerces and validates before `execute()`. `api.output()` streams running output, which becomes the result when `execute()` returns no `output`:
 
 ```typescript
-import { Type } from "@earendil-works/pi-ai";
+import { num, obj, str } from "@earendil-works/pi-schema";
 
 const count = defineTool({
 	name: "count",
 	description: "Count from 1 to n",
-	parameters: Type.Object({ n: Type.Number() }),
+	parameters: obj({ n: num() }),
 	execute: async (args, api) => {
 		for (let i = 1; i <= args.n; i++) api.output(`${i}\n`);
 		return {};
@@ -185,7 +281,7 @@ const count = defineTool({
 registry.install(defineExtension({ name: "count", tools: [count] }));
 ```
 
-Each call runs as its own durable task. Its intent is committed before `execute()` runs. If the process dies mid-call, the tool reruns on reopen only when it is declared `replay: "safe"`; otherwise the model gets an `interrupted` error result with the output committed so far. Throwing from `execute()` gives the model an error result. A result can also return `usage`, which is added to the conversation's [usage](#usage-and-cost). It can also return `control: { terminate: true }`: when every result of the round asks for it, the run ends without another model request.
+Each call runs as its own durable task. Its intent is committed before `execute()` runs. If the process dies mid-call, the tool reruns on reopen only when it is declared `replay: "safe"`; otherwise the model gets an `interrupted` error result with the output committed so far. A replay-safe call cut off `settings.restartLimit` times in a row ends with a `restart_limit` error result instead of running again. Throwing from `execute()` gives the model an error result. A result can also return `usage`, which is added to the conversation's [usage](#usage-and-cost). It can also return `control: { terminate: true }`: when every result of the round asks for it, the run ends without another model request.
 
 A result has three channels: `output` for the model, `structuredOutput` for programs that call the tool (see [Calling tools from tools](#calling-tools-from-tools)), and `details` for UIs. A tool that declares `structuredOutputSchema` returns a matching `structuredOutput`, which the Harness validates. Programs calling a tool without one get its bounded output: one text item as a string, one image as its `ImageContent`, nothing as `""`, and anything else as the content list, for errors too. `structuredOutput` is always the tool's own value: a schema tool's error result keeps the value it returned, and the text of one without is in a `tool_error` diagnostic, as a thrown error's message is. The transcript stores only `output` and `details`:
 
@@ -193,8 +289,8 @@ A result has three channels: `output` for the model, `structuredOutput` for prog
 const lines = defineTool({
 	name: "lines",
 	description: "Count the lines of a file",
-	parameters: Type.Object({ path: Type.String() }),
-	structuredOutputSchema: Type.Object({ lines: Type.Number() }),
+	parameters: obj({ path: str() }),
+	structuredOutputSchema: obj({ lines: num() }),
 	execute: async (args, api, context) => {
 		const text = await readText(api, args.path, context);
 		const count = text.split("\n").length;
@@ -203,7 +299,7 @@ const lines = defineTool({
 });
 ```
 
-A missing, undeclared, or invalid `structuredOutput` turns a nested call's result into an error result with an `invalid_structured_output` diagnostic; for a call the model made, which never sees it, it is dropped and reported through `onReport`. An error result may omit it, and programs then find its text in a `tool_error` diagnostic; error results the Harness writes itself (blocked, invalid, interrupted, aborted) carry none, and their `diagnostics` say what went wrong. An `afterTool` hook that redacts a schema tool's `output` must redact its `structuredOutput` too. The built-in `bash` returns `{ output, truncated, fullOutputPath?, exitCode }`, where `output` is the retained tail the model sees, read with `api.retainedOutput()`, and answers a nonzero exit with an error result that still carries it.
+A missing, undeclared, or invalid `structuredOutput` turns a nested call's result into an error result with an `invalid_structured_output` diagnostic; for a call the model made, which never sees it, it is dropped and reported through `onReport`. An error result may omit it, and programs then find its text in a `tool_error` diagnostic; error results the Harness writes itself (blocked, invalid, interrupted, aborted) carry none, even when an `afterTool` hook returns one, and their `diagnostics` say what went wrong; one a hook turns into a success gives a schema-less tool's program its output. An `afterTool` hook that redacts a schema tool's `output` must redact its `structuredOutput` too. The built-in `bash` returns `{ output, truncated, fullOutputPath?, exitCode }`, where `output` is the retained tail the model sees, read with `api.retainedOutput()`, and answers a nonzero exit with an error result that still carries it. The built-in `read` returns a text file's text as a string and an image as its `ImageContent`, which code mode's `image()` shows.
 
 A later extension's tool with the same name replaces an earlier one where both are selected, and `wrapTool()` decorates whichever tool won:
 
@@ -223,7 +319,7 @@ A tool calls another tool with `api.executeTool()`, as a code mode script or an 
 const testsPass = defineTool({
 	name: "tests_pass",
 	description: "Run the test suite and say whether it passed",
-	parameters: Type.Object({}),
+	parameters: obj({}),
 	execute: async (_args, api, context) => {
 		const run = await api.executeTool("bash", { command: "npm test" }, context, { progress: false });
 		// Absent when bash did not finish, for example on a timeout.
@@ -235,7 +331,7 @@ const testsPass = defineTool({
 
 - The caller gets the nested call's `taskId`, `structuredOutput`, `details`, `diagnostics`, `usage`, and `isError`, not the `output` meant for the model. A blocked, invalid, failed, or aborted nested call returns an `isError` result. `executeTool()` itself rejects once `execute()` has returned, when the caller is aborted, or when the Harness closes; cancelling its `context` stops only the wait.
 - Hooks see a nested call's `call.parent`, so a guard can treat calls from scripts differently.
-- While the caller runs, its nested calls show in `docs["pi.live"].nestedTools`, with the arguments they run with and a `summary` (error, duration, usage) once done, and as tool events with `parentToolCallId` and `parentTaskId`. `progress: false` keeps a nested call's running output out of `pi.live`. Before the caller settles, nested calls it left running are aborted, also those an earlier attempt made. The caller's result message does not list its nested calls; their task records keep them.
+- While the caller runs, its nested calls show in `docs["pi.live"].nestedTools`, with their caller's `parentCallId` and `parentTaskId`, the arguments they run with, and a `summary` (error, duration, usage) once done; a nested call's full result is in its caller's `NestedCallDoc` while the caller runs. `progress: false` keeps a nested call's running output out of `pi.live`. Before the caller settles, nested calls it left running are aborted, also those an earlier attempt made. The caller's result message does not list its nested calls; their task records keep them.
 - Each nested call has a key, its position among the caller's nested calls unless the caller passes `{ key }`. A replay-safe caller that reruns after a crash and calls in the same order, or passes the same keys, gets the nested calls it already made back, finished or still running, instead of starting them again. A nested call the crash interrupted before its result was committed follows its own `replay` policy, so a replay-safe tool with external effects still needs its own idempotency. A caller that is not replay-safe never reruns, so after a restart its unfinished nested calls are abandoned, with everything they own, before they run again.
 - A nested call's `usage` is counted under its own tool; passing it on in the caller's result counts it twice.
 - Nested results are not kept: they live in the caller's task documents (`NestedCallDoc`, one per nested call, keyed by its key, holding `{ taskId, result? }`) only until the caller settles. The nested call's task record keeps only a small receipt. A stored result is exactly what `executeTool()` returns, without the model's `output`, so an image or a `bash` tail is stored once.
@@ -302,6 +398,7 @@ await root.configure(
 		modelTools: [readTool], // of those, offer the model only read; tools may still call bash
 		instructions: "Only read; never edit files.",
 		cwd: "/work/repo",
+		maxTurns: 50, // tool rounds one run takes at most; unset: no limit
 	},
 	context,
 );
@@ -310,6 +407,8 @@ const agent = await root.agent(context); // resolved: model, extensions, tools, 
 ```
 
 Extensions and tools are passed as objects and stored by name, so a stored name outlives its code: after an extension is uninstalled, conversations that select it just stop getting it until it is installed again. `createConversation()`, `fork()`, and `root()` take the same change as `agent`. A task-owned conversation, such as a subagent's, starts as a copy of its owner's conversation's agent. A fork starts with the agent its parent had at the fork entry. The model, prompt, and offered tools of a request are fixed when it is prepared; a change applies from the next request. Tool calls and hooks use the agent as their task phase resolves it, and the environment is built from the current `cwd` at each use, so a `cwd` or extension change can reach calls the model already made.
+
+**Turn limits.** `maxTurns` bounds the tool rounds one run takes: the round that reaches it still runs its tools, then the run ends `unanswered` with `turn_limit`, like a failed run (`runFailure`, and `settings.afterFailedRun` decides the inputs queued behind it). An answer always ends the run, so it is never cut off. The count is `docs["pi.live"].run.turns`; it survives restarts, and every run starts at 0, also one a continue starts (see [Busy Conversations](#busy-conversations)), so a host or tool that continues automatically gets a fresh budget each time and must bound that itself. An `onYield` continuation also starts the count over: an extension that keeps a run going bounds its own loop, reading `pi.live.run.turns` and `pi.agent.maxTurns` with `api.snapshot`. `configure()` throws a `RangeError` for anything but an integer 1 or more (or `null`); a change applies at the end of the current round, and children and forks inherit it like the rest of the agent.
 
 ## Settings
 
@@ -324,9 +423,9 @@ const harness = await Harness.open(storage, {
 		stream: { timeoutMs: 120_000 },
 		retry: { maxRetries: 3 },
 		compaction: { reserveTokens: 16384 },
-		progress: { partialIntervalMs: 100, outputIntervalMs: 100 },
+		progress: { partialIntervalMs: 100, outputIntervalMs: 100, persistWithinMs: 1_000 },
 		toolExecution: "parallel",
-		contextRetentionMs: 600_000, // idle conversations keep their context in memory this long (checked lazily where timers cannot be unreferenced)
+		contextRetentionMs: 600_000, // idle conversations keep their context in memory this long (checked lazily where background timers are declined, as in Workers)
 		documentRetentionMs: 600_000, // loaded documents nothing observes stay in memory this long after their last use; observed ones always
 		get followUpMode() {
 			return userSettings.followUpMode;
@@ -384,33 +483,55 @@ Work that already started keeps the code it took: a running tool call finishes u
 
 ## Watching a Conversation
 
-Everything a UI needs is committed state. `viewState()` returns the conversation's structural view as a read-only Chord state, updated after every commit that touches it:
-
-```typescript
-const view = await root.viewState(context);
-view.subscribe((value) => {
-	// value.entries: the active transcript
-	// value.docs["pi.live"]: the running generation (streamed partial, retry, deferred) and tool calls (output, details)
-	// value.docs["pi.inbox"], value.docs["pi.usage"], value.docs["pi.agent"], value.docs["pi.provider"]
-	render(value);
-});
-// later: view.dispose();
-```
-
-`watch()` delivers the same view with the exact Chord operations of each commit, one callback at a time:
+Everything a UI needs is committed state. `watch()` returns a watch of the conversation's structural view: its value at attachment, then each commit that touches it, with the Chord operations of that commit, one callback at a time:
 
 ```typescript
 const watch = await root.watch(context);
 render(watch.value); // the state at attachment
-watch.start(async (value, ops) => {
+watch.start(async (call) => {
+	if (call.kind !== "value") return; // Durable's watches end on a failure; they never send a failed call
+	const { value, ops } = call;
+	// value.entries: a window over the transcript, newest last; value.before: the entry just before it
+	// value.docs["pi.live"]: the run, the running generation (streamed partial, retry, deferred), tool calls (output,
+	//   details), compactions, and why the last run ended without an answer (runFailure)
+	// value.docs["pi.inbox"], value.docs["pi.usage"], value.docs["pi.agent"], value.docs["pi.provider"]
+	render(value);
 	await send(ops); // for example to a remote client that applies them
 });
 // later: await watch.stop();
 ```
 
-A slow watch keeps at most 100 undelivered frames. After that, the pending frames are replaced by one frame holding the whole newest view. A client that joins late or reconnects starts from the current view; nothing is replayed.
+The view's `entries` are a window, so neither the first value nor a reconnect costs the whole transcript. A watch starts with the newest 50 entries; new entries are appended, and once the window would hold more than 100, its oldest leave in one splice, leaving the newest 50. `watch(context, { min, max })` changes the bounds. `from` picks where the first value starts (as `transcript.resume` does after a drop); every entry committed after the watch attached is appended, so a `from` past the newest entry starts empty and receives what comes next. Compaction summaries and resets are entries like any other, in place; a summary's `head` says where the entries it summarizes end. `conversation.context()` gives the active transcript the model sees.
 
-Partial answers and tool output are committed at most every 100 ms by default, so a crash loses at most that window. `settings.progress` changes the intervals; a host whose storage is remote can commit less often, for example `{ partialIntervalMs: 500, outputIntervalMs: 500 }`.
+`ConversationTranscript` keeps what a client has seen beyond the window: call `merge()` with every value of the view, and render the `items` it returns, the client's whole transcript with a "load earlier" marker at the top and a "load more" gap wherever the client missed entries, after a stall or a reconnect:
+
+```typescript
+import { ConversationTranscript } from "@earendil-works/pi-durable";
+
+const transcript = new ConversationTranscript((query, limit, ctx) => root.entries(query, limit, undefined, ctx));
+const watch = await root.watch(context);
+render(transcript.merge(watch.value));
+watch.start(async (call) => {
+	if (call.kind === "value") render(transcript.merge(call.value));
+});
+
+// When a marker scrolls into view:
+render(await transcript.loadEarlier(context)); // the page before the oldest entry
+render(await transcript.fillGap(gap, context)); // the next page of a gap item
+
+// Reconnect after a drop: only what was missed, when it fits the window, otherwise the newest entries and a gap.
+const resumed = await root.watch(context, transcript.resume);
+```
+
+Entries never change once committed, so a merge only adds; one that adds nothing returns the same `items` array. See `test/examples/31-transcript.ts`.
+
+Watches are Chord's `WatchHandle` (exported by `@earendil-works/chord`; Durable re-exports it). The listener gets one `WatchCall` per call, tagged by `kind`, and the newest commit's context: `{ kind: "value", value, ops, retired }`. Chord's watches also have `{ kind: "failed", error }` calls for failures a source recovers from; Durable's failures are final, so a Durable watch never sends one and ends instead. A watch ends once, and `closed` (or `stop()`) gives a `WatchEnd` tagged by `kind`: `stopped`, `aborted` (its acquisition context was aborted), `ended` (the Harness closed, or a task document's task ended), `listener_error`, or `failed` (the Harness failed). An ended watch keeps its last value and no longer references the Harness.
+
+Adapters that must change in the same step as Durable's memory, such as a Chord source over a view, attach a synchronous observer instead of a watch: `harness.observeConversation(id, observer, context)`, `harness.observeTaskGraph(observer, context)`, and `harness.observeDoc(token, ...scope, observer, context)` return the current `value` and `detach()`, and call `observer.advance(call, context)` with every later change as a `WatchCall` (always a `value` call), unfolded, as memory adopts it: inside the storage's commit for a stored commit, at once for a deferred one (before it is stored). A document observer gets one call per change at its address, so a commit that retires and recreates the document gives two; the task graph also advances without a commit when a registry change alters a task's `blocked` reason. A change can arrive before the `observeXXX()` promise resolves; its ops apply from the observation's `value`. `observer.end(end)` comes once with a `WatchEnd`: `ended` when the Harness closes or, for a task document, right after the retirement of the commit that ends its task, `failed` when the Harness fails. `advance` only records the change: no awaits, no Harness calls, no throws, and quick, since every commit waits for it. One that throws (or returns a rejected promise) is reported, detached, and ended `listener_error`. Watches are built on these observers.
+
+Commits that land while a callback runs are delivered together in the next callback: the newest view and the operations of all of them, folded (appends to one string join, sets of one field keep the last). Past 10,000 pending operations the callback gets one root replacement `[["r", view]]` holding the whole newest view instead, its window included. A client that joins late or reconnects starts from the current view; nothing is replayed.
+
+Partial answers and tool output are committed at most every 100 ms by default, and watches see each commit at once. Storage gets them later and together, as deferred commits (see [Your Own State](#your-own-state)): with the next commit that reads `pi.live`, such as the end of the answer or of a tool, and at the latest after `settings.progress.persistWithinMs` (default 1,000 ms). A crash loses at most about that window of an answer or of tool output; a stream that crashes in its first second may leave no aborted entry, and that attempt's usage is not recorded. `settings.progress` changes the intervals; a host whose storage is remote can commit less often, for example `{ partialIntervalMs: 500, outputIntervalMs: 500 }`.
 
 ## Busy Conversations
 
@@ -420,16 +541,45 @@ A conversation is busy while a run is working on an input. Submitting to a busy 
 await root.submit({ type: "input", content: "Also run the tests" }, context); // follow-up (default)
 await root.submit({ type: "input", content: "Use pnpm, not npm", whenBusy: "steer" }, context);
 await root.submit({ type: "input", content: "Only if idle", whenBusy: "reject" }, context); // throws ConversationBusy
+await root.submit({ type: "input", content: "Only if busy", whenBusy: "steer", whenIdle: "reject" }, context); // throws ConversationIdle when idle
 await root.submit({ type: "write", entry: { kind: "app.note", data: "user opened a file" } }, context);
 ```
 
 - **Steers** are placed after the current tool round and join the running work.
 - **Follow-ups** are placed when the run answers, and start the next run.
+- **`whenIdle: "reject"`** refuses an input when no run is working, so it never starts a run of its own. With `whenBusy: "steer"`, it steers the current run or throws `ConversationIdle`. A run that answered and waits for its [after-run tasks](#work-at-the-end-of-a-run) is still working, so such an input queues and starts the next run.
+- **`submit(tx, draft)`** admits inside your own commit, with the same rules, and returns the submission's ID. Your checks, the admission, and your writes are stored together or not at all:
+
+  ```typescript
+  const id = await harness.commit(async (tx) => {
+    const chat = await tx.doc(MyChat, root.id); // your own conversation document
+    if (chat.muted.includes(userId)) throw new Error("Muted");
+    const id = await root.submit(tx, { type: "input", content: text, whenBusy: "steer", whenIdle: "reject" });
+    chat.sent.push({ id, userId }); // your own state, same commit
+    return id;
+  }, context);
+  ```
+
+  Call it before the commit's own table writes (`appendEntry()`, `createTask()`, another admission), once per commit: otherwise it throws `ReadAfterWrite`, on every path. Documents may be read and written before and after it. A rejection (`ConversationBusy`, `ConversationIdle`) throws before any write, so you may catch it. Until your commit is stored the admission is provisional: if your callback throws later, no submission exists. Tasks and tools do the same in their own commits through `api.conversation(id)`; entries the admission places carry the task's `byTaskId`.
 - **Writes** append an entry without asking the model anything. A write of only `kind` and `data` changes nothing the model sees, so it is appended at once, even mid-run, and is never queued: a chat message shows in the transcript as soon as it is sent. It can therefore appear before items submitted earlier that are still queued, except behind a queued reset, where it waits so the reset does not hide it. A write with `model`, `head`, or `edits` waits for the next boundary like a steer.
 - `await submission.abort(context)` withdraws a queued submission.
 - The [settings](#settings) `steeringMode: "all"` and `followUpMode: "all"` place every queued item at once instead of one per turn.
 
-If a run fails, queued items stay in the inbox until the next input or queued write places them, oldest first.
+If a run fails, queued items stay in the inbox until the next input, queued write, or continue places them, oldest first.
+
+When a run ends without an answer, `docs["pi.live"].runFailure` says why until the next run starts: `model_error` and `no_model` (with the error text or the missing model in `detail`), `aborted`, `reset`, `interrupted` (the host stopped while the model answered, with no retry left), `faulted`, `orphaned`, and `restart_limit` (the run's task could not go on), `turn_limit` (a tool round reached the conversation's `maxTurns`), or `nothing_to_answer` (a continue, below, found nothing to answer). The run's inputs are in it too, settled `unanswered`; the settlement's reason is the same, except that an orphaned run's inputs carry why it was orphaned (`missing_task`, `task_too_old`, `migration_failed`) and `no_model` has no `detail` there (spec §8.2).
+
+To resume such a run without typing a message, submit a continue. It starts a run on the context as it is, so the model answers the user message or tool results the stopped run left:
+
+```typescript
+const live = await harness.snapshot(LiveDoc, root.id, context);
+if (live?.run === undefined && live?.runFailure !== undefined) {
+	const resumed = await root.submit({ type: "continue" }, context); // throws ConversationBusy while busy
+	await resumed.wait(context); // done with the answer, or unanswered like any run
+}
+```
+
+A continue is never queued: it throws `ConversationBusy` while a run is working, since whether there is anything to continue depends on how that run ends. Items a failed run left queued are placed first and join the run. A context with nothing to answer (empty, or ending in an answer, also a text answer cut off at its output limit) ends the run without a request, `unanswered` with `nothing_to_answer`. A cut-off answer with tool calls can be continued: its calls never ran, so the context ends in their error results. Tools can continue the conversations they own through `api.conversation(id)`, as they submit to them.
 
 An input is placed as a `pi.user` entry. To show it as something else, give it an `entry` with your kind and data; the model still sees `content` as the user message:
 
@@ -456,7 +606,9 @@ await root.reset(undefined, context);                                  // start 
 await root.reset("We were fixing the flaky login test. Continue.", context); // start from a handoff note
 ```
 
-While busy, the reset is queued like a write. When it is placed during a tool round, the current run ends. A tool can request the same with `control: { handoff: "..." }`.
+While busy, the reset is queued like a write. When it is placed during a tool round, the current run ends: its inputs settle `unanswered` with reason `reset`, and queued inputs run in the new context.
+
+A tool can return `control: { handoff: "..." }` to write the same reset with its text, but the run continues: the next model request starts in the new context, and the submission settles with that eventual answer. Queued writes and steers land after the handoff text, follow-ups wait for the run's end, and a queued `reset()` still ends the run. When every call of the round also returns `terminate: true`, the run ends after the handoff instead.
 
 ## Compaction
 
@@ -482,31 +634,21 @@ settings: {
 		reserveTokens: 16384, // above contextWindow - reserveTokens, the next request waits for a compaction
 		keepRecentTokens: 20000, // roughly how much recent context stays verbatim
 		backgroundTokens: 32768, // this far below that, a compaction starts in the background; 0 disables it
+		modelOverrides: {
+			// exact "provider/modelId"; each field set here replaces the one above for that model
+			"local/small-32k": { reserveTokens: 4096, keepRecentTokens: 8000, backgroundTokens: 4096 },
+		},
 	},
 }
 ```
+
+The fixed token counts rarely suit a 32k and a 1M context window alike; `modelOverrides` lets one harness serve both. The conversation's current model picks the entry, at the threshold check, after a context overflow, and when a compaction selects what to summarize.
 
 When a provider rejects a request because the context is too long, generation compacts and retries once. A summary that would cut before the start of the current context settles as `stale` when it is placed, so when several are in flight, the furthest cut stays in effect. Summarization spend counts in `pi.usage`. A `beforeCompact` hook on `CompactionTask` can decline or supply its own summary.
 
 When a compaction that a generation waits for at the blocking threshold fails, the generation fails too, without sending a request: its inputs settle `unanswered` with `model_error` and detail `Compaction failed: <error>`. One that finds nothing to compact or is declined lets the request go ahead.
 
-Running compactions are listed in `docs["pi.live"].compactions` with their reason, attempt, and retry backoff. The newest failure stays in `docs["pi.live"].compactionFailure` (task, reason, error) until a compaction produces a summary. The agent events add `compaction_start` and `compaction_end` (with `error` when the compaction failed), and `compactions` and `compactionFailure` fields in the snapshot.
-
-## Agent Events (Experimental)
-
-For consumers that want coding-agent style events (`message_start`, `message_update`, `tool_execution_start`, ...) instead of structural state:
-
-```typescript
-import { watchEvents } from "@earendil-works/pi-durable";
-
-const stream = await watchEvents(harness, root.id, context);
-initialize(stream.snapshot); // entries, run, in-flight generation, tools, compactions, inbox, agent, usage
-stream.start(async (events) => {
-	for (const event of events) console.log(JSON.stringify(event));
-});
-```
-
-Events are derived from commits, one batch per commit, and apply on top of the snapshot. Message and tool updates carry deltas: text and thinking appends, appended tool-call argument text, and output trims and appends. When a consumer falls more than 100 batches behind, it receives a fresh `snapshot` event instead. See `test/examples/19-json.ts` for the full stream of one run.
+Running compactions are listed in `docs["pi.live"].compactions` with their `trigger` (`manual`, `threshold`, or `overflow`), attempt, and retry backoff. The newest failure stays in `docs["pi.live"].compactionFailure` (task, trigger, error) until a compaction produces a summary.
 
 ## Hooks
 
@@ -524,10 +666,46 @@ const Guard = defineExtension({
 });
 ```
 
-- **Generation:** `beforeRequest` (replace the messages of one request), `afterResponse`, `onYield` (continue the run with another user message), and `afterTools` (runs once a round's tools are done).
-- **Tools:** `beforeTool` (block or rewrite arguments) and `afterTool` (replace the result).
+- **Generation:** `beforeRequest` (replace the messages of one request), `beforeProviderRequest` (replace the provider request body of one request, e.g. to set a provider-specific field), `afterResponse`, `onYield` (continue the run with another user message), `afterTools` (runs once a round's tools are done), and `afterRun` (tasks to run before the run ends, below).
+- **Tools:** `beforeTool` (block or rewrite arguments) and `afterTool` (replace the result). `afterTool` sees every result a tool task writes, also the error results the Harness writes itself (unavailable, invalid, blocked, interrupted, restart limit, aborted), told apart by their diagnostic code; past `settings.restartLimit` it no longer runs. On an abort it runs inside the abort handler, so a slow hook delays `abort()`.
 
 To limit a hook to some conversations, select its extension only there, for example with `configure({ extensions: { add: [Guard] } })`.
+
+Hooks read committed documents (`api.snapshot()`) and the conversation's raw history (`api.entry()`, `api.entries()`), which compaction never changes.
+
+### Work at the end of a run
+
+An `afterRun` hook starts durable work after a run answered, without a tool call: for example the project's tests after a run that edited files. It returns tasks, built with `runEndTask()`, and the generation creates them as its children and waits for them before the run ends:
+
+```typescript
+import { defineExtension, GenerationTask, hook, runEndTask, ToolResultEntry } from "@earendil-works/pi-durable";
+
+const TestsAfterEdits = defineExtension({
+	name: "tests-after-edits",
+	tasks: [RunTests], // a task of yours, defineTask(): runs the tests, then commits its result
+	hooks: [
+		hook(GenerationTask, {
+			afterRun: async (run, api, context) => {
+				// The run's own entries, also those a compaction summarized.
+				const range = { minEntryId: run.first, maxEntryId: run.last, order: "ascending" } as const;
+				const { items } = await api.entries(range, 1000, undefined, context); // page with `next` for longer runs
+				const edited = items.some((entry) => {
+					const message = entry.model?.[0];
+					return ToolResultEntry.is(entry) && message?.role === "toolResult" && message.toolName === "edit";
+				});
+				return edited ? { tasks: [runEndTask(RunTests, { command: "npm test" })] } : undefined;
+			},
+		}),
+	],
+});
+```
+
+- **When:** after a final answer or a `terminate` round, not while an `onYield` continuation keeps the run going, never after a failure or an abort.
+- **The answer first:** the answer is committed and the run's inputs settle `done` before the hooks are asked, so `Submission.wait()` resolves at the answer.
+- **Busy until done:** `pi.live.run` stays, with `run.afterRun` listing the tasks, so the conversation is busy and `waitForIdle()` includes them; Stop aborts them; a crash resumes them. A crash before they exist asks the hooks again, never twice once they do.
+- **Input meanwhile:** steers and follow-ups queue and start the next run once the tasks are done; `whenBusy: "reject"` and a continue throw `ConversationBusy`.
+- **Results for the model:** a task gets its conversation's handle before its commit, `const handle = (await runtime.conversation(runtime.conversationId, context))!`, and admits a write or a follow-up (say "the tests failed: ...") inside it with `handle.submit(tx, draft)`, before its own table writes. Both are placed when the run ends: a write before any queued user input, a follow-up in queue order with the rest. A follow-up starts a fix run, which asks `afterRun` again with a fresh turn budget, so cap such loops in your extension.
+- **Broken requests** (an uninstalled or built-in task, a non-JSON input, a throwing `initial()`) are reported through `onReport` against the hook's extension and skipped; the run still ends.
 
 ## More Conversations and Forks
 
@@ -551,7 +729,7 @@ const Subagent: Extension = defineExtension({
 		defineTool({
 			name: "subagent",
 			description: "Delegate a self-contained task to a subagent and get its answer back.",
-			parameters: Type.Object({ task: Type.String() }),
+			parameters: obj({ task: str() }),
 			replay: "safe", // a rerun after a crash finds the same child and submission
 			execute: async (args, api, context) => {
 				const child = await api.commit(async (tx) => {
@@ -582,8 +760,8 @@ Owned work belongs to its owner:
 
 The examples show both patterns as product code:
 
-- [`22-subagent-foreground.ts`](test/examples/22-subagent-foreground.ts): the tool above, returning the child's answer. The UI finds the child through the call's `details` and prints the child's events indented under the call.
-- [`23-subagent-background.ts`](test/examples/23-subagent-background.ts): persistent subagents behind one `subagent` tool that spawns, messages (steer or follow-up), waits for, stops, and lists them. Each child is owned by a background anchor task, so the parent's Esc and idle waits never reach it. Each message is delivered by a background reporter task that posts the answer back to the parent as a follow-up input once it arrives; request IDs keep a restart from sending a message or a report twice.
+- [`21-subagent-foreground.ts`](test/examples/21-subagent-foreground.ts): the tool above, returning the child's answer. The UI finds the child through the call's `details` and prints the child's events indented under the call.
+- [`22-subagent-background.ts`](test/examples/22-subagent-background.ts): persistent subagents behind one `subagent` tool that spawns, messages (steer or follow-up), waits for, stops, and lists them. Each child is owned by a background anchor task, so the parent's Esc and idle waits never reach it. Each message is delivered by a background reporter task that posts the answer back to the parent as a follow-up input once it arrives; request IDs keep a restart from sending a message or a report twice.
 
 ## Child Tasks
 
@@ -610,23 +788,24 @@ decide: async (task, runtime, context) => {
 - **Finishing:** a task that finishes while work it owns is still running is `completing`: its outcome is decided, but it becomes terminal, and `waitForTask()` returns, only once that work is done. A failed or aborted outcome aborts that work first.
 - **Aborting:** abort runs bottom-up. Aborting a task aborts the work it owns first, and its own abort handler starts only once that work is done, so each task undoes its own effects.
 
-[`24-child-tasks.ts`](test/examples/24-child-tasks.ts) runs a checkout with four payments: a declined card, a cancelled checkout, and a restart while the payments run.
+[`23-child-tasks.ts`](test/examples/23-child-tasks.ts) runs a checkout with four payments: a declined card, a cancelled checkout, and a restart while the payments run.
 
 ## Task Graph
 
-`harness.taskGraph(context)` shows every live task of the Session as one Chord state, for a task panel or debugging. Each node has its owner edge (`owner` task, or none for a task its conversation owns), its status, whether it is `background` or abort-marked, and the conversations it owns. `harness.watchTaskGraph(context)` delivers the same value as a watch, like a conversation's `watch()`.
+`harness.watchTaskGraph(context)` watches every live task of the Session as one value, for a task panel or debugging, like a conversation's `watch()`. Each node has its owner edge (`owner` task, or none for a task its conversation owns), its status, whether it is `background` or abort-marked, and the conversations it owns.
 
 ```typescript
-const graph = await harness.taskGraph(context);
-graph.subscribe((value) => {
-	for (const node of Object.values(value.tasks)) {
+const graph = await harness.watchTaskGraph(context);
+graph.start(async (call) => {
+	if (call.kind !== "value") return;
+	for (const node of Object.values(call.value.tasks)) {
 		const status = node.state.status === "waiting" ? `waiting on ${node.state.on.join(", ")}` : node.state.status;
 		console.log(`${node.id} ${node.kind} ${status}`, node.owner ?? `conversation ${node.conversationId}`);
 	}
 });
 ```
 
-A task appears with the commit that creates it and leaves with the commit that makes it terminal. Statuses are the committed ones: `pending`, `running`, `waiting` (with `on` and `policy`), and `completing` (with the held outcome's status). After a restart, tasks that were `running` show as `pending` until they run again. Whether a pending task is blocked by a missing definition is not part of the graph; `harness.inspect()` reports that. The graph lists live tasks only: once a subagent's owner task is terminal, a later task in its conversation is a top-level node, and the conversation's `ConversationRecord.owner` (also in its view's `conversation`) links it to its parent. [`24-child-tasks.ts`](test/examples/24-child-tasks.ts) prints the checkout's tree while its payments run.
+A task appears with the commit that creates it and leaves with the commit that makes it terminal. Statuses are the committed ones: `pending`, `running`, `waiting` (with `on` and `policy`), and `completing` (with the held outcome's status). After a restart, tasks that were `running` show as `pending` until they run again. Whether a pending task is blocked by a missing definition is not part of the graph; `harness.inspect()` reports that. The graph lists live tasks only: once a subagent's owner task is terminal, a later task in its conversation is a top-level node, and the conversation's `ConversationRecord.owner` (also in its view's `conversation`) links it to its parent. [`23-child-tasks.ts`](test/examples/23-child-tasks.ts) prints the checkout's tree while its payments run.
 
 ## Your Own State
 
@@ -642,6 +821,7 @@ const Todos = defineDoc<{ items: string[] }>({
 	history: "latest", // or "rewindable" to read old values with snapshotAsOf()
 	fork: "initial", // what a fork starts with: "initial", "current", or "asOf"
 	initial: () => ({ items: [] }),
+	checkpointWhen: () => false, // required: true stores this change as a complete base, bounding replay
 });
 
 await root.commit(async (tx) => {
@@ -650,7 +830,21 @@ await root.commit(async (tx) => {
 console.log(await harness.snapshot(Todos, root.id, context));
 ```
 
-`harness.watchDoc()` and `harness.documentState()` observe one document like the view above. `HarnessOptions.conversationCreated(tx, conversation)` runs in every commit that creates or forks a conversation, including a tool's raw `tx.createConversation()`, so every conversation gets your documents; `init` in `createConversation()`, `fork()`, and `root()` writes per-call data in the same commit. An extension's tools, sections, and hooks read their own documents through `api` or `input.read`, and treat an absent one as its default ([`11-extension-state.ts`](test/examples/11-extension-state.ts)).
+A commit whose changes are cheap to lose, such as your own streamed progress, can be shown at once and stored later:
+
+```typescript
+await root.commit(
+	async (tx) => {
+		(await tx.doc(Todos, root.id)).items.push("draft"); // a document like Todos: latest, fork "initial"
+	},
+	context,
+	{ persistence: { kind: "deferred", withinMs: 1_000 } }, // without withinMs: settings.progress.persistWithinMs
+);
+```
+
+Watches and the view see it at once. Storage gets it with the next commit that reads or writes the document, before the document leaves memory, at close, and at the latest about `withinMs` later; `observeCommits()` sees it then, with exactly what was stored (a document the commit retires shows as its retirement only). A crash loses what was not stored yet, so derive nothing durable from such a value outside a commit that reads it. Only a commit that changes nothing but existing documents with `history: "latest"` and `fork: "initial"` is deferred; anything else in it, such as an entry, a new document, or a task state, stores it at once.
+
+`harness.watchDoc()` watches one document like the view above. A document watch follows its address: a retirement is a call with `retired: true`, the last value the watch was given (a change made in the retiring commit itself is not shown), and no ops, and a document created there later arrives as `[["r", value]]` on the same watch. A task document's watch ends `ended` with its task: once the retirement call of the commit that ends the task has returned, or at the Harness's close if that call was never delivered (a watch never started); an observer of it gets `end({ kind: "ended" })` right after the retirement. `HarnessOptions.conversationCreated(tx, conversation)` runs in every commit that creates or forks a conversation, including a tool's raw `tx.createConversation()`, so every conversation gets your documents; `init` in `createConversation()`, `fork()`, and `root()` writes per-call data in the same commit. An extension's tools, sections, and hooks read their own documents through `api` or `input.read`, and treat an absent one as its default ([`10-extension-state.ts`](test/examples/10-extension-state.ts)).
 
 ## Usage and Cost
 
@@ -665,9 +859,14 @@ const usage = await harness.usage(context); // { models: { "openai/gpt-6-sol": U
 | Backend | Import | Notes |
 |---|---|---|
 | Memory | `MemoryStorage` from the package root | Nothing is persisted. |
+| IndexedDB | `IndexedDbStorage.open(name)` from `@earendil-works/pi-durable/storage/indexeddb` | Browser-only storage in one IndexedDB database. |
 | SQLite | `openNodeSqliteStorage(file)` from `@earendil-works/pi-durable/storage/sqlite/node` | One database file. WAL mode with `synchronous = NORMAL`: commits survive process crashes; the newest may be lost on power or host failure. |
 | JSONL | `openNodeJsonlStorage(directory, context)` from `@earendil-works/pi-durable/storage/jsonl/node` | Append-only files in one directory. Pass `{ fsync: true }` to flush before each commit marker. Keeps the whole history in memory too, so memory grows with it; use SQLite for long-running agents. |
 | Cloudflare Durable Object | `openDurableObjectSqliteStorage(ctx.storage)` from `@earendil-works/pi-durable/storage/sqlite/cloudflare` | The SQLite storage of one SQLite-backed Durable Object; commits are its storage transactions. |
+
+In a browser, open IndexedDB storage with `await IndexedDbStorage.open(name)`. One owner must hold the database at a
+time; use a [Web Lock](https://developer.mozilla.org/docs/Web/API/Web_Locks_API) around its lifetime rather than opening
+it in competing tabs or workers. Call `await navigator.storage.persist()` when durable retention matters.
 
 SQLite storage can namespace its tables and indexes when sharing a database: pass `{ prefix: "pi_" }` to
 `SqliteStorage.open(database, options)`, `openNodeSqliteStorage(path, options)`, or
@@ -697,7 +896,7 @@ await database.transaction(async (transaction) => {
 });
 ```
 
-Custom backends can run the shared conformance suite with any Vitest- or Jest-compatible runner:
+A custom backend's `commit(batches, receive, context)` stores `batches` in order, each as one atomic commit with its own seq, checked against the state the earlier ones left, in as few round trips as it can. It stops at the first batch its own checks refuse (global IDs, document actions, copy resolution): the batches before it stay stored, it and the later ones are not. Once they are durable it calls `receive(index, seq)` per stored batch, in order and synchronously, then resolves with `{ stored, refused? }`; it rejects for an unknown outcome (connection lost, a failed statement or `COMMIT`). `receive` is a durability receipt: the Session publishes each batch later, one at a time, so memory and every view never show a partial log. `receive` calls no Storage method and never throws. Custom backends can run the shared conformance suite, which checks this too, with any Vitest- or Jest-compatible runner:
 
 ```typescript
 import { registerStorageConformance } from "@earendil-works/pi-durable/testing";
@@ -713,21 +912,21 @@ registerStorageConformance({ describe, expect, it }, "My Storage", async (use) =
 });
 ```
 
-The package root loads TypeBox, because the tool task validates arguments with pi-ai's `validateToolArguments()`. That costs about 23 MB of peak RSS unbundled, about 4 MB in a tree-shaken bundle.
+The package root loads pi-schema, because the tool task validates arguments with pi-ai's `validateToolArguments()`.
 
 ## Errors
 
 Three rules decide what an error does:
 
-1. **A storage error ends the Harness.** The call that hit it rejects with the error. Everything after it, and every pending wait, rejects with `SessionFailed` (its `cause` is that error); watches and event streams end with `session_failed`; running tasks get their abort signal; `onReport` gets the error once. The Harness then closes itself. Nothing is retried; a custom storage retries its own transient failures. Reopen to recover: commits are atomic, so the store is consistent, and resubmitting with the same `requestId` finds a submission that was already admitted.
-2. **An invalid request fails only that call:** a storage throws `StorageRequestError` for a bad cursor, an unknown conversation, or history a document does not keep. A read you cancelled fails only itself too.
+1. **A storage error ends the Harness.** The call that hit it rejects with the error. Everything after it, and every pending wait, rejects with `SessionFailed` (its `cause` is that error); watches end with `failed`; running tasks get their abort signal; `onReport` gets the error once. The Harness then closes itself. Nothing is retried; a custom storage retries its own transient failures. Reopen to recover: commits are atomic, so the store is consistent, and resubmitting with the same `requestId` finds a submission that was already admitted.
+2. **An invalid read fails only that call:** a storage read throws `StorageRequestError` for a bad cursor, an unknown conversation, or history a document does not keep. A read you cancelled fails only itself too. The exemption covers reads only: any error from `commit()` or `mintId()`, `StorageRequestError` included, ends the Harness as in rule 1.
 3. **Your code fails only its own unit:** a throwing task phase faults that task, a throwing tool gets an error result, a throwing hook is reported and skipped (`beforeTool` blocks the call), and a throwing commit callback rolls back that commit. Listeners that throw, or return a rejected promise, are reported and the others still run. The exception is a host `RegistryReader` whose `snapshot()` throws: the Harness cannot schedule without it, so it fails the Harness like a storage error.
 
 `harness.closed` settles once the Harness has closed, by `close()` or after a storage error, so a host restarts on failure like this:
 
 ```typescript
 harness.closed.then((end) => {
-	if (end.reason === "failed") reopen(end.error);
+	if (end.kind === "failed") reopen(end.error);
 });
 ```
 
@@ -738,29 +937,35 @@ A failure closes the Harness by itself; `closed` settles once that close is done
 Runnable examples live in [`test/examples`](test/examples). Run one from this package directory with:
 
 ```bash
-node --conditions=source --experimental-strip-types test/examples/14-chat.ts
+node --conditions=source --experimental-strip-types test/examples/13-chat.ts
 ```
 
 | Example | Shows |
 |---|---|
-| [14-chat](test/examples/14-chat.ts) | One question and answer |
-| [16-real-model](test/examples/16-real-model.ts) | Streaming an answer from OpenAI |
-| [17-coding-tools](test/examples/17-coding-tools.ts) | A tool-using turn on JSONL storage |
-| [18-print](test/examples/18-print.ts) | Print mode: submit a prompt, print the answer |
-| [19-json](test/examples/19-json.ts) | JSON mode: agent events or raw view operations, on SQLite, JSONL, or memory |
-| [20-inbox](test/examples/20-inbox.ts) | Steers, follow-ups, writes, and withdrawal while busy |
-| [21-late-join](test/examples/21-late-join.ts) | Attaching a view and an event stream mid-run |
-| [22-subagent-foreground](test/examples/22-subagent-foreground.ts) | A replay-safe subagent tool whose child the call owns, with the child's events under the call |
-| [23-subagent-background](test/examples/23-subagent-background.ts) | Persistent subagents: spawn, steer, stop, list, answers reported back, restart-safe |
-| [24-child-tasks](test/examples/24-child-tasks.ts) | A checkout that owns and waits for four payments: failFast, abort, restart |
-| [25-compaction](test/examples/25-compaction.ts) | A long chat compacted in the background, manually, and after a context overflow |
-| [26-coding-agent](test/examples/26-coding-agent.ts) | CodingTools, live settings from a settings object, an environment that follows the conversation's directory |
-| [27-plan-mode](test/examples/27-plan-mode.ts) | A read-only plan mode as an extension with its own document, switched with `configure()` |
-| [28-reviewer](test/examples/28-reviewer.ts) | A reviewer conversation with its own model, extensions, tools, directory, and review loop |
-| [29-sandbox-per-conversation](test/examples/29-sandbox-per-conversation.ts) | An environment per conversation, looked up from an app document |
-| [30-tool-override](test/examples/30-tool-override.ts) | A same-name bash for some conversations, and a wrapper that times whichever bash won |
-| [31-reload-and-restart](test/examples/31-reload-and-restart.ts) | Reloading an extension mid-call, and stored choices surviving a restart |
-| [00](test/examples/00-conversation.ts)–[13](test/examples/13-recovery.ts) | The layers underneath: sessions, documents, forks, watches, the Harness, agent configuration, reload, extension state, tasks, recovery |
+| [13-chat](test/examples/13-chat.ts) | One question and answer |
+| [15-real-model](test/examples/15-real-model.ts) | Streaming an answer from OpenAI |
+| [16-coding-tools](test/examples/16-coding-tools.ts) | A tool-using turn on JSONL storage |
+| [17-print](test/examples/17-print.ts) | Print mode: submit a prompt, print the answer |
+| [18-json](test/examples/18-json.ts) | JSON mode: raw view operations, or appended entries and `pi.live` per change, on SQLite, JSONL, or memory |
+| [19-inbox](test/examples/19-inbox.ts) | Steers, follow-ups, writes, and withdrawal while busy |
+| [20-late-join](test/examples/20-late-join.ts) | Attaching a view mid-run: the running tool's output, then the streamed answer |
+| [21-subagent-foreground](test/examples/21-subagent-foreground.ts) | A replay-safe subagent tool whose child the call owns, with the child's transcript under the call |
+| [22-subagent-background](test/examples/22-subagent-background.ts) | Persistent subagents: spawn, steer, stop, list, answers reported back, restart-safe |
+| [23-child-tasks](test/examples/23-child-tasks.ts) | A checkout that owns and waits for four payments: failFast, abort, restart |
+| [24-compaction](test/examples/24-compaction.ts) | A long chat compacted in the background, manually, and after a context overflow |
+| [25-coding-agent](test/examples/25-coding-agent.ts) | CodingTools, live settings from a settings object, an environment that follows the conversation's directory |
+| [26-plan-mode](test/examples/26-plan-mode.ts) | A read-only plan mode as an extension with its own document, switched with `configure()` |
+| [27-reviewer](test/examples/27-reviewer.ts) | A reviewer conversation with its own model, extensions, tools, directory, and review loop |
+| [28-sandbox-per-conversation](test/examples/28-sandbox-per-conversation.ts) | An environment per conversation, looked up from an app document |
+| [29-tool-override](test/examples/29-tool-override.ts) | A same-name bash for some conversations, and a wrapper that times whichever bash won |
+| [30-reload-and-restart](test/examples/30-reload-and-restart.ts) | Reloading an extension mid-call, and stored choices surviving a restart |
+| [31-transcript](test/examples/31-transcript.ts) | A client's transcript over the windowed view: live appends, a stall with a gap, loading it and earlier pages, and resuming with `from` |
+| [32-tests-after-edits](test/examples/32-tests-after-edits.ts) | An `afterRun` hook that runs the tests after every run that edited files, a fix run when they fail, and input waiting for them |
+| [33-turn-limit-and-continue](test/examples/33-turn-limit-and-continue.ts) | A per-conversation turn limit, `runFailure`, and continuing without a user message |
+| [34-submit-in-commit](test/examples/34-submit-in-commit.ts) | Admitting a visitor's steer inside the host's own commit with `submit(tx, draft)` and `whenIdle: "reject"` |
+| [35-durable-on-the-store](test/examples/35-durable-on-the-store.ts) | A Harness on `StoreStorage` in a Chord host's store, next to a Chord object's own table: one commit queue, one id allocator, one export |
+| [36-durable-views](test/examples/36-durable-views.ts) | A Chord object following a Durable view with `self.follow`: its frames and a member reading the followed value |
+| [00](test/examples/00-conversation.ts)–[12](test/examples/12-recovery.ts) | The layers underneath: sessions, documents, forks, watches, the Harness, agent configuration, reload, extension state, tasks, recovery |
 
 Examples that call OpenAI need `OPENAI_API_KEY`; most use the faux provider otherwise.
 
@@ -1010,6 +1215,11 @@ const agent = new Agent({
   // Session ID for provider caching
   sessionId: "session-123",
 
+  // How requests identify the app to providers (pi-ai ClientIdentity), merged over
+  // DEFAULT_AGENT_IDENTITY ({ attribution: PI_ATTRIBUTION }: provider attribution headers name pi).
+  // Pass your app's attribution, or null to send none.
+  identity: { attribution: { name: "my-app", url: "https://my-app.example" } },
+
   // Dynamic API key resolution (for expiring OAuth tokens)
   getApiKey: async (provider) => refreshToken(),
 
@@ -1228,18 +1438,20 @@ const agent = new Agent({
 
 ## Tools
 
-Define tools using `AgentTool`:
+Define tools using `AgentTool`. `parameters` is any JSON Schema object; built with `@earendil-works/pi-schema`'s builders, it also types `params` (other schemas give `unknown`, `AgentTool<any>` gives `any`):
 
 ```typescript
-import { Type } from "typebox";
+import { obj, str } from "@earendil-works/pi-schema";
 
-const readFileTool: AgentTool = {
+const readFileParameters = obj({
+  path: str({ description: "File path" }),
+});
+
+const readFileTool: AgentTool<typeof readFileParameters> = {
   name: "read_file",
   label: "Read File",  // For UI display
   description: "Read a file's contents",
-  parameters: Type.Object({
-    path: Type.String({ description: "File path" }),
-  }),
+  parameters: readFileParameters,
   // Override execution mode for this tool (optional).
   // "sequential" forces the entire batch to run one at a time.
   // "parallel" allows concurrent execution with other tool calls.
@@ -1351,6 +1563,8 @@ This package provides:
 
 - an explicit, callback-based `TelemetryContext` / `TelemetrySpan` contract;
 - a shared `NOOP_TELEMETRY_CONTEXT`;
+- opaque cross-process propagation and span links;
+- counters, up-down counters, histograms, and typed metric schemas;
 - a reference `InMemoryTelemetryContext` implementation;
 - serializable schema definitions with inferred TypeScript types;
 - no exporter, global current-span state, or dependency on a telemetry backend.
@@ -1363,8 +1577,11 @@ Applications can use the in-memory reference or provide an adapter for OpenTelem
 - [Telemetry Concepts](#telemetry-concepts)
 - [Core Context API](#core-context-api)
 - [Adapter Contract](#adapter-contract)
+- [Propagation and Span Links](#propagation-and-span-links)
+- [Metrics](#metrics)
 - [No-op Context](#no-op-context)
 - [In-Memory Reference Adapter](#in-memory-reference-adapter)
+- [Stored Telemetry](#stored-telemetry)
 - [Adapter Conformance](#adapter-conformance)
 - [Typed Schemas](#typed-schemas)
   - [Start and Completion Attributes](#start-and-completion-attributes)
@@ -1404,11 +1621,11 @@ example.account.load                         span
 └─ status: ok                               final outcome
 ```
 
-A span is diagnostic data, not business state. Recording it must not change whether the account load runs, succeeds, fails, or is persisted. An adapter translates these generic concepts into the corresponding concepts used by OpenTelemetry, Sentry, logs, or another backend.
+A span is diagnostic data, not business state. An adapter translates these generic concepts into the corresponding concepts used by OpenTelemetry, Sentry, logs, or another backend.
 
 ## Core Context API
 
-A `TelemetryContext` starts a span around a callback. The callback receives a `TelemetrySpan`, which is also the explicit parent context for child spans.
+A `TelemetryContext` starts a span around a callback. The callback receives a `TelemetrySpan`, which is also the explicit parent context for child spans. Contexts optionally expose their adapter's `metrics?: TelemetryMetrics` and `propagation?: TelemetryPropagation` capabilities; child spans and extracted parents carry the same capabilities. A `TelemetryContext` adapter starts root spans; hosts retain this adapter. Invocation contexts and pi-ai request options carry a `TelemetrySpan`, never the adapter. A tracing adapter that only implements `startSpan()` is still valid.
 
 ```typescript
 import {
@@ -1462,19 +1679,120 @@ return telemetryContext.startSpan({ name: 'example.save' }, async (span) => {
 
 ## Adapter Contract
 
-An adapter implements `TelemetryContext` and bridges the generic API to its backend. It must:
+An adapter implements `TelemetryContext` and bridges the generic API to its backend. Typed inputs are trusted; malformed inputs have unspecified behavior. Adapters are not required to validate inputs or suppress adapter/backend failures.
+
+The callback and recording contract is:
 
 - create a child span and invoke the callback synchronously, exactly once;
+- expose optional metric and propagation capabilities on its contexts, child spans, and extracted parents, including inert fallback spans;
 - preserve the callback's returned value and rejection value, returning a promise rejected with the same value after a synchronous throw;
 - keep the native span open until a returned promise settles;
 - treat normal completion as `ok` and throws/rejections as errors unless an explicit status was set;
 - make repeated `setStatus()` calls last-write-wins;
 - merge `setAttributes()` calls, with later defined values replacing earlier values and `undefined` ignored;
-- make recording methods synchronous, passive, and non-throwing;
-- ignore calls made after settlement;
-- ignore a failed recording call atomically, suppress backend failures, and still execute the business callback exactly once.
+- make recording methods synchronous;
+- ignore calls made after settlement.
 
 Adapters may activate backend-native ambient context internally for automatic instrumentation, but pi code always propagates the parent through `TelemetryContext` arguments. Exporter buffering, flushing, sampling, backend IDs, and backend-specific context objects belong to the adapter. Use the [adapter conformance suite](#adapter-conformance) to check these observable semantics.
+
+## Propagation and Span Links
+
+An adapter may also implement `TelemetryPropagation`. Expose it through `context.propagation` so code can inject or extract using the context it already has. The root, spans, and extracted parents share the adapter's capability object:
+
+```typescript
+interface TelemetryPropagation {
+  inject(context: TelemetryContext): TelemetryCarrier | undefined;
+  extract(carrier: TelemetryCarrier | undefined): TelemetryContext;
+}
+type TelemetryCarrier = Record<string, string>;
+```
+
+A carrier is an opaque JSON-safe string map. Adapters own its format; W3C `traceparent` and `tracestate` fit without requiring them. Transport code sends only the carrier, never a context or span:
+
+```typescript
+const caller = new InMemoryTelemetryContext();
+const provider = new InMemoryTelemetryContext();
+await caller.startSpan({ name: 'rpc.client' }, async (span) => {
+  const wire = JSON.stringify(caller.inject(span));
+  await provider.extract(JSON.parse(wire)).startSpan(
+    { name: 'rpc.server' },
+    (serverSpan) => handleRequest(serverSpan),
+  );
+});
+```
+
+Injection returns a detached carrier or `undefined` for roots, no-op contexts, and unsupported contexts. Extraction returns a receiver-owned parent. Absent or unknown carriers fall back to the adapter's root. Extraction checks only that required carrier keys contain strings; identifiers are opaque and need no format validation. Both methods are synchronous. Trace metadata is diagnostics, never authorization. Transport boundaries own carrier size limits.
+
+A link relates work without changing its parent. Use `SpanOptions.links` when the target is known at creation, or `span.addLink()` after the span has started:
+
+```typescript
+await telemetry.startSpan(
+  { name: 'activation', links: [{ context: firstGetter, attributes: { reason: 'trigger' } }] },
+  async (activation) => {
+    laterGetter.addLink({ context: activation });
+    await activate();
+  },
+);
+```
+
+Link targets are `TelemetryContext` handles, including spans and extracted remote parents. For a remote link, first call `adapter.extract(carrier)`. A settled target remains linkable and injectable; a settled source ignores `addLink()`. Links append in order, copy attributes, and ignore root, no-op, or unsupported contexts. The typed span starter's callback also supports `addLink()`; initial links use the low-level `startSpan()` API.
+
+`NOOP_TELEMETRY_PROPAGATION` ignores its arguments: injection returns `undefined`, extraction returns `NOOP_TELEMETRY_CONTEXT`.
+
+## Metrics
+
+An adapter may implement `TelemetryMetrics` alongside `TelemetryContext` and `TelemetryPropagation`. Applications configure one adapter, not separate backends for each capability. Expose the shared capability through `context.metrics`; child spans retain it, so nested model calls can record metrics without a separate configuration option. The in-memory adapter also implements the factory methods directly:
+
+```typescript
+const bytes = telemetry.counter('network.bytes', {
+  description: 'Encoded WebSocket bytes', unit: 'By',
+});
+bytes.add(encodedSize, { direction: 'out' });
+
+const active = telemetry.upDownCounter('calls.active');
+active.add(1);
+active.add(-1);
+
+const duration = telemetry.histogram('call.duration', {
+  unit: 'ms', boundaries: [1, 10, 100, 1000],
+});
+duration.record(elapsedMs, { method: 'read' }, currentSpan);
+```
+
+Factories take an instrument name and optional `InstrumentOptions` (`description`, `unit`). Histograms additionally accept `HistogramOptions.boundaries`: callers supply finite, strictly increasing bucket hints. Backends own aggregation and may translate these hints. Callers are responsible for finite measurements and non-negative counter increments; up-down counters and histograms may use signed values. Histogram `record(value, attributes?, context?)` optionally correlates a measurement with a span, called an exemplar. Counter `add(value, attributes?)` has no context argument.
+
+Factories and recording methods are synchronous and trust typed inputs. Adapters need not validate measurement values, metadata, attributes, or boundaries; malformed inputs have unspecified behavior. `NOOP_TELEMETRY_METRICS` returns shared frozen instruments that discard measurements. Record only values already available to business code; do not serialize or measure extra data for telemetry.
+
+Use only low-cardinality attributes: bounded values such as direction or method, not request IDs, user IDs, prompts, or arbitrary paths. The low-level attribute bag remains open; instrumentation owns this policy, not backend-specific heuristics.
+
+### Typed metric schemas
+
+`TelemetrySchemaDefinition.metrics` optionally declares instrument names, kinds, metadata, and required/optional attributes. `createTypedMetrics()` combines one or more schemas and rejects duplicate metric names, incorrect instrument kinds, unknown attributes, and missing required attributes at compile time:
+
+```typescript
+const schema = defineTelemetrySchema({
+  version: 1,
+  spans: {},
+  metrics: {
+    'network.bytes': {
+      kind: 'counter', description: 'Encoded bytes', unit: 'By',
+      attributes: {
+        direction: {
+          type: 'string', required: true, values: ['in', 'out'],
+          description: 'Direction', cardinality: 'low',
+        },
+      },
+    },
+  },
+} as const);
+
+const metrics = createTypedMetrics(telemetry, [schema]);
+metrics.counter('network.bytes').add(encodedSize, { direction: 'out' });
+```
+
+Metric definitions use `kind: 'counter' | 'upDownCounter' | 'histogram'`; only histograms may declare `boundaries`. Metric attributes use the same scalar/array definitions as spans, but reject `cardinality: 'high'`. Omitting the cardinality annotation does not waive the low-cardinality policy. Unlike the typed span starter, the metric helper reads and retains schema instrument metadata at runtime. It performs no runtime attribute validation.
+
+`InMemoryTelemetryContext.getMetrics()` returns ordered, detached `RecordedTelemetryMeasurement` snapshots: `kind`, `name`, optional `description`/`unit`/`boundaries`, `value`, copied `attributes`, and a carrier-shaped exemplar `context` or `null`. This is a measurement log, not aggregated counters or buckets; storage is unbounded. Measurement times are retained privately for store queries, not exposed in these snapshots.
 
 ## No-op Context
 
@@ -1494,6 +1812,7 @@ The no-op context:
 - invokes callbacks synchronously;
 - preserves returned values and asynchronous rejections, and converts a synchronous throw to a promise rejected with the same value;
 - uses one shared frozen inert span, including for nested spans;
+- exposes `NOOP_TELEMETRY_METRICS` and `NOOP_TELEMETRY_PROPAGATION` on its root and spans;
 - does not inspect or retain names, attributes, events, or statuses.
 
 ## In-Memory Reference Adapter
@@ -1516,9 +1835,34 @@ await telemetry.startSpan(
 console.log(telemetry.getSpans());
 ```
 
-`getSpans()` returns detached snapshots in span-start order. Each `RecordedTelemetrySpan` contains a deterministic numeric ID, parent ID, merged attributes, ordered events, final status, settlement state, and deterministic end sequence. It records no timestamps.
+`getSpans()` returns detached snapshots in span-start order. Each `RecordedTelemetrySpan` contains a deterministic numeric ID, local parent ID, carrier-shaped `context` and `parentContext` snapshots, ordered `links`, merged attributes, ordered events, final status, settlement state, and deterministic end sequence. These normalized snapshots expose no timestamps. A remote parent has `parentId: null` but a non-null `parentContext`; a root has both null. A `RecordedTelemetryLink` contains a target carrier and copied attributes.
+
+The adapter implements `TelemetryPropagation` with its own small carrier codec: a unique recorder scope, a deterministic numeric span ID, and an inherited trace ID. The carrier survives JSON round trips and works across independent processes without a shared registry. Its keys are an implementation detail, not a public wire format for other adapters.
 
 The adapter is safe to use as an ordinary `TelemetryContext`, but storage is unbounded and process-local. Create a fresh instance to isolate tests or recording scopes, and do not capture sensitive attributes unless the caller's data policy allows them.
+
+## Stored Telemetry
+
+`TelemetryStore` separates querying from recording. Both `InMemoryTelemetryContext` and `@earendil-works/chord/telemetry-sqlite` implement it:
+
+- `findTraces(query?)` returns complete locally stored traces, newest trace start first. Filters include the earliest stored span's `name`, inclusive `startMin`/`startMax`, `errors: true`, and scalar `attributes`. All requested attributes must match one span, anywhere in the trace. Pages default to 20 traces; pass the returned opaque `cursor` with the same filters to continue. Equal start times are ordered by trace ID.
+- `getTrace(traceId)` returns a trace or `undefined`.
+- `findMetrics({ name, startMin?, startMax?, attributes? })` returns metric rows with count, sum, minimum, and maximum. Time bounds are inclusive interval-start times. The in-memory adapter maps each raw measurement to a count-one row in its ten-second interval; SQLite aggregates measurements per series and interval.
+
+Only settled spans are returned. A trace ID is the root's globally unique span ID (`<recorder UUID>:<counter>`) and propagates with the parent identity. Stores return the spans available locally: remote or expired parents can be absent, and a child can appear before its parent settles. Pagination is not a snapshot across requests; late settlements and retention can change a trace's earliest stored span. SQLite reads committed rows without implicitly flushing.
+
+`StoredSpan` includes epoch-millisecond `startedMs`/`endedMs`, event offsets in `timeMs`, and links carrying both target `traceId` and `spanId`. Duration uses a monotonic clock; wall clocks across processes may disagree. Merge spans from several stores by trace ID; parent relationships, not timestamp containment, define the tree.
+
+Rendering is a separate subpath, kept out of the root entry graph:
+
+```typescript
+import { renderTrace } from '@earendil-works/pi-telemetry/render';
+
+const page = await telemetry.findTraces({ errors: true, limit: 10 });
+for (const trace of page.traces) console.log(renderTrace(trace.spans));
+```
+
+`renderTrace()` accepts stored spans, deduplicates IDs, treats absent parents as roots, and prints attributes, durations, statuses, event offsets, and cross-trace links. It never follows links or queries a store.
 
 ## Adapter Conformance
 
@@ -1551,7 +1895,7 @@ for (const group of new Set(conformance.map((testCase) => testCase.group))) {
 }
 ```
 
-The suite checks synchronous single admission, result and rejection identity, automatic and explicit status, attribute merging, event ordering, inert post-settlement calls, nested and concurrent parentage, and suppression of unreadable telemetry payload failures. `getSpans()` may flush an asynchronous exporter before returning. The testing subpath uses Node's assertion APIs; the root telemetry package remains runtime-neutral.
+The suite checks capability identity on roots, child spans, extracted parents and inert spans, synchronous single admission, result and rejection identity, automatic and explicit status, attribute merging, event ordering, inert post-settlement calls, nested and concurrent parentage, and links. Fixtures may supply `propagation` to additionally check JSON round trips, multiple adapter hops, and root fallback for absent or unknown carriers. Fixtures may also supply `metrics` and `getMetrics()` to check ordered measurements, histogram exemplars, and input copying. It does not test malformed inputs or require suppression of adapter/backend failures. `getSpans()` may flush an asynchronous exporter before returning. The testing subpath uses Node's assertion APIs; the root telemetry package remains runtime-neutral.
 
 ## Typed Schemas
 
@@ -1712,24 +2056,20 @@ Adapters do not need to understand schema objects. Instrumentation helpers and t
 Package ownership is intentionally split:
 
 - `@earendil-works/pi-telemetry` owns the vendor-neutral contract, no-op and in-memory reference contexts, schema utilities, and adapter conformance suite;
-- `@earendil-works/pi-ai` accepts and propagates `telemetryContext` in provider request options but owns no telemetry schema;
-- `@earendil-works/pi-agent-core` owns and exports the pi AI-request and harness schemas, their combined readonly schema tuple, and typed span helpers.
+- `@earendil-works/pi-ai` accepts a parent `TelemetrySpan` through `telemetry` in provider request options and exports `AI_TELEMETRY_SCHEMA` from its root and `./models` entry points;
+- `@earendil-works/pi-durable` exports `DURABLE_TELEMETRY_SCHEMA` for short task-handler and submission spans, events, and metrics;
+- `@earendil-works/pi-agent-core` retains its existing agent-loop and session instrumentation and schemas.
 
 ```typescript
-import {
-  AGENT_TELEMETRY_SCHEMAS,
-  AI_TELEMETRY_SCHEMA,
-  HARNESS_TELEMETRY_SCHEMA,
-  startAiSpan,
-  startHarnessSpan,
-} from '@earendil-works/pi-agent-core';
+import { AI_TELEMETRY_SCHEMA } from '@earendil-works/pi-ai/models';
+import { DURABLE_TELEMETRY_SCHEMA } from '@earendil-works/pi-durable';
 ```
 
-The pi schemas use pi-owned `pi.ai.*`, `pi.harness.*`, and `pi.session.*` names. Adapters may translate them to backend conventions without changing the emitted pi vocabulary.
+The AI and Durable schemas use pi-owned `pi.ai.*` and `pi.durable.*` names. Adapters may translate them to backend conventions without changing the emitted pi vocabulary.
 
 ## Security and Portability
 
-Telemetry is process-local diagnostics, not durable application state. Do not persist a `TelemetryContext`, `TelemetrySpan`, or backend-native trace object in records, messages, snapshots, or deferred handles.
+Telemetry is diagnostics, not durable application state. Do not persist a `TelemetryContext`, `TelemetrySpan`, or backend-native trace object in records, messages, snapshots, or deferred handles. An injected `TelemetryCarrier` may cross a transport or be stored as optional diagnostic correlation data. Changing adapters may lose correlation; carriers are not application state.
 
 Attribute values are intentionally limited to primitive scalars and arrays. Domain instrumentation should avoid prompts, completions, tool arguments or output, file contents, provider payloads, headers, credentials, and free-form error details unless its schema and data policy explicitly allow them.
 
@@ -1741,15 +2081,30 @@ The package does not use `AsyncLocalStorage` or another runtime-specific ambient
 
 | Export | Purpose |
 |---|---|
-| `TelemetryContext` | Starts callback-managed child spans |
+| `TelemetryContext` | Starts callback-managed child spans and optionally exposes adapter metrics/propagation |
 | `TelemetrySpan` | Records attributes, events, and status; also acts as a child context |
-| `SpanOptions` | Span name and optional start attributes |
+| `SpanOptions` | Span name, optional start attributes and links |
+| `SpanLink` | Context target and optional link attributes |
+| `TelemetryCarrier` | Opaque JSON-safe string map |
+| `TelemetryPropagation` | Optional adapter injection and extraction capability |
+| `NOOP_TELEMETRY_PROPAGATION` | Shared passive propagation for disabled telemetry |
+| `TelemetryMetrics` | Optional adapter instrument factories |
+| `TelemetryCounter` / `TelemetryUpDownCounter` | Instruments with `add()` |
+| `TelemetryHistogram` | Instrument with `record()` and optional exemplar context |
+| `InstrumentOptions` / `HistogramOptions` | Description, unit, and histogram boundary hints |
+| `NOOP_TELEMETRY_METRICS` | Shared passive metric instruments |
+| `RecordedTelemetryMeasurement` | Captured measurement and optional exemplar |
 | `SpanAttributes` / `AttributeValue` | Open adapter-level attribute bag and supported values |
 | `SpanStatus` | Explicit `ok` or `error` status |
 | `NOOP_TELEMETRY_CONTEXT` | Shared passive context for disabled telemetry |
 | `InMemoryTelemetryContext` | Reference adapter with deterministic process-local recording |
 | `RecordedTelemetrySpan` | Normalized captured span snapshot |
 | `RecordedTelemetryEvent` | Normalized captured event snapshot |
+| `RecordedTelemetryLink` | Captured target carrier and link attributes |
+| `TelemetryStore` | Settled trace discovery, trace retrieval, and metric queries |
+| `StoredSpan` / `StoredTrace` | Backend-independent timed span and trace snapshots |
+| `TraceQuery` / `MetricQuery` | Trace filters, pagination, and metric filters |
+| `StoredMetric` | Metric interval row with count, sum, minimum, and maximum |
 
 ### Schema definitions and inference
 
@@ -1757,6 +2112,9 @@ The package does not use `AsyncLocalStorage` or another runtime-specific ambient
 |---|---|
 | `defineTelemetrySchema()` | Typed identity helper for serializable schema data |
 | `createTypedSpanStarter()` | Binds a parent context to one or more schema vocabularies |
+| `createTypedMetrics()` / `TypedTelemetryMetrics` | Binds metric names, kinds, metadata, and attributes to schemas |
+| `TelemetryMetricDefinition` / `TelemetryMetricAttributeDefinition` | Serializable instrument metadata and low-cardinality attribute definitions |
+| `SchemaTelemetryCounter` / `SchemaTelemetryHistogram` | Schema-constrained recording methods |
 | `TypedSpanStarter` | Exact starter type with recursively child-bound callbacks |
 | `TelemetrySchemaDefinition` | Top-level schema shape |
 | `TelemetrySpanDefinition` | Span metadata, parents, attributes, events, and status rule |

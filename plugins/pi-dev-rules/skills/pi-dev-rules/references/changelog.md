@@ -1,6 +1,6 @@
 # Pi: Changelog
 
-Source: `packages/coding-agent/CHANGELOG.md` at pi@71023aec1. Built locally from the repository changelog; no network access.
+Source: `packages/coding-agent/CHANGELOG.md` at pi@f9a263655. Built locally from the repository changelog; no network access.
 
 A reverse-chronological release list, newest first. The highlight column is the first
 bullet of each release's `### New Features` section, or its first bullet when that
@@ -15,6 +15,8 @@ checkout to rebuild this file and the reference bundles.
 
 | Version | Date | Highlights |
 | --------- | ------ | ----------- |
+| **1.5.0** | 2026-11-02 | Extension update changelogs: see what changed in installed extension packages on the next fresh launch after an update. Package authors can choose... |
+| **1.4.0** | 2026-10-21 | Image input for classifiers: codemode models.classify() accepts images for TypeSafe's Jev and Cloudflare's Clef models on typesafe, cloudflare-work... |
 | **1.3.0** | 2026-10-15 | Choose where /share uploads: sessionShareDestination selects auto, gist, or radius. See Sessions and context and Export or share a session. |
 | **1.2.0** | 2026-10-12 | Per-key OpenRouter model lists: with an OpenRouter key, Pi lists only the models that key may use, with the key's context size, max output, and pri... |
 | **1.1.0** | 2026-10-07 | Program status reporting: terminals and agent dashboards that support OSC 7501 see whether Pi is working, blocked on a dialog or login, done, or fa... |
@@ -38,14 +40,12 @@ checkout to rebuild this file and the reference bundles.
 | **0.84.1** | 2026-08-07 | Qwen Token Plan Individual — Use the built-in provider for models documented for Individual subscriptions. See API Keys. |
 | **0.84.0** | 2026-08-06 | Fullscreen TUI mode — Switch between regular and fullscreen modes at runtime, with a sticky editor and footer, independently scrollable transcript,... |
 | **0.83.0** | 2026-07-29 | Credential export for external clients — pi auth print-api-key and pi auth print-bearer-token export configured credentials with automatic OAuth re... |
-| **0.82.1** | 2026-07-25 | Claude Opus 5 — Available on Anthropic and Amazon Bedrock with adaptive thinking (including xhigh), inference profiles, and prompt caching. See Pro... |
-| **0.82.0** | 2026-07-24 | Constrained tool sampling — Tools can prefer or require strict JSON Schema sampling or use OpenAI Lark/regex grammars, with model capability metada... |
 
 ---
 
 ## Full changelog
 
-289 release sections are recorded in the Pi repository, including `[Unreleased]`.
+291 release sections are recorded in the Pi repository, including `[Unreleased]`.
 Read the complete, untruncated history there:
 
 ```bash

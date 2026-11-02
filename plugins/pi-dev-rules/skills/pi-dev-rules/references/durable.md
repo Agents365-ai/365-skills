@@ -1,7 +1,7 @@
 # Pi Durable: What It Is, What Shipped, and Where to Read More
 
 Source: <https://earendil.com/posts/pi-durable/> (Earendil Engineering, "Pi Durable", 2026-10-01)
-and the pi tree at `pi@71023aec1` (release v1.3.0, 2026-10-15) with `packages/durable/CHANGELOG.md`.
+and the pi tree at `pi@f9a263655` (release v1.5.0, 2026-11-02) with `packages/durable/CHANGELOG.md`.
 Manually curated, not auto-built. The package README and the normative specification are bundled in
 `agent-harness.md` (API) and `durable-spec.md` (semantics); this page is the routing and status layer
 the blog provides and the docs site does not.
@@ -42,12 +42,15 @@ What that buys, per the README:
   with a per-document fork rule (`asOf`, `current`, `initial`).
 - **Extensions as bundles:** prompt sections, tools, hooks, and tasks installed in a registry and
   selected per conversation; installing a name again replaces it while conversations run.
-- **Multiplayer:** `viewState()`, `watch()`, and `watchEvents()` let any number of clients attach,
-  late or after a reconnect, and steer a busy conversation (`whenBusy: "steer"`).
+- **Multiplayer:** `Conversation.watch()` (a windowed view), `watchDoc()`, and `watchTaskGraph()` let any number of clients attach,
+  late or after a reconnect, and steer a busy conversation (`whenBusy: "steer"`). Since 1.5.0 a
+  watch delivers the changes made while its listener runs in one callback, and the
+  `viewState()`/`documentState()` getters plus `watchEvents()` are gone.
 - **No built-in subagents:** a subagent is a child conversation owned by the tool call that started
   it, taken from the README's `subagent` example and made restart-safe by `replay: "safe"`.
 - **Backends:** `MemoryStorage`, SQLite (`storage/sqlite/node`, also a Cloudflare Durable Object),
-  and JSONL (`storage/jsonl/node`), plus a conformance suite and benchmarks for a custom one. One
+  JSONL (`storage/jsonl/node`), and IndexedDB (`storage/indexeddb`, browser, added in 1.4.0), plus
+  a conformance suite and benchmarks for a custom one. One
   process owns a storage at a time.
 
 The blog's own sizing claim: about 15,000 lines of source without tests (roughly 150k tokens with
@@ -66,6 +69,8 @@ experimental: the blog says the API might still change, and the CHANGELOG confir
 | 1.1.0 | 2026-10-07 | Breaking scan `order`, Cloudflare storage, context caching |
 | 1.2.0 | 2026-10-12 | Breaking: tagged `ToolTaskInput`, `output` instead of `content`, storage errors fail the Session, nested tool calls, structured output, deferred tools, the `codemode` extension |
 | 1.3.0 | 2026-10-15 | SQLite table prefixes, shared operation queues for Cloudflare adapters, system-baseline ordering after compaction, lower-memory image encoding |
+| 1.4.0 | 2026-10-21 | Breaking: sleeping tasks (`sleepUntil`, no `TaskRuntime.sleep`), crash-loop guard (`settings.restartLimit`), explicit `checkpointWhen` on documents, SQLite schema v2 (not readable by 1.3.0). Adds IndexedDB storage, telemetry spans, per-model compaction thresholds, wake signals |
+| 1.5.0 | 2026-11-02 | Breaking: pi-schema tool schemas (TypeBox dropped), `Storage.commit(batches, receive, context)`, Chord watches with tagged calls, conversation views replace `viewState()`/`watchEvents()`, progress commits deferred to `settings.progress.persistWithinMs`. Adds `ConversationTranscript`, `runFailure`, `settings.afterFailedRun` |
 
 Install, as in the README:
 
@@ -85,11 +90,11 @@ const settled = await submission.wait(context);
 
 ## Where it lives in the tree
 
-| Path (pi@71023aec1) | What it holds |
+| Path (pi@f9a263655) | What it holds |
 | --------------------- | ------------- |
 | `packages/durable/README.md` | The public API, per feature; bundled in `agent-harness.md` |
-| `packages/durable/docs/spec.md` | The normative Pico5 specification (5352 lines); bundled in `durable-spec.md` |
-| `packages/durable/test/examples/00-31` | 32 runnable examples; the README's table names most of them: chat, coding tools, print/JSON mode, inbox, late join, foreground and background subagents, child tasks, compaction, reviewer, per-conversation sandbox, tool override, reload |
+| `packages/durable/docs/spec.md` | The normative Pico5 specification (6531 lines); bundled in `durable-spec.md` |
+| `packages/durable/test/examples/00-37` | 38 runnable examples; the README's table names most of them: chat, coding tools, print/JSON mode, inbox, late join, foreground and background subagents, child tasks, compaction, reviewer, per-conversation sandbox, tool override, reload, transcript, turn limits, store-backed harness, followed views |
 | `packages/durable/CHANGELOG.md` | Per-release breaking changes and features; the source of the table above |
 | `packages/durable/docs/pico-v5-{handoff,chord-usage}.md`, `chord-delta-findings.md` | Implementation plan and Chord design notes; not bundled here |
 | `packages/chord/` | The document-state runtime the harness builds on; see `chord.md` |
@@ -120,7 +125,7 @@ exist in older checkouts (for example at `v1.1.0` and earlier), which is why a s
 show them; `git log --oneline --diff-filter=D -- packages/coding-agent/src/experimental/durable` is
 the check.
 
-The main features described in the blog remain in the v1.3.0 package: the storage backends, crash recovery,
+The main features described in the blog remain in the v1.5.0 package: the storage backends, crash recovery,
 queued submissions, forks, compaction as a background task, documents, hot extension replacement,
 and the multi-client view. The blog's "coming weeks" items (a Slack bot, a GitHub triage bot) are not
 in the tree.
