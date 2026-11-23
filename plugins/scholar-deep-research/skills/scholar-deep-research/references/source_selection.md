@@ -36,6 +36,17 @@ When you have four databases and limited rounds, where do you spend the queries?
 - **Web of Science / Scopus** require institutional access. Mention in the report appendix as "not consulted" if your user explicitly cares about indexing rigor.
 - **Brave Search** (web search MCP) is for *non-academic* sources — press releases, blog posts, community discussion of preprints. Only run when the question explicitly needs them.
 
+## Optional: Firecrawl for papers and clinical trials
+
+Off by default, and the sources above stay the default. Reach for it when the user already has a `FIRECRAWL_API_KEY`.
+
+- **Papers.** Firecrawl's research paper index holds PubMed, bioRxiv and medRxiv abstracts plus arXiv preprints. `firecrawl research search-papers "<query>"` runs a semantic search over the abstracts, and `firecrawl research related-papers <ids...> --intent "<intent>"` expands from seed papers. Results carry `pmid:`, `pmcid:`, `doi:` or `arxiv:` ids; pass a PMID, DOI or arXiv id to `scripts/resolve_id.py` to see which search script fetches its record.
+- **Clinical trials.** [Firecrawl Alexandria](https://alexandria.firecrawl.dev/categories/life-sciences?utm_source=365-skills&utm_medium=integration) has a ClinicalTrials.gov provider: search studies by condition, intervention or sponsor, or fetch one study by NCT number. `firecrawl list clinicaltrials-gov` shows its tools.
+
+Setup: `npx -y firecrawl-cli@latest init` installs the CLI and the core skills, including `firecrawl-research-index` and `firecrawl-alexandria`. For the skills alone, run `npx skills add firecrawl/skills`.
+
+Firecrawl output is not a `search_*.py` envelope, so treat it like host-native web results: use it to find candidates, and let a paper enter `research_state.json` only through the search scripts.
+
 ## What each source is BAD at
 
 - **OpenAlex**: occasional metadata errors (wrong author, wrong year). Verify the top-N before they enter the report.
